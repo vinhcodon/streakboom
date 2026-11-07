@@ -5,7 +5,7 @@
   import { getCurrentWebviewWindow } from "@tauri-apps/api/webviewWindow";
   import { onMount } from "svelte";
   import Pet from "$lib/Pet.svelte";
-  import { ONE_SHOT_MS, type PetState } from "$lib/sprites";
+  import { needsWakeFirst, TIMED, type PetState } from "$lib/sprites";
   import type { Trigger } from "$lib/lines";
   import { pick, remember, resolveLang } from "$lib/selector";
   import { newScratch, scratchStep } from "$lib/gestures";
@@ -182,15 +182,35 @@
     clearTimeout(walkEndTimer);
   }
 
-  function enter(next: PetState) {
+  let wakeThen: PetState | null = null; // what to do once the pet has finished waking up
+
+  function enter(requested: PetState) {
+    let next = requested;
+    // A sleeping pet wakes up first (stretch, eyes open), then carries on.
+    if (needsWakeFirst(pose, next)) {
+      wakeThen = next;
+      next = "wake";
+    } else if (next !== "wake") {
+      wakeThen = null;
+    }
     clearInterval(walkTimer);
     clearTimeout(walkEndTimer);
     clearTimeout(sleepTimer);
     clearTimeout(oneShotTimer);
     pose = next;
     poseTick++;
-    const ms = ONE_SHOT_MS[next];
-    if (ms) oneShotTimer = setTimeout(() => enter(quiet ? "sleep" : "idle"), ms);
+    const timed = TIMED[next];
+    if (timed) {
+      oneShotTimer = setTimeout(() => {
+        if (next === "wake" && wakeThen) {
+          const after = wakeThen;
+          wakeThen = null;
+          enter(after);
+        } else {
+          enter(timed.next ?? (quiet ? "sleep" : "idle"));
+        }
+      }, timed.ms);
+    }
     if (next === "idle") scheduleNext();
     if (next === "walk") startWalk();
     if (next === "sleep" && !quiet) {
@@ -204,12 +224,12 @@
   }
 
   function pickNext() {
-    if (quiet) return enter("sleep");
+    if (quiet) return pose === "sleep" || pose === "drowsy" ? undefined : enter("drowsy");
     if (panel) return scheduleNext();
     const r = Math.random();
     if (r < 0.5) enter("look");
     else if (r < 0.85) enter("walk");
-    else enter("sleep");
+    else enter("drowsy"); // yawns first, then falls asleep
   }
 
   function startWalk() {
@@ -791,7 +811,7 @@
             bubbleOn = false;
             closePanel();
           }
-          enter(quiet ? "sleep" : "idle");
+          enter(quiet ? "drowsy" : "idle"); // drifts off, or wakes up with a stretch
         })
       );
       cleanups.push(await win.listen<BubbleAction>("bubble-action", (e) => onBubbleAction(e.payload)));
@@ -884,9 +904,7 @@
     ondblclick={onDblClick}
     oncontextmenu={onPetMenu}
   >
-    {#key poseTick}
-      <Pet {pose} {dir} {tilt} />
-    {/key}
+    <Pet {pose} {dir} {tilt} tick={poseTick} />
   </div>
 </main>
 
