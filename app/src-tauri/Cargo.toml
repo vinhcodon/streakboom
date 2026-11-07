@@ -1,6 +1,6 @@
 [package]
 name = "streakboom"
-version = "0.1.0"
+version = "0.1.1"
 description = "Streakboom desktop pet"
 authors = ["streakboom"]
 edition = "2024"
