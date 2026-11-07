@@ -33,11 +33,14 @@ export interface Line {
 
 type Opts = Pick<Line, "tiers" | "bands" | "hours" | "days">;
 
-function mk(lang: Lang, trigger: Trigger, texts: string[], opts: Opts = {}): Line[] {
+// `batch` keeps ids unique when a later block adds lines with the same trigger/tier/band as an
+// earlier one, and leaves the ids of the first batch unchanged (the "recent lines" memory
+// stored on disk refers to ids).
+function mk(lang: Lang, trigger: Trigger, texts: string[], opts: Opts = {}, batch = ""): Line[] {
   return texts.map((raw, i) => {
     const spicy = raw.startsWith("~");
     const text = spicy ? raw.slice(1) : raw;
-    const key = [trigger, opts.tiers?.join("") ?? "", opts.bands?.join("") ?? "", opts.days ?? ""]
+    const key = [trigger, opts.tiers?.join("") ?? "", opts.bands?.join("") ?? "", opts.days ?? "", batch]
       .filter(Boolean)
       .join(".");
     return { id: `${lang}.${key}.${i}`, lang, trigger, text, spicy, ...opts };
@@ -152,6 +155,254 @@ const VI: Line[] = [
   ]),
 ];
 
-export const LINES: Line[] = [...EN, ...VI];
+// ---- second batch: more variety, same triggers (about 100 more lines per language) ----------
+
+const EN2: Line[] = [
+  ...mk("en", "greeting", [
+    "Hello. I live here now, apparently.",
+    "~I was totally not staring at the screen. Hi.",
+    "Hi there. Be gentle, I'm new around here.",
+    "~Nice wallpaper. I have notes.",
+  ], { tiers: [1] }, "b"),
+  ...mk("en", "greeting", [
+    "~Look who's back. The desktop missed you. I didn't. Okay, I did.",
+    "Hey! I was just practicing my dramatic stare.",
+    "Welcome back. I saved you the good pixels.",
+    "~Quick, look busy. I'll look decorative.",
+  ], { tiers: [2] }, "b"),
+  ...mk("en", "greeting", [
+    "There's my person. The day just got 12% better.",
+    "~Oh no, it's you. Anyway, I saved you a seat. It's the whole screen.",
+    "Hi hi hi. I did a little dance. You missed it.",
+    "Ah, the best part of my day. Sorry, second best. Naps are first.",
+    "Welcome home. I kept the desktop warm.",
+  ], { tiers: [3, 4] }, "b"),
+  ...mk("en", "return", [
+    "You're back! I only knocked three icons over. In my head.",
+    "~Look who remembered I exist.",
+    "Ah, the human returns. The screen was lonely.",
+    "Hello again! I practiced waiting. Not my best skill.",
+    "~Took you long enough. I've aged two pixels.",
+  ], {}, "b"),
+  ...mk("en", "morning", [
+    "Good morning! The pixels are freshly polished.",
+    "Rise and shine. Or at least rise.",
+    "New day, same me, fresh nap plans.",
+    "~Morning. Don't talk to me before the second coffee. Or the first.",
+    "Morning! I've already stretched twice. Very productive.",
+  ], {}, "b"),
+  ...mk("en", "night", [
+    "Quiet hours. Even the fans are whispering.",
+    "~It's late. Nothing good happens after 'just one more tab'.",
+    "The moon says close the laptop. I'm only the messenger.",
+    "Tomorrow-you will thank tonight-you for sleeping.",
+    "I'm here if you need company. I won't tell anyone you're up.",
+  ], { hours: [23, 5] }, "b"),
+  ...mk("en", "long", [
+    "You've been at it a while. Hydrate, hero.",
+    "Quick stretch? I'll hold your place.",
+    "~Your posture looks like a question mark. Fix it, I believe in you.",
+    "Break time. Look at something far away. A cloud, a tree, me.",
+    "Even robots take breaks. I'm not a robot, I'm a cat. Take a break.",
+  ], {}, "b"),
+  ...mk("en", "idle", [
+    "Just vibing. Pixel-style.",
+    "I made a tiny plan: do nothing, but fluffier.",
+    "All is well. Suspiciously well.",
+    "~Is that a new tab? You have eleven. I counted.",
+    "If I had a hat, I'd tip it at your productivity.",
+    "I'm keeping watch. Nothing to report. That's the best report.",
+  ], { bands: ["content"] }, "b"),
+  ...mk("en", "idle", [
+    "I've watched the cursor for ten minutes. It's not that exciting.",
+    "Hello? Anyone? Not even a tiny poke?",
+    "I invented a game: count the pixels. I'm at four.",
+    "~Entertain me or I'll start chewing on the taskbar.",
+    "Poke me. Or scratch my head. I'll act surprised.",
+  ], { bands: ["bored"] }, "b"),
+  ...mk("en", "idle", [
+    "Zoomies loading... 80%.",
+    "I could chase the cursor. I'm choosing not to. For now.",
+    "Feeling bouncy! Do something fun!",
+    "~I have too much energy and no hands. Good luck to us.",
+    "Race me to the end of the screen! (I will win.)",
+  ], { bands: ["playful"] }, "b"),
+  ...mk("en", "idle", [
+    "Five more minutes. For me. Not for you.",
+    "My eyelids are filing a complaint.",
+    "*curls up in spirit*",
+    "I'm awake. Technically.",
+    "~Wake me when something interesting happens. Or snacks.",
+  ], { bands: ["sleepy"] }, "b"),
+  ...mk("en", "idle", [
+    "Oh, it's you. I was just thinking about you. In a casual way.",
+    "It got quiet. I like it better with you here.",
+    "~I'm fine. Totally fine. Pet me if you want. Optional.",
+    "Hi. Stay a while?",
+  ], { bands: ["lonely"] }, "b"),
+  ...mk("en", "click", [
+    "Boing!",
+    "You found the poke button. It's me.",
+    "Hey! Personal space!",
+    "I felt that in my whiskers.",
+    "~Poke count: too many. I'm keeping a list.",
+    "Ooh, attention. More, please.",
+    "Yes, hello, I exist. What do you need?",
+    "Tap tap. Who's there? Me. Always me.",
+  ], {}, "b"),
+  ...mk("en", "pet", [
+    "Left a little. No, the other left.",
+    "~This is purely scientific. I'm not enjoying it.",
+    "Ahh. Yes. That spot. Never stop.",
+    "Okay fine, I love it. Don't tell anyone.",
+    "My ears just did a happy thing.",
+    "~You're getting good at this. Dangerous.",
+    "Mmm, prrr. (That was the fan.)",
+    "Head scratches: the superior currency.",
+  ], {}, "b"),
+  ...mk("en", "how", ["Doing great. Mostly horizontal.", "Content. Fed on pixels.", "Pretty good! Ask me again tomorrow."], { bands: ["content"] }, "b"),
+  ...mk("en", "how", ["Ready to bounce off the walls. Which are your windows.", "Energy: yes. Plans: chaos.", "I'm basically a tiny firework. In a good way."], { bands: ["playful"] }, "b"),
+  ...mk("en", "how", ["Bored, but less so now. Thanks for the visit.", "I counted the icons again. Still too many.", "Could use some excitement. Or a snack."], { bands: ["bored"] }, "b"),
+  ...mk("en", "how", ["Drowsy. My bed is a pixel away.", "Half asleep. Half polite.", "*yawns* Fine, thank you. Mostly asleep."], { bands: ["sleepy"] }, "b"),
+  ...mk("en", "how", ["Better, now that you looked at me.", "I'm okay. I'm okay! Hi.", "Thanks for asking. It matters."], { bands: ["lonely"] }, "b"),
+  ...mk("en", "milestone", ["Day three. You could have left. You didn't.", "Three days running. Impressive stamina."], { days: 3 }, "b"),
+  ...mk("en", "milestone", ["One week! I'll allow a tiny happy dance.", "Seven days. I'm officially attached."], { days: 7 }, "b"),
+  ...mk("en", "milestone", ["Thirty days. I'd frame this, if I had walls.", "A month! You're my favorite human. (You already were.)"], { days: 30 }, "b"),
+  ...mk("en", "brainhint", [
+    "A brain would let me answer your questions. Right now I just stare.",
+    "I have thoughts. Few ways to share them. Hint hint.",
+    "Imagine me with a vocabulary. Dangerous, right?",
+    "Give me a brain and I promise to use it responsibly. Mostly.",
+  ], { tiers: [3, 4] }, "b"),
+  ...mk("en", "hint", [
+    "Psst. Move your cursor back and forth over my head. Trust me.",
+    "~I'm not asking for head scratches. I'm just standing here with a head.",
+  ], {}, "b"),
+];
+
+const VI2: Line[] = [
+  ...mk("vi", "greeting", [
+    "Xin chào. Hình như mình sống ở đây rồi.",
+    "~Mình đâu có nhìn chằm chằm vào màn hình. Chào bạn.",
+    "Chào bạn. Nhẹ tay nhé, mình mới đến.",
+    "~Hình nền đẹp đó. Mình có vài góp ý.",
+  ], { tiers: [1] }, "b"),
+  ...mk("vi", "greeting", [
+    "~Xem ai về này. Desktop nhớ bạn. Mình thì không. À có.",
+    "Ê! Mình đang tập ánh nhìn đầy kịch tính.",
+    "Chào mừng về. Mình để dành pixel ngon cho bạn.",
+    "~Nhanh, giả vờ bận đi. Mình sẽ giả vờ làm cảnh.",
+  ], { tiers: [2] }, "b"),
+  ...mk("vi", "greeting", [
+    "Người của mình đây rồi. Ngày vừa tốt lên 12%.",
+    "~Ôi không, lại là bạn. Dù sao mình cũng giữ chỗ rồi. Cả màn hình luôn.",
+    "Chào chào chào. Mình vừa nhảy một điệu. Bạn bỏ lỡ rồi.",
+    "Phần tuyệt nhất trong ngày của mình đây. À, nhì thôi. Ngủ trưa là nhất.",
+    "Chào mừng về nhà. Mình giữ desktop ấm cho bạn.",
+  ], { tiers: [3, 4] }, "b"),
+  ...mk("vi", "return", [
+    "Bạn về rồi! Mình chỉ làm rơi ba cái icon. Trong tưởng tượng.",
+    "~Ai kia nhớ ra là mình tồn tại rồi.",
+    "À, con người đã về. Màn hình buồn quá.",
+    "Chào lại nhé! Mình tập chờ đợi rồi. Không phải sở trường.",
+    "~Lâu thật đó. Mình già đi hai pixel rồi.",
+  ], {}, "b"),
+  ...mk("vi", "morning", [
+    "Chào buổi sáng! Pixel vừa được đánh bóng.",
+    "Dậy thôi. Hoặc ít nhất là ngồi dậy.",
+    "Ngày mới, mình vẫn thế, kế hoạch ngủ trưa còn mới.",
+    "~Sáng rồi. Đừng nói chuyện với mình trước ly cà phê thứ hai. Hoặc thứ nhất.",
+    "Chào buổi sáng! Mình vươn vai hai lần rồi. Chăm chỉ ghê.",
+  ], {}, "b"),
+  ...mk("vi", "night", [
+    "Giờ yên tĩnh. Đến quạt máy cũng thì thầm.",
+    "~Khuya rồi. Chẳng có gì hay ho xảy ra sau câu 'thêm một tab nữa'.",
+    "Mặt trăng bảo gập laptop lại. Mình chỉ là người truyền tin.",
+    "Bạn của ngày mai sẽ cảm ơn bạn của đêm nay vì đã ngủ.",
+    "Mình ở đây nếu bạn cần bạn. Mình không kể ai là bạn còn thức đâu.",
+  ], { hours: [23, 5] }, "b"),
+  ...mk("vi", "long", [
+    "Ngồi lâu rồi đó. Uống nước đi, anh hùng.",
+    "Vươn vai chút nhé? Mình giữ chỗ cho.",
+    "~Dáng ngồi của bạn giống dấu chấm hỏi. Sửa đi, mình tin bạn.",
+    "Nghỉ chút. Nhìn thứ gì đó thật xa. Đám mây, cái cây, hay mình.",
+    "Robot còn nghỉ. Mình không phải robot, mình là mèo. Nghỉ đi.",
+  ], {}, "b"),
+  ...mk("vi", "idle", [
+    "Cứ thong thả thôi. Kiểu pixel.",
+    "Mình có một kế hoạch nhỏ: không làm gì, nhưng bông hơn.",
+    "Mọi thứ ổn. Ổn đáng ngờ.",
+    "~Tab mới hả? Bạn mở mười một cái rồi. Mình đếm.",
+    "Có mũ là mình đã nghiêng mũ chào năng suất của bạn.",
+    "Mình canh gác. Không có gì để báo cáo. Báo cáo đó là tốt nhất.",
+  ], { bands: ["content"] }, "b"),
+  ...mk("vi", "idle", [
+    "Mình nhìn con trỏ mười phút rồi. Nó không thú vị lắm.",
+    "Alo? Có ai không? Một cú chọc nhỏ cũng được.",
+    "Mình nghĩ ra một trò: đếm pixel. Đang ở con số bốn.",
+    "~Giải trí cho mình đi, không thì mình gặm thanh taskbar.",
+    "Chọc mình đi. Hoặc gãi đầu. Mình sẽ giả vờ bất ngờ.",
+  ], { bands: ["bored"] }, "b"),
+  ...mk("vi", "idle", [
+    "Cơn chạy lung tung đang tải... 80%.",
+    "Mình có thể đuổi con trỏ. Mình chọn không. Tạm thời.",
+    "Đang nảy tưng tưng! Làm gì vui đi!",
+    "~Mình thừa năng lượng mà không có tay. Chúc hai ta may mắn.",
+    "Thi chạy tới cuối màn hình không? (Mình thắng.)",
+  ], { bands: ["playful"] }, "b"),
+  ...mk("vi", "idle", [
+    "Năm phút nữa thôi. Cho mình. Không phải cho bạn.",
+    "Mí mắt mình đang nộp đơn khiếu nại.",
+    "*cuộn tròn trong tâm trí*",
+    "Mình thức. Về mặt kỹ thuật.",
+    "~Có chuyện hay hoặc đồ ăn thì gọi mình dậy.",
+  ], { bands: ["sleepy"] }, "b"),
+  ...mk("vi", "idle", [
+    "Ồ, là bạn. Mình vừa nghĩ về bạn. Kiểu bình thường thôi.",
+    "Vừa nãy yên ắng quá. Có bạn thích hơn.",
+    "~Mình ổn. Hoàn toàn ổn. Muốn vuốt ve thì cứ vuốt. Tùy bạn.",
+    "Chào. Ở lại chút nhé?",
+  ], { bands: ["lonely"] }, "b"),
+  ...mk("vi", "click", [
+    "Bùm!",
+    "Bạn tìm ra nút chọc rồi. Là mình.",
+    "Ê! Không gian riêng tư!",
+    "Mình cảm nhận được đến tận ria.",
+    "~Số lần chọc: quá nhiều. Mình đang ghi sổ.",
+    "Ôi, được quan tâm. Thêm nữa đi.",
+    "Vâng, chào, mình có tồn tại. Bạn cần gì?",
+    "Cốc cốc. Ai đó? Mình. Luôn là mình.",
+  ], {}, "b"),
+  ...mk("vi", "pet", [
+    "Qua trái chút. Không, trái kia.",
+    "~Đây là thí nghiệm khoa học thuần túy. Mình không hề thích.",
+    "Aaa. Đúng. Chỗ đó. Đừng dừng.",
+    "Thôi được, mình thích lắm. Đừng nói ai.",
+    "Tai mình vừa làm một điều vui.",
+    "~Bạn giỏi dần rồi đó. Nguy hiểm.",
+    "Ừm, gừ gừ. (Là tiếng quạt.)",
+    "Gãi đầu: đồng tiền quý nhất.",
+  ], {}, "b"),
+  ...mk("vi", "how", ["Mình ổn. Phần lớn thời gian nằm ngang.", "Hài lòng. Ăn pixel no nê.", "Khá tốt! Mai hỏi lại mình nhé."], { bands: ["content"] }, "b"),
+  ...mk("vi", "how", ["Sẵn sàng nảy khắp tường. Mà tường là cửa sổ của bạn.", "Năng lượng: có. Kế hoạch: hỗn loạn.", "Mình giống pháo hoa nhỏ. Theo nghĩa tốt."], { bands: ["playful"] }, "b"),
+  ...mk("vi", "how", ["Chán, nhưng bớt rồi. Cảm ơn bạn ghé thăm.", "Mình lại đếm icon. Vẫn nhiều quá.", "Cần chút hứng khởi. Hoặc đồ ăn vặt."], { bands: ["bored"] }, "b"),
+  ...mk("vi", "how", ["Lơ mơ. Giường mình cách một pixel.", "Nửa ngủ. Nửa lịch sự.", "*ngáp* Ổn, cảm ơn. Phần lớn là đang ngủ."], { bands: ["sleepy"] }, "b"),
+  ...mk("vi", "how", ["Đỡ hơn rồi, vì bạn nhìn mình.", "Mình ổn. Mình ổn! Chào.", "Cảm ơn đã hỏi. Điều đó quan trọng."], { bands: ["lonely"] }, "b"),
+  ...mk("vi", "milestone", ["Ba ngày rồi. Bạn có thể đi, nhưng bạn không đi.", "Ba ngày liền. Sức bền ấn tượng."], { days: 3 }, "b"),
+  ...mk("vi", "milestone", ["Một tuần! Mình cho phép nhảy một điệu nhỏ.", "Bảy ngày. Mình chính thức gắn bó."], { days: 7 }, "b"),
+  ...mk("vi", "milestone", ["Ba mươi ngày. Có tường là mình đóng khung.", "Một tháng! Giờ bạn là người mình thích nhất. (Vốn đã vậy.)"], { days: 30 }, "b"),
+  ...mk("vi", "brainhint", [
+    "Có bộ não, mình sẽ trả lời câu hỏi của bạn. Giờ mình chỉ biết nhìn.",
+    "Mình có nhiều suy nghĩ. Ít cách chia sẻ. Gợi ý đó nha.",
+    "Tưởng tượng mình có cả vốn từ vựng xem. Nguy hiểm đúng không?",
+    "Cho mình bộ não, mình hứa dùng có trách nhiệm. Phần lớn thời gian.",
+  ], { tiers: [3, 4] }, "b"),
+  ...mk("vi", "hint", [
+    "Này. Rê con trỏ qua lại trên đầu mình. Tin mình đi.",
+    "~Mình không đòi gãi đầu đâu. Mình chỉ đứng đây với cái đầu.",
+  ], {}, "b"),
+];
+
+export const LINES: Line[] = [...EN, ...EN2, ...VI, ...VI2];
 
 export const MILESTONE_DAYS = [3, 7, 30];

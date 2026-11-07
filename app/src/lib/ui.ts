@@ -55,6 +55,9 @@ export interface UiStrings {
   thinking: string;
   capHit: string;
   slowHint: string;
+  copyStats: string;
+  statsCopied: string;
+  statsHint: string;
   sectionAbout: string;
   versionLabel: string;
   checkUpdates: string;
@@ -137,6 +140,9 @@ export const UI: Record<Lang, UiStrings> = {
     thinking: "…",
     capHit: "I've talked a lot today. Let's keep the rest for tomorrow.",
     slowHint: "Google is slow right now. I'm still trying, this can take up to a minute or two.",
+    copyStats: "Copy stats",
+    statsCopied: "Copied",
+    statsHint: "Nothing is sent automatically. Copy it and paste it to the developer if you want to share it.",
     sectionAbout: "About",
     versionLabel: "Version",
     checkUpdates: "Check for updates",
@@ -229,6 +235,9 @@ export const UI: Record<Lang, UiStrings> = {
     thinking: "…",
     capHit: "Hôm nay mình nói nhiều rồi. Phần còn lại để mai nhé.",
     slowHint: "Google đang chậm. Mình vẫn đang thử, có thể mất tới một hai phút.",
+    copyStats: "Sao chép thống kê",
+    statsCopied: "Đã chép",
+    statsHint: "Không có gì được gửi tự động. Sao chép rồi dán cho người phát triển nếu bạn muốn chia sẻ.",
     sectionAbout: "Về app",
     versionLabel: "Phiên bản",
     checkUpdates: "Kiểm tra cập nhật",

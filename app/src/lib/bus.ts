@@ -44,6 +44,8 @@ export interface SettingsSnapshot {
   hasKey: boolean;
   brainBad: boolean;
   tier: number; // closeness tier, for the tone of the first AI line
+  /** What "Copy stats" puts on the clipboard. Empty unless the user opted in. */
+  stats: { installId: string; events: { e: string; t: number }[] };
 }
 
 /** Settings window -> pet window. */

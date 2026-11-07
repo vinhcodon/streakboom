@@ -605,6 +605,10 @@
       hasKey,
       brainBad,
       tier: tierOf(data.closeness),
+      stats:
+        data.telemetry.consent === "on"
+          ? { installId: data.telemetry.installId, events: $state.snapshot(data.telemetry.queue) as { e: string; t: number }[] }
+          : { installId: "", events: [] },
     };
   }
   const pushSettings = () => void toSettings(snapshot());

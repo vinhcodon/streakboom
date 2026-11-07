@@ -72,6 +72,25 @@ test("line ids are unique and no line is empty", () => {
   for (const l of LINES) assert.ok(l.text.trim().length > 0 && !l.text.startsWith("~"));
 });
 
+test("line pools are rich enough, readable and free of repeats", () => {
+  for (const lang of LANGS) {
+    const mine = LINES.filter((l) => l.lang === lang);
+    assert.ok(mine.length >= 150, `${lang} has ${mine.length} lines`);
+    const texts = mine.map((l) => l.text.trim().toLowerCase());
+    assert.equal(new Set(texts).size, texts.length, `${lang} has repeated lines`);
+    for (const l of mine) assert.ok(l.text.length <= 110, `${l.id} is too long for a bubble (${l.text.length})`);
+    // not all sarcasm: gentle users must still get plenty
+    const spicy = mine.filter((l) => l.spicy).length;
+    assert.ok(spicy / mine.length < 0.4 && spicy > 10, `${lang} spicy share ${spicy}/${mine.length}`);
+    // the triggers that are actually used need real variety (at least 8 lines each)
+    for (const t of ["greeting", "return", "morning", "night", "long", "idle", "click", "pet", "how", "hint"] as Trigger[])
+      assert.ok(mine.filter((l) => l.trigger === t).length >= (t === "hint" ? 6 : 8), `${lang} ${t}`);
+  }
+  // both languages should be about the same size
+  const n = (lang: Lang) => LINES.filter((l) => l.lang === lang).length;
+  assert.ok(Math.abs(n("vi") - n("en")) <= 4);
+});
+
 test("gentle tone excludes spicy lines", () => {
   for (const lang of LANGS)
     for (const t of ["greeting", "return", "click", "pet"] as Trigger[])
