@@ -3,7 +3,7 @@
 Goal: a pet with no AI that is charming enough to keep for 7 days (Hypothesis 4) and builds the attachment that makes users willing to give it a "brain" (Hypothesis 2b).
 
 ## Decisions
-- **Character:** a small animal (cat/dog/small creature; species to be fixed by art).
+- **Character:** a small animal. Decided: a round "mochi cat" (see the character paragraph under Behaviors).
 - **Personality:** playful, mischievous, mildly sarcastic. Teasing never targets the user's worth or work quality; it targets the situation (the clock, the coffee, the pile of tabs).
 - **Languages:** Vietnamese and English line pools, chosen by system language, switchable in Settings.
 - **No guilt:** the pet never dies, starves or gets sick. Neglect only makes it "a bit lonely", and it is delighted when the user returns.
@@ -25,7 +25,7 @@ Derived mood bands: Sleepy (night/idle), Content, Playful, Bored, Lonely-but-hop
 3. **Friend (50–79):** inside jokes, remembers the user's name and routine times, rare "brain" hints.
 4. **Close (80–100):** richer animations, special reactions to milestones (day 7, day 30).
 
-The "brain request" (see onboarding_flow.md) is more natural at tier 2–3, but is triggered by behavior, not by tier alone.
+The "brain request" (see 02-onboarding-flow.md) is more natural at tier 2–3, but is triggered by behavior, not by tier alone.
 
 ## Behaviors
 - **Idle loop:** idle, look around, groom/stretch, yawn, sit, nap.

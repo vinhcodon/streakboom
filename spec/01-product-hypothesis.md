@@ -1,5 +1,7 @@
 # Product Requirement & Hypothesis Specification: Desktop AI Pet (BYOK)
 
+> **Status note.** This is the original requirements and hypothesis document, kept close to how it was written. The decisions log (section 3b) records what was decided. Where the build later differs, the later documents win: the "<40MB RAM" target became about 120 MB (a webview cannot do 40 MB), the stack is Tauri 2 + Svelte, and only Gemini is supported. See [`04-technical-design.md`](04-technical-design.md).
+
 ## 1. Project Overview
 **Project Name:** Desktop AI Pet (Working Title)  
 **Target Platform:** Cross-platform Desktop (Windows / macOS) built via Tauri or lightweight UI frameworks.  

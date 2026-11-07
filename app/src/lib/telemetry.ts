@@ -1,4 +1,4 @@
-// Funnel events from onboarding_flow.md. Recording is opt-in and lives in state.ts
+// Funnel events from spec/02-onboarding-flow.md. Recording is opt-in and lives in state.ts
 // (recordEvent / setConsent); the page's track() wrapper calls it. Events carry a name and a
 // timestamp only, never keys, chat content or personal data.
 

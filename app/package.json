@@ -1,13 +1,14 @@
 {
   "name": "streakboom",
   "version": "0.1.2",
-  "description": "",
+  "description": "Streakboom: a small desktop pet that can talk with your own Gemini key",
   "type": "module",
   "scripts": {
     "dev": "vite dev",
     "build": "vite build",
     "preview": "vite preview",
     "prepare": "svelte-kit sync || echo ''",
+    "test": "node --test \"src/lib/*.test.ts\"",
     "check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
     "check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch",
     "tauri": "tauri"

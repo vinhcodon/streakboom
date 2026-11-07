@@ -1,5 +1,5 @@
 // Hand-written line pools for the naive pet. A leading "~" marks a "spicy" (sarcastic) line;
-// it is dropped when the user turns on the gentle tone. See naive_pet_design.md.
+// it is dropped when the user turns on the gentle tone. See spec/03-naive-pet-design.md.
 
 export type Lang = "vi" | "en";
 export type Band = "sleepy" | "content" | "playful" | "bored" | "lonely";
