@@ -1,0 +1,418 @@
+import { MILESTONE_DAYS } from "./lines.ts";
+import type { Band, Lang } from "./lines.ts";
+
+export interface Settings {
+  lang: "auto" | Lang;
+  freq: "quiet" | "normal" | "chatty";
+  gentle: boolean;
+  qhOn: boolean; // quiet hours: no proactive lines
+  qhStart: number;
+  qhEnd: number;
+}
+
+/** Bookkeeping for the "give me a brain" (API key) request. The key itself is never stored here. */
+export interface BrainMeta {
+  asks: number; // times the request card was shown (max 3)
+  snoozeUntil: number; // "Later" pushes the next ask out
+  menuOpens: number; // times the interaction menu was opened
+  chatTries: number; // times the user tried to type before having a brain
+  connectedAt: number; // 0 if never connected
+}
+
+/** Daily AI usage, so a free key is never drained. Resets when the local day changes. */
+export interface AiUsage {
+  day: string;
+  chat: number;
+  proactive: number;
+  coolUntil: number; // after a rate limit, no AI calls until then
+}
+
+export const AI_CHAT_DAILY_CAP = 60;
+export const AI_PROACTIVE_DAILY_CAP = 6;
+export const AI_COOLDOWN_MS = 2 * 60_000;
+
+export const defaultAi = (): AiUsage => ({ day: "", chat: 0, proactive: 0, coolUntil: 0 });
+
+const freshAi = (a: AiUsage, now: number): AiUsage => (a.day === dayKey(now) ? a : { ...a, day: dayKey(now), chat: 0, proactive: 0 });
+
+/** "ok", or why not: "cooldown" (recent rate limit) / "cap" (daily limit reached). */
+export function aiGate(d: PetData, kind: "chat" | "proactive", now: number): "ok" | "cooldown" | "cap" {
+  const a = freshAi(d.ai, now);
+  if (now < a.coolUntil) return "cooldown";
+  if (kind === "chat" && a.chat >= AI_CHAT_DAILY_CAP) return "cap";
+  if (kind === "proactive" && a.proactive >= AI_PROACTIVE_DAILY_CAP) return "cap";
+  return "ok";
+}
+
+export function recordAi(d: PetData, kind: "chat" | "proactive", now: number): PetData {
+  const a = freshAi(d.ai, now);
+  return { ...d, ai: { ...a, [kind]: a[kind] + 1 } };
+}
+
+export function coolDown(d: PetData, now: number): PetData {
+  return { ...d, ai: { ...freshAi(d.ai, now), coolUntil: now + AI_COOLDOWN_MS } };
+}
+
+/**
+ * Opt-in, anonymous funnel telemetry. Nothing is recorded unless consent is "on"; events carry a
+ * name and a timestamp only (never keys, chat or personal data). Each funnel event is recorded
+ * once per install. The queue stays on this machine until a sending backend exists.
+ */
+export type Consent = "unset" | "on" | "off";
+export interface TelemetryEvent {
+  e: string;
+  t: number;
+}
+export interface Telemetry {
+  consent: Consent;
+  asks: number; // times the consent card was shown
+  installId: string; // random, created only when consent is given
+  queue: TelemetryEvent[];
+  done: string[]; // once-only events already recorded
+}
+
+export const MAX_CONSENT_ASKS = 2;
+export const TELEMETRY_QUEUE_MAX = 200;
+
+export const defaultTelemetry = (): Telemetry => ({ consent: "unset", asks: 0, installId: "", queue: [], done: [] });
+
+export const shouldAskConsent = (d: PetData): boolean =>
+  d.telemetry.consent === "unset" && d.telemetry.asks < MAX_CONSENT_ASKS;
+
+export const recordConsentAsk = (d: PetData): PetData => ({
+  ...d,
+  telemetry: { ...d.telemetry, asks: d.telemetry.asks + 1 },
+});
+
+/**
+ * Turning on creates a random install id and backfills `first_launch` with the real first-seen
+ * time (that moment passed before the user could agree). Turning off deletes the id and the queue.
+ */
+export function setConsent(d: PetData, consent: "on" | "off", newId: string): PetData {
+  if (consent === "off") {
+    return { ...d, telemetry: { ...d.telemetry, consent: "off", installId: "", queue: [], done: [] } };
+  }
+  const t = d.telemetry;
+  const withId = { ...t, consent: "on" as const, installId: t.installId || newId };
+  const base: PetData = { ...d, telemetry: withId };
+  return recordEvent(base, "first_launch", d.firstSeen);
+}
+
+export function recordEvent(d: PetData, name: string, now: number): PetData {
+  const t = d.telemetry;
+  if (t.consent !== "on" || t.done.includes(name)) return d;
+  const queue = [...t.queue, { e: name, t: now }].slice(-TELEMETRY_QUEUE_MAX);
+  return { ...d, telemetry: { ...t, queue, done: [...t.done, name] } };
+}
+
+const parseTelemetry = (o: unknown): Telemetry => {
+  const x = (o && typeof o === "object" ? o : {}) as Record<string, unknown>;
+  const consent: Consent = x.consent === "on" || x.consent === "off" ? x.consent : "unset";
+  const queue = Array.isArray(x.queue)
+    ? x.queue
+        .filter(
+          (q): q is TelemetryEvent =>
+            !!q && typeof q.e === "string" && q.e.length > 0 && q.e.length <= 40 && typeof q.t === "number" && Number.isFinite(q.t)
+        )
+        .slice(-TELEMETRY_QUEUE_MAX)
+        .map((q) => ({ e: q.e, t: q.t }))
+    : [];
+  const done = Array.isArray(x.done) ? x.done.filter((s): s is string => typeof s === "string" && s.length <= 40).slice(0, 50) : [];
+  const asks = typeof x.asks === "number" && Number.isFinite(x.asks) ? clamp(Math.floor(x.asks), 0, 99) : 0;
+  const installId = typeof x.installId === "string" && x.installId.length <= 64 ? x.installId : "";
+  // No consent, no identifier and no stored events, whatever the file says.
+  return consent === "on" ? { consent, asks, installId, queue, done } : { consent, asks, installId: "", queue: [], done: [] };
+};
+
+/**
+ * Gesture discovery. Gestures are invisible, so the pet nudges the user toward the head scratch
+ * a few times (spaced out) until they have done it once.
+ */
+export interface GestureMeta {
+  scratches: number; // head scratches done so far
+  hints: number; // nudges shown
+  lastHint: number;
+}
+
+export const MAX_GESTURE_HINTS = 3;
+export const GESTURE_HINT_GAP_MS = 20 * 3_600_000;
+
+export const defaultGestures = (): GestureMeta => ({ scratches: 0, hints: 0, lastHint: 0 });
+
+export const shouldHintGesture = (d: PetData, now: number): boolean =>
+  d.gestures.scratches === 0 && d.gestures.hints < MAX_GESTURE_HINTS && now - d.gestures.lastHint >= GESTURE_HINT_GAP_MS;
+
+export const recordHint = (d: PetData, now: number): PetData => ({
+  ...d,
+  gestures: { ...d.gestures, hints: d.gestures.hints + 1, lastHint: now },
+});
+
+export const recordScratch = (d: PetData): PetData => ({
+  ...d,
+  gestures: { ...d.gestures, scratches: d.gestures.scratches + 1 },
+});
+
+/** Update offers: "Later" snoozes the same version for a day, so the pet never nags. */
+export interface UpdateMeta {
+  offered: string; // the version last offered
+  snoozeUntil: number;
+}
+
+export const UPDATE_SNOOZE_MS = 24 * 3_600_000;
+
+export const defaultUpdate = (): UpdateMeta => ({ offered: "", snoozeUntil: 0 });
+
+export const shouldOfferUpdate = (d: PetData, version: string, now: number): boolean =>
+  !(d.update.offered === version && now < d.update.snoozeUntil);
+
+export const snoozeUpdate = (d: PetData, version: string, now: number): PetData => ({
+  ...d,
+  update: { offered: version, snoozeUntil: now + UPDATE_SNOOZE_MS },
+});
+
+export const MAX_BRAIN_ASKS = 3;
+export const BRAIN_SNOOZE_MS = 2 * 24 * 3_600_000;
+export const MENU_OPENS_BEFORE_ASK = 3;
+
+export interface PetData {
+  v: 1;
+  mood: number; // 25..100
+  closeness: number; // 10..100
+  firstSeen: number;
+  lastSeen: number;
+  lastCheckIn: string; // local day key of the last daily check-in
+  streak: number;
+  gainDay: string;
+  gainToday: number; // closeness gained from interactions today (capped)
+  recent: string[];
+  said: Record<string, number>; // trigger -> last time spoken (ms)
+  milestones: number[];
+  settings: Settings;
+  brain: BrainMeta;
+  ai: AiUsage;
+  telemetry: Telemetry;
+  gestures: GestureMeta;
+  update: UpdateMeta;
+}
+
+export type InteractKind = "click" | "pet" | "snack" | "play" | "how";
+
+const HOUR = 3_600_000;
+const DAY = 24 * HOUR;
+const clamp = (n: number, lo: number, hi: number) => Math.min(hi, Math.max(lo, n));
+
+export const DEFAULT_SETTINGS: Settings = {
+  lang: "auto",
+  freq: "normal",
+  gentle: false,
+  qhOn: false,
+  qhStart: 22,
+  qhEnd: 7,
+};
+
+export function defaultData(now: number): PetData {
+  return {
+    v: 1,
+    mood: 55,
+    closeness: 10,
+    firstSeen: now,
+    lastSeen: now,
+    lastCheckIn: "",
+    streak: 0,
+    gainDay: "",
+    gainToday: 0,
+    recent: [],
+    said: {},
+    milestones: [],
+    settings: { ...DEFAULT_SETTINGS },
+    brain: { asks: 0, snoozeUntil: 0, menuOpens: 0, chatTries: 0, connectedAt: 0 },
+    ai: defaultAi(),
+    telemetry: defaultTelemetry(),
+    gestures: defaultGestures(),
+    update: defaultUpdate(),
+  };
+}
+
+/** Parse stored JSON defensively; anything missing or invalid falls back to defaults. */
+export function parse(json: string | null | undefined, now: number): PetData {
+  const base = defaultData(now);
+  if (!json) return base;
+  try {
+    const o = JSON.parse(json);
+    if (!o || typeof o !== "object") return base;
+    const num = (v: unknown, d: number) => (typeof v === "number" && Number.isFinite(v) ? v : d);
+    const s = (o.settings ?? {}) as Partial<Settings>;
+    return {
+      v: 1,
+      mood: clamp(num(o.mood, base.mood), 25, 100),
+      closeness: clamp(num(o.closeness, base.closeness), 10, 100),
+      firstSeen: num(o.firstSeen, now),
+      lastSeen: num(o.lastSeen, now),
+      lastCheckIn: typeof o.lastCheckIn === "string" ? o.lastCheckIn : "",
+      streak: Math.max(0, Math.floor(num(o.streak, 0))),
+      gainDay: typeof o.gainDay === "string" ? o.gainDay : "",
+      gainToday: Math.max(0, num(o.gainToday, 0)),
+      recent: Array.isArray(o.recent) ? o.recent.filter((x: unknown) => typeof x === "string").slice(-24) : [],
+      said: o.said && typeof o.said === "object" ? { ...o.said } : {},
+      milestones: Array.isArray(o.milestones) ? o.milestones.filter((x: unknown) => typeof x === "number") : [],
+      settings: {
+        lang: s.lang === "vi" || s.lang === "en" ? s.lang : "auto",
+        freq: s.freq === "quiet" || s.freq === "chatty" ? s.freq : "normal",
+        gentle: !!s.gentle,
+        qhOn: !!s.qhOn,
+        qhStart: clamp(Math.floor(num(s.qhStart, 22)), 0, 23),
+        qhEnd: clamp(Math.floor(num(s.qhEnd, 7)), 0, 23),
+      },
+      brain: {
+        asks: clamp(Math.floor(num(o.brain?.asks, 0)), 0, 99),
+        snoozeUntil: num(o.brain?.snoozeUntil, 0),
+        menuOpens: clamp(Math.floor(num(o.brain?.menuOpens, 0)), 0, 9999),
+        chatTries: clamp(Math.floor(num(o.brain?.chatTries, 0)), 0, 9999),
+        connectedAt: num(o.brain?.connectedAt, 0),
+      },
+      ai: {
+        day: typeof o.ai?.day === "string" ? o.ai.day : "",
+        chat: clamp(Math.floor(num(o.ai?.chat, 0)), 0, 99999),
+        proactive: clamp(Math.floor(num(o.ai?.proactive, 0)), 0, 99999),
+        coolUntil: num(o.ai?.coolUntil, 0),
+      },
+      telemetry: parseTelemetry(o.telemetry),
+      update: {
+        offered: typeof o.update?.offered === "string" ? o.update.offered.slice(0, 40) : "",
+        snoozeUntil: num(o.update?.snoozeUntil, 0),
+      },
+      gestures: {
+        scratches: clamp(Math.floor(num(o.gestures?.scratches, 0)), 0, 999999),
+        hints: clamp(Math.floor(num(o.gestures?.hints, 0)), 0, 99),
+        lastHint: num(o.gestures?.lastHint, 0),
+      },
+    };
+  } catch {
+    return base;
+  }
+}
+
+/** Local calendar day key, e.g. "2026-11-07". */
+export function dayKey(ts: number): string {
+  const d = new Date(ts);
+  const p = (n: number) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`;
+}
+
+export function tierOf(closeness: number): 1 | 2 | 3 | 4 {
+  if (closeness >= 80) return 4;
+  if (closeness >= 50) return 3;
+  if (closeness >= 20) return 2;
+  return 1;
+}
+
+export function bandOf(d: PetData, hour: number, lonely: boolean): Band {
+  if (hour >= 23 || hour < 5) return "sleepy";
+  if (lonely) return "lonely";
+  if (d.mood >= 65) return "playful";
+  if (d.mood <= 35) return "bored";
+  return "content";
+}
+
+export function inQuietHours(s: Settings, hour: number): boolean {
+  if (!s.qhOn) return false;
+  return s.qhStart <= s.qhEnd ? hour >= s.qhStart && hour < s.qhEnd : hour >= s.qhStart || hour < s.qhEnd;
+}
+
+/**
+ * Should the pet ask for a brain now? Only without a key, at most MAX_BRAIN_ASKS times,
+ * not while snoozed, and only after a behavioural signal (tried to type, or opened the menu
+ * several times). Never at install.
+ */
+export function shouldAskBrain(d: PetData, now: number, hasKey: boolean): boolean {
+  if (hasKey) return false;
+  const b = d.brain;
+  if (b.asks >= MAX_BRAIN_ASKS || now < b.snoozeUntil) return false;
+  return b.chatTries > 0 || b.menuOpens >= MENU_OPENS_BEFORE_ASK;
+}
+
+export function recordAsk(d: PetData): PetData {
+  return { ...d, brain: { ...d.brain, asks: d.brain.asks + 1, chatTries: 0 } };
+}
+
+export function snoozeAsk(d: PetData, now: number): PetData {
+  return { ...d, brain: { ...d.brain, snoozeUntil: now + BRAIN_SNOOZE_MS, menuOpens: 0 } };
+}
+
+export interface SessionStart {
+  data: PetData;
+  absentMs: number;
+  returned: boolean; // away for 3+ hours
+  lonely: boolean; // away for 24+ hours
+  checkedIn: boolean; // first launch of a new day
+  milestone: number | null;
+}
+
+/** Apply absence effects and the daily check-in when the app starts. */
+export function startSession(prev: PetData, now: number): SessionStart {
+  const d: PetData = { ...prev, said: { ...prev.said }, milestones: [...prev.milestones] };
+  const isNew = prev.lastCheckIn === "";
+  const absentMs = Math.max(0, now - prev.lastSeen);
+  const returned = !isNew && absentMs >= 3 * HOUR;
+  const lonely = !isNew && absentMs >= DAY;
+
+  if (lonely) {
+    const days = Math.floor(absentMs / DAY);
+    d.mood = clamp(d.mood - Math.min(25, days * 5), 25, 100);
+    d.closeness = clamp(d.closeness - Math.floor(days / 3), 10, 100); // very slow, floor 10
+  }
+
+  const today = dayKey(now);
+  let checkedIn = false;
+  let milestone: number | null = null;
+  if (d.lastCheckIn !== today) {
+    checkedIn = true;
+    d.streak = d.lastCheckIn === dayKey(now - DAY) ? d.streak + 1 : 1;
+    d.closeness = clamp(d.closeness + 3, 10, 100);
+    d.gainDay = today;
+    d.gainToday = 0;
+    d.lastCheckIn = today;
+    if (MILESTONE_DAYS.includes(d.streak) && !d.milestones.includes(d.streak)) {
+      milestone = d.streak;
+      d.milestones.push(d.streak);
+    }
+  }
+
+  if (returned) d.mood = clamp(d.mood + 15, 25, 100);
+  d.lastSeen = now;
+  return { data: d, absentMs, returned, lonely, checkedIn, milestone };
+}
+
+/**
+ * Time passing within a session: high mood relaxes toward 50 (1 per 10 min);
+ * low mood sinks slowly toward the floor of 25 (1 per 30 min) until the user interacts.
+ */
+export function tick(prev: PetData, now: number): PetData {
+  const minutes = Math.max(0, (now - prev.lastSeen) / 60_000);
+  let mood = prev.mood;
+  if (mood > 50) mood = Math.max(50, mood - minutes / 10);
+  else if (mood > 25) mood = Math.max(25, mood - minutes / 30);
+  return { ...prev, mood, lastSeen: now };
+}
+
+const MOOD_GAIN: Record<InteractKind, number> = { click: 1, pet: 8, snack: 6, play: 10, how: 2 };
+const CLOSENESS_GAIN: Record<InteractKind, number> = { click: 0, pet: 1, snack: 1, play: 1, how: 1 };
+export const DAILY_CLOSENESS_CAP = 5;
+
+export function interact(prev: PetData, kind: InteractKind, now: number): PetData {
+  const d = { ...prev };
+  const today = dayKey(now);
+  if (d.gainDay !== today) {
+    d.gainDay = today;
+    d.gainToday = 0;
+  }
+  d.mood = clamp(d.mood + MOOD_GAIN[kind], 25, 100);
+  const room = DAILY_CLOSENESS_CAP - d.gainToday;
+  const gain = Math.min(room, CLOSENESS_GAIN[kind]);
+  if (gain > 0) {
+    d.closeness = clamp(d.closeness + gain, 10, 100);
+    d.gainToday += gain;
+  }
+  d.lastSeen = now;
+  return d;
+}

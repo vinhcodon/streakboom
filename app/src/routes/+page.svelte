@@ -1,0 +1,914 @@
+<script lang="ts">
+  // The pet window. It owns all state and logic; speech bubbles are shown by the "bubble"
+  // window and settings by the "settings" window (see $lib/bus.ts for the messages).
+  import { invoke } from "@tauri-apps/api/core";
+  import { getCurrentWebviewWindow } from "@tauri-apps/api/webviewWindow";
+  import { onMount } from "svelte";
+  import Pet from "$lib/Pet.svelte";
+  import { ONE_SHOT_MS, type PetState } from "$lib/sprites";
+  import type { Trigger } from "$lib/lines";
+  import { pick, remember, resolveLang } from "$lib/selector";
+  import { newScratch, scratchStep } from "$lib/gestures";
+  import {
+    toBubble,
+    toSettings,
+    type BrainChange,
+    type BubbleAction,
+    type BubbleView,
+    type SettingsPatch,
+    type SettingsSnapshot,
+  } from "$lib/bus";
+  import {
+    aiGate,
+    bandOf,
+    coolDown,
+    dayKey,
+    defaultData,
+    inQuietHours,
+    interact,
+    parse,
+    recordAi,
+    recordAsk,
+    recordConsentAsk,
+    recordEvent,
+    recordHint,
+    recordScratch,
+    setConsent,
+    shouldAskBrain,
+    shouldAskConsent,
+    shouldHintGesture,
+    shouldOfferUpdate,
+    snoozeAsk,
+    snoozeUpdate,
+    startSession,
+    tick,
+    tierOf,
+    type PetData,
+    type Settings,
+  } from "$lib/state";
+  import type { FunnelEvent } from "$lib/telemetry";
+  import { UI, type ErrKind } from "$lib/ui";
+
+  // Pet window layout (logical px) - keep in sync with src-tauri/src/lib.rs.
+  const PET_LEFT = 10;
+  const PET_TOP = 10;
+  const PET_SIZE = 120;
+  const WALK_SPEED = 36; // logical px per second
+  const WALK_TICK_MS = 66;
+  const DRAG_START_PX = 5; // pointer travel before a press becomes a drag
+  const MIN = 60_000;
+  const MAX_REPLY_CHARS = 240;
+
+  type Panel = null | "chat" | "ask" | "consent" | "update";
+  type Turn = { role: "user" | "model"; text: string };
+
+  let pose = $state<PetState>("idle");
+  let poseTick = $state(0); // bumped on every change of pose so one-shot animations replay
+  let dir = $state<1 | -1>(1);
+  let tilt = $state(0); // degrees the pet leans while it is carried (follows the cursor's speed)
+  let quiet = $state(false); // "Quiet mode": pet sleeps and says nothing
+  let data = $state<PetData>(defaultData(Date.now()));
+
+  // What the bubble window shows: a plain speech line, or one of the panels.
+  let panel = $state<Panel>(null);
+  let bubbleText = $state("");
+  let bubbleOn = $state(false);
+
+  // brain (BYOK). The key itself never reaches this window: it lives in the settings window's
+  // input box and the OS credential store.
+  let hasKey = $state(false);
+  let brainBad = $state(false); // stored key was rejected; ask for a new one
+  let busy = $state(false);
+  let chatPhase = $state<"compose" | "thinking" | "reply">("compose");
+  let chatUser = $state("");
+  let chatReply = $state("");
+  let chatSlow = $state(false);
+  let chatDraft = false; // the user has typed something in the bubble's text box
+  let updateVersion = $state(""); // the version the update offer is about
+  let history: Turn[] = [];
+
+  let lonely = false;
+  const sessionStart = Date.now();
+  let lastClickSay = 0;
+
+  let nextTimer: ReturnType<typeof setTimeout> | undefined;
+  let sleepTimer: ReturnType<typeof setTimeout> | undefined;
+  let oneShotTimer: ReturnType<typeof setTimeout> | undefined;
+  let tiltTimer: ReturnType<typeof setTimeout> | undefined;
+  let walkTimer: ReturnType<typeof setInterval> | undefined;
+  let walkEndTimer: ReturnType<typeof setTimeout> | undefined;
+  let bubbleTimer: ReturnType<typeof setTimeout> | undefined;
+  let menuTimer: ReturnType<typeof setTimeout> | undefined;
+  let clickTimer: ReturnType<typeof setTimeout> | undefined;
+  let proactiveTimer: ReturnType<typeof setTimeout> | undefined;
+  let saveTimer: ReturnType<typeof setTimeout> | undefined;
+  let slowTimer: ReturnType<typeof setTimeout> | undefined;
+
+  const lang = $derived(resolveLang(data.settings.lang, navigator.language));
+  const ui = $derived(UI[lang]);
+  const canChat = $derived(hasKey && !brainBad);
+
+  const rand = (a: number, b: number) => a + Math.random() * (b - a);
+  const clip = (s: string) => (s.length > MAX_REPLY_CHARS ? s.slice(0, MAX_REPLY_CHARS - 1).trimEnd() + "…" : s);
+
+  // ------------------------------------------------------------ persistence
+  function scheduleSave() {
+    clearTimeout(saveTimer);
+    saveTimer = setTimeout(save, 500);
+  }
+  async function save() {
+    try {
+      await invoke("save_pet", { json: JSON.stringify(data) });
+    } catch {
+      /* keep running; we will retry on the next change */
+    }
+  }
+
+  // ------------------------------------------------------------- telemetry
+  /** Records a funnel event if (and only if) the user opted in. */
+  function track(event: FunnelEvent) {
+    const next = recordEvent(data, event, Date.now());
+    if (next !== data) {
+      data = next;
+      scheduleSave();
+    }
+  }
+
+  // ---------------------------------------------------------------- speech
+  function ctxNow(extra: { days?: number } = {}) {
+    const hour = new Date().getHours();
+    return {
+      lang,
+      tier: tierOf(data.closeness),
+      band: bandOf(data, hour, lonely),
+      hour,
+      gentle: data.settings.gentle,
+      ...extra,
+    };
+  }
+
+  /** Pick a scripted line (recording it so it is not repeated soon) without showing it. */
+  function pickLine(trigger: Trigger, extra: { days?: number } = {}): string | null {
+    const line = pick(trigger, ctxNow(extra), data.recent);
+    if (!line) return null;
+    data = {
+      ...data,
+      recent: remember(data.recent, line.id),
+      said: { ...data.said, [trigger]: Date.now() },
+    };
+    scheduleSave();
+    return line.text;
+  }
+
+  function say(trigger: Trigger, extra: { days?: number } = {}): boolean {
+    const text = pickLine(trigger, extra);
+    if (!text) return false;
+    showBubble(text);
+    return true;
+  }
+
+  function showBubble(text: string, minMs = 0) {
+    bubbleText = text;
+    bubbleOn = true;
+    clearTimeout(bubbleTimer);
+    bubbleTimer = setTimeout(() => (bubbleOn = false), Math.max(minMs, 4000 + text.length * 60));
+  }
+
+  // ------------------------------------------------------------- behaviour
+  function stopTimers() {
+    clearTimeout(nextTimer);
+    clearTimeout(sleepTimer);
+    clearInterval(walkTimer);
+    clearTimeout(walkEndTimer);
+  }
+
+  function enter(next: PetState) {
+    clearInterval(walkTimer);
+    clearTimeout(walkEndTimer);
+    clearTimeout(sleepTimer);
+    clearTimeout(oneShotTimer);
+    pose = next;
+    poseTick++;
+    const ms = ONE_SHOT_MS[next];
+    if (ms) oneShotTimer = setTimeout(() => enter(quiet ? "sleep" : "idle"), ms);
+    if (next === "idle") scheduleNext();
+    if (next === "walk") startWalk();
+    if (next === "sleep" && !quiet) {
+      sleepTimer = setTimeout(() => enter("idle"), rand(20_000, 60_000));
+    }
+  }
+
+  function scheduleNext() {
+    clearTimeout(nextTimer);
+    nextTimer = setTimeout(pickNext, rand(4_000, 11_000));
+  }
+
+  function pickNext() {
+    if (quiet) return enter("sleep");
+    if (panel) return scheduleNext();
+    const r = Math.random();
+    if (r < 0.5) enter("look");
+    else if (r < 0.85) enter("walk");
+    else enter("sleep");
+  }
+
+  function startWalk() {
+    dir = Math.random() < 0.5 ? -1 : 1;
+    const scale = window.devicePixelRatio || 1;
+    const stepPx = Math.max(1, Math.round((WALK_SPEED * scale * WALK_TICK_MS) / 1000));
+    walkTimer = setInterval(async () => {
+      try {
+        const hitEdge = await invoke<boolean>("move_by", { dx: dir * stepPx });
+        if (hitEdge) dir = dir === 1 ? -1 : 1;
+      } catch {
+        enter("idle");
+      }
+    }, WALK_TICK_MS);
+    walkEndTimer = setTimeout(() => enter("idle"), rand(3_000, 8_000));
+  }
+
+  // ---------------------------------------------------------------- panels
+  function openPanel(p: Exclude<Panel, null>) {
+    if (pose === "walk") enter("idle");
+    panel = p;
+    resetMenuTimer();
+  }
+  function closePanel() {
+    panel = null;
+    clearTimeout(menuTimer);
+    clearTimeout(slowTimer);
+    chatPhase = "compose";
+    chatUser = "";
+    chatReply = "";
+    chatSlow = false;
+    chatDraft = false;
+  }
+  /** The chat and the ask card close themselves when left alone (never while typing or waiting). */
+  function resetMenuTimer() {
+    clearTimeout(menuTimer);
+    if (panel !== "chat" && panel !== "ask" && panel !== "update") return;
+    const ms = panel === "update" ? 30_000 : panel === "chat" && chatPhase === "reply" ? 20_000 : 12_000;
+    menuTimer = setTimeout(() => {
+      if (panel === "chat" && (chatDraft || busy)) resetMenuTimer();
+      else {
+        if (panel === "update") updateLater(); // ignoring the offer counts as "later"
+        closePanel();
+      }
+    }, ms);
+  }
+
+  // ----------------------------------------------------------- interaction
+  let suppressClick = false; // the click that ends a drag must not count as a poke
+
+  function onClick() {
+    if (suppressClick || pose === "held" || quiet) return;
+    // Wait briefly so a double-click (chat) does not also trigger the single-click reaction.
+    clearTimeout(clickTimer);
+    clickTimer = setTimeout(singleClick, 230);
+  }
+
+  function singleClick() {
+    stopTimers();
+    enter("happy");
+    const now = Date.now();
+    if (now - lastClickSay > 3000) {
+      lastClickSay = now;
+      data = interact(data, "click", now);
+      say("click");
+    }
+  }
+
+  function onDblClick() {
+    clearTimeout(clickTimer);
+    if (quiet || suppressClick) return;
+    if (panel) return closePanel();
+    data = { ...data, brain: { ...data.brain, menuOpens: data.brain.menuOpens + 1 } };
+    track("first_interaction");
+    if (shouldAskBrain(data, Date.now(), hasKey)) showAsk();
+    else openChat();
+    scheduleSave();
+  }
+
+  function openChat() {
+    chatUser = "";
+    chatSlow = false;
+    chatDraft = false;
+    if (canChat) {
+      chatReply = "";
+      chatPhase = "compose";
+    } else {
+      // Without a brain the pet answers with a scripted "how are you" instead of a real chat.
+      chatReply = pickLine("how") ?? "";
+      chatPhase = "reply";
+    }
+    openPanel("chat");
+  }
+
+  // Dragging: done here, not by the OS, so Rust can keep the pet on screen (see drag_move).
+  let press: { x: number; y: number } | null = null;
+  let dragging = false;
+  let dragReady = false;
+  let movePending = false;
+
+  function onPetDown(e: PointerEvent) {
+    if (e.button !== 0) return;
+    press = { x: e.screenX, y: e.screenY };
+    (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
+  }
+
+  async function beginDrag() {
+    dragging = true;
+    clearTimeout(clickTimer);
+    clearTimeout(oneShotTimer);
+    stopTimers();
+    pose = "held";
+    poseTick++;
+    try {
+      await invoke("drag_start");
+      dragReady = true;
+    } catch {
+      dragging = false;
+    }
+  }
+
+  // At most one drag_move in flight; moves that arrive meanwhile collapse into one more call
+  // (Rust reads the cursor itself, so nothing is lost). No requestAnimationFrame: it is paused
+  // whenever the webview is not considered visible.
+  let moveAgain = false;
+  async function requestMove() {
+    if (!dragReady) return;
+    if (movePending) {
+      moveAgain = true;
+      return;
+    }
+    movePending = true;
+    do {
+      moveAgain = false;
+      try {
+        await invoke("drag_move");
+      } catch {
+        /* ignore a missed frame */
+      }
+    } while (moveAgain && dragging);
+    movePending = false;
+  }
+
+  function onPetUp(e: PointerEvent) {
+    try {
+      (e.currentTarget as HTMLElement).releasePointerCapture(e.pointerId);
+    } catch {
+      /* not captured */
+    }
+    if (dragging) {
+      dragging = false;
+      dragReady = false;
+      suppressClick = true;
+      setTimeout(() => (suppressClick = false), 80);
+      invoke("drag_end").catch(() => {});
+      clearTimeout(tiltTimer);
+      tilt = 0;
+      enter(quiet ? "sleep" : "land"); // lands with a little squash, then idles
+    }
+    press = null;
+  }
+
+  // While carried, the pet leans the way the cursor is moving and swings back when it stops.
+  let lastDragX = 0;
+  function leanWith(screenX: number) {
+    const dx = screenX - lastDragX;
+    lastDragX = screenX;
+    tilt = Math.max(-22, Math.min(22, tilt * 0.5 + dx * 1.6));
+    clearTimeout(tiltTimer);
+    tiltTimer = setTimeout(() => (tilt = 0), 110);
+  }
+
+  // Stroking: sweep the cursor back and forth over the pet's head, no button needed.
+  let scratch = newScratch();
+  function onPetMove(e: PointerEvent) {
+    if (e.buttons & 1) {
+      if (!press || quiet) return;
+      if (!dragging && Math.hypot(e.screenX - press.x, e.screenY - press.y) > DRAG_START_PX) {
+        lastDragX = e.screenX;
+        void beginDrag();
+      }
+      if (dragging) {
+        leanWith(e.screenX);
+        requestMove();
+      }
+      return;
+    }
+    if (quiet || pose === "held") return;
+    const r = (e.currentTarget as HTMLElement).getBoundingClientRect();
+    const res = scratchStep(scratch, { x: e.clientX - r.left, y: e.clientY - r.top, t: performance.now() }, r.height, r.width);
+    scratch = res.state;
+    // The belly zone is detected too (for a later release) but does nothing yet.
+    if (res.zone === "head") onHeadScratch();
+  }
+  function onPetLeave() {
+    scratch = { ...scratch, pts: [] };
+  }
+  function onHeadScratch() {
+    lonely = false;
+    stopTimers();
+    enter("happy");
+    data = recordScratch(interact(data, "pet", Date.now()));
+    track("first_interaction");
+    say("pet");
+    scheduleSave();
+  }
+
+  // Right-click: a small native menu (the only menu the pet has besides the tray).
+  function onPetMenu(e: MouseEvent) {
+    e.preventDefault();
+    invoke("show_pet_menu", { labels: [ui.menuSettings, ui.menuQuiet, ui.menuQuit] }).catch(() => {});
+  }
+
+  // ----------------------------------------------------------------- brain
+  function errKind(e: unknown): ErrKind {
+    const k = (e as { kind?: string } | null)?.kind;
+    return k && k in ui.err ? (k as ErrKind) : "unknown";
+  }
+
+  function showAsk() {
+    data = recordAsk(data);
+    track("brain_request_shown");
+    openPanel("ask");
+    scheduleSave();
+  }
+  function askLater() {
+    data = snoozeAsk(data, Date.now());
+    closePanel();
+    scheduleSave();
+  }
+  function acceptAsk() {
+    closePanel();
+    invoke("open_settings", { section: "brain" }).catch(() => {});
+  }
+
+  /** The disabled text box was clicked. Without a brain that is the "I tried to chat" signal. */
+  function onChatBlocked() {
+    if (canChat) return;
+    if (brainBad) {
+      closePanel();
+      invoke("open_settings", { section: "brain" }).catch(() => {});
+      return;
+    }
+    data = { ...data, brain: { ...data.brain, chatTries: data.brain.chatTries + 1 } };
+    if (shouldAskBrain(data, Date.now(), hasKey)) showAsk();
+    scheduleSave();
+  }
+
+  function answerConsent(yes: boolean) {
+    data = setConsent(data, yes ? "on" : "off", crypto.randomUUID());
+    closePanel();
+    scheduleSave();
+  }
+
+  // ---------------------------------------------------------------- updates
+  // Checks quietly in the background; if a newer signed version exists the pet offers it. It
+  // never updates or restarts on its own while you may be busy (fullscreen, a panel, quiet hours).
+  let updateRetry: ReturnType<typeof setTimeout> | undefined;
+  async function autoCheckUpdate() {
+    clearTimeout(updateRetry);
+    try {
+      const info = await invoke<{ version: string } | null>("update_check");
+      if (!info || !shouldOfferUpdate(data, info.version, Date.now())) return;
+      const busyNow = await invoke<boolean>("is_busy").catch(() => false);
+      if (quiet || busyNow || panel !== null || inQuietHours(data.settings, new Date().getHours())) {
+        updateRetry = setTimeout(autoCheckUpdate, 10 * MIN); // not now; try again shortly
+        return;
+      }
+      updateVersion = info.version;
+      openPanel("update");
+    } catch {
+      /* offline, or no manifest yet: stay quiet */
+    }
+  }
+  function updateLater() {
+    if (updateVersion) {
+      data = snoozeUpdate(data, updateVersion, Date.now());
+      scheduleSave();
+    }
+  }
+  async function startUpdate() {
+    closePanel();
+    showBubble(ui.updating, 600_000);
+    try {
+      await invoke("update_install"); // installs and restarts; normally never returns
+    } catch {
+      showBubble(ui.updateFailed, 6000);
+    }
+  }
+
+  async function sendChat(raw: string) {
+    const text = raw.trim();
+    if (!text || busy || !canChat) return;
+    const gate = aiGate(data, "chat", Date.now());
+    if (gate !== "ok") {
+      chatUser = text;
+      chatReply = gate === "cap" ? ui.capHit : ui.err.rate_limit;
+      chatPhase = "reply";
+      resetMenuTimer();
+      return;
+    }
+    data = recordAi(data, "chat", Date.now());
+    busy = true;
+    lonely = false;
+    data = interact(data, "how", Date.now());
+    history = [...history, { role: "user" as const, text }].slice(-8);
+    chatUser = text;
+    chatReply = "";
+    chatPhase = "thinking";
+    chatSlow = false;
+    clearTimeout(slowTimer);
+    slowTimer = setTimeout(() => (chatSlow = true), 8_000);
+    stopTimers();
+    enter("think"); // the pet tilts its head and looks up while it waits
+    resetMenuTimer();
+    try {
+      const reply = clip(
+        await invoke<string>("brain_chat", {
+          lang,
+          tier: tierOf(data.closeness),
+          gentle: data.settings.gentle,
+          history,
+        })
+      );
+      history = [...history, { role: "model" as const, text: reply }].slice(-8);
+      chatReply = reply;
+    } catch (e) {
+      const k = errKind(e);
+      history = history.slice(0, -1); // drop the unanswered user turn
+      if (k === "invalid_key") brainBad = true;
+      if (k === "rate_limit") data = coolDown(data, Date.now());
+      chatReply = ui.err[k];
+    } finally {
+      clearTimeout(slowTimer);
+      chatSlow = false;
+      busy = false;
+      chatPhase = "reply";
+      // If the chat was closed while waiting, still deliver the answer as a plain bubble.
+      if (panel !== "chat") showBubble(chatReply, 5000);
+      enter("happy");
+      resetMenuTimer();
+      scheduleSave();
+    }
+  }
+
+  function onBubbleAction(a: BubbleAction) {
+    switch (a.type) {
+      case "chat-send":
+        void sendChat(a.text);
+        break;
+      case "chat-blocked":
+        onChatBlocked();
+        break;
+      case "typing":
+        chatDraft = a.nonEmpty;
+        resetMenuTimer();
+        break;
+      case "close":
+        closePanel();
+        break;
+      case "ask-yes":
+        acceptAsk();
+        break;
+      case "ask-later":
+        askLater();
+        break;
+      case "consent":
+        answerConsent(a.yes);
+        break;
+      case "update-yes":
+        void startUpdate();
+        break;
+      case "update-later":
+        updateLater();
+        closePanel();
+        break;
+    }
+  }
+
+  // -------------------------------------------------------------- settings
+  function setSetting<K extends keyof Settings>(key: K, value: Settings[K]) {
+    data = { ...data, settings: { ...data.settings, [key]: value } };
+    if (key === "freq") scheduleProactive();
+    scheduleSave();
+  }
+
+  function snapshot(): SettingsSnapshot {
+    return {
+      lang,
+      settings: $state.snapshot(data.settings) as Settings,
+      consent: data.telemetry.consent,
+      queued: data.telemetry.queue.length,
+      hasKey,
+      brainBad,
+      tier: tierOf(data.closeness),
+    };
+  }
+  const pushSettings = () => void toSettings(snapshot());
+
+  function onSettingsPatch(p: SettingsPatch) {
+    if (p.type === "setting") {
+      setSetting(p.key, p.value as never);
+    } else if (p.type === "consent") {
+      if ((data.telemetry.consent === "on") !== p.yes) {
+        data = setConsent(data, p.yes ? "on" : "off", crypto.randomUUID());
+        scheduleSave();
+      }
+    } else {
+      track(p.event);
+    }
+    pushSettings();
+  }
+
+  function onBrainChanged(c: BrainChange) {
+    history = [];
+    brainBad = false;
+    if (c.type === "connected") {
+      hasKey = true;
+      data = { ...data, brain: { ...data.brain, connectedAt: Date.now() } };
+      if (panel === "ask") closePanel();
+      stopTimers();
+      enter("happy");
+      showBubble(`${clip(c.reply)}\n· ${c.model}`, 6000);
+      track("key_valid");
+      track("first_ai_message");
+    } else {
+      hasKey = false;
+      data = { ...data, brain: { ...data.brain, connectedAt: 0 } };
+      showBubble(ui.removed);
+    }
+    scheduleSave();
+    pushSettings();
+  }
+
+  // ------------------------------------------------------------- proactive
+  function scheduleProactive() {
+    clearTimeout(proactiveTimer);
+    const f = data.settings.freq;
+    if (f === "quiet") return;
+    const [a, b] = f === "chatty" ? [4, 7] : [10, 15];
+    proactiveTimer = setTimeout(() => fireProactive(), rand(a, b) * MIN);
+  }
+
+  async function fireProactive() {
+    const hour = new Date().getHours();
+    let busyNow = false;
+    try {
+      busyNow = await invoke<boolean>("is_busy");
+    } catch {
+      /* assume not busy */
+    }
+    const blocked =
+      quiet ||
+      busyNow ||
+      inQuietHours(data.settings, hour) ||
+      pose === "held" ||
+      panel !== null ||
+      bubbleOn;
+    if (blocked) {
+      proactiveTimer = setTimeout(() => fireProactive(), 2 * MIN);
+      return;
+    }
+    const t = Date.now();
+    const said = data.said;
+    let trigger: Trigger = "idle";
+    if ((hour >= 23 || hour < 5) && t - (said.night ?? 0) > 60 * MIN) trigger = "night";
+    else if (t - sessionStart >= 90 * MIN && t - (said.long ?? 0) > 75 * MIN) trigger = "long";
+    else if (hour >= 5 && hour < 11 && dayKey(said.morning ?? 0) !== dayKey(t)) trigger = "morning";
+    else if (shouldHintGesture(data, t) && Math.random() < 0.7) trigger = "hint";
+    else if (
+      !hasKey &&
+      tierOf(data.closeness) >= 3 &&
+      Math.random() < 0.15 &&
+      t - (said.brainhint ?? 0) > 24 * 60 * MIN
+    )
+      trigger = "brainhint";
+    if (trigger === "hint") data = recordHint(data, t);
+    // With a brain, about half of the proactive lines are written by the AI. Any problem
+    // falls back to a scripted line, silently: unprompted chatter must never show errors.
+    // (Gesture hints are always scripted: they teach something specific.)
+    if (trigger !== "hint" && canChat && Math.random() < 0.5 && aiGate(data, "proactive", t) === "ok") {
+      data = recordAi(data, "proactive", t);
+      scheduleSave();
+      if (await aiProactive(trigger, hour)) return scheduleProactive();
+    }
+    say(trigger);
+    scheduleProactive();
+  }
+
+  async function aiProactive(trigger: Trigger, hour: number): Promise<boolean> {
+    const mood = bandOf(data, hour, lonely);
+    const prompt =
+      lang === "vi"
+        ? `Bây giờ là ${hour} giờ. Tâm trạng của bạn: ${mood}. Tình huống: ${trigger}. Hãy tự nói một câu ngắn với mình, không cần mình trả lời.`
+        : `It is ${hour}:00. Your mood: ${mood}. Situation: ${trigger}. Say one short thing to me unprompted; no reply needed.`;
+    try {
+      const reply = clip(
+        await invoke<string>("brain_chat", {
+          lang,
+          tier: tierOf(data.closeness),
+          gentle: data.settings.gentle,
+          history: [{ role: "user" as const, text: prompt }],
+        })
+      );
+      if (quiet || panel !== null || bubbleOn || pose === "held") return false;
+      enter("happy");
+      showBubble(reply, 5000);
+      return true;
+    } catch (e) {
+      const k = errKind(e);
+      if (k === "invalid_key") brainBad = true;
+      if (k === "rate_limit") data = coolDown(data, Date.now());
+      scheduleSave();
+      return false;
+    }
+  }
+
+  // ------------------------------------------------------- bubble window view
+  const view = $derived.by<BubbleView>(() => {
+    if (quiet) return { kind: "none" };
+    if (panel === "chat") {
+      return {
+        kind: "chat",
+        phase: chatPhase,
+        canChat,
+        placeholder: brainBad ? ui.brainBad : canChat ? ui.chatHint : ui.inputHint,
+        user: chatUser,
+        reply: chatReply,
+        thinking: ui.thinking,
+        slow: chatSlow ? ui.slowChat : "",
+      };
+    }
+    if (panel === "ask") return { kind: "ask", text: ui.askText, yes: ui.askYes, later: ui.askLater };
+    if (panel === "update") {
+      return { kind: "update", text: ui.updateText.replace("{v}", updateVersion), yes: ui.updateYes, later: ui.updateLater };
+    }
+    if (panel === "consent") {
+      return { kind: "consent", text: ui.consentText, note: ui.consentNote, yes: ui.consentYes, no: ui.consentNo };
+    }
+    if (bubbleOn) return { kind: "say", text: bubbleText };
+    return { kind: "none" };
+  });
+  let lastSent = "";
+  $effect(() => {
+    const v = $state.snapshot(view) as BubbleView;
+    const s = JSON.stringify(v);
+    if (s !== lastSent) {
+      lastSent = s;
+      if (v.kind === "none") void toBubble(v);
+      // The bubble window is created on demand. If it is new, this first message is lost,
+      // but it announces itself ("bubble-ready") and we re-send the view then.
+      else void invoke("bubble_ensure").finally(() => toBubble(v));
+    }
+  });
+  function resendView() {
+    lastSent = JSON.stringify($state.snapshot(view));
+    void toBubble($state.snapshot(view) as BubbleView);
+  }
+
+  // ------------------------------------------------------------------ start
+  onMount(() => {
+    const cleanups: Array<() => void> = [];
+    let minuteTimer: ReturnType<typeof setInterval> | undefined;
+    let updateFirst: ReturnType<typeof setTimeout> | undefined;
+    let updateEvery: ReturnType<typeof setInterval> | undefined;
+
+    (async () => {
+      const win = getCurrentWebviewWindow();
+      // Register listeners first so no message from the other windows is missed.
+      cleanups.push(
+        await win.listen<boolean>("quiet-changed", (e) => {
+          quiet = e.payload;
+          stopTimers();
+          if (quiet) {
+            bubbleOn = false;
+            closePanel();
+          }
+          enter(quiet ? "sleep" : "idle");
+        })
+      );
+      cleanups.push(await win.listen<BubbleAction>("bubble-action", (e) => onBubbleAction(e.payload)));
+      cleanups.push(await win.listen("bubble-ready", resendView));
+      cleanups.push(await win.listen("settings-ready", pushSettings));
+      cleanups.push(await win.listen<SettingsPatch>("settings-patch", (e) => onSettingsPatch(e.payload)));
+      cleanups.push(await win.listen<BrainChange>("brain-changed", (e) => onBrainChanged(e.payload)));
+
+      const prefs = await invoke<{ quiet: boolean }>("get_prefs");
+      quiet = prefs.quiet;
+
+      let stored: string | null = null;
+      try {
+        stored = await invoke<string | null>("load_pet");
+      } catch {
+        /* start fresh */
+      }
+      try {
+        hasKey = await invoke<boolean>("brain_status");
+      } catch {
+        hasKey = false;
+      }
+      const now = Date.now();
+      const isNew = stored === null;
+      const s = startSession(parse(stored, now), now);
+      data = s.data;
+      lonely = s.lonely;
+      if (isNew) track("first_launch"); // dropped unless already opted in; backfilled on consent
+      if (data.streak >= 3) track("active_d3");
+      if (data.streak >= 7) track("active_d7");
+      save();
+
+      // One-time, equal-weight consent card shortly after launch, never over another panel.
+      if (shouldAskConsent(data)) {
+        setTimeout(() => {
+          if (shouldAskConsent(data) && !panel && !bubbleOn && !quiet) {
+            data = recordConsentAsk(data);
+            openPanel("consent");
+            scheduleSave();
+          }
+        }, 12_000);
+      }
+
+      // The window holds only the pet, so the clickable region never changes.
+      invoke("set_hit_rect", { x: PET_LEFT, y: PET_TOP, w: PET_SIZE, h: PET_SIZE }).catch(() => {});
+      enter(quiet ? "sleep" : "idle");
+
+      if (!quiet) {
+        setTimeout(() => say(s.returned ? "return" : "greeting"), 1500);
+        if (s.milestone) setTimeout(() => say("milestone", { days: s.milestone! }), 8000);
+      }
+      scheduleProactive();
+      minuteTimer = setInterval(() => {
+        data = tick(data, Date.now());
+        save();
+      }, MIN);
+
+      // First update check a minute after start, then every six hours.
+      updateFirst = setTimeout(autoCheckUpdate, 60_000);
+      updateEvery = setInterval(autoCheckUpdate, 6 * 60 * MIN);
+    })();
+
+    return () => {
+      stopTimers();
+      [bubbleTimer, menuTimer, clickTimer, proactiveTimer, saveTimer, slowTimer, oneShotTimer, tiltTimer].forEach((t) =>
+        clearTimeout(t)
+      );
+      clearInterval(minuteTimer);
+      clearTimeout(updateFirst);
+      clearInterval(updateEvery);
+      clearTimeout(updateRetry);
+      cleanups.forEach((c) => c());
+    };
+  });
+</script>
+
+<!-- No browser menu anywhere; the pet has its own small native menu (see onPetMenu). -->
+<svelte:window oncontextmenu={(e) => e.preventDefault()} />
+
+<main>
+  <div
+    class="pet"
+    role="presentation"
+    onpointerdown={onPetDown}
+    onpointermove={onPetMove}
+    onpointerup={onPetUp}
+    onpointercancel={onPetUp}
+    onpointerleave={onPetLeave}
+    onclick={onClick}
+    ondblclick={onDblClick}
+    oncontextmenu={onPetMenu}
+  >
+    {#key poseTick}
+      <Pet {pose} {dir} {tilt} />
+    {/key}
+  </div>
+</main>
+
+<style>
+  :global(html),
+  :global(body) {
+    margin: 0;
+    background: transparent;
+    overflow: hidden;
+    user-select: none;
+  }
+  main {
+    position: relative;
+    width: 140px;
+    height: 140px;
+  }
+  .pet {
+    position: absolute;
+    left: 10px;
+    top: 10px;
+    width: 120px;
+    height: 120px;
+    cursor: grab;
+    touch-action: none;
+  }
+  .pet:active {
+    cursor: grabbing;
+  }
+</style>

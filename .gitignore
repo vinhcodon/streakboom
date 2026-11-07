@@ -1,0 +1,14 @@
+# Local tooling and build output
+.claude/
+dist/
+spike/
+*.log
+
+# Secrets: never commit signing keys or API keys
+*.key
+.env
+.env.*
+
+# OS / editor
+.DS_Store
+Thumbs.db
