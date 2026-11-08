@@ -1,0 +1,134 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Streakboom: meet Peak, a desktop pet cat</title>
+  <meta name="description" content="Streakboom is a free, open-source desktop pet for Windows. Meet Peak, a cheerful golden chibi cat who keeps you company. No AI required.">
+  <meta name="theme-color" content="#f5b83d">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%90%BE%3C/text%3E%3C/svg%3E">
+  <meta property="og:title" content="Streakboom: meet Peak">
+  <meta property="og:description" content="A free, open-source desktop pet cat for Windows.">
+  <meta property="og:type" content="website">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <header class="nav">
+    <a class="brand" href="#top">🐾 Streakboom</a>
+    <nav>
+      <a href="#features" data-i18n="nav_features">Features</a>
+      <a href="#install" data-i18n="nav_install">Install</a>
+      <a href="#privacy" data-i18n="nav_privacy">Privacy</a>
+      <a href="#faq" data-i18n="nav_faq">FAQ</a>
+      <a href="#updates" data-i18n="nav_updates">Updates</a>
+      <a href="https://github.com/vinhcodon/streakboom">GitHub</a>
+      <button id="lang-btn" class="lang" type="button" aria-label="Switch language">VI</button>
+    </nav>
+  </header>
+
+  <main id="top">
+
+    <!-- HERO -->
+    <section class="hero">
+      <div class="hero-text">
+        <h1 data-i18n="hero_title">A little cat that lives on your screen.</h1>
+        <p class="lead" data-i18n-html="hero_lead">Meet <strong>Peak</strong>, a cheerful golden chibi cat. It reacts when you stroke, poke or carry it, says short lines in Vietnamese or English, and keeps you company. Free and open source, for Windows.</p>
+        <div class="cta">
+          <a id="download-btn" class="btn primary" href="https://github.com/vinhcodon/streakboom/releases/latest">
+            <span data-i18n="download">Download for Windows</span>
+            <small id="download-meta" data-i18n="latest_release">latest release</small>
+          </a>
+          <a class="btn ghost" href="#features" data-i18n="see_more">See what it does</a>
+        </div>
+        <p class="note" data-i18n-html="alpha_note">Closed alpha, Windows 10/11 only. The installer is not code-signed yet, so SmartScreen will warn: choose <em>More info</em>, then <em>Run anyway</em>.</p>
+      </div>
+
+      <div class="hero-art">
+        <canvas id="peak" width="360" height="360" role="img" aria-label="Peak, a golden chibi cat. Move the mouse over it or click it."></canvas>
+        <p class="demo-hint" data-i18n="demo_hint">Try it: move the mouse near Peak, click it, or pick a pose.</p>
+        <div id="poses" class="chips" role="group" aria-label="Poses"></div>
+      </div>
+    </section>
+
+    <!-- FEATURES -->
+    <section id="features" class="section">
+      <h2 data-i18n="feat_title">A companion, not an assistant</h2>
+      <p class="sub" data-i18n="feat_sub">Lovable with no AI at all. Bring your own key if you want it to chat.</p>
+      <div class="grid">
+        <article class="card"><h3 data-i18n="f1_h">🐈 Alive without AI</h3><p data-i18n="f1_p">A mood and closeness model, 182 hand-written lines per language, quiet hours, and no guilt: it never dies or starves, it only gets a bit lonely.</p></article>
+        <article class="card"><h3 data-i18n="f2_h">👆 Gestures, not buttons</h3><p data-i18n="f2_p">Sweep over its head to scratch, over its belly to rub, click to poke, drag to carry it by the scruff. Its eyes follow your cursor.</p></article>
+        <article class="card"><h3 data-i18n="f3_h">🧠 Bring your own brain</h3><p data-i18n="f3_p">Add a Gemini, Claude or OpenAI key and double-click to chat. Gemini has a free tier. Your key stays on your computer.</p></article>
+        <article class="card"><h3 data-i18n="f4_h">💭 Remembers a little</h3><p data-i18n="f4_p">A name for the pet, what to call you, a few milestones. See, edit or forget any of it in Settings, Memory.</p></article>
+        <article class="card"><h3 data-i18n="f5_h">🤫 Polite</h3><p data-i18n="f5_p">Quiet in fullscreen apps, during quiet hours and in Quiet mode. Never takes keyboard focus for plain speech.</p></article>
+        <article class="card"><h3 data-i18n="f6_h">🪶 Light</h3><p data-i18n="f6_p">About 100 to 120 MB of memory and almost no CPU while it stands still (measured on one machine so far).</p></article>
+      </div>
+    </section>
+
+    <!-- HOW TO USE -->
+    <section class="section alt">
+      <h2 data-i18n="use_title">How to play with Peak</h2>
+      <table class="gestures">
+        <tbody>
+          <tr><th data-i18n="g1_a">Sweep the cursor over its head</th><td data-i18n="g1_b">Scratch: it is happy and gets closer to you</td></tr>
+          <tr><th data-i18n="g2_a">Sweep over its belly</th><td data-i18n="g2_b">A belly rub: bliss, or sometimes a playful trap</td></tr>
+          <tr><th data-i18n="g3_a">Click once</th><td data-i18n="g3_b">A poke</td></tr>
+          <tr><th data-i18n="g4_a">Drag</th><td data-i18n="g4_b">Carry it; it lands with a little squash</td></tr>
+          <tr><th data-i18n="g5_a">Double-click</th><td data-i18n="g5_b">Open the chat bubble</td></tr>
+          <tr><th data-i18n="g6_a">Right-click it, or the tray icon</th><td data-i18n="g6_b">Settings, Quiet mode, Quit</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <!-- INSTALL -->
+    <section id="install" class="section">
+      <h2 data-i18n="inst_title">Install in three steps</h2>
+      <ol class="steps">
+        <li data-i18n-html="s1">Download <code>Streakboom_&lt;version&gt;_x64-setup.exe</code> with the button above, or from the <a href="https://github.com/vinhcodon/streakboom/releases/latest">latest release</a>.</li>
+        <li data-i18n-html="s2">Run it. If Windows says "Windows protected your PC", choose <strong>More info</strong>, then <strong>Run anyway</strong>. It installs for the current user only, with no administrator rights.</li>
+        <li data-i18n-html="s3">Peak appears on your screen and shows a short tour. To remove it, use Windows Settings, Apps.</li>
+      </ol>
+      <p class="sub" data-i18n="inst_note">Windows needs the WebView2 runtime; the installer downloads it if it is missing.</p>
+    </section>
+
+    <!-- PRIVACY -->
+    <section id="privacy" class="section alt">
+      <h2 data-i18n="priv_title">Your data stays yours</h2>
+      <ul class="checks">
+        <li data-i18n="p1">API keys are stored in the Windows Credential Manager and sent only to the provider you chose.</li>
+        <li data-i18n="p2">What Peak remembers is stored on your computer, and you can see or delete all of it in Settings.</li>
+        <li data-i18n="p3">Usage stats are off by default, and nothing is ever sent automatically.</li>
+        <li data-i18n="p4">Free and MIT licensed. The code is public, so anyone can read it.</li>
+      </ul>
+    </section>
+
+    <!-- FAQ -->
+    <section id="faq" class="section">
+      <h2 data-i18n="faq_title">Questions</h2>
+      <details><summary data-i18n="q1">Is it really free?</summary><p data-i18n="a1">Yes. The app costs nothing and the code is under the MIT license. An AI brain is optional and is billed by the provider you choose (Gemini has a free tier; Claude and OpenAI are paid).</p></details>
+      <details><summary data-i18n="q2">Why does Windows warn me when I run the installer?</summary><p data-i18n="a2">The installer is not code-signed yet, so SmartScreen does not recognise it. Choose More info, then Run anyway. The source is public in the GitHub repository.</p></details>
+      <details><summary data-i18n="q3">Do I need AI or an account?</summary><p data-i18n="a3">No. Peak is lovable without any AI and there is no account. If you add your own key, it can also chat and remember a few things about you.</p></details>
+      <details><summary data-i18n="q4">Does it work on Mac or Linux?</summary><p data-i18n="a4">Not yet. It is Windows 10/11 only for now. A macOS port is on the roadmap.</p></details>
+      <details><summary data-i18n="q5">How do I get updates?</summary><p data-i18n="a5">Peak can update itself: install automatically when you are idle, ask first (the default), or never check. You can also download any release from this page.</p></details>
+    </section>
+
+    <!-- UPDATES (filled from GitHub Releases by app.js) -->
+    <section id="updates" class="section alt">
+      <h2 data-i18n="upd_title">Latest updates</h2>
+      <p class="sub" data-i18n-html="upd_sub">Pulled live from <a href="https://github.com/vinhcodon/streakboom/releases">GitHub Releases</a>. Release notes are in English.</p>
+      <ol id="release-list" class="releases" aria-live="polite">
+        <li class="loading" data-i18n="loading">Loading releases…</li>
+      </ol>
+      <p><a href="https://github.com/vinhcodon/streakboom/releases.atom" data-i18n="rss">Subscribe via RSS</a></p>
+    </section>
+
+  </main>
+
+  <footer class="footer">
+    <p data-i18n="foot_a">MIT License. Made by Vinh Nguyen. Peak is an original character, drawn as vector shapes in code with Claude's help.</p>
+    <p><a href="https://github.com/vinhcodon/streakboom">Source</a> · <a href="https://github.com/vinhcodon/streakboom/issues" data-i18n="foot_bug">Report a bug</a></p>
+  </footer>
+
+  <script type="module" src="app.js"></script>
+</body>
+</html>
