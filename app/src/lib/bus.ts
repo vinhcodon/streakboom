@@ -52,6 +52,8 @@ export interface MemoryView {
   usualPart: "morning" | "afternoon" | "evening" | "night" | null;
   touches: { poke: number; scratch: number; chat: number };
   marks: string[]; // ids of shared milestones
+  aiLearn: boolean;
+  facts: { id: string; text: string }[];
 }
 
 /** Pet window -> settings window, answering `settings-ready` and after every change. */
@@ -74,7 +76,10 @@ export type SettingsPatch =
   | { type: "consent"; yes: boolean }
   | { type: "mem"; action: "set"; field: MemField; value: string }
   | { type: "mem"; action: "learn"; value: boolean }
-  | { type: "mem"; action: "forget-habits" | "forget-all" }
+  | { type: "mem"; action: "fact-set"; id: string; value: string }
+  | { type: "mem"; action: "fact-del"; id: string }
+  | { type: "mem"; action: "ai"; value: boolean }
+  | { type: "mem"; action: "forget-habits" | "forget-facts" | "forget-all" }
   | { type: "track"; event: "get_key_clicked" | "returned_to_app" | "key_pasted" };
 
 /** Settings window -> pet window, after the key or model changed (calls go straight to Rust). */

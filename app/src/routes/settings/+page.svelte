@@ -107,6 +107,15 @@
     wipe = "";
     void fromSettings({ type: "mem", action: kind === "all" ? "forget-all" : "forget-habits" });
   }
+  const setAi = (v: boolean) => void fromSettings({ type: "mem", action: "ai", value: v });
+  let factDrafts = $state<Record<string, string>>({});
+  const factText = (id: string, text: string) => factDrafts[id] ?? text;
+  function saveFact(id: string) {
+    const v = factDrafts[id];
+    if (v === undefined) return;
+    delete factDrafts[id];
+    void fromSettings({ type: "mem", action: "fact-set", id, value: v });
+  }
   const setLearn = (v: boolean) => void fromSettings({ type: "mem", action: "learn", value: v });
   const showWizard = $derived(!snap?.hasKey || snap?.brainBad || replacing);
 
@@ -414,7 +423,23 @@
       {:else}
         <p class="muted">{ui.memEmpty}</p>
       {/if}
+      <label class="chk">
+        <input type="checkbox" checked={snap.memory.aiLearn} onchange={(e) => setAi(e.currentTarget.checked)} />
+        {ui.memAi}
+      </label>
+      <p class="muted">{ui.memAiNote}</p>
+      <div class="muted">{ui.memFacts}</div>
+      {#each snap.memory.facts as f (f.id)}
+        <div class="row">
+          <input class="txt wide" maxlength="60" value={factText(f.id, f.text)} oninput={(e) => (factDrafts[f.id] = e.currentTarget.value)} onkeydown={(e) => e.key === "Enter" && saveFact(f.id)} />
+          <button class="seg" disabled={factDrafts[f.id] === undefined} onclick={() => saveFact(f.id)}>{ui.memSave}</button>
+          <button class="seg" aria-label="delete" onclick={() => fromSettings({ type: "mem", action: "fact-del", id: f.id })}>×</button>
+        </div>
+      {:else}
+        <p class="muted">{ui.memFactsNone}</p>
+      {/each}
       <div class="row">
+        <button class="seg" disabled={snap.memory.facts.length === 0} onclick={() => fromSettings({ type: "mem", action: "forget-facts" })}>{ui.memForgetFacts}</button>
         <button class="seg" class:danger={wipe === "habits"} onclick={() => forget("habits")}>{wipe === "habits" ? ui.sure : ui.memForgetHabits}</button>
         <button class="seg" class:danger={wipe === "all"} onclick={() => forget("all")}>{wipe === "all" ? ui.sure : ui.memForgetAll}</button>
       </div>
@@ -541,6 +566,9 @@
   }
   .txt {
     width: 150px;
+  }
+  .txt.wide {
+    width: 230px;
   }
   .txt,
   .key {

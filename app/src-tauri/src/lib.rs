@@ -588,11 +588,36 @@ fn brain_set_model(state: State<AppState>, model: Option<String>) -> Result<Stri
 }
 
 #[tauri::command]
-async fn brain_chat(app: AppHandle, lang: String, tier: u8, gentle: bool, history: Vec<Turn>) -> Result<String, AiError> {
+async fn brain_chat(
+    app: AppHandle,
+    lang: String,
+    tier: u8,
+    gentle: bool,
+    history: Vec<Turn>,
+    known: Option<Vec<String>>,
+) -> Result<String, AiError> {
     tauri::async_runtime::spawn_blocking(move || {
         let key = brain::load_key().ok_or_else(|| AiError::new(Kind::InvalidKey, "no key"))?;
         let state = app.state::<AppState>();
-        run_generate(&state, &key, &brain::persona(&lang, tier, gentle), &history)
+        let system = brain::persona_with(&lang, tier, gentle, known.as_deref().unwrap_or(&[]));
+        run_generate(&state, &key, &system, &history)
+    })
+    .await
+    .map_err(|_| task_failed())?
+}
+
+/// A small background call: which lasting facts did the user state in this chat? The transcript
+/// is what the user already sent to the model in the chat itself. Returns at most 3 filtered
+/// lines (see brain::parse_facts); the caller stores them and shows them in Settings.
+#[tauri::command]
+async fn brain_remember(app: AppHandle, lang: String, transcript: String, known: Vec<String>) -> Result<Vec<String>, AiError> {
+    tauri::async_runtime::spawn_blocking(move || {
+        let key = brain::load_key().ok_or_else(|| AiError::new(Kind::InvalidKey, "no key"))?;
+        let state = app.state::<AppState>();
+        let text: String = transcript.chars().take(2000).collect();
+        let turns = [Turn { role: "user".into(), text }];
+        let raw = run_generate(&state, &key, &brain::extract_prompt(&lang), &turns)?;
+        Ok(brain::parse_facts(&raw, &known))
     })
     .await
     .map_err(|_| task_failed())?
@@ -844,6 +869,7 @@ pub fn run() {
             brain_model,
             brain_set_model,
             brain_chat,
+            brain_remember,
             brain_forget,
             open_key_page
         ])

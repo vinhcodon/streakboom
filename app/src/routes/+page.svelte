@@ -10,9 +10,16 @@
   import { pick, remember, resolveLang } from "$lib/selector";
   import { newScratch, scratchStep } from "$lib/gestures";
   import {
+    addFacts,
     cooled,
+    countChat,
     defaultMemory,
     forgetAll,
+    forgetFacts,
+    knownFor,
+    removeFact,
+    resetExtract,
+    setFact,
     forgetHabits,
     nextMark,
     parseMemory,
@@ -625,10 +632,12 @@
           tier: tierOf(data.closeness),
           gentle: data.settings.gentle,
           history,
+          known: knownFor(mem, lang),
         })
       );
       history = [...history, { role: "model" as const, text: reply }].slice(-8);
       chatReply = reply;
+      void maybeRemember();
     } catch (e) {
       const k = errKind(e);
       history = history.slice(0, -1); // drop the unanswered user turn
@@ -644,6 +653,33 @@
       if (panel !== "chat") showBubble(chatReply, 5000);
       enter("happy");
       resetMenuTimer();
+      scheduleSave();
+    }
+  }
+
+  // Every few chat messages, a small background call picks lasting facts out of the chat. Silent on
+  // any problem. The first time, a short note says what is stored and where it goes.
+  let remembering = false;
+  async function maybeRemember() {
+    const c = countChat(mem);
+    mem = c.memory;
+    if (!c.due || remembering || !canChat || aiGate(data, "chat", Date.now()) !== "ok") return scheduleSave();
+    remembering = true;
+    const transcript = history.map((t) => (t.role === "user" ? "User: " : "Pet: ") + t.text).join("\n");
+    try {
+      const facts = await invoke<string[]>("brain_remember", { lang, transcript, known: mem.facts.map((f) => f.text) });
+      data = recordAi(data, "chat", Date.now());
+      const before = mem.facts.length;
+      mem = resetExtract(addFacts(mem, facts, Date.now(), () => crypto.randomUUID()));
+      if (mem.facts.length > before && !mem.aiNotice) {
+        mem = { ...mem, aiNotice: true };
+        setTimeout(() => !panel && !bubbleOn && showBubble(ui.memNotice, 9000), 2500);
+      }
+      pushSettings();
+    } catch (e) {
+      if (errKind(e) === "rate_limit") data = coolDown(data, Date.now());
+    } finally {
+      remembering = false;
       scheduleSave();
     }
   }
@@ -706,12 +742,18 @@
       usualPart: usualPart(mem),
       touches: { ...mem.touches },
       marks: mem.marks.map((m) => m.id),
+      aiLearn: mem.aiLearn,
+      facts: mem.facts.map((f) => ({ id: f.id, text: f.text })),
     };
   }
 
   function onMemPatch(p: Extract<SettingsPatch, { type: "mem" }>) {
     if (p.action === "set") mem = setName(mem, p.field, p.value);
     else if (p.action === "learn") mem = { ...mem, learn: p.value };
+    else if (p.action === "ai") mem = { ...mem, aiLearn: p.value, sinceExtract: 0 };
+    else if (p.action === "fact-set") mem = setFact(mem, p.id, p.value);
+    else if (p.action === "fact-del") mem = removeFact(mem, p.id);
+    else if (p.action === "forget-facts") mem = forgetFacts(mem);
     else if (p.action === "forget-habits") mem = forgetHabits(mem);
     else mem = forgetAll(mem);
     scheduleSave();

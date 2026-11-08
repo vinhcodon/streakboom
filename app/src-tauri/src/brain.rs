@@ -86,6 +86,80 @@ pub fn hello_prompt(lang: &str) -> String {
     }
 }
 
+
+/// The persona plus what the user told the pet earlier. Background only: the model is told not
+/// to recite it or to invent more. Only ever used for chats the user started (never for the
+/// pet's unprompted lines, which may be on a shared screen).
+pub fn persona_with(lang: &str, tier: u8, gentle: bool, known: &[String]) -> String {
+    let mut s = persona(lang, tier, gentle);
+    let known: Vec<&String> = known.iter().filter(|k| !k.trim().is_empty()).take(24).collect();
+    if !known.is_empty() {
+        s.push_str(
+            "\nBackground about the user, told by them earlier (mention one only when it fits naturally; \
+             never list them, never invent other facts about the user):",
+        );
+        for k in known {
+            s.push_str("\n- ");
+            s.extend(k.chars().filter(|c| !c.is_control()).take(80));
+        }
+    }
+    s
+}
+
+/// System prompt for the small background call that picks durable facts out of a chat.
+pub fn extract_prompt(lang: &str) -> String {
+    let language = if lang == "vi" { "Vietnamese" } else { "English" };
+    format!(
+        "You extract lasting facts that the USER stated about themselves from a short chat with a desktop pet. \
+         Output at most 3 lines, one fact per line, each under 60 characters, written in {language}, no numbering, \
+         no bullets. Only things the user said about themselves that stay true for weeks (interests, projects, pets, \
+         routines, preferences). Skip moods, one-off requests, anything the pet said, other people's private details, \
+         health, money, exact addresses, passwords, keys, numbers that identify someone. If there is nothing, output NONE."
+    )
+}
+
+/// Keeps only lines that look like short, harmless facts. A model can ignore instructions, so the
+/// rules are enforced here too: no secrets, links, addresses or long digit runs, at most 3, no
+/// duplicates of what is already known.
+pub fn parse_facts(raw: &str, known: &[String]) -> Vec<String> {
+    let banned = ["password", "mật khẩu", "mat khau", "api key", "apikey", "token", "secret", "http", "www.", "@"];
+    let mut out: Vec<String> = Vec::new();
+    for line in raw.lines() {
+        let t = line.trim().trim_start_matches(|c: char| matches!(c, '-' | '*' | '•' | '·') || c.is_ascii_digit() || c == '.' || c == ')').trim();
+        let t: String = t.chars().filter(|c| !c.is_control()).collect();
+        let n = t.chars().count();
+        if !(4..=60).contains(&n) || t.eq_ignore_ascii_case("none") {
+            continue;
+        }
+        let low = t.to_lowercase();
+        if banned.iter().any(|b| low.contains(b)) {
+            continue;
+        }
+        let mut run = 0;
+        let mut long_digits = false;
+        for c in t.chars() {
+            run = if c.is_ascii_digit() { run + 1 } else { 0 };
+            if run >= 5 {
+                long_digits = true;
+            }
+        }
+        if long_digits {
+            continue;
+        }
+        let dup = known.iter().chain(out.iter()).any(|k| {
+            let kl = k.to_lowercase();
+            kl == low || kl.contains(&low) || low.contains(&kl)
+        });
+        if dup {
+            continue;
+        }
+        out.push(t);
+        if out.len() == 3 {
+            break;
+        }
+    }
+    out
+}
 // ----------------------------------------------------------- pure helpers
 
 /// Loose sanity check only: Google has changed key formats before, so no prefix is required.
@@ -437,6 +511,27 @@ mod tests {
         assert!(model_ok("gemini-3.1-flash-lite") && !model_ok("a/b") && !model_ok("") && !model_ok("x?key=1"));
     }
 
+
+    #[test]
+    fn known_facts_reach_the_persona_and_are_bounded() {
+        let none = persona_with("en", 2, false, &[]);
+        assert_eq!(none, persona("en", 2, false));
+        let p = persona_with("en", 2, false, &["has a cat named Mun".into(), "  ".into(), "x\ny".into()]);
+        assert!(p.contains("- has a cat named Mun"));
+        assert!(!p.contains("- \n"));
+        let many: Vec<String> = (0..40).map(|i| format!("fact number {i}")).collect();
+        assert_eq!(persona_with("en", 2, false, &many).matches("\n- ").count(), 24);
+    }
+
+    #[test]
+    fn extracted_facts_are_filtered() {
+        let known = vec!["likes jazz".to_string()];
+        let raw = "- Is studying for finals\n2. likes jazz a lot\nNONE\nmy password is hunter2\nphone 0912345678 is mine\nsee https://x.io\n* Has a cat named Mun\n* Works on a game\n* Plays chess\nab";
+        let out = parse_facts(raw, &known);
+        assert_eq!(out, vec!["Is studying for finals", "Has a cat named Mun", "Works on a game"]);
+        assert!(parse_facts("NONE", &[]).is_empty());
+        assert!(parse_facts(&"x".repeat(200), &[]).is_empty());
+    }
     #[test]
     fn key_sanity_and_persona() {
         assert!(key_ok("  AIzaSyExampleExampleExample1234567  "));

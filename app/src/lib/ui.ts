@@ -83,6 +83,12 @@ export interface UiStrings {
   memForgetAll: string;
   memForgetNote: string;
   memEmpty: string;
+  memAi: string;
+  memAiNote: string;
+  memFacts: string;
+  memFactsNone: string;
+  memForgetFacts: string;
+  memNotice: string;
   sectionAbout: string;
   versionLabel: string;
   checkUpdates: string;
@@ -151,7 +157,7 @@ export const UI: Record<Lang, UiStrings> = {
     connecting: "Checking…",
     age: "I am 18 or older (Google requires this)",
     dataNote:
-      "Free keys: Google may use what you send me, and have people read it, to improve its products. Don't tell me anything sensitive.",
+      "Free keys: Google may use what you send me, and have people read it, to improve its products. Don't tell me anything sensitive. I also jot down a few lasting facts from our chats; they stay on this computer and go to Google with each chat (you can see, edit or turn this off in What the pet remembers).",
     keyNote: "Your key stays on this computer and is only sent to Google. Tip: make a key just for me so it's easy to revoke.",
     back: "Back",
     brainLabel: "Brain",
@@ -192,6 +198,12 @@ export const UI: Record<Lang, UiStrings> = {
     memForgetAll: "Forget everything",
     memForgetNote: "Forgetting habits keeps the names. Forgetting everything also removes the names.",
     memEmpty: "Nothing yet.",
+    memAi: "Remember things I tell it in chats",
+    memAiNote: "On by default. Every chat you start sends these notes to Google along with your message so the pet can use them, and a short extra request picks new ones out of your chat. Turn it off to stop both.",
+    memFacts: "What it noted from chats",
+    memFactsNone: "Nothing noted yet. Edit or delete anything here.",
+    memForgetFacts: "Forget noted facts",
+    memNotice: "I jotted down something you told me. It's in Settings > What the pet remembers, where you can edit or delete it, and it goes to Google with our chats. You can turn it off there.",
     sectionAbout: "About",
     versionLabel: "Version",
     checkUpdates: "Check for updates",
@@ -270,7 +282,7 @@ export const UI: Record<Lang, UiStrings> = {
     connecting: "Đang kiểm tra…",
     age: "Mình từ 18 tuổi trở lên (Google yêu cầu)",
     dataNote:
-      "Key miễn phí: Google có thể dùng những gì bạn gửi cho mình, và cho người đọc, để cải thiện sản phẩm. Đừng kể điều nhạy cảm nhé.",
+      "Key miễn phí: Google có thể dùng những gì bạn gửi cho mình, và cho người đọc, để cải thiện sản phẩm. Đừng kể điều nhạy cảm nhé. Mình cũng ghi lại vài điều lâu dài từ các cuộc trò chuyện; chúng nằm trên máy này và được gửi cho Google cùng mỗi lần chat (bạn xem, sửa hoặc tắt trong Pet nhớ gì).",
     keyNote: "Key chỉ nằm trên máy này và chỉ được gửi cho Google. Mẹo: tạo một key riêng cho mình để dễ thu hồi.",
     back: "Quay lại",
     brainLabel: "Bộ não",
@@ -311,6 +323,12 @@ export const UI: Record<Lang, UiStrings> = {
     memForgetAll: "Quên hết",
     memForgetNote: "Quên thói quen vẫn giữ tên. Quên hết thì xóa cả tên.",
     memEmpty: "Chưa có gì.",
+    memAi: "Nhớ những điều tôi kể trong lúc trò chuyện",
+    memAiNote: "Bật sẵn. Mỗi cuộc trò chuyện bạn bắt đầu sẽ gửi các ghi chú này cho Google cùng tin nhắn để pet dùng, và một yêu cầu nhỏ thêm sẽ rút ý mới từ cuộc trò chuyện. Tắt đi là dừng cả hai.",
+    memFacts: "Những điều đã ghi từ trò chuyện",
+    memFactsNone: "Chưa ghi gì. Bạn có thể sửa hoặc xóa mọi mục ở đây.",
+    memForgetFacts: "Quên các điều đã ghi",
+    memNotice: "Mình vừa ghi lại điều bạn kể. Nó nằm ở Cài đặt > Pet nhớ gì, bạn sửa hoặc xóa được, và nó được gửi cho Google cùng các cuộc trò chuyện. Bạn tắt được ở đó.",
     sectionAbout: "Về app",
     versionLabel: "Phiên bản",
     checkUpdates: "Kiểm tra cập nhật",

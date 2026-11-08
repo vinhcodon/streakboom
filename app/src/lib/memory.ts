@@ -9,6 +9,10 @@ import { dayKey } from "./state.ts";
 
 const DAY = 24 * 3_600_000;
 export const MAX_NAME = 20;
+export const MAX_FACTS = 20;
+export const MAX_FACT = 60;
+/** The pet looks for lasting facts after this many of the user's chat messages. */
+export const EXTRACT_EVERY = 4;
 
 export interface Memory {
   v: 1;
@@ -26,6 +30,12 @@ export interface Memory {
   touches: { poke: number; scratch: number; chat: number };
   marks: { id: string; t: number }[]; // milestones shared with the user
   said: Record<string, number>; // memory line kind -> last time spoken, for cooldowns
+  // Facts the AI picked out of chats (on by default, can be switched off). They travel to Google
+  // with each chat the user starts, which the user is told (Settings and a one-time note).
+  aiLearn: boolean;
+  aiNotice: boolean; // the one-time note about this has been shown
+  sinceExtract: number; // chat messages since the last look for facts
+  facts: { id: string; text: string; t: number }[];
 }
 
 export const defaultMemory = (): Memory => ({
@@ -44,6 +54,10 @@ export const defaultMemory = (): Memory => ({
   touches: { poke: 0, scratch: 0, chat: 0 },
   marks: [],
   said: {},
+  aiLearn: true,
+  aiNotice: false,
+  sinceExtract: 0,
+  facts: [],
 });
 
 /** A name typed by the user: trimmed, single line, no control characters, at most MAX_NAME. */
@@ -51,6 +65,11 @@ export function cleanName(raw: string): string {
   // eslint-disable-next-line no-control-regex
   return raw.replace(/[\u0000-\u001f\u007f<>]/g, " ").replace(/\s+/g, " ").trim().slice(0, MAX_NAME).trim();
 }
+
+/** A fact as stored: one line, no control characters, bounded. */
+export const cleanFact = (raw: string): string =>
+  // eslint-disable-next-line no-control-regex
+  raw.replace(/[\u0000-\u001f\u007f<>]/g, " ").replace(/\s+/g, " ").trim().slice(0, MAX_FACT).trim();
 
 const num = (v: unknown, d = 0, max = 1e9) => (typeof v === "number" && Number.isFinite(v) ? Math.min(max, Math.max(0, Math.floor(v))) : d);
 const counts = (v: unknown, n: number): number[] =>
@@ -86,6 +105,16 @@ export function parseMemory(json: string | null | undefined): Memory {
             .filter((m: unknown): m is { id: string; t: number } => !!m && typeof (m as { id?: unknown }).id === "string" && typeof (m as { t?: unknown }).t === "number")
             .slice(0, 50)
             .map((m: { id: string; t: number }) => ({ id: m.id.slice(0, 30), t: m.t }))
+        : [],
+      aiLearn: o.aiLearn !== false,
+      aiNotice: o.aiNotice === true,
+      sinceExtract: num(o.sinceExtract, 0, 999),
+      facts: Array.isArray(o.facts)
+        ? o.facts
+            .filter((f: unknown): f is { id: string; text: string; t: number } => !!f && typeof (f as { id?: unknown }).id === "string" && typeof (f as { text?: unknown }).text === "string")
+            .slice(0, MAX_FACTS)
+            .map((f: { id: string; text: string; t: unknown }) => ({ id: f.id.slice(0, 40), text: cleanFact(f.text), t: num(f.t) }))
+            .filter((f: { text: string }) => f.text.length > 0)
         : [],
       said: o.said && typeof o.said === "object" ? Object.fromEntries(Object.entries(o.said).filter(([, v]) => typeof v === "number").slice(0, 40)) as Record<string, number> : {},
     };
@@ -192,7 +221,53 @@ export const cooled = (m: Memory, kind: string, now: number, ms: number): boolea
 /** Forget what was learned from use; keeps the names and the on/off switch. */
 export function forgetHabits(m: Memory): Memory {
   const d = defaultMemory();
-  return { ...d, learn: m.learn, petName: m.petName, callMe: m.callMe, asks: m.asks };
+  return { ...d, learn: m.learn, petName: m.petName, callMe: m.callMe, asks: m.asks, aiLearn: m.aiLearn, aiNotice: m.aiNotice, facts: m.facts };
 }
 /** Forget everything, names included; keeps only the on/off switch. */
-export const forgetAll = (m: Memory): Memory => ({ ...defaultMemory(), learn: m.learn });
+export const forgetAll = (m: Memory): Memory => ({ ...defaultMemory(), learn: m.learn, aiLearn: m.aiLearn, aiNotice: m.aiNotice });
+
+// ------------------------------------------------------------------- AI facts
+/** Counts one more chat message; true when it is time to look for facts. */
+export const countChat = (m: Memory): { memory: Memory; due: boolean } => {
+  if (!m.aiLearn) return { memory: m, due: false };
+  const n = m.sinceExtract + 1;
+  return { memory: { ...m, sinceExtract: n }, due: n >= EXTRACT_EVERY };
+};
+export const resetExtract = (m: Memory): Memory => ({ ...m, sinceExtract: 0 });
+
+const same = (a: string, b: string) => {
+  const x = a.toLowerCase();
+  const y = b.toLowerCase();
+  return x === y || x.includes(y) || y.includes(x);
+};
+
+/** Adds new facts (deduplicated), keeping the newest MAX_FACTS. */
+export function addFacts(m: Memory, texts: string[], now: number, newId: () => string): Memory {
+  if (!m.aiLearn) return m;
+  let facts = [...m.facts];
+  for (const raw of texts) {
+    const text = cleanFact(raw);
+    if (text.length < 4 || facts.some((f) => same(f.text, text))) continue;
+    facts.push({ id: newId(), text, t: now });
+  }
+  facts = facts.slice(-MAX_FACTS);
+  return { ...m, facts };
+}
+export const setFact = (m: Memory, id: string, raw: string): Memory => {
+  const text = cleanFact(raw);
+  return { ...m, facts: text ? m.facts.map((f) => (f.id === id ? { ...f, text } : f)) : m.facts.filter((f) => f.id !== id) };
+};
+export const removeFact = (m: Memory, id: string): Memory => ({ ...m, facts: m.facts.filter((f) => f.id !== id) });
+export const forgetFacts = (m: Memory): Memory => ({ ...m, facts: [], sinceExtract: 0 });
+
+/**
+ * What goes to the model as background in a chat the user started: how they want to be called,
+ * the pet's own name, and (if switched on) the stored facts. Never used for unprompted lines.
+ */
+export function knownFor(m: Memory, lang: "vi" | "en"): string[] {
+  const out: string[] = [];
+  if (m.callMe) out.push(lang === "vi" ? `gọi người dùng là ${m.callMe}` : `call the user ${m.callMe}`);
+  if (m.petName) out.push(lang === "vi" ? `tên của bạn (thú cưng) là ${m.petName}` : `your own name is ${m.petName}`);
+  if (m.aiLearn) out.push(...m.facts.map((f) => f.text));
+  return out;
+}

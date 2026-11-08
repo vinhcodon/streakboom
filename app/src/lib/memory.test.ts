@@ -165,3 +165,49 @@ test("forgetting", () => {
   assert.equal(a.callMe, "");
   assert.equal(a.learn, false);
 });
+
+import { addFacts, countChat, knownFor, removeFact, setFact, forgetFacts, EXTRACT_EVERY, MAX_FACTS } from "./memory.ts";
+
+let idn = 0;
+const nid = () => `f${++idn}`;
+
+test("facts are deduplicated, bounded and cleaned", () => {
+  let m = addFacts(defaultMemory(), ["Likes jazz", "likes jazz a lot", "Has a cat named Mun", "ab", "x\u0000y z <b>"], 1, nid);
+  assert.deepEqual(m.facts.map((f) => f.text), ["Likes jazz", "Has a cat named Mun", "x y z b"]);
+  for (let i = 0; i < 40; i++) m = addFacts(m, [`distinct fact ${i} here`], 2, nid);
+  assert.equal(m.facts.length, MAX_FACTS);
+  assert.equal(m.facts[MAX_FACTS - 1].text, "distinct fact 39 here");
+});
+
+test("the user can edit and delete facts; an empty edit deletes", () => {
+  let m = addFacts(defaultMemory(), ["Likes jazz", "Plays chess"], 1, () => "a");
+  m = { ...m, facts: m.facts.map((f, i) => ({ ...f, id: `id${i}` })) };
+  assert.equal(setFact(m, "id0", " Likes blues ").facts[0].text, "Likes blues");
+  assert.equal(setFact(m, "id0", "  ").facts.length, 1);
+  assert.equal(removeFact(m, "id1").facts.length, 1);
+  assert.equal(forgetFacts(m).facts.length, 0);
+});
+
+test("facts are looked for every few messages, and never when switched off", () => {
+  let m = defaultMemory();
+  let due = false;
+  for (let i = 0; i < EXTRACT_EVERY; i++) ({ memory: m, due } = countChat(m));
+  assert.equal(due, true);
+  const off = { ...defaultMemory(), aiLearn: false };
+  assert.equal(countChat(off).due, false);
+  assert.deepEqual(addFacts(off, ["Likes jazz"], 1, nid).facts, []);
+});
+
+test("only what the model may know is sent: names and, when on, the facts", () => {
+  const m = addFacts(setName(setName(defaultMemory(), "callMe", "Vinh"), "petName", "Bông"), ["Likes jazz"], 1, nid);
+  assert.deepEqual(knownFor(m, "en"), ["call the user Vinh", "your own name is Bông", "Likes jazz"]);
+  assert.deepEqual(knownFor({ ...m, aiLearn: false }, "en"), ["call the user Vinh", "your own name is Bông"]);
+  assert.deepEqual(knownFor(defaultMemory(), "vi"), []);
+});
+
+test("forgetting habits keeps facts; forgetting everything removes them", () => {
+  const m = addFacts(sessions(defaultMemory(), [20, 20]), ["Likes jazz"], 1, nid);
+  assert.equal(forgetHabits(m).facts.length, 1);
+  assert.equal(forgetAll(m).facts.length, 0);
+  assert.equal(parseMemory(JSON.stringify(m)).facts.length, 1);
+});
