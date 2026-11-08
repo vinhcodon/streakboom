@@ -19,7 +19,7 @@ Status: **proposed 2026-11-08, asked by Vinh to be carried out story by story.**
 | E4 | Two-way care loop | 2 / 5 | Gestures answer; no lasting change yet (weakest) |
 | E5 | Proactive but frugal | 3 / 6 | Polite and rate-limited; context timing comes through E8 (strongest) |
 | E6 | Measurement and alpha | 1 / 7 | Counters built; no baseline, no tool, no testers |
-| E7 | Verification and release | 3 / 9 | The 8-hour soak was stopped at 2 h 23 (memory flat) to diagnose CPU; real keys, devices open; the 0.2.1 to 0.2.2 update was seen working |
+| E7 | Verification and release | 4 / 9 | The 8-hour soak was stopped at 2 h 23 (memory flat) to diagnose CPU; real keys, devices open; the 0.2.1 to 0.2.2 update was seen working |
 | E8 | Focus-safety and places | 1 / 15 | Spec and ADR-0029 written; code waits for the CPU gate |
 
 Against the roadmap: Phases 0 to 2 done; **Phase 4 in progress** (E7: the soak was stopped early; PR-3 and PR-4 done; PF-3, PR-8, VE-2, VE-3 open); Phase 3 blocked on keys (VE-4, VE-5, PE-3); Phase 5 not started (E6).
@@ -102,9 +102,9 @@ Open question for CO-3: the "rest rhythm" idea (using the habit counts for more 
 | VE-3 | Run on a lower-end second machine (A1) | S | needs Vinh (a machine) | |
 | VE-4 | Real-key test of the Claude brain: connect, chat in both languages, the no-credit and bad-key errors, the mood tags (Phase 3) | M | blocked (a key) | |
 | VE-5 | The same for the OpenAI brain | M | blocked (a key) | |
-| VE-6 | A real update from one version to the next (**observed once**: the installed 0.2.1 became 0.2.2 by itself at 22:06:56 on 2026-11-08; who accepted the offer was not observed) and the first real clean-up of an old release (**done**: publishing 0.2.3 deleted v0.2.1 and its tag and kept v0.2.2) | S | mostly done (a watched update 0.2.2 to 0.2.3 is still open) | |
+| VE-6 | A real update from one version to the next (**observed once**: the installed 0.2.1 became 0.2.2 by itself at 22:06:56 on 2026-11-08; who accepted the offer was not observed) and the first real clean-up of an old release (**done**: publishing 0.2.3 deleted v0.2.1 and its tag and kept v0.2.2) | S | done (the in-app update 0.2.2 to 0.2.3 was watched end to end at 23:18) | |
 | VE-7 | Update the installed copy to 0.2.2 | S | done (the app updated itself at 22:06:56) | |
-| VE-8 | A full 8-hour soak on the build after the CPU fix | S | ready after the installed copy is on 0.2.3 (and PR-9 for the final target) | PR-9 |
+| VE-8 | A full 8-hour soak on the build after the CPU fix | S | ready (the installed copy is on 0.2.3; needs the PC awake for 8 hours) | PR-9 |
 
 ## E8. Focus-safety and places (spec/06, plan `character-and-movement.md`)
 Order by decision D2: the CPU baseline (PR-3, PR-4, PR-9) comes first; the pure logic FS-1 and the probe FS-2 are ready.
