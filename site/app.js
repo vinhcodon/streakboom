@@ -5,6 +5,7 @@ import { startPeak } from "./peak.js";
 
 const REPO = "vinhcodon/streakboom";
 const API = `https://api.github.com/repos/${REPO}/releases?per_page=5`;
+const MANIFEST = `https://raw.githubusercontent.com/${REPO}/main/updates/latest.json`;
 
 const btn = document.getElementById("download-btn");
 const meta = document.getElementById("download-meta");
@@ -52,12 +53,20 @@ function renderReleases() {
 
 function renderDownload() {
   const latest = releases?.[0];
-  const exe = latest?.assets.find((a) => a.name.endsWith("-setup.exe"));
-  if (!exe) return;
-  btn.href = exe.browser_download_url;
-  document.getElementById("direct-dl").href = exe.browser_download_url;
+  if (!latest) return;
+  const exe = latest.assets.find((a) => a.name.endsWith("-setup.exe"));
+  // the install step names the real file; with no asset list (manifest fallback) the name follows the version
+  const exeName = document.getElementById("exe-name");
+  if (exeName) exeName.textContent = exe ? exe.name : `Streakboom_${latest.tag_name.replace(/^v/, "")}_x64-setup.exe`;
   meta.removeAttribute("data-i18n");
-  meta.textContent = `${latest.tag_name} · ${(exe.size / 1048576).toFixed(0)} MB · ${fmtDate(latest.published_at)}`;
+  if (exe) {
+    btn.href = exe.browser_download_url;
+    document.getElementById("direct-dl").href = exe.browser_download_url;
+    meta.textContent = `${latest.tag_name} · ${(exe.size / 1048576).toFixed(0)} MB · ${fmtDate(latest.published_at)}`;
+  } else {
+    // no direct link known: the button keeps pointing at "releases/latest"
+    meta.textContent = `${latest.tag_name} · ${fmtDate(latest.published_at)}`;
+  }
 }
 
 // Peak is Windows only. On a phone, a Mac or Linux the .exe is useless, so offer to send the link to a PC instead.
@@ -93,11 +102,35 @@ applyLang();
 
 startPeak(document.getElementById("peak"), document.getElementById("poses"));
 
-try {
-  const res = await fetch(API, { headers: { Accept: "application/vnd.github+json" } });
+// The GitHub API sometimes answers 5xx or is rate limited. The release script also commits the update
+// manifest to the repository (served by raw.githubusercontent.com, which stayed up when the API did not),
+// so if the API fails we still show the latest version and its notes from there.
+async function getJson(url, headers) {
+  const res = await fetch(url, { headers, signal: AbortSignal.timeout(8000) });
   if (!res.ok) throw new Error(res.status);
-  releases = (await res.json()).filter((r) => !r.draft && !r.prerelease);
-  if (!releases.length) throw new Error("no releases");
+  return res.json();
+}
+
+async function loadReleases() {
+  try {
+    const list = (await getJson(API, { Accept: "application/vnd.github+json" })).filter((r) => !r.draft && !r.prerelease);
+    if (list.length) return list;
+  } catch {
+    // fall through to the manifest
+  }
+  const m = await getJson(MANIFEST);
+  return [{
+    name: `Streakboom ${m.version}`,
+    tag_name: `v${m.version}`,
+    html_url: `https://github.com/${REPO}/releases/latest`,
+    published_at: m.pub_date,
+    body: m.notes,
+    assets: [],
+  }];
+}
+
+try {
+  releases = await loadReleases();
 } catch {
   failed = true;
 }
