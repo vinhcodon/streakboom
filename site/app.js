@@ -1,72 +1,85 @@
-// Entry point: language, the interactive Peak, and the download button and updates list from GitHub Releases.
-// If the API fails or is rate limited, the static fallback links in index.html still work.
+// Entry point: language, the interactive Peak, the download button and the "updates" list.
+// The download button always points at the latest release page (never at a version-specific link, since
+// GitHub keeps only the two newest releases). The version, date and notes come from CHANGELOG.md in the
+// repository, so a new release needs no change here.
 import { applyLang, lang, t } from "./i18n.js";
 import { startPeak } from "./peak.js";
 
 const REPO = "vinhcodon/streakboom";
-const API = `https://api.github.com/repos/${REPO}/releases?per_page=5`;
-const MANIFEST = `https://raw.githubusercontent.com/${REPO}/main/updates/latest.json`;
+const RAW = `https://raw.githubusercontent.com/${REPO}/main`;
+const CHANGELOG_URL = `${RAW}/CHANGELOG.md`;
+const MANIFEST_URL = `${RAW}/updates/latest.json`; // fallback: newest version and its notes only
+const CHANGELOG_PAGE = `https://github.com/${REPO}/blob/main/CHANGELOG.md`;
+const SHOW = 3; // newest entries shown
 
-const btn = document.getElementById("download-btn");
 const meta = document.getElementById("download-meta");
 const list = document.getElementById("release-list");
-let releases = null;
+let entries = null; // [{ version, date, title, items: [text] }] newest first, or null while loading
 let failed = false;
 
-const fmtDate = (iso) => new Date(iso).toLocaleDateString(lang === "vi" ? "vi-VN" : "en-US", { year: "numeric", month: "short", day: "numeric" });
+const fmtDate = (iso) => {
+  const d = new Date(iso);
+  return isNaN(d) ? "" : d.toLocaleDateString(lang === "vi" ? "vi-VN" : "en-US", { year: "numeric", month: "short", day: "numeric" });
+};
+
+/** "## 0.2.1 (2026-11-08), a title" headings, each followed by "- " bullets (wrapped lines are joined). */
+export function parseChangelog(text) {
+  const out = [];
+  let cur = null;
+  for (const raw of text.split(/\r?\n/)) {
+    const h = raw.match(/^##\s+(\d+\.\d+\.\d+[^\s(]*)\s*(?:\((\d{4}-\d{2}-\d{2})\))?\s*,?\s*(.*)$/);
+    if (h) {
+      cur = { version: h[1], date: h[2] || "", title: h[3].trim(), items: [] };
+      out.push(cur);
+    } else if (/^#{1,2}\s/.test(raw)) {
+      cur = null; // some other heading ends the entry
+    } else if (cur && /^-\s+/.test(raw)) {
+      cur.items.push(raw.replace(/^-\s+/, "").trim());
+    } else if (cur && cur.items.length && /^\s+\S/.test(raw)) {
+      cur.items[cur.items.length - 1] += " " + raw.trim();
+    }
+  }
+  return out.filter((e) => e.items.length);
+}
 
 function renderReleases() {
   list.textContent = "";
   if (failed) {
     const li = document.createElement("li");
     const a = document.createElement("a");
-    a.href = `https://github.com/${REPO}/releases`;
+    a.href = CHANGELOG_PAGE;
     a.textContent = t("load_fail");
     li.append(a);
     list.append(li);
     return;
   }
-  if (!releases) return;
-  for (const r of releases) {
+  if (!entries) return;
+  for (const e of entries.slice(0, SHOW)) {
     const li = document.createElement("li");
     const h = document.createElement("h3");
-    const a = document.createElement("a");
-    a.href = r.html_url;
-    a.textContent = r.name || r.tag_name;
-    h.append(a);
+    h.textContent = `Streakboom ${e.version}`;
     const m = document.createElement("div");
     m.className = "meta";
-    m.textContent = fmtDate(r.published_at);
-    li.append(h, m);
-    if (r.body) {
-      const pre = document.createElement("pre");
-      pre.textContent = r.body; // textContent: release notes are never injected as HTML
-      const more = document.createElement("a");
-      more.className = "more";
-      more.href = r.html_url;
-      more.textContent = t("notes_more");
-      li.append(pre, more);
+    m.textContent = [e.date && fmtDate(e.date), e.title].filter(Boolean).join(" · ");
+    const ul = document.createElement("ul");
+    for (const text of e.items) {
+      const item = document.createElement("li");
+      item.textContent = text; // textContent: changelog text is never injected as HTML
+      ul.append(item);
     }
+    li.append(h, m, ul);
     list.append(li);
   }
 }
 
 function renderDownload() {
-  const latest = releases?.[0];
+  const latest = entries?.[0];
   if (!latest) return;
-  const exe = latest.assets.find((a) => a.name.endsWith("-setup.exe"));
-  // the install step names the real file; with no asset list (manifest fallback) the name follows the version
+  // the install step names the real file for the current version
   const exeName = document.getElementById("exe-name");
-  if (exeName) exeName.textContent = exe ? exe.name : `Streakboom_${latest.tag_name.replace(/^v/, "")}_x64-setup.exe`;
+  if (exeName) exeName.textContent = `Streakboom_${latest.version}_x64-setup.exe`;
   meta.removeAttribute("data-i18n");
-  if (exe) {
-    btn.href = exe.browser_download_url;
-    document.getElementById("direct-dl").href = exe.browser_download_url;
-    meta.textContent = `${latest.tag_name} · ${(exe.size / 1048576).toFixed(0)} MB · ${fmtDate(latest.published_at)}`;
-  } else {
-    // no direct link known: the button keeps pointing at "releases/latest"
-    meta.textContent = `${latest.tag_name} · ${fmtDate(latest.published_at)}`;
-  }
+  meta.textContent = [`v${latest.version}`, latest.date && fmtDate(latest.date)].filter(Boolean).join(" · ");
 }
 
 // Peak is Windows only. On a phone, a Mac or Linux the .exe is useless, so offer to send the link to a PC instead.
@@ -102,37 +115,28 @@ applyLang();
 
 startPeak(document.getElementById("peak"), document.getElementById("poses"));
 
-// The GitHub API sometimes answers 5xx or is rate limited. The release script also commits the update
-// manifest to the repository (served by raw.githubusercontent.com, which stayed up when the API did not),
-// so if the API fails we still show the latest version and its notes from there.
-async function getJson(url, headers) {
-  const res = await fetch(url, { headers, signal: AbortSignal.timeout(8000) });
+async function getText(url) {
+  const res = await fetch(url, { signal: AbortSignal.timeout(8000) });
   if (!res.ok) throw new Error(res.status);
-  return res.json();
+  return res.text();
 }
 
-async function loadReleases() {
+async function loadEntries() {
   try {
-    const list = (await getJson(API, { Accept: "application/vnd.github+json" })).filter((r) => !r.draft && !r.prerelease);
-    if (list.length) return list;
+    const parsed = parseChangelog(await getText(CHANGELOG_URL));
+    if (parsed.length) return parsed;
   } catch {
-    // fall through to the manifest
+    // fall through to the update manifest
   }
-  const m = await getJson(MANIFEST);
-  return [{
-    name: `Streakboom ${m.version}`,
-    tag_name: `v${m.version}`,
-    html_url: `https://github.com/${REPO}/releases/latest`,
-    published_at: m.pub_date,
-    body: m.notes,
-    assets: [],
-  }];
+  // the manifest (committed by the release script) has the newest version and its notes as one paragraph
+  const m = JSON.parse(await getText(MANIFEST_URL));
+  return [{ version: m.version, date: (m.pub_date || "").slice(0, 10), title: "", items: [m.notes].filter(Boolean) }];
 }
 
 try {
-  releases = await loadReleases();
+  entries = await loadEntries();
 } catch {
-  failed = true;
+  failed = true; // offline or blocked: the download button and the links still work
 }
 renderReleases();
 renderDownload();

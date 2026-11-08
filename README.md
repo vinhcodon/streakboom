@@ -125,7 +125,7 @@ The app reads the manifest from that repository copy first and from the release 
 
 ## Website 🌐
 
-The site in `site/` is a single static page with no framework: hero with an interactive Peak, features, install steps, privacy, FAQ and the latest releases, in English and Vietnamese. The download button, version and release notes are read from GitHub Releases when the page loads (with the manifest in `updates/latest.json` as a fallback), so a new release needs no change to the site. On phones and non-Windows computers the download is replaced by "send the link to my PC".
+The site in `site/` is a single static page with no framework: hero with an interactive Peak, features, install steps, privacy, FAQ and the latest releases, in English and Vietnamese. The download button always points at the latest release page (GitHub keeps only the two newest releases, so the page never links to a version-specific file). The version and the notes of the newest versions are read from `CHANGELOG.md` in the repository when the page loads, with `updates/latest.json` as the fallback, so a new release needs no change to the site as long as it has its `CHANGELOG.md` entry (the release script requires one). On phones and non-Windows computers the download is replaced by "send the link to my PC".
 
 - **Peak on the page is the app's own cat.** `scripts/build-site.mjs` turns `app/src/lib/rig/*.ts` into browser JavaScript in `site/peak/` (generated, git-ignored), so the page cannot drift from the app. Needs Node 22.13 or newer.
 - **Preview:** `node scripts/site-dev.mjs`, then open `http://localhost:4173`.
