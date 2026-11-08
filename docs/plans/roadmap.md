@@ -1,6 +1,6 @@
 # Roadmap: from the first official release (0.2.0) to the first outside users
 
-Status: **approved 2026-11-08 with the answers in section 5; Phases 1 and 2 are done and shipped (the counters in 0.1.15, then the first official release 0.2.0, ADR-0026); the rest is open. A reminder to update the website is in `../handoff/to-website-0.2.0.md`.** Written 2026-11-08 after reading all project documents and the code.
+Status: **approved 2026-11-08 with the answers in section 5; Phases 0, 1 and 2 are done and shipped (the counters in 0.1.15, the first official release 0.2.0 (ADR-0026), the chat-cap fix 0.2.1 (ADR-0027)); Phase 4 has started (A4 first positive report, A5 soak running, a sleep-speech fix committed and unreleased); the rest is open. A reminder to update the website is in `../handoff/to-website-0.2.0.md`.** Written 2026-11-08 after reading all project documents and the code.
 
 Goal of this stretch: run a closed alpha with 5 to 10 observed first-time users and get a first baseline of the north star (Bond Days, [`../../spec/05-north-star-metrics.md`](../../spec/05-north-star-metrics.md)) to test hypotheses H1, H2b, H4 and H5 ([`../hypotheses/README.md`](../hypotheses/README.md)).
 
@@ -9,13 +9,8 @@ Goal of this stretch: run a closed alpha with 5 to 10 observed first-time users 
 - Documents reorganized into `spec/` (how it works now), `docs/decisions/`, `docs/hypotheses/`, `docs/handoff/`, `docs/plans/` and the engineering log; README and specs 01 to 04 brought up to date with 0.1.14.
 - Process rule written down (ADR-0023): commit explicit paths, release from a clean tree.
 
-## Phase 1. Settle what is in `main` and in 0.1.14
-**Why first:** `main` and the 0.1.14 installer contain the reverted Bond Days prototype; the revert is committed (`18e13de`) but not released. Counters would be recorded locally for anyone with consent on, under the old wording.
-**Steps**
-1. Decide the release vehicle (decision R1): a small 0.1.15 that only removes the prototype, or fold the removal into the first Bond Days release.
-2. If a small release: build from a clean tree, run `npm run check`, `npm test`, `cargo test`, release with the documented steps, and verify the manifest and an update from 0.1.14 on this machine.
-3. Hypothesis A10: after updating, confirm `pet.json` has no `days` array and no counters.
-**Done when** installed copies no longer contain the prototype, or Vinh has accepted that they do until the next release.
+## Phase 1. Settle what is in `main` and in 0.1.14 (done)
+The reverted Bond Days prototype was folded out in the Bond Days release (decision R1): 0.1.15 shipped the counters and no prototype, and every copy of 0.1.14 is gone (the 0.1.x builds were withdrawn with 0.2.0, ADR-0026). Hypothesis A10 (no leftover counters after the update) was not checked on other machines because there are none; the author's copy was replaced by hand.
 
 ## Phase 2. Bond Days, built from the plan (done and released in 0.1.15 on 2026-11-08; a few checks remain listed as not verified)
 Plan and tests: [`bond-days.md`](bond-days.md) (steps 0 to 6, decisions D1 to D8 answered). Order and gates:
@@ -40,6 +35,8 @@ Plan and tests: [`bond-days.md`](bond-days.md) (steps 0 to 6, decisions D1 to D8
 
 ## Phase 4. Alpha readiness
 Verify the assumptions in the hypotheses register before outsiders see the app.
+
+**Progress (2026-11-08):** A4 first positive report from the author (one try, not a pass); A5 8-hour soak started at 19:40 (`scripts/soak-log.ps1`, result pending); A7 waits for the end of the soak (a reboot would cut it; start with Windows is still off on the author's machine). Next in order after the soak: A7 with the tray icon check, a forced unprompted line during fullscreen (A4) and while the cat sleeps (fix `a4e620f`, then release 0.2.2). A1, A2 and A3 need a second machine or monitor.
 
 | Item | Hypothesis | Action |
 |---|---|---|
