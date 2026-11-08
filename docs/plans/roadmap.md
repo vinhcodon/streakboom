@@ -1,4 +1,4 @@
-# Roadmap: from 0.1.14 to a closed alpha
+# Roadmap: from the first official release (0.2.0) to the first outside users
 
 Status: **approved 2026-11-08 with the answers in section 5; Phases 1 and 2 are done and released in 0.1.15, the rest is open.** Written 2026-11-08 after reading all project documents and the code.
 

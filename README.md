@@ -2,7 +2,7 @@
 
 An open-source desktop pet for Windows. Meet **Peak**, a cheerful golden chibi cat inspired by the soft, squishy look of mochi illustrations. Peak lives on top of your screen, reacts to being stroked, poked and carried, says short lines in Vietnamese or English, and keeps you company. It is a companion, not an assistant: it is lovable with no AI at all, and if you give it your own API key (Gemini, Claude or OpenAI) it can also chat and remember a few things about you.
 
-> **Status: closed alpha (v0.1.x), Windows 10/11 only.** The installer is not code-signed yet, so Windows SmartScreen will warn when you run it.
+> **Status: first official release (v0.2.0), Windows 10/11 only.** Earlier 0.1.x builds were development builds and have been withdrawn. The installer is not code-signed yet, so Windows SmartScreen will warn when you run it. The Claude and OpenAI brains have not yet been tried with real keys (Gemini has).
 
 ## Meet Peak 🐱
 
@@ -132,7 +132,7 @@ The documents are split by the kind of statement they make, so each fact has one
 
 ## Roadmap 🧭
 
-Done: the naive pet, the key flow, three brains, memory, gestures, emotional reactions, opt-in stats with Copy stats, the north star counters (Bond Days, released in 0.1.15), the installer and signed auto-update. Next, in order: a first real-key test of the Claude and OpenAI brains, then the closed alpha with a handful of observed first-time users. Open: a place to send stats (or keep Copy stats for the alpha), code signing, crash reporting without content, a macOS port, and testing on more machines (multi-monitor, mixed DPI). The ordered plan is in [`docs/plans/roadmap.md`](docs/plans/roadmap.md).
+Done and shipped in 0.2.0: the naive pet, the key flow, three brains, memory, gestures, emotional reactions, opt-in stats with Copy stats and the Bond Days counters, the installer and signed auto-update with fallbacks. Next, in order: a first real-key test of the Claude and OpenAI brains, then a handful of observed first-time users. Open: a place to send stats (or keep Copy stats), code signing, crash reporting without content, a macOS port, and testing on more machines (multi-monitor, mixed DPI). The ordered plan is in [`docs/plans/roadmap.md`](docs/plans/roadmap.md).
 
 ## Art and credits 🎨
 

@@ -1,6 +1,6 @@
 # Technical Design
 
-The stable design of the app as of 0.1.14. What was built and measured, round by round (including the early spikes and the numbers behind the decisions), is in [`../docs/engineering-log.md`](../docs/engineering-log.md). The reasons behind the choices are in [`../docs/decisions/`](../docs/decisions/README.md); the unverified assumptions are in [`../docs/hypotheses/`](../docs/hypotheses/README.md).
+The stable design of the app as of 0.2.0. What was built and measured, round by round (including the early spikes and the numbers behind the decisions), is in [`../docs/engineering-log.md`](../docs/engineering-log.md). The reasons behind the choices are in [`../docs/decisions/`](../docs/decisions/README.md); the unverified assumptions are in [`../docs/hypotheses/`](../docs/hypotheses/README.md).
 
 ## 1. Stack
 - **Shell:** Tauri 2 (Rust core plus the system webview), Windows 10/11 with WebView2 first (ADR-0003, ADR-0004).
@@ -42,7 +42,7 @@ Principles:
 - **M4 Brained pet** (done): the brain client, system prompt, short in-memory context, daily caps, timeout and failover, rate-limit cooldown.
 - **M5 Telemetry and packaging** (partly done): opt-in consent and local funnel queue with "Copy stats" (done); NSIS installer (done); signed auto-update through GitHub Releases (done). **Open:** a sending backend, code signing, crash reporting without content.
 - **Rounds after M5** (done, recorded in the log): gesture interaction, three-window architecture, the mochi cat, continuous spring motion, memory phases 1 and 2, belly rub and cursor-following eyes, emotional reactions, language following, start with Windows, the first-run tour, the reorganized Settings and update modes, Claude and OpenAI as brains.
-- **M6 Closed alpha** (next): 5 to 10 observed first-time users, then a wider group; evaluate funnel, retention and Bond Days. The ordered work to get there is in [`../docs/plans/roadmap.md`](../docs/plans/roadmap.md).
+- **M6 First outside users** (next; 0.2.0 is the first official release): 5 to 10 observed first-time users, then a wider group; evaluate funnel, retention and Bond Days. The ordered work to get there is in [`../docs/plans/roadmap.md`](../docs/plans/roadmap.md).
 
 ## 4. Brain providers
 One brain is in use at a time; keys of several can be stored (ADR-0008). All calls are made from Rust, are stateless, and use short prompts: the system prompt asks for under two sentences, a max output limit applies, and the context is the last 8 turns kept in memory only.
