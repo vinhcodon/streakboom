@@ -76,6 +76,11 @@ const counts = (v: unknown, n: number): number[] =>
   Array.isArray(v) && v.length === n ? v.map((x) => num(x, 0, 1e6)) : Array(n).fill(0);
 
 export function parseMemory(json: string | null | undefined): Memory {
+  const m = parseRaw(json);
+  return { ...m, facts: tidyFacts(m.facts) };
+}
+
+function parseRaw(json: string | null | undefined): Memory {
   const base = defaultMemory();
   if (!json) return base;
   try {
@@ -235,11 +240,30 @@ export const countChat = (m: Memory): { memory: Memory; due: boolean } => {
 };
 export const resetExtract = (m: Memory): Memory => ({ ...m, sinceExtract: 0 });
 
-const same = (a: string, b: string) => {
+const wordsOf = (s: string) => new Set(s.toLowerCase().split(/[^\p{L}\p{N}]+/u).filter((w) => w.length >= 2));
+
+/** Two facts say (nearly) the same: one contains the other, or most of the shorter one's words are shared. */
+export function same(a: string, b: string): boolean {
   const x = a.toLowerCase();
   const y = b.toLowerCase();
-  return x === y || x.includes(y) || y.includes(x);
-};
+  if (x === y || x.includes(y) || y.includes(x)) return true;
+  const wa = wordsOf(a);
+  const wb = wordsOf(b);
+  if (wa.size === 0 || wb.size === 0) return false;
+  let inter = 0;
+  for (const w of wa) if (wb.has(w)) inter++;
+  return inter / Math.min(wa.size, wb.size) >= 0.6;
+}
+
+/** "USER owns a cat" is the model talking about the user instead of writing the fact: not stored. */
+export const talksAboutUser = (t: string): boolean => /^(the )?user\b/i.test(t.trim());
+
+/** Removes facts that are in the model's third-person format or repeat an earlier one (old stores had some). */
+export function tidyFacts(facts: Memory["facts"]): Memory["facts"] {
+  const out: Memory["facts"] = [];
+  for (const f of facts) if (!talksAboutUser(f.text) && !out.some((g) => same(g.text, f.text))) out.push(f);
+  return out;
+}
 
 /** Adds new facts (deduplicated), keeping the newest MAX_FACTS. */
 export function addFacts(m: Memory, texts: string[], now: number, newId: () => string): Memory {
@@ -247,7 +271,7 @@ export function addFacts(m: Memory, texts: string[], now: number, newId: () => s
   let facts = [...m.facts];
   for (const raw of texts) {
     const text = cleanFact(raw);
-    if (text.length < 4 || facts.some((f) => same(f.text, text))) continue;
+    if (text.length < 4 || talksAboutUser(text) || facts.some((f) => same(f.text, text))) continue;
     facts.push({ id: newId(), text, t: now });
   }
   facts = facts.slice(-MAX_FACTS);

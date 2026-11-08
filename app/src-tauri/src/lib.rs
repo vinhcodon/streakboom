@@ -625,8 +625,8 @@ async fn brain_remember(app: AppHandle, lang: String, transcript: String, known:
         let state = app.state::<AppState>();
         let text: String = transcript.chars().take(2000).collect();
         let turns = [Turn { role: "user".into(), text }];
-        let raw = run_generate(&state, &key, &brain::extract_prompt(&lang), &turns)?;
-        Ok(brain::parse_facts(&raw, &known))
+        let raw = run_generate(&state, &key, &brain::extract_prompt(&lang, &known), &turns)?;
+        Ok(brain::parse_facts(&raw, &known, &lang))
     })
     .await
     .map_err(|_| task_failed())?

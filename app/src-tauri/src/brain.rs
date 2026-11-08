@@ -152,21 +152,70 @@ pub fn persona_with(lang: &str, tier: u8, gentle: bool, known: &[String]) -> Str
 }
 
 /// System prompt for the small background call that picks durable facts out of a chat.
-pub fn extract_prompt(lang: &str) -> String {
+pub fn extract_prompt(lang: &str, known: &[String]) -> String {
     let language = if lang == "vi" { "Vietnamese" } else { "English" };
-    format!(
-        "You extract lasting facts that the USER stated about themselves from a short chat with a desktop pet. \
-         Output at most 3 lines, one fact per line, each under 60 characters, written in {language}, no numbering, \
-         no bullets. Only things the user said about themselves that stay true for weeks (interests, projects, pets, \
-         routines, preferences). Skip moods, one-off requests, anything the pet said, other people's private details, \
-         health, money, exact addresses, passwords, keys, numbers that identify someone. If there is nothing, output NONE."
-    )
+    let mut s = format!(
+        "You extract lasting facts that the user stated about themselves from a short chat with a desktop pet.          Output at most 3 lines, one fact per line, each under 60 characters, no numbering, no bullets.          Write EVERY fact in {language} only, even if the chat mixes languages, and never in any other language.          Write each as a short plain phrase about the user without the word \"user\" or \"the user\"          (for example: \"Has a cat named Mun\"). Only things that stay true for weeks (interests, projects, pets,          family, routines, preferences). Skip moods, one-off requests, anything the pet said, other people's private          details, health, money, exact addresses, passwords, keys, numbers that identify someone."
+    );
+    let known: Vec<&String> = known.iter().filter(|k| !k.trim().is_empty()).take(24).collect();
+    if !known.is_empty() {
+        s.push_str(
+            "
+Already known (do not repeat any of these, not even in different words or another language;              output only what is genuinely new):",
+        );
+        for k in known {
+            s.push_str("
+- ");
+            s.extend(k.chars().filter(|c| !c.is_control()).take(80));
+        }
+    }
+    s.push_str("
+If there is nothing new, output exactly NONE.");
+    s
 }
 
 /// Keeps only lines that look like short, harmless facts. A model can ignore instructions, so the
 /// rules are enforced here too: no secrets, links, addresses or long digit runs, at most 3, no
 /// duplicates of what is already known.
-pub fn parse_facts(raw: &str, known: &[String]) -> Vec<String> {
+/// Words of a fact, lowercased, for comparing two phrasings of the same thing.
+fn words(s: &str) -> std::collections::HashSet<String> {
+    s.to_lowercase()
+        .split(|c: char| !c.is_alphanumeric())
+        .filter(|w| w.chars().count() >= 2)
+        .map(|w| w.to_string())
+        .collect()
+}
+
+/// True when two facts say (nearly) the same: one contains the other, or most words are shared.
+pub fn similar(a: &str, b: &str) -> bool {
+    let (la, lb) = (a.to_lowercase(), b.to_lowercase());
+    if la == lb || la.contains(&lb) || lb.contains(&la) {
+        return true;
+    }
+    let (wa, wb) = (words(a), words(b));
+    if wa.is_empty() || wb.is_empty() {
+        return false;
+    }
+    let inter = wa.intersection(&wb).count() as f32;
+    inter / wa.len().min(wb.len()) as f32 >= 0.6
+}
+
+/// A fact in the wrong language is dropped: for Vietnamese it must not be plain English, for
+/// English it must not contain Vietnamese letters.
+fn language_ok(t: &str, lang: &str) -> bool {
+    let non_ascii_letter = t.chars().any(|c| c.is_alphabetic() && !c.is_ascii());
+    if lang == "vi" {
+        if non_ascii_letter {
+            return true;
+        }
+        let english = [" has ", " have ", " owns ", " is ", " are ", " the ", " named ", " likes ", " works ", " with ", " a "];
+        let padded = format!(" {} ", t.to_lowercase());
+        return !english.iter().any(|w| padded.contains(w));
+    }
+    !non_ascii_letter
+}
+
+pub fn parse_facts(raw: &str, known: &[String], lang: &str) -> Vec<String> {
     let banned = ["password", "mật khẩu", "mat khau", "api key", "apikey", "token", "secret", "http", "www.", "@"];
     let mut out: Vec<String> = Vec::new();
     for line in raw.lines() {
@@ -177,7 +226,7 @@ pub fn parse_facts(raw: &str, known: &[String]) -> Vec<String> {
             continue;
         }
         let low = t.to_lowercase();
-        if banned.iter().any(|b| low.contains(b)) {
+        if banned.iter().any(|b| low.contains(b)) || low.starts_with("user") || low.starts_with("the user") || !language_ok(&t, lang) {
             continue;
         }
         let mut run = 0;
@@ -191,10 +240,7 @@ pub fn parse_facts(raw: &str, known: &[String]) -> Vec<String> {
         if long_digits {
             continue;
         }
-        let dup = known.iter().chain(out.iter()).any(|k| {
-            let kl = k.to_lowercase();
-            kl == low || kl.contains(&low) || low.contains(&kl)
-        });
+        let dup = known.iter().chain(out.iter()).any(|k| similar(k, &t));
         if dup {
             continue;
         }
@@ -558,6 +604,25 @@ mod tests {
 
 
     #[test]
+    fn facts_in_the_wrong_language_or_repeated_are_dropped() {
+        let vi_known = vec!["Nuôi một con mèo tên là Peak".to_string()];
+        let raw = "USER has a daughter
+USER owns a cat named Peak
+Chủ nhân của mèo Peak
+Đang tự code cho pet desktop
+Owns a laptop with a cracked screen
+Đang học nấu ăn
+Đang học nấu món ăn";
+        let out = parse_facts(raw, &vi_known, "vi");
+        assert_eq!(out, vec!["Chủ nhân của mèo Peak", "Đang tự code cho pet desktop", "Đang học nấu ăn"]);
+        assert!(parse_facts("Có một con mèo tên Mun", &[], "en").is_empty()); // Vietnamese in an English store
+        assert!(similar("Has a cat named Mun", "has a cat named mun"));
+        assert!(!similar("Likes jazz", "Plays chess"));
+        let p = extract_prompt("vi", &vi_known);
+        assert!(p.contains("Vietnamese") && p.contains("- Nuôi một con mèo tên là Peak") && p.contains("NONE"));
+    }
+
+    #[test]
     fn mood_tags_are_split_off_and_never_shown() {
         assert_eq!(split_mood("[happy] Hello there!"), ("Hello there!".into(), "happy".into()));
         assert_eq!(split_mood("  [Sad]  I'm here."), ("I'm here.".into(), "sad".into()));
@@ -585,10 +650,10 @@ mod tests {
     fn extracted_facts_are_filtered() {
         let known = vec!["likes jazz".to_string()];
         let raw = "- Is studying for finals\n2. likes jazz a lot\nNONE\nmy password is hunter2\nphone 0912345678 is mine\nsee https://x.io\n* Has a cat named Mun\n* Works on a game\n* Plays chess\nab";
-        let out = parse_facts(raw, &known);
+        let out = parse_facts(raw, &known, "en");
         assert_eq!(out, vec!["Is studying for finals", "Has a cat named Mun", "Works on a game"]);
-        assert!(parse_facts("NONE", &[]).is_empty());
-        assert!(parse_facts(&"x".repeat(200), &[]).is_empty());
+        assert!(parse_facts("NONE", &[], "en").is_empty());
+        assert!(parse_facts(&"x".repeat(200), &[], "en").is_empty());
     }
     #[test]
     fn key_sanity_and_persona() {

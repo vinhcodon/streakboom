@@ -174,9 +174,9 @@ const nid = () => `f${++idn}`;
 test("facts are deduplicated, bounded and cleaned", () => {
   let m = addFacts(defaultMemory(), ["Likes jazz", "likes jazz a lot", "Has a cat named Mun", "ab", "x\u0000y z <b>"], 1, nid);
   assert.deepEqual(m.facts.map((f) => f.text), ["Likes jazz", "Has a cat named Mun", "x y z b"]);
-  for (let i = 0; i < 40; i++) m = addFacts(m, [`distinct fact ${i} here`], 2, nid);
+  for (let i = 0; i < 40; i++) m = addFacts(m, [`aa${i}x bb${i}y cc${i}z`], 2, nid);
   assert.equal(m.facts.length, MAX_FACTS);
-  assert.equal(m.facts[MAX_FACTS - 1].text, "distinct fact 39 here");
+  assert.equal(m.facts[MAX_FACTS - 1].text, "aa39x bb39y cc39z");
 });
 
 test("the user can edit and delete facts; an empty edit deletes", () => {
@@ -210,4 +210,28 @@ test("forgetting habits keeps facts; forgetting everything removes them", () => 
   assert.equal(forgetHabits(m).facts.length, 1);
   assert.equal(forgetAll(m).facts.length, 0);
   assert.equal(parseMemory(JSON.stringify(m)).facts.length, 1);
+});
+
+import { same, tidyFacts } from "./memory.ts";
+
+test("paraphrases and the model's third-person format are not stored twice", () => {
+  assert.ok(same("Nuôi một con mèo tên là Peak", "nuôi một con mèo tên là peak"));
+  assert.ok(same("Đang học nấu ăn", "Đang học nấu món ăn"));
+  assert.ok(!same("Likes jazz", "Plays chess"));
+  const m = addFacts(defaultMemory(), ["USER owns a cat named Peak", "The user has a daughter", "Có một con mèo tên Peak", "Đang học nấu ăn", "Đang học nấu món ăn"], 1, nid);
+  assert.deepEqual(m.facts.map((f) => f.text), ["Có một con mèo tên Peak", "Đang học nấu ăn"]);
+});
+
+test("an old store is tidied when loaded: no USER-format facts, no repeats", () => {
+  const raw = JSON.stringify({
+    facts: [
+      { id: "1", text: "Nuôi một con mèo tên là Peak", t: 1 },
+      { id: "2", text: "USER owns a cat named Peak", t: 2 },
+      { id: "3", text: "USER has a daughter", t: 3 },
+      { id: "4", text: "Đang tự code cho pet desktop", t: 4 },
+      { id: "5", text: "Đang tự code cho pet desktop", t: 5 },
+    ],
+  });
+  assert.deepEqual(parseMemory(raw).facts.map((f) => f.id), ["1", "4"]);
+  assert.deepEqual(tidyFacts([]), []);
 });
