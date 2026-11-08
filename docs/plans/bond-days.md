@@ -140,8 +140,8 @@ Done on a release build with the WebView2 debug port, on the author's real data 
 |---|---|
 | 1 Consent off records nothing | not run directly; the old-consent case (no version) recorded no `days` |
 | 2 One gesture, one counter | passed: poke, double-click (no extra poke), head scratch, belly rub each moved one counter by one; `chat` not tested (no key) |
-| 3 Engagement | not run (needs an unprompted line); unit tests only |
-| 4 Not counted as `shown` | not run; by reading the call sites only the two proactive paths and `shareNextMark` call `markShown` |
+| 3 Engagement | passed (second pass, with the `window.__pet.proactive()` hook): a scratch within 30 s engaged the line once; a rub on the same line did not engage again; a scratch 38 s later did not engage; a double-click within 30 s did |
+| 4 Not counted as `shown` | partly: `shown` rose only for the proactive line; the greeting, replies and cards were not observed separately (by reading the call sites only the proactive paths and `shareNextMark` call `markShown`) |
 | 5 `min` | about one per minute observed; the sleep case not run |
 | 6 Midnight | not run |
 | 7 Old consent | passed: no counters; the new card appeared and was answered |
@@ -149,4 +149,4 @@ Done on a release build with the WebView2 debug port, on the author's real data 
 | 9 Idle cost | not measured in this pass; no timers were added |
 | 10 Opt-out deletes | unit tests only |
 
-Still open before release: checks 3, 4, 6, 8 and 10 in the real window, and a first-install run of the new consent wording.
+Still open before release: checks 6, 8 and 10 in the real window, `chat` and `quiet` counters, and a first-install run of the new consent wording. None of them blocks the rest of the plan; they are listed as not verified.

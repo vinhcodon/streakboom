@@ -1280,6 +1280,8 @@
         if (s.milestone) setTimeout(() => say("milestone", { days: s.milestone! }), 8000);
       }
       scheduleProactive();
+      // Test hook (like window.__cat): lets a debugger trigger the real unprompted-line path now.
+      (window as unknown as Record<string, unknown>).__pet = { proactive: () => void fireProactive() };
       let lastTick = Date.now();
       minuteTimer = setInterval(() => {
         const now = Date.now();
