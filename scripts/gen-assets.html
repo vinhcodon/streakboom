@@ -47,29 +47,63 @@ function bg(x, w, h) {
   x.fillRect(0, 0, w, h);
 }
 
-// a square icon: gold tile, Peak's face. `radius` 0 = full bleed (apple-touch), >0 = rounded tile with transparent corners.
-function icon(size, radius) {
-  if (size < 128) {
-    // downscale in two steps so a favicon stays smooth, not blocky
-    const big = icon(256, radius);
-    const c = canvas(size, size);
-    const x = c.getContext("2d");
-    x.imageSmoothingQuality = "high";
-    x.drawImage(big, 0, 0, size, size);
-    return c;
+// ---- Peak's face (option C): the rig's own head, ears and eyes without the body. Drawn natively
+// at every size, as vectors, so a 16px favicon is crisp instead of a shrunken big picture.
+const FUR = "#f6c26b", DARK = "#e9a94a", EDGE = "#b9781a", PINK = "#f4a7a7", FACE_INK = "#2b2220";
+const ell = (c, x, y, rx, ry) => { c.beginPath(); c.ellipse(x, y, rx, ry, 0, 0, Math.PI * 2); };
+const tri = (c, a, b, d, fill) => { c.beginPath(); c.moveTo(...a); c.lineTo(...b); c.lineTo(...d); c.closePath(); c.fillStyle = fill; c.fill(); };
+const triEdge = (c, a, b, d, lw) => { c.beginPath(); c.moveTo(...a); c.lineTo(...b); c.lineTo(...d); c.closePath(); c.lineWidth = lw; c.strokeStyle = EDGE; c.stroke(); };
+
+function face(c, detail, outline) {
+  const lw = outline;
+  c.lineJoin = "round"; c.lineCap = "round";
+  if (lw) {
+    // edges first, so the fill covers the inner half and leaves a clean outline
+    triEdge(c, [24, 54], [29, 18], [56, 38], lw); triEdge(c, [96, 54], [91, 18], [64, 38], lw);
+    ell(c, 60, 64, 42, 34); c.lineWidth = lw; c.strokeStyle = EDGE; c.stroke();
   }
-  const src = peak(8); // 960px, cropped to the head so it stays readable when tiny
-  const side = 106 * 8, cx = 60 * 8, cy = 60 * 8; // ears (y 22) to chin (y 98) centred with margin
+  tri(c, [24, 54], [29, 18], [56, 38], FUR); tri(c, [96, 54], [91, 18], [64, 38], FUR);
+  ell(c, 60, 64, 42, 34); c.fillStyle = FUR; c.fill();
+  tri(c, [31, 47], [33, 29], [48, 40], PINK); tri(c, [89, 47], [87, 29], [72, 40], PINK);
+  if (detail) {
+    c.strokeStyle = DARK; c.lineWidth = 3;
+    for (const x of [53, 60, 67]) { c.beginPath(); c.moveTo(x, 36); c.lineTo(x, 44); c.stroke(); }
+  }
+  for (const x of [43, 77]) { // eyes a touch larger than the real Peak so they read at 16px
+    ell(c, x, 67, 9, 11); c.fillStyle = FACE_INK; c.fill();
+    ell(c, x + 3.2, 63, 3.6, 3.6); c.fillStyle = "#fff"; c.fill();
+  }
+  c.fillStyle = "rgba(244,140,140,.75)";
+  ell(c, 31, 79, 7.5, 4.8); c.fill(); ell(c, 89, 79, 7.5, 4.8); c.fill();
+  c.fillStyle = "#e98f8f"; c.beginPath(); c.moveTo(56, 78); c.lineTo(64, 78); c.lineTo(60, 83); c.closePath(); c.fill();
+  if (detail) {
+    c.strokeStyle = "#7a4b3a"; c.lineWidth = 2.6; c.beginPath();
+    c.moveTo(60, 83); c.quadraticCurveTo(57, 89, 52, 86); c.moveTo(60, 83); c.quadraticCurveTo(63, 89, 68, 86); c.stroke();
+  }
+}
+
+// favicon: the face fills the whole square, no tile, transparent around it
+function favicon(size) {
   const c = canvas(size, size);
   const x = c.getContext("2d");
-  x.imageSmoothingQuality = "high";
-  if (radius) {
-    x.beginPath();
-    x.roundRect(0, 0, size, size, size * radius);
-    x.clip();
-  }
-  bg(x, size, size);
-  x.drawImage(src, cx - side / 2, cy - side / 2, side, side, size * 0.06, size * 0.06, size * 0.88, size * 0.88);
+  const k = size / 92;
+  x.scale(k, k); x.translate(-14, -13);
+  face(x, size >= 28, size < 24 ? 5 : 4.2);
+  return c;
+}
+
+// app / touch icon: the face on a warm dark tile, so the golden fur stands out. radius 0 = full bleed (apple-touch)
+function tileIcon(size, radius) {
+  const c = canvas(size, size);
+  const x = c.getContext("2d");
+  if (radius) { x.beginPath(); x.roundRect(0, 0, size, size, size * radius); x.clip(); }
+  const g = x.createLinearGradient(0, 0, size, size);
+  g.addColorStop(0, "#54412a"); g.addColorStop(1, "#2c2217");
+  x.fillStyle = g; x.fillRect(0, 0, size, size);
+  const k = (size * 0.8) / 92;
+  x.translate(size * 0.1, size * 0.11);
+  x.scale(k, k); x.translate(-14, -13);
+  face(x, true, 4.2);
   return c;
 }
 
@@ -102,9 +136,10 @@ function share() {
 
 const files = {
   "og-image.jpg": share(),
-  "favicon-32.png": icon(32, 0.22),
-  "apple-touch-icon.png": icon(180, 0),
-  "peak-icon-1024.png": icon(1024, 0.22),
+  "favicon-16.png": favicon(16),
+  "favicon-32.png": favicon(32),
+  "apple-touch-icon.png": tileIcon(180, 0),
+  "peak-icon-1024.png": tileIcon(1024, 0.22),
 };
 
 const out = document.getElementById("out");

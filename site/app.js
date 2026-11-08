@@ -40,7 +40,11 @@ function renderReleases() {
     if (r.body) {
       const pre = document.createElement("pre");
       pre.textContent = r.body; // textContent: release notes are never injected as HTML
-      li.append(pre);
+      const more = document.createElement("a");
+      more.className = "more";
+      more.href = r.html_url;
+      more.textContent = t("notes_more");
+      li.append(pre, more);
     }
     list.append(li);
   }

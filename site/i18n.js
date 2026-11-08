@@ -20,7 +20,7 @@ export const STRINGS = {
     f3_h: "🧠 Bring your own brain", f3_p: "Add a Gemini, Claude or OpenAI key and double-click to chat. Gemini has a free tier. Your key stays on your computer.",
     f4_h: "💭 Remembers a little", f4_p: "A name for the pet, what to call you, a few milestones. See, edit or forget any of it in Settings, Memory.",
     f5_h: "🤫 Polite", f5_p: "Quiet in fullscreen apps, during quiet hours and in Quiet mode. Never takes keyboard focus for plain speech.",
-    f6_h: "🪶 Light", f6_p: "About 100 to 120 MB of memory and almost no CPU while it stands still (measured on one machine so far).",
+    f6_h: "🍃 Light", f6_p: "About 100 to 120 MB of memory and almost no CPU while it stands still (measured on one machine so far).",
     use_title: "How to play with Peak",
     g1_a: "Sweep the cursor over its head", g1_b: "Scratch: it is happy and gets closer to you",
     g2_a: "Sweep over its belly", g2_b: "A belly rub: bliss, or sometimes a playful trap",
@@ -46,7 +46,7 @@ export const STRINGS = {
     q5: "How do I get updates?", a5: "Peak can update itself: install automatically when you are idle, ask first (the default), or never check. You can also download any release from this page.",
     upd_title: "Latest updates",
     upd_sub: "Pulled live from <a href=\"https://github.com/vinhcodon/streakboom/releases\">GitHub Releases</a>. Release notes are in English.",
-    loading: "Loading releases…", rss: "Subscribe via RSS", load_fail: "Could not load releases. See GitHub Releases.",
+    notes_more: "Full notes", loading: "Loading releases…", rss: "Subscribe via RSS", load_fail: "Could not load releases. See GitHub Releases.",
     foot_a: "MIT License. Made by Vinh Nguyen. Peak is an original character, drawn as vector shapes in code with Claude's help.",
     foot_bug: "Report a bug",
   },
@@ -69,7 +69,7 @@ export const STRINGS = {
     f3_h: "🧠 Mang bộ não của riêng bạn", f3_p: "Thêm khóa Gemini, Claude hoặc OpenAI rồi bấm đúp để trò chuyện. Gemini có gói miễn phí. Khóa của bạn chỉ nằm trên máy bạn.",
     f4_h: "💭 Nhớ một chút", f4_p: "Tên của thú cưng, cách gọi bạn, vài cột mốc. Xem, sửa hoặc xóa bất cứ thứ gì trong Cài đặt, Bộ nhớ.",
     f5_h: "🤫 Lịch sự", f5_p: "Im lặng khi bạn dùng ứng dụng toàn màn hình, trong giờ yên tĩnh và ở chế độ Yên tĩnh. Không giành bàn phím khi chỉ nói chuyện thường.",
-    f6_h: "🪶 Nhẹ", f6_p: "Khoảng 100 đến 120 MB bộ nhớ và gần như không tốn CPU khi đứng yên (mới đo trên một máy).",
+    f6_h: "🍃 Nhẹ", f6_p: "Khoảng 100 đến 120 MB bộ nhớ và gần như không tốn CPU khi đứng yên (mới đo trên một máy).",
     use_title: "Chơi với Peak thế nào",
     g1_a: "Lướt con trỏ qua đầu", g1_b: "Gãi đầu: nó vui và thân với bạn hơn",
     g2_a: "Lướt qua bụng", g2_b: "Xoa bụng: sung sướng, hoặc đôi khi là một cái bẫy tinh nghịch",
@@ -95,7 +95,7 @@ export const STRINGS = {
     q5: "Làm sao để nhận bản cập nhật?", a5: "Peak có thể tự cập nhật: tự cài khi bạn rảnh, hỏi trước (mặc định), hoặc không kiểm tra. Bạn cũng có thể tải bất kỳ bản phát hành nào ngay trên trang này.",
     upd_title: "Cập nhật mới nhất",
     upd_sub: "Lấy trực tiếp từ <a href=\"https://github.com/vinhcodon/streakboom/releases\">GitHub Releases</a>. Ghi chú phát hành bằng tiếng Anh.",
-    loading: "Đang tải các bản phát hành…", rss: "Đăng ký qua RSS", load_fail: "Không tải được danh sách bản phát hành. Xem GitHub Releases.",
+    notes_more: "Xem đầy đủ", loading: "Đang tải các bản phát hành…", rss: "Đăng ký qua RSS", load_fail: "Không tải được danh sách bản phát hành. Xem GitHub Releases.",
     foot_a: "Giấy phép MIT. Tác giả Vinh Nguyen. Peak là nhân vật gốc, được vẽ bằng các hình vector trong mã với sự hỗ trợ của Claude.",
     foot_bug: "Báo lỗi",
   },
@@ -117,6 +117,7 @@ export function applyLang(next = lang) {
   try { localStorage.setItem("lang", lang); } catch {}
   document.documentElement.lang = lang;
   document.title = t("title");
+  document.documentElement.classList.remove("i18n-pending");
   for (const el of document.querySelectorAll("[data-i18n]")) el.textContent = t(el.dataset.i18n);
   for (const el of document.querySelectorAll("[data-i18n-html]")) el.innerHTML = t(el.dataset.i18nHtml);
   const btn = document.getElementById("lang-btn");

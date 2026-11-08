@@ -15,10 +15,12 @@ const types = { ".html": "text/html; charset=utf-8", ".css": "text/css", ".js": 
 // the only files the generator may write
 const SAVE = {
   "og-image.jpg": join(site, "assets", "og-image.jpg"),
+  "favicon-16.png": join(site, "assets", "favicon-16.png"),
   "favicon-32.png": join(site, "assets", "favicon-32.png"),
   "apple-touch-icon.png": join(site, "assets", "apple-touch-icon.png"),
   "peak-icon-1024.png": join(root, "assets", "peak-icon-1024.png"), // source for the app icon
 };
+const PAGES = { "/__gen": "gen-assets.html" };
 
 createServer(async (req, res) => {
   const url = new URL(req.url, "http://x");
@@ -35,7 +37,7 @@ createServer(async (req, res) => {
   }
 
   let file;
-  if (path === "/__gen") file = join(here, "gen-assets.html");
+  if (PAGES[path]) file = join(here, PAGES[path]);
   else {
     if (path.endsWith("/")) path += "index.html";
     file = normalize(join(site, path));

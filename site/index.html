@@ -7,6 +7,7 @@
   <meta name="description" content="Streakboom is a free, open-source desktop pet for Windows. Meet Peak, a cheerful golden chibi cat who keeps you company. No AI required.">
   <meta name="theme-color" content="#f5b83d">
   <link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="assets/favicon-16.png">
   <link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
   <meta property="og:title" content="Streakboom: meet Peak, a desktop pet cat">
   <meta property="og:description" content="A free, open-source desktop pet cat for Windows. No AI required.">
@@ -19,6 +20,16 @@
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:image" content="https://vinhcodon.github.io/streakboom/assets/og-image.jpg">
   <link rel="stylesheet" href="style.css">
+  <script>
+    // Vietnamese visitors: hide the page for a moment so English text never flashes before the translation (app.js shows it)
+    try {
+      var l = localStorage.getItem("lang");
+      if (l === "vi" || (!l && /^vi/i.test(navigator.language))) {
+        document.documentElement.classList.add("i18n-pending");
+        setTimeout(function () { document.documentElement.classList.remove("i18n-pending"); }, 1500);
+      }
+    } catch (e) {}
+  </script>
 </head>
 <body>
 
@@ -31,7 +42,7 @@
       <a href="#privacy" data-i18n="nav_privacy">Privacy</a>
       <a href="#faq" data-i18n="nav_faq">FAQ</a>
       <a href="#updates" data-i18n="nav_updates">Updates</a>
-      <a href="https://github.com/vinhcodon/streakboom">GitHub</a>
+      <a class="nav-extra" href="https://github.com/vinhcodon/streakboom">GitHub</a>
     </nav>
   </header>
 
@@ -55,7 +66,7 @@
           <span data-i18n="other_os">Peak runs on Windows 10/11, so this device cannot install it. Send the link to your PC and download it there.</span>
           <a id="direct-dl" href="https://github.com/vinhcodon/streakboom/releases/latest" data-i18n="direct_dl">Download the .exe anyway</a>
         </p>
-        <p class="note" data-i18n-html="alpha_note">Closed alpha, Windows 10/11 only. The installer is not code-signed yet, so SmartScreen will warn: choose <em>More info</em>, then <em>Run anyway</em>.</p>
+        <p class="note win-note" data-i18n-html="alpha_note">Closed alpha, Windows 10/11 only. The installer is not code-signed yet, so SmartScreen will warn: choose <em>More info</em>, then <em>Run anyway</em>.</p>
       </div>
 
       <div class="hero-art">
@@ -75,7 +86,7 @@
         <article class="card"><h3 data-i18n="f3_h">🧠 Bring your own brain</h3><p data-i18n="f3_p">Add a Gemini, Claude or OpenAI key and double-click to chat. Gemini has a free tier. Your key stays on your computer.</p></article>
         <article class="card"><h3 data-i18n="f4_h">💭 Remembers a little</h3><p data-i18n="f4_p">A name for the pet, what to call you, a few milestones. See, edit or forget any of it in Settings, Memory.</p></article>
         <article class="card"><h3 data-i18n="f5_h">🤫 Polite</h3><p data-i18n="f5_p">Quiet in fullscreen apps, during quiet hours and in Quiet mode. Never takes keyboard focus for plain speech.</p></article>
-        <article class="card"><h3 data-i18n="f6_h">🪶 Light</h3><p data-i18n="f6_p">About 100 to 120 MB of memory and almost no CPU while it stands still (measured on one machine so far).</p></article>
+        <article class="card"><h3 data-i18n="f6_h">🍃 Light</h3><p data-i18n="f6_p">About 100 to 120 MB of memory and almost no CPU while it stands still (measured on one machine so far).</p></article>
       </div>
     </section>
 

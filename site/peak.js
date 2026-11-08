@@ -17,8 +17,14 @@ export function startPeak(canvas, chipBox) {
   let last = 0;
   let visible = true;
 
+  // Peak is drawn a little smaller than the canvas so the round backdrop never cuts off its paws or tail
+  const FIT = 0.84;
   const paint = () => {
-    ctx.setTransform(scale, 0, 0, scale, 0, 0);
+    const s = scale * FIT;
+    const off = (canvas.width - 120 * s) / 2;
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.setTransform(s, 0, 0, s, off, off + canvas.width * 0.02);
     drawFrame(ctx, rig.frame());
   };
 
