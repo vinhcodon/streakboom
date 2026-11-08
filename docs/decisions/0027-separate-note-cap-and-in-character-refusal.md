@@ -1,6 +1,6 @@
 # ADR-0027: Fact-noting has its own daily cap, and "enough for today" is said in character
 
-Status: accepted (built 2026-11-08; unreleased, planned for 0.2.1)
+Status: accepted (done; released in 0.2.1 on 2026-11-08)
 
 ## Context
 On 2026-11-08 every chat answer was "Hôm nay mình nói nhiều rồi. Phần còn lại để mai nhé." The author asked whether chat was restricted. It was: the daily cap (ADR-0008) of 60 chat turns was used up (`pet.json` showed `ai.chat = 60`, `ai.proactive = 6`).
