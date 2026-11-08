@@ -15,6 +15,7 @@ const types = { ".html": "text/html; charset=utf-8", ".css": "text/css", ".js": 
 // the only files the generator may write
 const SAVE = {
   "og-image.jpg": join(site, "assets", "og-image.jpg"),
+  "peak-logo.png": join(site, "assets", "peak-logo.png"),
   "favicon-16.png": join(site, "assets", "favicon-16.png"),
   "favicon-32.png": join(site, "assets", "favicon-32.png"),
   "apple-touch-icon.png": join(site, "assets", "apple-touch-icon.png"),
