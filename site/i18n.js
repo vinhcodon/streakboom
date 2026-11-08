@@ -57,6 +57,8 @@ export const STRINGS = {
     p6: "With a brain, what you send goes to the provider you chose (with Google's free tier it may be used and read by Google, and API users must be 18 or older). The app says so before you connect.",
     q6: "Which AI brains work?",
     a6: "Gemini, Claude and OpenAI are all built in; you bring your own key. Gemini has been tried with a real key. The Claude and OpenAI brains have not yet been tried with real keys, so they may still have rough edges. A Claude Pro/Team or ChatGPT Plus subscription does not include API access; the API is billed separately.",
+    q7: "Is there a limit on chatting?",
+    a7: "Yes, a daily cap protects your provider's quota and your spending: 60 chat messages and 6 unprompted lines a day. When Peak has talked enough it says so in its own words, with no numbers, and the count resets at midnight.",
   },
   vi: {
     title: "Streakboom: gặp Peak, chú mèo thú cưng trên màn hình",
@@ -114,6 +116,8 @@ export const STRINGS = {
     p6: "Khi dùng bộ não, nội dung bạn gửi đi đến nhà cung cấp bạn chọn (với gói miễn phí của Google, nó có thể được Google sử dụng và đọc, và người dùng API phải từ 18 tuổi). Ứng dụng sẽ báo trước khi bạn kết nối.",
     q6: "Những bộ não AI nào dùng được?",
     a6: "Gemini, Claude và OpenAI đều được tích hợp sẵn; bạn mang khóa của riêng mình. Gemini đã được thử với khóa thật. Bộ não Claude và OpenAI chưa được thử với khóa thật nên có thể còn trục trặc. Gói Claude Pro/Team hay ChatGPT Plus không bao gồm quyền truy cập API; API được tính phí riêng.",
+    q7: "Trò chuyện có bị giới hạn không?",
+    a7: "Có, một mức trần mỗi ngày để bảo vệ hạn mức và chi phí của bạn ở nhà cung cấp: 60 tin nhắn trò chuyện và 6 câu Peak tự nói mỗi ngày. Khi Peak đã nói đủ, nó tự nói điều đó bằng lời của mình, không có con số, và bộ đếm được đặt lại lúc nửa đêm.",
   },
 };
 
