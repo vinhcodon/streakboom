@@ -58,6 +58,31 @@ export interface UiStrings {
   copyStats: string;
   statsCopied: string;
   statsHint: string;
+  // memory: asking, and the "What the pet remembers" page
+  nameAsk: string;
+  callMeAsk: string;
+  nameHolder: string;
+  callMeHolder: string;
+  nameOk: string;
+  nameSkip: string;
+  sectionMemory: string;
+  memIntro: string;
+  memLearn: string;
+  memPetName: string;
+  memCallMe: string;
+  memNone: string;
+  memSave: string;
+  memDays: string;
+  memStreak: string;
+  memUsual: string;
+  memParts: { morning: string; afternoon: string; evening: string; night: string };
+  memTouches: string;
+  memMarks: string;
+  memMarkNames: Record<string, string>;
+  memForgetHabits: string;
+  memForgetAll: string;
+  memForgetNote: string;
+  memEmpty: string;
   sectionAbout: string;
   versionLabel: string;
   checkUpdates: string;
@@ -143,6 +168,30 @@ export const UI: Record<Lang, UiStrings> = {
     copyStats: "Copy stats",
     statsCopied: "Copied",
     statsHint: "Nothing is sent automatically. Copy it and paste it to the developer if you want to share it.",
+    nameAsk: "Hey, I still don't have a name. Want to give me one?",
+    callMeAsk: "What should I call you?",
+    nameHolder: "A name for me...",
+    callMeHolder: "Your name or nickname...",
+    nameOk: "Save",
+    nameSkip: "Not now",
+    sectionMemory: "What the pet remembers",
+    memIntro: "Everything the pet knows about you is here, and only here, on this computer. Nothing of it is sent anywhere.",
+    memLearn: "Remember my habits (when I show up, how often I touch it)",
+    memPetName: "Pet's name",
+    memCallMe: "It calls me",
+    memNone: "(not set)",
+    memSave: "Save",
+    memDays: "Days together",
+    memStreak: "Longest streak",
+    memUsual: "Usually around",
+    memParts: { morning: "the morning", afternoon: "the afternoon", evening: "the evening", night: "the night" },
+    memTouches: "Pokes and scratches / chats",
+    memMarks: "Shared milestones",
+    memMarkNames: { "days.7": "A week together", "days.30": "30 days", "days.100": "100 days", "touch.100": "100 touches", "touch.500": "500 touches", "chat.1": "First chat", "chat.25": "25 chats" },
+    memForgetHabits: "Forget habits and counts",
+    memForgetAll: "Forget everything",
+    memForgetNote: "Forgetting habits keeps the names. Forgetting everything also removes the names.",
+    memEmpty: "Nothing yet.",
     sectionAbout: "About",
     versionLabel: "Version",
     checkUpdates: "Check for updates",
@@ -238,6 +287,30 @@ export const UI: Record<Lang, UiStrings> = {
     copyStats: "Sao chép thống kê",
     statsCopied: "Đã chép",
     statsHint: "Không có gì được gửi tự động. Sao chép rồi dán cho người phát triển nếu bạn muốn chia sẻ.",
+    nameAsk: "Mình vẫn chưa có tên. Bạn đặt cho mình một cái nhé?",
+    callMeAsk: "Mình nên gọi bạn là gì?",
+    nameHolder: "Tên cho mình...",
+    callMeHolder: "Tên hoặc biệt danh của bạn...",
+    nameOk: "Lưu",
+    nameSkip: "Để sau",
+    sectionMemory: "Pet nhớ gì",
+    memIntro: "Mọi điều pet biết về bạn nằm ở đây và chỉ ở trên máy này. Không có gì được gửi đi đâu.",
+    memLearn: "Nhớ thói quen của tôi (giờ tôi hay mở, số lần chạm)",
+    memPetName: "Tên của pet",
+    memCallMe: "Pet gọi tôi là",
+    memNone: "(chưa đặt)",
+    memSave: "Lưu",
+    memDays: "Số ngày bên nhau",
+    memStreak: "Chuỗi ngày dài nhất",
+    memUsual: "Thường vào khoảng",
+    memParts: { morning: "buổi sáng", afternoon: "buổi chiều", evening: "buổi tối", night: "ban đêm" },
+    memTouches: "Chọc và gãi / trò chuyện",
+    memMarks: "Cột mốc đã chia sẻ",
+    memMarkNames: { "days.7": "Một tuần bên nhau", "days.30": "30 ngày", "days.100": "100 ngày", "touch.100": "100 lần chạm", "touch.500": "500 lần chạm", "chat.1": "Lần trò chuyện đầu", "chat.25": "25 cuộc trò chuyện" },
+    memForgetHabits: "Quên thói quen và số đếm",
+    memForgetAll: "Quên hết",
+    memForgetNote: "Quên thói quen vẫn giữ tên. Quên hết thì xóa cả tên.",
+    memEmpty: "Chưa có gì.",
     sectionAbout: "Về app",
     versionLabel: "Phiên bản",
     checkUpdates: "Kiểm tra cập nhật",

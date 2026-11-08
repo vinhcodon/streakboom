@@ -27,7 +27,7 @@
   const reduceMotion = typeof matchMedia === "function" && matchMedia("(prefers-reduced-motion: reduce)").matches;
 
   const interactive = $derived(
-    view.kind === "chat" || view.kind === "ask" || view.kind === "consent" || view.kind === "update"
+    view.kind === "chat" || view.kind === "ask" || view.kind === "consent" || view.kind === "update" || view.kind === "input"
   );
   const hasBrain = $derived(view.kind === "chat" && view.canChat);
   const chatReady = $derived(view.kind === "chat" && view.canChat && view.phase !== "thinking");
@@ -80,7 +80,7 @@
       const h = Math.ceil(r.height);
       boxW = w;
       boxH = h;
-      const focusKey = view.kind === "chat" && chatReady ? "chat" : "";
+      const focusKey = view.kind === "chat" && chatReady ? "chat" : view.kind === "input" ? `input-${view.field}` : "";
       const focus = focusKey !== "" && focusKey !== lastFocusKey;
       lastFocusKey = focusKey;
       const key = `${w}x${h}:${interactive}:${focus}`;
@@ -98,6 +98,15 @@
     draft = "";
     void fromBubble({ type: "typing", nonEmpty: false });
     void fromBubble({ type: "chat-send", text });
+  }
+
+  function submitInput() {
+    if (view.kind !== "input") return;
+    const value = draft.trim();
+    if (!value) return;
+    const field = view.field;
+    draft = "";
+    void fromBubble({ type: "input", field, value });
   }
 
   let wasEmpty = true;
@@ -154,6 +163,23 @@
         <div class="row end">
           <button class="btn" onclick={() => fromBubble({ type: "update-later" })}>{view.later}</button>
           <button class="btn primary" onclick={() => fromBubble({ type: "update-yes" })}>{view.yes}</button>
+        </div>
+      {:else if view.kind === "input"}
+        <div class="say">{view.text}</div>
+        <div class="inputwrap">
+          <input
+            bind:this={input}
+            bind:value={draft}
+            class="chat"
+            placeholder={view.placeholder}
+            maxlength="20"
+            autocomplete="off"
+            onkeydown={(e) => e.key === "Enter" && submitInput()}
+          />
+        </div>
+        <div class="row end">
+          <button class="btn" onclick={() => view.kind === "input" && fromBubble({ type: "input-skip", field: view.field })}>{view.skip}</button>
+          <button class="btn primary" disabled={!draft.trim()} onclick={submitInput}>{view.ok}</button>
         </div>
       {:else if view.kind === "consent"}
         <div class="say">{view.text}</div>

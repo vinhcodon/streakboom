@@ -21,7 +21,11 @@ export type BubbleView =
     }
   | { kind: "ask"; text: string; yes: string; later: string }
   | { kind: "consent"; text: string; note: string; yes: string; no: string }
-  | { kind: "update"; text: string; yes: string; later: string };
+  | { kind: "update"; text: string; yes: string; later: string }
+  // a one-line question the user answers by typing (the pet's name, what to call the user)
+  | { kind: "input"; field: MemField; text: string; placeholder: string; ok: string; skip: string };
+
+export type MemField = "petName" | "callMe";
 
 /** Bubble window -> pet window. */
 export type BubbleAction =
@@ -33,7 +37,22 @@ export type BubbleAction =
   | { type: "ask-later" }
   | { type: "update-yes" }
   | { type: "update-later" }
-  | { type: "consent"; yes: boolean };
+  | { type: "consent"; yes: boolean }
+  | { type: "input"; field: MemField; value: string }
+  | { type: "input-skip"; field: MemField };
+
+/** What the "What the pet remembers" page shows. Plain numbers and names, nothing else. */
+export interface MemoryView {
+  learn: boolean;
+  petName: string;
+  callMe: string;
+  days: number;
+  sessions: number;
+  bestStreak: number;
+  usualPart: "morning" | "afternoon" | "evening" | "night" | null;
+  touches: { poke: number; scratch: number; chat: number };
+  marks: string[]; // ids of shared milestones
+}
 
 /** Pet window -> settings window, answering `settings-ready` and after every change. */
 export interface SettingsSnapshot {
@@ -44,6 +63,7 @@ export interface SettingsSnapshot {
   hasKey: boolean;
   brainBad: boolean;
   tier: number; // closeness tier, for the tone of the first AI line
+  memory: MemoryView;
   /** What "Copy stats" puts on the clipboard. Empty unless the user opted in. */
   stats: { installId: string; events: { e: string; t: number }[] };
 }
@@ -52,6 +72,9 @@ export interface SettingsSnapshot {
 export type SettingsPatch =
   | { type: "setting"; key: keyof Settings; value: Settings[keyof Settings] }
   | { type: "consent"; yes: boolean }
+  | { type: "mem"; action: "set"; field: MemField; value: string }
+  | { type: "mem"; action: "learn"; value: boolean }
+  | { type: "mem"; action: "forget-habits" | "forget-all" }
   | { type: "track"; event: "get_key_clicked" | "returned_to_app" | "key_pasted" };
 
 /** Settings window -> pet window, after the key or model changed (calls go straight to Rust). */

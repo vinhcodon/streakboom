@@ -10,11 +10,32 @@
   import { pick, remember, resolveLang } from "$lib/selector";
   import { newScratch, scratchStep } from "$lib/gestures";
   import {
+    cooled,
+    defaultMemory,
+    forgetAll,
+    forgetHabits,
+    nextMark,
+    parseMemory,
+    recordAsked,
+    recordSession,
+    recordTouch,
+    sayKind,
+    setName,
+    shareMark,
+    shouldAsk,
+    usualPart,
+    type Memory,
+    type Touch,
+  } from "$lib/memory";
+  import { memLine, type MemKind } from "$lib/memlines";
+  import {
     toBubble,
     toSettings,
     type BrainChange,
     type BubbleAction,
     type BubbleView,
+    type MemField,
+    type MemoryView,
     type SettingsPatch,
     type SettingsSnapshot,
   } from "$lib/bus";
@@ -59,7 +80,7 @@
   const MIN = 60_000;
   const MAX_REPLY_CHARS = 240;
 
-  type Panel = null | "chat" | "ask" | "consent" | "update";
+  type Panel = null | "chat" | "ask" | "consent" | "update" | "input";
   type Turn = { role: "user" | "model"; text: string };
 
   let pose = $state<PetState>("idle");
@@ -68,6 +89,8 @@
   let tilt = $state(0); // degrees the pet leans while it is carried (follows the cursor's speed)
   let quiet = $state(false); // "Quiet mode": pet sleeps and says nothing
   let data = $state<PetData>(defaultData(Date.now()));
+  let mem = $state<Memory>(defaultMemory()); // what the pet remembers (its own file, memory.json)
+  let inputField = $state<MemField>("petName");
 
   // What the bubble window shows: a plain speech line, or one of the panels.
   let panel = $state<Panel>(null);
@@ -119,6 +142,7 @@
   async function save() {
     try {
       await invoke("save_pet", { json: JSON.stringify(data) });
+      await invoke("save_memory", { json: JSON.stringify(mem) });
     } catch {
       /* keep running; we will retry on the next change */
     }
@@ -165,6 +189,52 @@
     if (!text) return false;
     showBubble(text);
     return true;
+  }
+
+  // ---------------------------------------------------------------- memory
+  const DAY_MS = 24 * 60 * MIN;
+  const touch = (kind: Touch) => {
+    mem = recordTouch(mem, kind);
+    scheduleSave();
+  };
+
+  /** A line that exists only because the pet remembers something. False if there is none to say. */
+  function memSay(kind: MemKind, extra: { absentDays?: number; n?: number } = {}, cooldownMs = 0): boolean {
+    const now = Date.now();
+    if (cooldownMs && !cooled(mem, kind, now, cooldownMs)) return false;
+    const text = memLine(kind, mem, { lang, gentle: data.settings.gentle, hour: new Date().getHours(), ...extra });
+    if (!text) return false;
+    mem = sayKind(mem, kind, now);
+    showBubble(text);
+    scheduleSave();
+    return true;
+  }
+
+  /** Shares the next unshared milestone, if any (never over another bubble or panel). */
+  function shareNextMark(): boolean {
+    const id = nextMark(mem);
+    if (!id || quiet || panel !== null || bubbleOn) return false;
+    mem = shareMark(mem, id, Date.now());
+    scheduleSave();
+    return memSay(`mark.${id}`, { n: mem.days });
+  }
+
+  /** Asks the user to name the pet, or to say what to call them (a typed answer, never guessed). */
+  function askInput(field: MemField) {
+    mem = recordAsked(mem, field === "petName" ? "name" : "callMe", Date.now());
+    inputField = field;
+    openPanel("input");
+    scheduleSave();
+  }
+
+  function answerInput(field: MemField, value: string) {
+    mem = setName(mem, field, value);
+    closePanel();
+    scheduleSave();
+    pushSettings();
+    stopTimers();
+    enter("happy");
+    memSay(field === "petName" ? "named" : "calledMe");
   }
 
   function showBubble(text: string, minMs = 0) {
@@ -266,8 +336,8 @@
   /** The chat and the ask card close themselves when left alone (never while typing or waiting). */
   function resetMenuTimer() {
     clearTimeout(menuTimer);
-    if (panel !== "chat" && panel !== "ask" && panel !== "update") return;
-    const ms = panel === "update" ? 30_000 : panel === "chat" && chatPhase === "reply" ? 20_000 : 12_000;
+    if (panel !== "chat" && panel !== "ask" && panel !== "update" && panel !== "input") return;
+    const ms = panel === "input" ? 60_000 : panel === "update" ? 30_000 : panel === "chat" && chatPhase === "reply" ? 20_000 : 12_000;
     menuTimer = setTimeout(() => {
       if (panel === "chat" && (chatDraft || busy)) resetMenuTimer();
       else {
@@ -294,6 +364,7 @@
     if (now - lastClickSay > 3000) {
       lastClickSay = now;
       data = interact(data, "click", now);
+      touch("poke");
       say("click");
     }
   }
@@ -432,8 +503,9 @@
     stopTimers();
     enter("happy");
     data = recordScratch(interact(data, "pet", Date.now()));
+    touch("scratch");
     track("first_interaction");
-    say("pet");
+    if (!(Math.random() < 0.25 && memSay("pet", {}, 60 * MIN))) say("pet");
     scheduleSave();
   }
 
@@ -535,6 +607,7 @@
     busy = true;
     lonely = false;
     data = interact(data, "how", Date.now());
+    touch("chat");
     history = [...history, { role: "user" as const, text }].slice(-8);
     chatUser = text;
     chatReply = "";
@@ -599,6 +672,12 @@
       case "consent":
         answerConsent(a.yes);
         break;
+      case "input":
+        if (panel === "input") answerInput(a.field, a.value);
+        break;
+      case "input-skip":
+        closePanel(); // asked once already; the next ask comes days later, twice at most
+        break;
       case "update-yes":
         void startUpdate();
         break;
@@ -616,6 +695,28 @@
     scheduleSave();
   }
 
+  function memoryView(): MemoryView {
+    return {
+      learn: mem.learn,
+      petName: mem.petName,
+      callMe: mem.callMe,
+      days: mem.days,
+      sessions: mem.sessions,
+      bestStreak: mem.bestStreak,
+      usualPart: usualPart(mem),
+      touches: { ...mem.touches },
+      marks: mem.marks.map((m) => m.id),
+    };
+  }
+
+  function onMemPatch(p: Extract<SettingsPatch, { type: "mem" }>) {
+    if (p.action === "set") mem = setName(mem, p.field, p.value);
+    else if (p.action === "learn") mem = { ...mem, learn: p.value };
+    else if (p.action === "forget-habits") mem = forgetHabits(mem);
+    else mem = forgetAll(mem);
+    scheduleSave();
+  }
+
   function snapshot(): SettingsSnapshot {
     return {
       lang,
@@ -625,6 +726,7 @@
       hasKey,
       brainBad,
       tier: tierOf(data.closeness),
+      memory: memoryView(),
       stats:
         data.telemetry.consent === "on"
           ? { installId: data.telemetry.installId, events: $state.snapshot(data.telemetry.queue) as { e: string; t: number }[] }
@@ -636,6 +738,8 @@
   function onSettingsPatch(p: SettingsPatch) {
     if (p.type === "setting") {
       setSetting(p.key, p.value as never);
+    } else if (p.type === "mem") {
+      onMemPatch(p);
     } else if (p.type === "consent") {
       if ((data.telemetry.consent === "on") !== p.yes) {
         data = setConsent(data, p.yes ? "on" : "off", crypto.randomUUID());
@@ -697,6 +801,15 @@
       return;
     }
     const t = Date.now();
+    // Questions first (a typed answer, never a guess), then a shared milestone.
+    const ageDays = Math.floor((t - data.firstSeen) / DAY_MS);
+    for (const [f, field] of [["name", "petName"], ["callMe", "callMe"]] as const) {
+      if (shouldAsk(mem, f, t, ageDays, tierOf(data.closeness))) {
+        askInput(field);
+        return scheduleProactive();
+      }
+    }
+    if (shareNextMark()) return scheduleProactive();
     const said = data.said;
     let trigger: Trigger = "idle";
     if ((hour >= 23 || hour < 5) && t - (said.night ?? 0) > 60 * MIN) trigger = "night";
@@ -764,6 +877,17 @@
         reply: chatReply,
         thinking: ui.thinking,
         slow: chatSlow ? ui.slowChat : "",
+      };
+    }
+    if (panel === "input") {
+      const name = inputField === "petName";
+      return {
+        kind: "input",
+        field: inputField,
+        text: name ? ui.nameAsk : ui.callMeAsk,
+        placeholder: name ? ui.nameHolder : ui.callMeHolder,
+        ok: ui.nameOk,
+        skip: ui.nameSkip,
       };
     }
     if (panel === "ask") return { kind: "ask", text: ui.askText, yes: ui.askYes, later: ui.askLater };
@@ -838,6 +962,12 @@
       const isNew = stored === null;
       const s = startSession(parse(stored, now), now);
       data = s.data;
+      try {
+        mem = parseMemory(await invoke<string | null>("load_memory"));
+      } catch {
+        /* nothing remembered yet */
+      }
+      mem = recordSession(mem, now, s.data.streak, s.absentMs);
       lonely = s.lonely;
       if (isNew) track("first_launch"); // dropped unless already opted in; backfilled on consent
       if (data.streak >= 3) track("active_d3");
@@ -860,7 +990,14 @@
       enter(quiet ? "sleep" : "idle");
 
       if (!quiet) {
-        setTimeout(() => say(s.returned ? "return" : "greeting"), 1500);
+        setTimeout(() => {
+          // Remembering beats a generic hello when there is something real to remember.
+          const days = Math.floor(s.absentMs / DAY_MS);
+          if (s.returned && days >= 2 && memSay("away", { absentDays: days })) return;
+          if (!s.returned && Math.random() < 0.4 && (memSay("greet", {}, 6 * 60 * MIN) || memSay("habit", {}, 3 * DAY_MS))) return;
+          say(s.returned ? "return" : "greeting");
+        }, 1500);
+        setTimeout(shareNextMark, 25_000);
         if (s.milestone) setTimeout(() => say("milestone", { days: s.milestone! }), 8000);
       }
       scheduleProactive();

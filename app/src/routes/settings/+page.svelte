@@ -82,6 +82,32 @@
     }
   }
 
+
+  // what the pet remembers: the drafts follow the stored names when those change
+  let petDraft = $state("");
+  let meDraft = $state("");
+  const storedPet = $derived(snap?.memory.petName ?? "");
+  const storedMe = $derived(snap?.memory.callMe ?? "");
+  $effect(() => {
+    petDraft = storedPet;
+  });
+  $effect(() => {
+    meDraft = storedMe;
+  });
+  let wipe = $state<"" | "habits" | "all">("");
+  let wipeTimer: ReturnType<typeof setTimeout> | undefined;
+  const saveName = (field: "petName" | "callMe", value: string) => void fromSettings({ type: "mem", action: "set", field, value });
+  function forget(kind: "habits" | "all") {
+    if (wipe !== kind) {
+      wipe = kind;
+      clearTimeout(wipeTimer);
+      wipeTimer = setTimeout(() => (wipe = ""), 4000);
+      return;
+    }
+    wipe = "";
+    void fromSettings({ type: "mem", action: kind === "all" ? "forget-all" : "forget-habits" });
+  }
+  const setLearn = (v: boolean) => void fromSettings({ type: "mem", action: "learn", value: v });
   const showWizard = $derived(!snap?.hasKey || snap?.brainBad || replacing);
 
   function patch<K extends keyof Settings>(key: K, value: Settings[K]) {
@@ -354,6 +380,47 @@
       {/if}
     </section>
 
+    <section id="sec-memory" class="card">
+      <h2>{ui.sectionMemory}</h2>
+      <p class="muted">{ui.memIntro}</p>
+      <label class="chk">
+        <input type="checkbox" checked={snap.memory.learn} onchange={(e) => setLearn(e.currentTarget.checked)} />
+        {ui.memLearn}
+      </label>
+      <div class="row">
+        <span class="lbl">{ui.memPetName}</span>
+        <input class="txt" maxlength="20" placeholder={ui.memNone} bind:value={petDraft} onkeydown={(e) => e.key === "Enter" && saveName("petName", petDraft)} />
+        <button class="seg" disabled={petDraft.trim() === snap.memory.petName} onclick={() => saveName("petName", petDraft)}>{ui.memSave}</button>
+      </div>
+      <div class="row">
+        <span class="lbl">{ui.memCallMe}</span>
+        <input class="txt" maxlength="20" placeholder={ui.memNone} bind:value={meDraft} onkeydown={(e) => e.key === "Enter" && saveName("callMe", meDraft)} />
+        <button class="seg" disabled={meDraft.trim() === snap.memory.callMe} onclick={() => saveName("callMe", meDraft)}>{ui.memSave}</button>
+      </div>
+      {#if snap.memory.days > 0 || snap.memory.marks.length > 0}
+        <div class="row"><span class="lbl">{ui.memDays}</span><b>{snap.memory.days}</b></div>
+        <div class="row"><span class="lbl">{ui.memStreak}</span><b>{snap.memory.bestStreak}</b></div>
+        {#if snap.memory.usualPart}
+          <div class="row"><span class="lbl">{ui.memUsual}</span><b>{ui.memParts[snap.memory.usualPart]}</b></div>
+        {/if}
+        <div class="row">
+          <span class="lbl">{ui.memTouches}</span>
+          <b>{snap.memory.touches.poke + snap.memory.touches.scratch} / {snap.memory.touches.chat}</b>
+        </div>
+        <div class="row">
+          <span class="lbl">{ui.memMarks}</span>
+          <span>{snap.memory.marks.length ? snap.memory.marks.map((m) => ui.memMarkNames[m] ?? m).join(", ") : ui.memEmpty}</span>
+        </div>
+      {:else}
+        <p class="muted">{ui.memEmpty}</p>
+      {/if}
+      <div class="row">
+        <button class="seg" class:danger={wipe === "habits"} onclick={() => forget("habits")}>{wipe === "habits" ? ui.sure : ui.memForgetHabits}</button>
+        <button class="seg" class:danger={wipe === "all"} onclick={() => forget("all")}>{wipe === "all" ? ui.sure : ui.memForgetAll}</button>
+      </div>
+      <p class="muted">{ui.memForgetNote}</p>
+    </section>
+
     <section id="sec-privacy" class="card">
       <h2>{ui.sectionPrivacy}</h2>
       <div class="row">
@@ -472,6 +539,10 @@
     gap: 6px;
     cursor: pointer;
   }
+  .txt {
+    width: 150px;
+  }
+  .txt,
   .key {
     border: 1px solid #ddd;
     border-radius: 8px;

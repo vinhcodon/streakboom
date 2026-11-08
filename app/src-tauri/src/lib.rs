@@ -71,6 +71,7 @@ struct AppState {
     prefs: Mutex<Prefs>,
     path: PathBuf,
     pet_path: PathBuf,
+    memory_path: PathBuf,
     model: Mutex<Option<String>>,
     hit: Mutex<Rect>,
     dirty: AtomicBool,
@@ -125,6 +126,20 @@ fn save_pet(state: State<AppState>, json: String) -> Result<(), String> {
     let tmp = state.pet_path.with_extension("json.tmp");
     fs::write(&tmp, json).map_err(|e| e.to_string())?;
     fs::rename(&tmp, &state.pet_path).map_err(|e| e.to_string())
+}
+
+/// What the pet remembers about the user: its own file, also an opaque JSON string owned by the
+/// frontend, so the user (or "Forget everything") can remove it without touching the pet's state.
+#[tauri::command]
+fn load_memory(state: State<AppState>) -> Option<String> {
+    fs::read_to_string(&state.memory_path).ok()
+}
+
+#[tauri::command]
+fn save_memory(state: State<AppState>, json: String) -> Result<(), String> {
+    let tmp = state.memory_path.with_extension("json.tmp");
+    fs::write(&tmp, json).map_err(|e| e.to_string())?;
+    fs::rename(&tmp, &state.memory_path).map_err(|e| e.to_string())
 }
 
 /// True when the user should not be interrupted: a fullscreen app/game, presentation mode,
@@ -747,6 +762,7 @@ pub fn run() {
             app.manage(AppState {
                 prefs: Mutex::new(prefs.clone()),
                 pet_path: dir.join("pet.json"),
+                memory_path: dir.join("memory.json"),
                 model: Mutex::new(prefs.model.clone().filter(|m| brain::model_ok(m))),
                 path,
                 hit: Mutex::new(Rect {
@@ -819,6 +835,8 @@ pub fn run() {
             show_pet_menu,
             load_pet,
             save_pet,
+            load_memory,
+            save_memory,
             is_busy,
             brain_status,
             brain_connect,
