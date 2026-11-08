@@ -43,7 +43,7 @@ On a fresh install the pet shows a four-card tour (replay it in Settings, About)
 - Your API keys are stored in the Windows Credential Manager (one entry per brain: `gemini-api-key`, `claude-api-key`, `openai-api-key`, service `streakboom`) and sent only to the provider you chose, in a request header. They are never written to a file or sent to any other window of the app.
 - With Google's free tier, what you send may be used and read by Google, and API users must be 18 or older (clients in the EEA, Switzerland and the UK must use paid services). For Claude and OpenAI, what you send goes to Anthropic or OpenAI to be answered; see their terms. The app says so before you connect.
 - Chats are kept in memory only. What the pet remembers is stored on your computer in `memory.json`: the names you gave, coarse habit counts (for example how many sessions began in each hour of the day), touch counts, milestones and the short facts it noted from your chats. The facts are sent to the brain you use, together with later chats you start. You can see, edit, delete or switch off all of it in Settings > Memory.
-- **Usage stats are off by default.** If you opt in, the app records funnel event names (for example "opened the chat") and timestamps with a random id, in a local queue. Nothing is sent automatically; **Settings, Privacy, Copy stats** puts it on your clipboard so you can share it by hand. Opting out deletes the id and the queue. (A change to also count a few per-day numbers is specified but not built; it will ask you again before it starts: see `spec/05-north-star-metrics.md`.)
+- **Usage stats are off by default.** If you opt in, the app records funnel event names (for example "opened the chat") and timestamps with a random id, in a local queue. Nothing is sent automatically; **Settings, Privacy, Copy stats** puts it on your clipboard so you can share it by hand. Opting out deletes the id and the queue. A second switch, **Daily activity counts**, adds a few numbers per day (scratches, rubs, pokes, messages sent, lines the pet said and you reacted to, minutes the app ran, times Quiet mode was switched on): only counts, never text. Anyone who agreed to the first, narrower wording is asked again and is not counted until they say yes; turning the switch off deletes the numbers. Details: `spec/05-north-star-metrics.md`.
 - Files live in `%APPDATA%\com.streakboom.app\`: `state.json` (window position, Quiet mode, the brain in use and the chosen models), `pet.json` (everything else about the pet) and `memory.json` (what it remembers).
 
 ## Project layout
@@ -78,7 +78,7 @@ npm run tauri dev          # run the app with hot reload
 ```
 
 ```powershell
-npm test                   # Node tests for the pure logic (src/lib/*.test.ts), 77 tests
+npm test                   # Node tests for the pure logic (src/lib/*.test.ts), 92 tests
 npm run check              # svelte-check (types)
 cd src-tauri; cargo test   # Rust tests (the three brain clients against a mock server, window geometry), 33 tests
 ```
@@ -120,7 +120,7 @@ The documents are split by the kind of statement they make, so each fact has one
 
 ## Roadmap
 
-Done: the naive pet, the key flow, three brains, memory, gestures, emotional reactions, opt-in stats with Copy stats, the installer and signed auto-update. Next, in order: the closed alpha with a handful of observed first-time users, preceded by the north star counters (Bond Days) and a first real-key test of the Claude and OpenAI brains. Open: a place to send stats (or keep Copy stats for the alpha), code signing, crash reporting without content, a macOS port, and testing on more machines (multi-monitor, mixed DPI). The ordered plan is in [`docs/plans/roadmap.md`](docs/plans/roadmap.md).
+Done: the naive pet, the key flow, three brains, memory, gestures, emotional reactions, opt-in stats with Copy stats, the north star counters (Bond Days, built and awaiting its first release), the installer and signed auto-update. Next, in order: release the counters, a first real-key test of the Claude and OpenAI brains, then the closed alpha with a handful of observed first-time users. Open: a place to send stats (or keep Copy stats for the alpha), code signing, crash reporting without content, a macOS port, and testing on more machines (multi-monitor, mixed DPI). The ordered plan is in [`docs/plans/roadmap.md`](docs/plans/roadmap.md).
 
 ## License
 

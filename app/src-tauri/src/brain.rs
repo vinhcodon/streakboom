@@ -420,6 +420,7 @@ pub fn pick_model(list: &Value) -> Option<String> {
 }
 
 /// Best plain Flash model other than `skip` (used when `skip` is overloaded).
+#[cfg(test)]
 pub fn pick_model_except(list: &Value, skip: &str) -> Option<String> {
     chat_models(list).into_iter().find(|n| n != skip)
 }

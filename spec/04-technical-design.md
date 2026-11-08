@@ -72,11 +72,11 @@ Files in `%APPDATA%\com.streakboom.app\`:
 - `memory.json`: the pet's name and what to call the user, coarse habit counts, touch counts, shared milestones, noted facts, and the memory settings. Written atomically; the user can see, edit and delete all of it in Settings > Memory.
 - API keys: Windows Credential Manager, one entry per provider (`gemini-api-key`, `claude-api-key`, `openai-api-key`, service `streakboom`).
 - Chat history: in memory only, never persisted. The facts noted from chats are persisted (see above) and are sent to the active provider with later chats the user starts.
-- Telemetry: opt-in, off by default, a random install id created only on consent and deleted on opt-out, funnel event names and timestamps only today, each event once per install; the queue stays on the machine and nothing is sent automatically (ADR-0009). Per-day counts are specified in spec/05 and need a new consent version.
+- Telemetry: opt-in, off by default, a random install id created only on consent and deleted on opt-out, funnel event names and timestamps, each once per install, plus per-day counters (`telemetry.days`, 60 days, counts only) recorded only at consent version 2 (`telemetry.consentV`); the queue and the counters stay on the machine and nothing is sent automatically (ADR-0009, spec/05). Pure rules for the counters are in `src/lib/bond.ts`.
 - Logs: none that contain keys or message content.
 
 ## 6. Testing
-- **Node** (`node --test`, 77 tests): state model and decay, line selection and coverage, gestures, reveal rhythm, telemetry rules, update snoozing, start-with-Windows and tour rules, the rig (key schema, springs, continuity, poses), memory rules and lines.
+- **Node** (`node --test`, 92 tests): state model and decay, line selection and coverage, gestures, reveal rhythm, telemetry and per-day counter rules (bond.ts), update snoozing, start-with-Windows and tour rules, the rig (key schema, springs, continuity, poses), memory rules and lines.
 - **Rust** (`cargo test`, 33 tests): the three clients against a one-shot mock HTTP server, error mapping, model ordering, mood tags, fact filtering, language rule, window geometry.
 - **Static:** `svelte-check`.
 - **Manual matrix still to run:** Windows 10 and 11, a second and a lower-end machine, multi-monitor, 100%, 125% and 150% DPI, fullscreen video, screen sharing, an 8-hour soak test, a reboot with start with Windows, and real Claude and OpenAI keys.

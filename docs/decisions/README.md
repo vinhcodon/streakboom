@@ -31,5 +31,5 @@ What was **decided**, why, and what was rejected. One short file per decision (a
 | [0019](0019-first-run-tour.md) | A four-card first-run tour, replayable from Settings | accepted | 2026-11-08 |
 | [0020](0020-no-streaming-for-now.md) | Streaming chat replies are not built | accepted | 2026-11-08 |
 | [0021](0021-positioning-companion-not-assistant.md) | The pet is a companion, not an assistant | accepted | 2026-11-08 |
-| [0022](0022-north-star-bond-days.md) | North star: Bond Days, with decisions D1 to D8 | accepted (not yet built) | 2026-11-08 |
+| [0022](0022-north-star-bond-days.md) | North star: Bond Days, with decisions D1 to D8 | accepted (built, awaiting release) | 2026-11-08 |
 | [0023](0023-process-commit-explicit-paths.md) | Commit only the files you changed; never git add -A in a shared checkout | accepted | 2026-11-08 |

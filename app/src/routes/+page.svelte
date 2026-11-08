@@ -48,6 +48,11 @@
     type SettingsSnapshot,
   } from "$lib/bus";
   import {
+    bumpDay,
+    countsDaily,
+    recordDailyAsk,
+    setDailyCounts,
+    shouldAskDaily,
     AI_CHAT_DAILY_CAP,
     AI_PROACTIVE_DAILY_CAP,
     aiGate,
@@ -86,6 +91,7 @@
   } from "$lib/state";
   import type { FunnelEvent } from "$lib/telemetry";
   import { UI, type ErrKind } from "$lib/ui";
+  import { engage as engagePure, markShown as markShownPure, minuteIncrement, noShown, type DayCounter, type DayStat } from "$lib/bond";
 
   // Pet window layout (logical px) - keep in sync with src-tauri/src/lib.rs.
   const PET_LEFT = 10;
@@ -97,7 +103,7 @@
   const MIN = 60_000;
   const MAX_REPLY_CHARS = 240;
 
-  type Panel = null | "chat" | "ask" | "consent" | "update" | "input" | "choice" | "tour";
+  type Panel = null | "chat" | "ask" | "consent" | "update" | "input" | "choice" | "tour" | "dailyconsent";
   type Turn = { role: "user" | "model"; text: string };
 
   let pose = $state<PetState>("idle");
@@ -227,6 +233,27 @@
     scheduleSave();
   };
 
+  // ---------------------------------------------------- per-day counts (Bond Days, spec/05)
+  // Recorded only if the user agreed to them (bumpDay checks). Counts only, never content.
+  function count(key: DayCounter, n = 1) {
+    const next = bumpDay(data, key, Date.now(), n);
+    if (next !== data) {
+      data = next;
+      scheduleSave();
+    }
+  }
+  // An unprompted line counts as "engaged" if the user reacts within 30 s, once per line. A typed message never does.
+  let shownState = noShown();
+  function markShown() {
+    count("shown");
+    shownState = markShownPure(shownState, Date.now());
+  }
+  function engage() {
+    const r = engagePure(shownState, Date.now());
+    shownState = r.state;
+    if (r.engaged) count("engaged");
+  }
+
   /** A line that exists only because the pet remembers something. False if there is none to say. */
   function memSay(kind: MemKind, extra: { absentDays?: number; n?: number } = {}, cooldownMs = 0): boolean {
     const now = Date.now();
@@ -245,7 +272,9 @@
     if (!id || quiet || panel !== null || bubbleOn) return false;
     mem = shareMark(mem, id, Date.now());
     scheduleSave();
-    return memSay(`mark.${id}`, { n: mem.days });
+    const said = memSay(`mark.${id}`, { n: mem.days });
+    if (said) markShown();
+    return said;
   }
 
   /** Asks the user to name the pet, or to say what to call them (a typed answer, never guessed). */
@@ -423,11 +452,13 @@
   function singleClick() {
     stopTimers();
     enter("happy");
+    engage();
     const now = Date.now();
     if (now - lastClickSay > 3000) {
       lastClickSay = now;
       data = interact(data, "click", now);
       touch("poke");
+      count("poke");
       say("click");
     }
   }
@@ -436,6 +467,7 @@
     clearTimeout(clickTimer);
     if (quiet || suppressClick) return;
     if (panel) return closePanel();
+    engage(); // answering the pet's line by opening the chat (a typed message never counts)
     data = { ...data, brain: { ...data.brain, menuOpens: data.brain.menuOpens + 1 } };
     track("first_interaction");
     if (shouldAskBrain(data, Date.now(), hasKey)) showAsk();
@@ -573,6 +605,8 @@
     stopTimers();
     data = recordRub(data);
     touch("scratch");
+    count("rub");
+    engage();
     rubsSinceHuff++;
     const trap = tierOf(data.closeness) >= 2 && rubsSinceHuff >= 2 && now - lastHuff > 3 * MIN && Math.random() < 0.35;
     if (trap) {
@@ -598,6 +632,8 @@
     enter("happy");
     data = recordScratch(interact(data, "pet", Date.now()));
     touch("scratch");
+    count("scratch");
+    engage();
     track("first_interaction");
     if (!(Math.random() < 0.25 && memSay("pet", {}, 60 * MIN))) say("pet");
     scheduleSave();
@@ -645,6 +681,14 @@
   }
 
   function answerConsent(yes: boolean) {
+    if (panel === "dailyconsent") {
+      // someone who agreed to the first wording: only the per-day numbers are at stake
+      data = setDailyCounts(data, yes);
+      closePanel();
+      scheduleSave();
+      pushSettings();
+      return;
+    }
     data = setConsent(data, yes ? "on" : "off", crypto.randomUUID());
     closePanel();
     scheduleSave();
@@ -706,6 +750,7 @@
       return;
     }
     data = recordAi(data, "chat", Date.now());
+    count("chat"); // a message that passed the usage gate and goes to the model
     busy = true;
     lonely = false;
     data = interact(data, "how", Date.now());
@@ -894,10 +939,16 @@
         proactiveCap: AI_PROACTIVE_DAILY_CAP,
       },
       memory: memoryView(),
+      daily: countsDaily(data),
       stats:
         data.telemetry.consent === "on"
-          ? { installId: data.telemetry.installId, events: $state.snapshot(data.telemetry.queue) as { e: string; t: number }[] }
-          : { installId: "", events: [] },
+          ? {
+              installId: data.telemetry.installId,
+              events: $state.snapshot(data.telemetry.queue) as { e: string; t: number }[],
+              days: $state.snapshot(data.telemetry.days) as DayStat[],
+              config: { gentle: data.settings.gentle, freq: data.settings.freq },
+            }
+          : { installId: "", events: [], days: [], config: { gentle: false, freq: "" } },
     };
   }
   const pushSettings = () => void toSettings(snapshot());
@@ -912,6 +963,9 @@
       scheduleSave();
     } else if (p.type === "mem") {
       onMemPatch(p);
+    } else if (p.type === "daily") {
+      data = setDailyCounts(data, p.yes);
+      scheduleSave();
     } else if (p.type === "consent") {
       if ((data.telemetry.consent === "on") !== p.yes) {
         data = setConsent(data, p.yes ? "on" : "off", crypto.randomUUID());
@@ -1021,9 +1075,12 @@
     if (trigger !== "hint" && trigger !== "hintbelly" && canChat && Math.random() < 0.5 && aiGate(data, "proactive", t) === "ok") {
       data = recordAi(data, "proactive", t);
       scheduleSave();
-      if (await aiProactive(trigger, hour)) return scheduleProactive();
+      if (await aiProactive(trigger, hour)) {
+        markShown();
+        return scheduleProactive();
+      }
     }
-    say(trigger);
+    if (say(trigger)) markShown();
     scheduleProactive();
   }
 
@@ -1091,6 +1148,9 @@
         skip: ui.tourSkip,
       };
     }
+    if (panel === "dailyconsent") {
+      return { kind: "consent", text: ui.dailyConsentText, note: ui.consentNote, yes: ui.consentYes, no: ui.consentNo };
+    }
     if (panel === "choice") return { kind: "choice", id: "startup", text: ui.startupAsk, yes: ui.startupYes, later: ui.startupLater };
     if (panel === "ask") return { kind: "ask", text: ui.askText, yes: ui.askYes, later: ui.askLater };
     if (panel === "update") {
@@ -1132,6 +1192,7 @@
       cleanups.push(
         await win.listen<boolean>("quiet-changed", (e) => {
           quiet = e.payload;
+          if (quiet) count("quiet");
           stopTimers();
           if (quiet) {
             bubbleOn = false;
@@ -1173,6 +1234,20 @@
       if (data.streak >= 7) track("active_d7");
       save();
 
+      // The "also count per-day numbers" card, once or twice, for people who agreed to the first wording.
+      if (shouldAskDaily(data)) {
+        let triesDaily = 0;
+        const tryDaily = () => {
+          if (!shouldAskDaily(data) || quiet) return;
+          if (!panel && !bubbleOn && !shouldAskConsent(data)) {
+            data = recordDailyAsk(data);
+            openPanel("dailyconsent");
+            scheduleSave();
+          } else if (++triesDaily < 15) setTimeout(tryDaily, 20_000);
+        };
+        setTimeout(tryDaily, 40_000);
+      }
+
       // One-time, equal-weight consent card shortly after launch, never over another panel.
       // (After the tour, if there is one: it retries every 20 s for a few minutes while another card is open.)
       if (shouldAskConsent(data)) {
@@ -1205,8 +1280,19 @@
         if (s.milestone) setTimeout(() => say("milestone", { days: s.milestone! }), 8000);
       }
       scheduleProactive();
+      let lastTick = Date.now();
       minuteTimer = setInterval(() => {
-        data = tick(data, Date.now());
+        const now = Date.now();
+        data = tick(data, now);
+        // a minute of presence, unless the machine slept since the last tick (no new timer: this one existed)
+        const inc = minuteIncrement(lastTick, now);
+        lastTick = now;
+        if (inc) data = bumpDay(data, "min", now, inc);
+        // once-only milestones for the funnel
+        const tier = tierOf(data.closeness);
+        if (tier >= 2) track("tier_2");
+        if (tier >= 3) track("tier_3");
+        if (mem.petName) track("pet_named");
         save();
       }, MIN);
 

@@ -1,3 +1,4 @@
+import { bumpDays, parseDays, type DayCounter, type DayStat } from "./bond.ts";
 import { MILESTONE_DAYS } from "./lines.ts";
 import type { Band, Lang } from "./lines.ts";
 
@@ -64,18 +65,31 @@ export interface TelemetryEvent {
   e: string;
   t: number;
 }
+/**
+ * Version of the consent wording the user agreed to. 1 = funnel event names only (the first
+ * wording); 2 = also per-day counts (spec/05). Per-day counters are recorded only at version 2, so
+ * people who agreed to the first wording are not counted until they agree again.
+ */
+export const CONSENT_VERSION = 2;
+export const MAX_DAILY_ASKS = 2;
 export interface Telemetry {
   consent: Consent;
+  consentV: number; // wording version agreed to (0 = never agreed)
   asks: number; // times the consent card was shown
+  dailyAsks: number; // times the "also count per-day numbers" card was shown to a version-1 user
   installId: string; // random, created only when consent is given
   queue: TelemetryEvent[];
   done: string[]; // once-only events already recorded
+  days: DayStat[]; // per-day counters, newest last (bond.ts); empty unless consent is on at version 2
 }
 
 export const MAX_CONSENT_ASKS = 2;
 export const TELEMETRY_QUEUE_MAX = 200;
 
-export const defaultTelemetry = (): Telemetry => ({ consent: "unset", asks: 0, installId: "", queue: [], done: [] });
+export const defaultTelemetry = (): Telemetry => ({ consent: "unset", consentV: 0, asks: 0, dailyAsks: 0, installId: "", queue: [], done: [], days: [] });
+
+/** Per-day counters are recorded only with consent on at the current wording. */
+export const countsDaily = (d: PetData): boolean => d.telemetry.consent === "on" && d.telemetry.consentV >= CONSENT_VERSION;
 
 export const shouldAskConsent = (d: PetData): boolean =>
   d.telemetry.consent === "unset" && d.telemetry.asks < MAX_CONSENT_ASKS;
@@ -91,12 +105,30 @@ export const recordConsentAsk = (d: PetData): PetData => ({
  */
 export function setConsent(d: PetData, consent: "on" | "off", newId: string): PetData {
   if (consent === "off") {
-    return { ...d, telemetry: { ...d.telemetry, consent: "off", installId: "", queue: [], done: [] } };
+    return { ...d, telemetry: { ...d.telemetry, consent: "off", consentV: 0, installId: "", queue: [], done: [], days: [] } };
   }
   const t = d.telemetry;
-  const withId = { ...t, consent: "on" as const, installId: t.installId || newId };
+  const withId = { ...t, consent: "on" as const, consentV: CONSENT_VERSION, installId: t.installId || newId };
   const base: PetData = { ...d, telemetry: withId };
   return recordEvent(base, "first_launch", d.firstSeen);
+}
+
+/** The second switch: also count a few numbers per day. Turning it off deletes them; the funnel events stay. */
+export function setDailyCounts(d: PetData, on: boolean): PetData {
+  if (d.telemetry.consent !== "on") return d;
+  return { ...d, telemetry: { ...d.telemetry, consentV: on ? CONSENT_VERSION : 1, days: on ? d.telemetry.days : [] } };
+}
+
+/** Someone who agreed to the first wording is asked once or twice about the per-day numbers. */
+export const shouldAskDaily = (d: PetData): boolean =>
+  d.telemetry.consent === "on" && d.telemetry.consentV < CONSENT_VERSION && d.telemetry.dailyAsks < MAX_DAILY_ASKS;
+
+export const recordDailyAsk = (d: PetData): PetData => ({ ...d, telemetry: { ...d.telemetry, dailyAsks: d.telemetry.dailyAsks + 1 } });
+
+/** Adds `n` to today's counter. Nothing is recorded unless the user agreed to per-day counts. */
+export function bumpDay(d: PetData, key: DayCounter, now: number, n = 1): PetData {
+  if (!countsDaily(d) || n <= 0) return d;
+  return { ...d, telemetry: { ...d.telemetry, days: bumpDays(d.telemetry.days, key, now, n) } };
 }
 
 export function recordEvent(d: PetData, name: string, now: number): PetData {
@@ -121,8 +153,12 @@ const parseTelemetry = (o: unknown): Telemetry => {
   const done = Array.isArray(x.done) ? x.done.filter((s): s is string => typeof s === "string" && s.length <= 40).slice(0, 50) : [];
   const asks = typeof x.asks === "number" && Number.isFinite(x.asks) ? clamp(Math.floor(x.asks), 0, 99) : 0;
   const installId = typeof x.installId === "string" && x.installId.length <= 64 ? x.installId : "";
-  // No consent, no identifier and no stored events, whatever the file says.
-  return consent === "on" ? { consent, asks, installId, queue, done } : { consent, asks, installId: "", queue: [], done: [] };
+  const dailyAsks = typeof x.dailyAsks === "number" && Number.isFinite(x.dailyAsks) ? clamp(Math.floor(x.dailyAsks), 0, 99) : 0;
+  // A file without a version that says "on" was written under the first wording.
+  const consentV = consent === "on" ? (typeof x.consentV === "number" && Number.isFinite(x.consentV) ? clamp(Math.floor(x.consentV), 1, CONSENT_VERSION) : 1) : 0;
+  // No consent, no identifier, no stored events and no counters, whatever the file says.
+  if (consent !== "on") return { consent, consentV: 0, asks, dailyAsks: 0, installId: "", queue: [], done: [], days: [] };
+  return { consent, consentV, asks, dailyAsks, installId, queue, done, days: consentV >= CONSENT_VERSION ? parseDays(x.days) : [] };
 };
 
 /**

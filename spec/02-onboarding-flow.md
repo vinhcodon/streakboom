@@ -15,7 +15,7 @@ How a new user goes from a pet that only says scripted lines to one that talks w
 ### S0. First launch
 - The pet appears and idles or walks. One scripted greeting.
 - About 4 seconds later, on a fresh install only: the **first-run tour**, four short cards in the bubble with "n / 4", Skip and Next/Got it: drag it and it stays on screen; click to poke and double-click to chat; stroke its head or belly (one can be a trap); add your own key in Settings for real conversation. Leaving a card alone for 90 seconds ends the tour. Existing users never get it unasked; Settings > About has "Show the tour again".
-- About 12 seconds after launch, once nothing else is open, a one-time telemetry consent card (opt-in, funnel event names only, no chat content; wording and a consent version are being changed, see spec/05 section 6). Default off; "No thanks" has the same weight as "Yes". While the tour or another card is open the consent card retries every 20 seconds for up to 5 minutes. If ignored it comes back at most once more; the choice can always be changed in Settings > Privacy.
+- About 12 seconds after launch, once nothing else is open, a one-time telemetry consent card (opt-in; funnel event names and a few per-day counts, never chat content; consent version 2, see spec/05 section 6). Default off; "No thanks" has the same weight as "Yes". While the tour or another card is open the consent card retries every 20 seconds for up to 5 minutes. If ignored it comes back at most once more; the choice can always be changed in Settings > Privacy.
 
 ### S1. Naive mode (days 1+)
 - Scripted lines driven by time of day, session length, idle time, mood and closeness.
@@ -60,7 +60,7 @@ How a new user goes from a pet that only says scripted lines to one that talks w
 ## Funnel events (opt-in)
 first_launch, first_interaction, brain_request_shown, get_key_clicked, returned_to_app, key_pasted, key_valid, first_ai_message, active_d3, active_d7.
 
-Each is recorded once per install, only after consent, as a name and a timestamp. They stay in a local queue; the user can copy them from Settings > Privacy ("Copy stats") to share by hand. (`install` is not recorded: it happens before consent is possible.) `active_d3` and `active_d7` mean "the streak of consecutive launch days reached 3 or 7", which is not retention. Planned additions (spec/05): `tier_2`, `tier_3`, `pet_named`, and per-day counters under a new consent version.
+Each is recorded once per install, only after consent, as a name and a timestamp. They stay in a local queue; the user can copy them from Settings > Privacy ("Copy stats") to share by hand. (`install` is not recorded: it happens before consent is possible.) `active_d3` and `active_d7` mean "the streak of consecutive launch days reached 3 or 7", which is not retention. Also recorded once each (built, unreleased): `tier_2`, `tier_3`, `pet_named`. Per-day counters are separate (spec/05): a second switch, recorded only at consent version 2; people who agreed to the first wording are asked once or twice, 40 seconds or more after launch and only when no other card is open.
 
 ## Open items
 - Exact trigger thresholds and snooze durations: tune in the alpha.

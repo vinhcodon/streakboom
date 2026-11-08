@@ -1,6 +1,6 @@
 # Plan: implementing "Bond Days" (companion to `spec/05-north-star-metrics.md`)
 
-Part of [`roadmap.md`](roadmap.md) (Phase 2). Status: **decisions D1 to D8 answered on 2026-11-08 (all as recommended, except D1: commit the revert, no release). Waiting for the go-ahead to start step 1.** Based on the local working tree on 2026-11-08 (see spec section 0 for how it differs from the handoff and from `main`).
+Part of [`roadmap.md`](roadmap.md) (Phase 2). Status: **steps 0 to 6 implemented on 2026-11-08 (92 Node tests, svelte-check clean); the manual checks in 5.2 and the release are open.** Step 0 was settled by working in the clean current tree and committing explicit paths. Step 6 documentation is done; ADR-0022 and the README say "built, awaiting release". Based on the local working tree on 2026-11-08 (see spec section 0 for how it differs from the handoff and from `main`).
 
 ## 1. Decisions (answered by Vinh, 2026-11-08; the recommendation column is what was chosen, except D1)
 
@@ -131,3 +131,22 @@ Use the installed build with `WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS=--remote-deb
 - Whether people who opted in under the old wording would accept the new card, and how many alpha users there will be.
 - Whether a Rust event for tray hide/show is cheap enough to include; not investigated.
 - The effect of the second consent card on the first-run flow (it must not collide with the tour, the name question or the consent card); only reasoned about.
+
+## 7. Results of the manual checks (2026-11-08)
+
+Done on a release build with the WebView2 debug port, on the author's real data folder (backed up and restored; see the engineering log entry for why an isolated profile was not possible).
+
+| Check (5.2) | Result |
+|---|---|
+| 1 Consent off records nothing | not run directly; the old-consent case (no version) recorded no `days` |
+| 2 One gesture, one counter | passed: poke, double-click (no extra poke), head scratch, belly rub each moved one counter by one; `chat` not tested (no key) |
+| 3 Engagement | not run (needs an unprompted line); unit tests only |
+| 4 Not counted as `shown` | not run; by reading the call sites only the two proactive paths and `shareNextMark` call `markShown` |
+| 5 `min` | about one per minute observed; the sleep case not run |
+| 6 Midnight | not run |
+| 7 Old consent | passed: no counters; the new card appeared and was answered |
+| 8 Export | not run beyond the Privacy page showing the button; JSON content unchecked |
+| 9 Idle cost | not measured in this pass; no timers were added |
+| 10 Opt-out deletes | unit tests only |
+
+Still open before release: checks 3, 4, 6, 8 and 10 in the real window, and a first-install run of the new consent wording.

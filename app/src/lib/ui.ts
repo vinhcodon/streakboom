@@ -147,6 +147,9 @@ export interface UiStrings {
   sectionPrivacy: string;
   consentText: string;
   consentNote: string;
+  dailyConsentText: string;
+  dailyLabel: string;
+  dailyNote: string;
   consentYes: string;
   consentNo: string;
   statsLabel: string;
@@ -336,9 +339,12 @@ export const UI: Record<Lang, UiStrings> = {
     sectionGeneral: "General",
     sectionBrain: "Brain (AI)",
     sectionPrivacy: "Privacy",
-    consentText: "Can I count which steps people use in the app, to make me better?",
+    consentText: "Can I count which steps people use in the app, and roughly how often you scratch, rub, poke and chat each day, to make me better?",
     consentNote:
-      "Only step names like “opened the menu”. Never your chats, your key or anything personal. Off by default; change it any time in Settings.",
+      "Only step names like “opened the menu” and a few numbers per day like “3 scratches”. Never your chats, your key or anything personal, and nothing is sent anywhere. Off by default; change it any time in Settings.",
+    dailyConsentText: "You already let me count steps. Can I also count a few numbers per day (scratches, rubs, pokes, messages, minutes)? Only counts, never what you write.",
+    dailyLabel: "Daily activity counts",
+    dailyNote: "Per day: scratches, rubs, pokes, messages sent, lines I said and you reacted to, minutes the app ran, times Quiet mode was switched on. Never any text. Turning this off deletes them.",
     consentYes: "Yes, count",
     consentNo: "No thanks",
     statsLabel: "Usage stats",
@@ -538,9 +544,12 @@ export const UI: Record<Lang, UiStrings> = {
     sectionGeneral: "Chung",
     sectionBrain: "Bộ não (AI)",
     sectionPrivacy: "Riêng tư",
-    consentText: "Mình đếm xem mọi người dùng app qua những bước nào để cải thiện mình, được không?",
+    consentText: "Mình đếm xem mọi người dùng app qua những bước nào, và mỗi ngày bạn gãi, xoa, chọc, chat khoảng bao nhiêu lần, để cải thiện mình, được không?",
     consentNote:
-      "Chỉ ghi tên bước như “đã mở menu”. Không có nội dung chat, key hay thông tin cá nhân. Mặc định là tắt, bạn đổi được bất cứ lúc nào trong Cài đặt.",
+      "Chỉ ghi tên bước như “đã mở menu” và vài con số mỗi ngày như “3 lần gãi”. Không có nội dung chat, key hay thông tin cá nhân, và không gửi đi đâu cả. Mặc định là tắt, bạn đổi được bất cứ lúc nào trong Cài đặt.",
+    dailyConsentText: "Bạn đã cho mình đếm các bước. Mình đếm thêm vài con số mỗi ngày (số lần gãi, xoa, chọc, tin nhắn, số phút) được không? Chỉ là số đếm, không có nội dung bạn viết.",
+    dailyLabel: "Số đếm hoạt động theo ngày",
+    dailyNote: "Mỗi ngày: số lần gãi, xoa, chọc, tin nhắn đã gửi, câu mình tự nói mà bạn phản hồi, số phút app chạy, số lần bật Quiet mode. Không có chữ nào. Tắt đi là xóa hết.",
     consentYes: "Đồng ý",
     consentNo: "Không, cảm ơn",
     statsLabel: "Thống kê dùng",

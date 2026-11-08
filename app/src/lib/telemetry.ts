@@ -12,4 +12,7 @@ export type FunnelEvent =
   | "key_valid"
   | "first_ai_message"
   | "active_d3"
-  | "active_d7";
+  | "active_d7"
+  | "tier_2" // closeness reached tier 2 (once)
+  | "tier_3"
+  | "pet_named"; // the user gave the pet a name (once)

@@ -1,6 +1,6 @@
 # Roadmap: from 0.1.14 to a closed alpha
 
-Status: **proposed, waiting for Vinh's approval of the order and of the decisions in section 5.** Written 2026-11-08 after reading all project documents and the code. Nothing here is started except where marked done.
+Status: **approved 2026-11-08 with the answers in section 5; Phase 2 is done (unreleased), the rest is open.** Written 2026-11-08 after reading all project documents and the code.
 
 Goal of this stretch: run a closed alpha with 5 to 10 observed first-time users and get a first baseline of the north star (Bond Days, [`../../spec/05-north-star-metrics.md`](../../spec/05-north-star-metrics.md)) to test hypotheses H1, H2b, H4 and H5 ([`../hypotheses/README.md`](../hypotheses/README.md)).
 
@@ -17,7 +17,7 @@ Goal of this stretch: run a closed alpha with 5 to 10 observed first-time users 
 3. Hypothesis A10: after updating, confirm `pet.json` has no `days` array and no counters.
 **Done when** installed copies no longer contain the prototype, or Vinh has accepted that they do until the next release.
 
-## Phase 2. Bond Days, built from the plan
+## Phase 2. Bond Days, built from the plan (code done 2026-11-08; manual checks and release open)
 Plan and tests: [`bond-days.md`](bond-days.md) (steps 0 to 6, decisions D1 to D8 answered). Order and gates:
 1. Step 0: agree the working-tree rules (branch or worktree; ADR-0023).
 2. Step 1 to 2: pure functions in `bond.ts` and the schema with the consent version, with their unit tests first.
@@ -68,10 +68,10 @@ Phase 0 (done) -> Phase 1 -> Phase 2 -----------------> Phase 4 -> Phase 5
 ```
 Phase 2 and Phase 3 touch different code (counters and consent versus the brain clients), so they can run in parallel if the working-tree rules in Phase 2 step 0 are followed.
 
-## 5. Decisions needed from Vinh
-- **R1.** Release vehicle for removing the prototype: a small 0.1.15 now, or fold it into the Bond Days release.
-- **R2.** Stats: keep "Copy stats" for the alpha, or choose a sending backend (and which).
-- **R3.** Code signing before the alpha, or accept the SmartScreen warning for the alpha.
-- **R4.** The fate of hypothesis H3 (chat utility) against the companion positioning: retire it, keep it as secondary, or replace it with H5.
-- **R5.** Who can supply real Claude and OpenAI keys for Phase 3, and how much budget.
-- **R6.** Permission to start Phase 2, step 0 (a branch or worktree), once this roadmap is approved.
+## 5. Decisions (answered by Vinh, 2026-11-08)
+- **R1.** Release vehicle for removing the prototype: **fold it into the Bond Days release** (no separate 0.1.15). Until then 0.1.14 copies keep the prototype locally.
+- **R2.** Stats: **keep "Copy stats" for the alpha**; no sending backend yet.
+- **R3.** Code signing: **not before the alpha**; accept the SmartScreen warning.
+- **R4.** Hypothesis H3: **kept as a secondary hypothesis**; H5 is primary.
+- **R5.** Real Claude and OpenAI keys: **later, none available now**; Phase 3 waits, and both brains stay "not verified with a real key" in the documents.
+- **R6.** Working method: **directly in the current tree**, committing only the files changed (ADR-0023). The tree was clean when work started.

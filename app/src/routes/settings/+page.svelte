@@ -115,7 +115,12 @@
   let statsCopied = $state(false);
   async function copyStats() {
     if (!snap) return;
-    const text = JSON.stringify({ app: "streakboom", version, installId: snap.stats.installId, events: snap.stats.events }, null, 2);
+    const autostartNow = await invoke<boolean>("autostart_get").catch(() => null);
+    const text = JSON.stringify(
+      { app: "streakboom", version, installId: snap.stats.installId, events: snap.stats.events, days: snap.stats.days, config: snap.stats.config, autostart: autostartNow },
+      null,
+      2
+    );
     try {
       await navigator.clipboard.writeText(text);
       statsCopied = true;
@@ -193,6 +198,10 @@
     void fromSettings({ type: "setting", key, value });
   }
   const stepHour = (key: "qhStart" | "qhEnd", d: number) => s && patch(key, (s[key] + d + 24) % 24);
+  const setDaily = (yes: boolean) => {
+    if (snap) snap = { ...snap, daily: yes };
+    void fromSettings({ type: "daily", yes });
+  };
   const setConsent = (yes: boolean) => {
     if (snap) snap = { ...snap, consent: yes ? "on" : "off" };
     void fromSettings({ type: "consent", yes });
@@ -591,9 +600,15 @@
       </div>
       <p class="muted">{ui.consentNote}</p>
       {#if snap.consent === "on"}
+        <div class="row">
+          <span class="lbl">{ui.dailyLabel}</span>
+          <button class="seg" class:on={snap.daily} onclick={() => setDaily(true)}>{ui.on}</button>
+          <button class="seg" class:on={!snap.daily} onclick={() => setDaily(false)}>{ui.off}</button>
+        </div>
+        <p class="muted">{ui.dailyNote}</p>
         <p class="muted">{ui.statsQueued.replace("{n}", String(snap.queued))}</p>
         <div class="row">
-          <button class="seg" disabled={snap.queued === 0} onclick={copyStats}>{statsCopied ? ui.statsCopied : ui.copyStats}</button>
+          <button class="seg" disabled={snap.queued === 0 && snap.stats.days.length === 0} onclick={copyStats}>{statsCopied ? ui.statsCopied : ui.copyStats}</button>
         </div>
         <p class="muted">{ui.statsHint}</p>
       {/if}

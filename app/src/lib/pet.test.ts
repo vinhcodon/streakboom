@@ -367,3 +367,50 @@ test("the tour is shown once: a fresh state has not seen it, finishing marks it,
   assert.equal(parse(JSON.stringify({ mood: 50 }), 1).tour.done, false); // the page marks existing users as done on load
   assert.equal(parse(JSON.stringify({ tour: { done: true } }), 1).tour.done, true);
 });
+
+import { bumpDay, countsDaily, setDailyCounts, shouldAskDaily, recordDailyAsk, CONSENT_VERSION } from "./state.ts";
+
+test("per-day counters need consent at the current wording", () => {
+  const off = defaultData(1);
+  assert.equal(bumpDay(off, "scratch", 1000), off); // never agreed: nothing recorded
+  const on2 = setConsent(defaultData(1), "on", "id");
+  assert.equal(on2.telemetry.consentV, CONSENT_VERSION);
+  assert.equal(bumpDay(on2, "scratch", 1000).telemetry.days[0].scratch, 1);
+  const old = parse(JSON.stringify({ telemetry: { consent: "on", installId: "x", queue: [], done: [], days: [{ d: "2026-11-08", scratch: 3 }] } }), 1);
+  assert.equal(old.telemetry.consentV, 1); // written under the first wording
+  assert.deepEqual(old.telemetry.days, []); // so its counters are not honoured
+  assert.equal(countsDaily(old), false);
+  assert.equal(bumpDay(old, "scratch", 1000), old);
+});
+
+test("opting out, or turning daily counts off, deletes the counters; the funnel stays", () => {
+  let d = setConsent(defaultData(1), "on", "id");
+  d = bumpDay(d, "poke", 1000);
+  d = recordEvent(d, "first_interaction", 1000);
+  const noDaily = setDailyCounts(d, false);
+  assert.deepEqual(noDaily.telemetry.days, []);
+  assert.equal(noDaily.telemetry.consent, "on");
+  assert.equal(noDaily.telemetry.queue.length >= 1, true);
+  assert.equal(countsDaily(noDaily), false);
+  assert.equal(countsDaily(setDailyCounts(noDaily, true)), true);
+  const off = setConsent(d, "off", "");
+  assert.deepEqual(off.telemetry.days, []);
+  assert.equal(off.telemetry.consentV, 0);
+  assert.equal(setDailyCounts(defaultData(1), true).telemetry.consent, "unset"); // cannot turn on without consent
+});
+
+test("a version-1 user is asked about daily counts at most twice; others never", () => {
+  const old = parse(JSON.stringify({ telemetry: { consent: "on", installId: "x" } }), 1);
+  assert.equal(shouldAskDaily(old), true);
+  assert.equal(shouldAskDaily(recordDailyAsk(recordDailyAsk(old))), false);
+  assert.equal(shouldAskDaily(setConsent(defaultData(1), "on", "id")), false); // already at the current wording
+  assert.equal(shouldAskDaily(defaultData(1)), false); // never agreed
+});
+
+test("a saved file round-trips the counters and the consent version", () => {
+  let d = setConsent(defaultData(5), "on", "id");
+  d = bumpDay(bumpDay(d, "rub", 86_400_000 * 20000), "chat", 86_400_000 * 20000, 2);
+  const again = parse(JSON.stringify(d), 5);
+  assert.deepEqual(again.telemetry.days, d.telemetry.days);
+  assert.equal(again.telemetry.consentV, CONSENT_VERSION);
+});

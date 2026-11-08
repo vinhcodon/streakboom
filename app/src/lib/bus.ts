@@ -3,6 +3,7 @@
 
 import { emitTo } from "@tauri-apps/api/event";
 import type { Lang } from "./lines.ts";
+import type { DayStat } from "./bond.ts";
 import type { Consent, Settings } from "./state.ts";
 
 /** The brains the pet can use. */
@@ -81,13 +82,21 @@ export interface SettingsSnapshot {
   usage: { chat: number; chatCap: number; proactive: number; proactiveCap: number };
   memory: MemoryView;
   /** What "Copy stats" puts on the clipboard. Empty unless the user opted in. */
-  stats: { installId: string; events: { e: string; t: number }[] };
+  stats: {
+    installId: string;
+    events: { e: string; t: number }[];
+    days: DayStat[]; // per-day counts (empty unless the user agreed to them)
+    config: { gentle: boolean; freq: string }; // two settings, for the "character" figures
+  };
+  /** The user agreed to per-day counts (the second consent switch). */
+  daily: boolean;
 }
 
 /** Settings window -> pet window. */
 export type SettingsPatch =
   | { type: "setting"; key: keyof Settings; value: Settings[keyof Settings] }
   | { type: "consent"; yes: boolean }
+  | { type: "daily"; yes: boolean } // the second switch: also count a few numbers per day
   | { type: "tour" } // "show the tour again"
   | { type: "startup"; on: boolean } // they changed "start with Windows" in Settings
   | { type: "mem"; action: "set"; field: MemField; value: string }
