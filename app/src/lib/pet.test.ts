@@ -15,6 +15,10 @@ import {
   recordAi,
   recordConsentAsk,
   recordEvent,
+  bumpDay,
+  bondDays,
+  chatShare,
+  TELEMETRY_DAYS_MAX,
   recordHint,
   recordScratch,
   shouldHintGesture,
@@ -366,4 +370,54 @@ test("the tour is shown once: a fresh state has not seen it, finishing marks it,
   assert.equal(finishTour(d).tour.done, true);
   assert.equal(parse(JSON.stringify({ mood: 50 }), 1).tour.done, false); // the page marks existing users as done on load
   assert.equal(parse(JSON.stringify({ tour: { done: true } }), 1).tour.done, true);
+});
+
+test("daily stats: nothing is recorded without consent", () => {
+  const d = defaultData(T0);
+  assert.equal(bumpDay(d, "scratch", T0), d);
+  assert.deepEqual(setConsent(d, "off", "x").telemetry.days, []);
+});
+
+test("daily stats: counters add up per local day and the list is capped", () => {
+  let d = setConsent(defaultData(T0), "on", "id-1");
+  d = bumpDay(bumpDay(bumpDay(d, "scratch", T0), "scratch", T0 + 1000), "chat", T0 + 2000, 3);
+  assert.equal(d.telemetry.days.length, 1);
+  assert.equal(d.telemetry.days[0].scratch, 2);
+  assert.equal(d.telemetry.days[0].chat, 3);
+  const next = bumpDay(d, "rub", T0 + 24 * 3_600_000);
+  assert.equal(next.telemetry.days.length, 2);
+  assert.equal(next.telemetry.days[1].rub, 1);
+  let long = d;
+  for (let i = 0; i < TELEMETRY_DAYS_MAX + 10; i++) long = bumpDay(long, "min", T0 + i * 24 * 3_600_000);
+  assert.equal(long.telemetry.days.length, TELEMETRY_DAYS_MAX);
+});
+
+test("bond days: counts care and engagement in the last 7 days, not chat or pokes", () => {
+  let d = setConsent(defaultData(T0), "on", "id-1");
+  const DAY = 24 * 3_600_000;
+  d = bumpDay(d, "chat", T0, 40);
+  d = bumpDay(d, "poke", T0 + DAY, 20);
+  d = bumpDay(d, "scratch", T0 + 2 * DAY);
+  d = bumpDay(d, "engaged", T0 + 3 * DAY);
+  d = bumpDay(d, "rub", T0 + 20 * DAY);
+  assert.equal(bondDays(d.telemetry.days, T0 + 3 * DAY), 2);
+  assert.equal(bondDays(d.telemetry.days, T0 + 20 * DAY), 1);
+  assert.equal(bondDays([], T0), 0);
+});
+
+test("chat share: chat over chat plus care gestures", () => {
+  assert.equal(chatShare([]), null);
+  let d = setConsent(defaultData(T0), "on", "id-1");
+  d = bumpDay(d, "chat", T0, 3);
+  d = bumpDay(d, "scratch", T0, 1);
+  assert.equal(chatShare(d.telemetry.days), 0.75);
+});
+
+test("daily stats: parse keeps valid days and drops everything without consent", () => {
+  const good = { d: "2026-11-08", scratch: 2, rub: -4, poke: "x", chat: 1.9, shown: 0, engaged: 0, min: 5 };
+  const on = parse(JSON.stringify({ telemetry: { consent: "on", installId: "a", days: [good, { d: "bad" }, 7] } }), T0);
+  assert.equal(on.telemetry.days.length, 1);
+  assert.deepEqual(on.telemetry.days[0], { d: "2026-11-08", scratch: 2, rub: 0, poke: 0, chat: 1, shown: 0, engaged: 0, min: 5 });
+  const off = parse(JSON.stringify({ telemetry: { consent: "off", days: [good] } }), T0);
+  assert.deepEqual(off.telemetry.days, []);
 });

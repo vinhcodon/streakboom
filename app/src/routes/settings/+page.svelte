@@ -115,7 +115,7 @@
   let statsCopied = $state(false);
   async function copyStats() {
     if (!snap) return;
-    const text = JSON.stringify({ app: "streakboom", version, installId: snap.stats.installId, events: snap.stats.events }, null, 2);
+    const text = JSON.stringify({ app: "streakboom", version, installId: snap.stats.installId, events: snap.stats.events, days: snap.stats.days }, null, 2);
     try {
       await navigator.clipboard.writeText(text);
       statsCopied = true;

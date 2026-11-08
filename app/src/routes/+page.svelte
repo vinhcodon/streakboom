@@ -66,6 +66,7 @@
     shouldAskStartup,
     recordConsentAsk,
     recordEvent,
+    bumpDay,
     recordBellyHint,
     recordHint,
     recordRub,
@@ -81,6 +82,9 @@
     startSession,
     tick,
     tierOf,
+    ENGAGE_WINDOW_MS,
+    type DayCounter,
+    type DayStat,
     type PetData,
     type Settings,
   } from "$lib/state";
@@ -185,6 +189,27 @@
       data = next;
       scheduleSave();
     }
+  }
+
+  /** Adds to today's counter (Bond Days stats); dropped unless the user opted in. */
+  function count(key: DayCounter, n = 1) {
+    const next = bumpDay(data, key, Date.now(), n);
+    if (next !== data) {
+      data = next;
+      scheduleSave();
+    }
+  }
+  // An unprompted line counts as "engaged" if the user reacts within ENGAGE_WINDOW_MS, once per line.
+  let proactiveAt = 0;
+  let proactiveOpen = false;
+  function markShown() {
+    count("shown");
+    proactiveAt = Date.now();
+    proactiveOpen = true;
+  }
+  function engage() {
+    if (proactiveOpen && Date.now() - proactiveAt < ENGAGE_WINDOW_MS) count("engaged");
+    proactiveOpen = false;
   }
 
   // ---------------------------------------------------------------- speech
@@ -423,11 +448,13 @@
   function singleClick() {
     stopTimers();
     enter("happy");
+    engage();
     const now = Date.now();
     if (now - lastClickSay > 3000) {
       lastClickSay = now;
       data = interact(data, "click", now);
       touch("poke");
+      count("poke");
       say("click");
     }
   }
@@ -436,6 +463,7 @@
     clearTimeout(clickTimer);
     if (quiet || suppressClick) return;
     if (panel) return closePanel();
+    engage();
     data = { ...data, brain: { ...data.brain, menuOpens: data.brain.menuOpens + 1 } };
     track("first_interaction");
     if (shouldAskBrain(data, Date.now(), hasKey)) showAsk();
@@ -573,6 +601,8 @@
     stopTimers();
     data = recordRub(data);
     touch("scratch");
+    count("rub");
+    engage();
     rubsSinceHuff++;
     const trap = tierOf(data.closeness) >= 2 && rubsSinceHuff >= 2 && now - lastHuff > 3 * MIN && Math.random() < 0.35;
     if (trap) {
@@ -598,6 +628,8 @@
     enter("happy");
     data = recordScratch(interact(data, "pet", Date.now()));
     touch("scratch");
+    count("scratch");
+    engage();
     track("first_interaction");
     if (!(Math.random() < 0.25 && memSay("pet", {}, 60 * MIN))) say("pet");
     scheduleSave();
@@ -706,6 +738,7 @@
       return;
     }
     data = recordAi(data, "chat", Date.now());
+    count("chat");
     busy = true;
     lonely = false;
     data = interact(data, "how", Date.now());
@@ -896,8 +929,12 @@
       memory: memoryView(),
       stats:
         data.telemetry.consent === "on"
-          ? { installId: data.telemetry.installId, events: $state.snapshot(data.telemetry.queue) as { e: string; t: number }[] }
-          : { installId: "", events: [] },
+          ? {
+              installId: data.telemetry.installId,
+              events: $state.snapshot(data.telemetry.queue) as { e: string; t: number }[],
+              days: $state.snapshot(data.telemetry.days) as DayStat[],
+            }
+          : { installId: "", events: [], days: [] },
     };
   }
   const pushSettings = () => void toSettings(snapshot());
@@ -1021,9 +1058,12 @@
     if (trigger !== "hint" && trigger !== "hintbelly" && canChat && Math.random() < 0.5 && aiGate(data, "proactive", t) === "ok") {
       data = recordAi(data, "proactive", t);
       scheduleSave();
-      if (await aiProactive(trigger, hour)) return scheduleProactive();
+      if (await aiProactive(trigger, hour)) {
+        markShown();
+        return scheduleProactive();
+      }
     }
-    say(trigger);
+    if (say(trigger)) markShown();
     scheduleProactive();
   }
 
@@ -1206,7 +1246,7 @@
       }
       scheduleProactive();
       minuteTimer = setInterval(() => {
-        data = tick(data, Date.now());
+        data = bumpDay(tick(data, Date.now()), "min", Date.now());
         save();
       }, MIN);
 

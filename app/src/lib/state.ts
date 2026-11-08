@@ -60,6 +60,27 @@ export function coolDown(d: PetData, now: number): PetData {
  * once per install. The queue stays on this machine until a sending backend exists.
  */
 export type Consent = "unset" | "on" | "off";
+
+/**
+ * Per-day counters for the "Bond Days" north star. Counts only, never content. `scratch` and
+ * `rub` are care gestures; `poke` is a click; `chat` is a message the user sent; `shown` is
+ * unprompted pet lines and `engaged` the ones the user reacted to within ENGAGE_WINDOW_MS;
+ * `min` is minutes the app was running.
+ */
+export interface DayStat {
+  d: string; // local day key, e.g. "2026-11-08"
+  scratch: number;
+  rub: number;
+  poke: number;
+  chat: number;
+  shown: number;
+  engaged: number;
+  min: number;
+}
+export type DayCounter = Exclude<keyof DayStat, "d">;
+export const DAY_COUNTERS: DayCounter[] = ["scratch", "rub", "poke", "chat", "shown", "engaged", "min"];
+export const TELEMETRY_DAYS_MAX = 60;
+export const ENGAGE_WINDOW_MS = 30_000;
 export interface TelemetryEvent {
   e: string;
   t: number;
@@ -70,12 +91,13 @@ export interface Telemetry {
   installId: string; // random, created only when consent is given
   queue: TelemetryEvent[];
   done: string[]; // once-only events already recorded
+  days: DayStat[]; // daily counters, newest last, at most TELEMETRY_DAYS_MAX
 }
 
 export const MAX_CONSENT_ASKS = 2;
 export const TELEMETRY_QUEUE_MAX = 200;
 
-export const defaultTelemetry = (): Telemetry => ({ consent: "unset", asks: 0, installId: "", queue: [], done: [] });
+export const defaultTelemetry = (): Telemetry => ({ consent: "unset", asks: 0, installId: "", queue: [], done: [], days: [] });
 
 export const shouldAskConsent = (d: PetData): boolean =>
   d.telemetry.consent === "unset" && d.telemetry.asks < MAX_CONSENT_ASKS;
@@ -91,7 +113,7 @@ export const recordConsentAsk = (d: PetData): PetData => ({
  */
 export function setConsent(d: PetData, consent: "on" | "off", newId: string): PetData {
   if (consent === "off") {
-    return { ...d, telemetry: { ...d.telemetry, consent: "off", installId: "", queue: [], done: [] } };
+    return { ...d, telemetry: { ...d.telemetry, consent: "off", installId: "", queue: [], done: [], days: [] } };
   }
   const t = d.telemetry;
   const withId = { ...t, consent: "on" as const, installId: t.installId || newId };
@@ -105,6 +127,49 @@ export function recordEvent(d: PetData, name: string, now: number): PetData {
   const queue = [...t.queue, { e: name, t: now }].slice(-TELEMETRY_QUEUE_MAX);
   return { ...d, telemetry: { ...t, queue, done: [...t.done, name] } };
 }
+
+/** Adds `n` to today's counter. Nothing is recorded unless the user opted in. */
+export function bumpDay(d: PetData, key: DayCounter, now: number, n = 1): PetData {
+  if (d.telemetry.consent !== "on") return d;
+  const day = dayKey(now);
+  const days = d.telemetry.days.slice();
+  const last = days[days.length - 1];
+  if (last && last.d === day) {
+    days[days.length - 1] = { ...last, [key]: last[key] + n };
+  } else {
+    days.push({ d: day, scratch: 0, rub: 0, poke: 0, chat: 0, shown: 0, engaged: 0, min: 0, [key]: n });
+  }
+  return { ...d, telemetry: { ...d.telemetry, days: days.slice(-TELEMETRY_DAYS_MAX) } };
+}
+
+const DAY_MS_TELEMETRY = 24 * 3_600_000;
+
+/**
+ * Bond Days: how many of the last 7 days (today included) had a voluntary act of care: a head
+ * scratch, a belly rub, or a reaction to one of the pet's unprompted lines. Chat and plain pokes
+ * do not count, so the number does not reward using the pet as an assistant.
+ */
+export function bondDays(days: DayStat[], now: number): number {
+  const recent = new Set<string>();
+  for (let i = 0; i < 7; i++) recent.add(dayKey(now - i * DAY_MS_TELEMETRY));
+  return days.filter((x) => recent.has(x.d) && x.scratch + x.rub + x.engaged > 0).length;
+}
+
+/** Guardrail: chat / (chat + care gestures) over the given days. Null when there is nothing yet. */
+export function chatShare(days: DayStat[]): number | null {
+  const chat = days.reduce((a, x) => a + x.chat, 0);
+  const care = days.reduce((a, x) => a + x.scratch + x.rub, 0);
+  return chat + care === 0 ? null : chat / (chat + care);
+}
+
+const parseDays = (v: unknown): DayStat[] => {
+  if (!Array.isArray(v)) return [];
+  const n = (x: unknown) => (typeof x === "number" && Number.isFinite(x) ? Math.min(1e6, Math.max(0, Math.floor(x))) : 0);
+  return v
+    .filter((x): x is Record<string, unknown> => !!x && typeof x === "object" && typeof (x as { d?: unknown }).d === "string" && /^\d{4}-\d{2}-\d{2}$/.test((x as { d: string }).d))
+    .map((x) => ({ d: x.d as string, scratch: n(x.scratch), rub: n(x.rub), poke: n(x.poke), chat: n(x.chat), shown: n(x.shown), engaged: n(x.engaged), min: n(x.min) }))
+    .slice(-TELEMETRY_DAYS_MAX);
+};
 
 const parseTelemetry = (o: unknown): Telemetry => {
   const x = (o && typeof o === "object" ? o : {}) as Record<string, unknown>;
@@ -122,7 +187,9 @@ const parseTelemetry = (o: unknown): Telemetry => {
   const asks = typeof x.asks === "number" && Number.isFinite(x.asks) ? clamp(Math.floor(x.asks), 0, 99) : 0;
   const installId = typeof x.installId === "string" && x.installId.length <= 64 ? x.installId : "";
   // No consent, no identifier and no stored events, whatever the file says.
-  return consent === "on" ? { consent, asks, installId, queue, done } : { consent, asks, installId: "", queue: [], done: [] };
+  return consent === "on"
+    ? { consent, asks, installId, queue, done, days: parseDays(x.days) }
+    : { consent, asks, installId: "", queue: [], done: [], days: [] };
 };
 
 /**
