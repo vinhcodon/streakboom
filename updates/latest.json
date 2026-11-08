@@ -1,11 +1,11 @@
 {
-    "version":  "0.2.1",
-    "notes":  "Chat: the background fact-noting requests no longer use up the daily chat limit (they have their own), and when Peak has talked enough it says so in its own words, without numbers.",
-    "pub_date":  "2026-11-08T11:04:12Z",
+    "version":  "0.2.2",
+    "notes":  "Peak no longer speaks while asleep or dozing off; Settings, About opens the website (streakboom.com).",
+    "pub_date":  "2026-11-08T14:00:13Z",
     "platforms":  {
                       "windows-x86_64":  {
-                                             "signature":  "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVUcHBlQXhYUlVURnNHU2ViaHA4QkJvSVJaaTdOTDQvendvYUpGSHBsYmZwZjdMOE5HUmoxVlcxaHpOc3dxQ2JIYzE0Wnh3UExqN1JXc1FGN1VFVFBUR01jbXhFanJ0cGdBPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzk0MTM1ODUxCWZpbGU6U3RyZWFrYm9vbV8wLjIuMV94NjQtc2V0dXAuZXhlCXZlcnNpb246MC4yLjEKUkNxZ2hSQ2lPL3Q3Z3FUL3dPMEsvTHZkSWF5QytyN1NQS29ZWjBpdnRqdm9USVpKRDhQc2d3cEpGVHArTXlrWGpyK2xpMFliQlJyc1RrN3RGQmpzQkE9PQo=",
-                                             "url":  "https://api.github.com/repos/vinhcodon/streakboom/releases/assets/723678130"
+                                             "signature":  "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVUcHBlQXhYUlVURnAzZXQyOUNBZ3p6MVhabU54aTViZU96aDRsUUxOQ2JpRy9Hbkk4OWR0SjczL3haOFdDTUtFRXRvYnNNUWFiR3AxS3ZQU2dzWHBPdWlxUHpCRkROYUF3PQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzk0MTQ2NDEyCWZpbGU6U3RyZWFrYm9vbV8wLjIuMl94NjQtc2V0dXAuZXhlCXZlcnNpb246MC4yLjIKMXJYSjRKa045ZUZlZXlqS3QxQVZaRytueEoxSE1abkZtQUsrSDRYb3hGT0VuVDNwanlNTzZDMzM2REVCYmtaekd4dEh2NVkyRlUyY1A4M3BvQU1LQ0E9PQo=",
+                                             "url":  "https://api.github.com/repos/vinhcodon/streakboom/releases/assets/724104749"
                                          }
                   }
 }
