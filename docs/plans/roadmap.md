@@ -2,6 +2,8 @@
 
 Status: **approved 2026-11-08 with the answers in section 5; Phases 0, 1 and 2 are done and shipped (the counters in 0.1.15, the first official release 0.2.0 (ADR-0026), the chat-cap fix 0.2.1 (ADR-0027)); Phase 4 has started (A4 first positive report, A5 soak running, a sleep-speech fix committed and unreleased); the rest is open. A reminder to update the website is in `../handoff/to-website-0.2.0.md`.** Written 2026-11-08 after reading all project documents and the code.
 
+The work is split into epics and user stories in [`backlog.md`](backlog.md) (progress per epic, sizes, order); the assessment behind it is [`pet-qualities-assessment.md`](pet-qualities-assessment.md).
+
 Goal of this stretch: run a closed alpha with 5 to 10 observed first-time users and get a first baseline of the north star (Bond Days, [`../../spec/05-north-star-metrics.md`](../../spec/05-north-star-metrics.md)) to test hypotheses H1, H2b, H4 and H5 ([`../hypotheses/README.md`](../hypotheses/README.md)).
 
 ## Phase 0. Housekeeping (done on 2026-11-08)
