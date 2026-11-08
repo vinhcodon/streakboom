@@ -208,9 +208,13 @@ export class Rig {
     for (const s of this.all()) s.step(dt);
   }
 
-  /** How much redrawing is needed: nothing (standing still), a trickle (z's, dots), or full speed. */
-  get mode(): "idle" | "light" | "full" {
-    if (this.all().some((s) => !s.settled) || this.walk.x > 0.01 || this.lookT >= 0 || this.blinkT >= 0) return "full";
+  /**
+   * How much redrawing is needed: nothing (standing still), a trickle (z's, dots: ~11 fps), a
+   * steady walk (~30 fps; the legs read fine at that rate), or full speed while a spring is moving.
+   */
+  get mode(): "idle" | "light" | "walk" | "full" {
+    if (this.all().some((s) => !s.settled) || this.lookT >= 0 || this.blinkT >= 0) return "full";
+    if (this.walk.x > 0.01) return "walk";
     if (this.pose === "sleep" || this.pose === "think") return "light";
     return "idle";
   }

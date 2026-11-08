@@ -14,31 +14,34 @@
   let canvas: HTMLCanvasElement | undefined = $state();
   let ctx: CanvasRenderingContext2D | null = null;
   let raf = 0;
+  let frameTimer: ReturnType<typeof setTimeout> | undefined;
   let last = 0;
-  let lastDraw = 0;
   let lastTick = -1;
 
   function paint() {
     if (ctx) drawFrame(ctx, rig.frame());
   }
 
-  function loop(now: number) {
+  // Redraw only as often as the motion needs (see Rig.mode): a standing cat costs nothing.
+  function loop() {
     raf = 0;
+    frameTimer = undefined;
+    const now = performance.now();
     const dt = Math.min(0.05, (now - last) / 1000 || 0.016);
     last = now;
     // fixed 1/120 s sub-steps keep the springs stable at any frame rate
     const n = Math.max(1, Math.round(dt * 120));
     for (let i = 0; i < n; i++) rig.step(dt / n);
+    paint();
     const mode = rig.mode;
-    if (mode === "full" || now - lastDraw > 80) {
-      paint();
-      lastDraw = now;
-    }
-    if (mode !== "idle") raf = requestAnimationFrame(loop);
+    if (mode === "full") raf = requestAnimationFrame(loop);
+    else if (mode === "walk") frameTimer = setTimeout(loop, 33);
+    else if (mode === "light") frameTimer = setTimeout(loop, 90);
   }
 
   function wake() {
     if (raf) return;
+    clearTimeout(frameTimer); // a pending slow frame is replaced by a fast one
     last = performance.now();
     raf = requestAnimationFrame(loop);
   }
@@ -92,6 +95,7 @@
     return () => {
       clearTimeout(timer);
       if (raf) cancelAnimationFrame(raf);
+      clearTimeout(frameTimer);
     };
   });
 </script>
