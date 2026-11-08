@@ -33,6 +33,7 @@ What was **decided**, why, and what was rejected. One short file per decision (a
 | [0021](0021-positioning-companion-not-assistant.md) | The pet is a companion, not an assistant | accepted | 2026-11-08 |
 | [0022](0022-north-star-bond-days.md) | North star: Bond Days, with decisions D1 to D8 | accepted (built; released in 0.1.15) | 2026-11-08 |
 | [0023](0023-process-commit-explicit-paths.md) | Commit only the files you changed; never git add -A in a shared checkout | accepted | 2026-11-08 |
+| [0030](0030-terrain-as-a-cost-field.md) | The desktop is terrain: a cost field of fixed relief and the user's attention (memory only); the cat moves away from the user's work; window geometry is a later separate permission | accepted (direction; not built) | 2026-11-09 |
 | [0029](0029-focus-safety-recent-input-and-pointer-fade.md) | Focus-safety uses recent input and the pointer and fades the cat; no hook, no window geometry | accepted (not built) | 2026-11-08 |
 | [0028](0028-latest-two-releases-notes-in-changelog.md) | GitHub keeps the latest two releases; the notes of every version live in CHANGELOG.md | accepted (done) | 2026-11-08 |
 | [0027](0027-separate-note-cap-and-in-character-refusal.md) | Fact-noting has its own daily cap; "enough for today" is said in character, never with numbers | accepted (done; released in 0.2.1) | 2026-11-08 |

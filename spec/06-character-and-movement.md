@@ -13,7 +13,7 @@ Product line: **"Một chú mèo nhỏ sống trên màn hình của bạn"** (a
 | D3 | "Too big for me" refusal | **Vague, in the cat's voice, never mentioning an assistant** ("Cái đó khó quá với một con mèo."). | section 1.4 |
 | D4 | Sarcasm level | **Keep about 14%** (the Gentle switch stays). Revisit with alpha feedback. | section 1.5 |
 | D5 | No per-day counter for how often the cat fades | **Agreed:** no new counter (it would need consent version 3). | section 4, ADR-0029 |
-| D6 | Response when the user types near the cat | **Fade and click-through only**; no sidestep in the first version. | section 3.1 |
+| D6 | Response when the user types near the cat | **Fade and click-through only** in the first version (FS-4). **Amended 2026-11-09 (ADR-0030, spec/07 T4): once the attention field exists (L2) the cat moves away from where the user is working; fading stays as the fallback.** | section 3.1 |
 | D7 | The constants of sections 3.1 and 2.3 (thresholds 3, 5 and 6 s, near radius 200 px, fade to 35%, a 3 x 3 grid, three drags to teach a spot) | **Agreed as starting values**, tuned in the manual checks. | sections 2.3, 3.1 |
 | D8 | CPU target | **Under 1% of a core standing, 7 to 15% at most walking**; PR-4 measures against it and reports honestly if software drawing cannot reach it. | section 2.1 |
 | Q2 | Default cat name | **Already decided in ADR-0024:** "Peak" is the project's character; each user's pet starts unnamed and is named after a day or two; if testers dislike the naming card, offer "Peak" as the suggested name there. | nothing to do |

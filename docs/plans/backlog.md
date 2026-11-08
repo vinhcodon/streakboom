@@ -20,7 +20,8 @@ Status: **proposed 2026-11-08, asked by Vinh to be carried out story by story.**
 | E5 | Proactive but frugal | 3 / 6 | Polite and rate-limited; context timing comes through E8 (strongest) |
 | E6 | Measurement and alpha | 1 / 7 | Counters built; no baseline, no tool, no testers |
 | E7 | Verification and release | 4 / 9 | The 8-hour soak was stopped at 2 h 23 (memory flat) to diagnose CPU; real keys, devices open; the 0.2.1 to 0.2.2 update was seen working |
-| E8 | Focus-safety and places | 3 / 15 | Spec and ADR-0029 written; code waits for the CPU gate |
+| E8 | Focus-safety and places | 4 / 13 | Spec and ADR-0029 written; FS-3 built and under review; PL-1 and PL-7 merged into E9 |
+| E9 | The desktop as terrain | 1 / 15 | Spec 07 and ADR-0030 written; code after FS-4 and PR-9 |
 
 Against the roadmap: Phases 0 to 2 done; **Phase 4 in progress** (E7: the soak was stopped early; PR-3 and PR-4 done; PF-3, PR-8, VE-2, VE-3 open); Phase 3 blocked on keys (VE-4, VE-5, PE-3); Phase 5 not started (E6).
 
@@ -114,17 +115,37 @@ Order by decision D2: the CPU baseline (PR-3, PR-4, PR-9) comes first; the pure 
 | FS-1 | Pure focus decision `focus.ts` with Node tests (walk and speak permissions, ghost with hysteresis) | S | done (`decideFocus`, 14 tests; not wired yet) | PR-4 |
 | FS-2 | Rust probe `focus_probe`: last-input time and pointer offset read by the hit-test thread; `windows-sys` features; Rust test for the tick arithmetic | M | done (5 Rust tests; checked in the running app; not called by the page yet) | PR-4 |
 | FS-3 | Hold walks and unprompted lines while the user is active (replaces PR-6 and PF-4) | M | ready | FS-1, FS-2 |
-| FS-4 | Fade and click-through while the user types near the cat | S | blocked (FS-3) | FS-3 |
+| FS-4 | Fade and click-through while the user types near the cat (stays as the fallback once TE-8 moves the cat away) | S | blocked (FS-3) | FS-3 |
 | FS-5 | Manual checks: overlap with a real text box, multi-monitor, DPI, CPU (spec/06 plan) | S | blocked (FS-4) | FS-4 |
 | FS-6 | Clarify the "no input hook" line in spec/05 to say what is and is not read | S | ready | FS-2 |
-| PL-0 | Decision: how zones and favorite spots survive a monitor, DPI or taskbar change (spec/06 2.3 gives a proposal) | S | needs Vinh | |
-| PL-1 | Vertical movement: a Rust `move_to` and the walk along both axes | M | blocked (PL-0, FS-5) | PL-0 |
-| PL-2 | `places.ts`: cell counts, taught spots, tier distance, monitor changes, with Node tests | M | blocked (PL-0) | PL-0 |
+| PL-0 | Decision: how zones and favorite spots survive a monitor, DPI or taskbar change | S | done (answered by the world model of spec/07: fractions of each monitor's work area, TE-1) | |
+| PL-1 | Vertical movement: a Rust `move_to` and the walk along both axes | M | merged into TE-2 and TE-7 (spec/07) | |
+| PL-2 | `places.ts`: cell counts, taught spots, tier distance, monitor changes, with Node tests; **rebuilt on the world model of spec/07 (TE-1) instead of a 3 x 3 grid** | M | blocked (TE-1) | TE-1 |
 | PL-3 | Places in memory, Settings view, Forget and a learning switch | M | blocked (PL-2) | PL-2 |
-| PL-4 | Dragging the cat teaches a favorite spot | S | blocked (PL-1, PL-2) | PL-1, PL-2 |
+| PL-4 | Dragging the cat teaches a favorite spot (and pushing it away teaches an unwelcome one) | S | blocked (TE-7, PL-2) | TE-7, PL-2 |
 | PL-5 | Resting distance by closeness tier | S | blocked (PL-2) | PL-2 |
-| PL-6 | New movement: curl up in a corner (measured for CPU) | M | blocked (PL-1) | PL-1 |
-| PL-7 | New movement: a hop along an arc (measured for CPU) | M | blocked (PL-1) | PL-1 |
+| PL-6 | New movement: curl up in a corner (measured for CPU) | M | blocked (TE-7) | TE-7 |
+| PL-7 | New movement: a hop along an arc (measured for CPU) | M | merged into TE-7 | |
+
+## E9. The desktop as terrain (spec/07, plan `terrain-and-attention.md`)
+Direction agreed 2026-11-09 (ADR-0030). By decision T6 the code comes after FS-4 and PR-9; the spec and ADR are done.
+| ID | Story | Size | Status | Depends on |
+|---|---|---|---|---|
+| TE-0 | Spec 07, plan and ADR-0030: the cost-field thesis | S | done | |
+| TE-1 | `terrain.ts`: one world from all monitors, positions as a monitor key plus fractions of the work area, neighbors across touching edges, with tests (resolution, DPI, taskbar and monitor-set changes) | M | blocked (FS-4, PR-9) | |
+| TE-2 | Rust: `monitors_info` (work areas and scale) and `move_to(x, y)` clamped to the world, with tests (replaces PL-1's Rust part) | M | blocked (FS-4, PR-9) | |
+| TE-3 | Walk across touching monitors (the walk clamps to the world, not to one monitor); manual check on two monitors | M | blocked (TE-1, TE-2) | TE-1, TE-2 |
+| TE-4 | `attention.ts`: the memory-only decayed grid per monitor, fed by the focus probe, with tests | M | blocked (TE-1, FS-3) | TE-1 |
+| TE-5 | Fixed danger zones as costs (caption buttons at the top right, the title-bar band) | S | blocked (TE-1) | TE-1 |
+| TE-6 | Cost-based choice of a place (`choosePlace`) for rest, wander, avoid and approach, with tests | M | blocked (TE-4, TE-5) | TE-4, TE-5 |
+| TE-7 | Vertical movement: hops along an arc and falls; a CPU measurement per kind; the author looks at a test build before the commit | M | blocked (TE-2, PR-9) | TE-2 |
+| TE-8 | Wire avoidance: the cat moves away from the user's work (at most once every 20 s), else fades | M | blocked (TE-6, TE-7, FS-4) | TE-6, TE-7 |
+| TE-9 | README, Settings text and the website note for the attention field | S | blocked (TE-8) | TE-8 |
+| TE-10a | L3: Rust windows snapshot (visible, non-minimized, non-cloaked, non-own, extended frame bounds, z-order, maximized flag) behind a Settings switch | M | blocked (Vinh's permission; spec/07 open question 4) | |
+| TE-10b | L3: perches and walls in the terrain (visible parts only, headroom, stable for half a second) | M | blocked (TE-10a, TE-1) | TE-10a |
+| TE-10c | L3: jump up to a perch, sit, nap, watch | M | blocked (TE-10b, TE-7) | TE-10b |
+| TE-10d | L3: fall to the surface below when the perch disappears or moves | M | blocked (TE-10b, TE-7) | TE-10b |
+| TE-11 | L4: learned places (welcome by dragging, unwelcome by pushing away) in Settings with Forget; this is PL-2 to PL-5 on the terrain model | M | blocked (TE-6) | TE-6 |
 
 ## Suggested order
 1. **PR-3** (S): explain the CPU. It decides whether the presence quality is healthy at all, and it is the only open story that needs no decision and no waiting.

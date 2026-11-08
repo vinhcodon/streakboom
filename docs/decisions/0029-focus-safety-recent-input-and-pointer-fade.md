@@ -18,5 +18,8 @@ The cat sits and walks along the bottom edge of the work area, where chat apps p
 ## Alternatives considered
 All four rungs of the ladder (rejected the top one, deferred the third); a hop aside (deferred: costs CPU, and the baseline CPU is already over budget); pointing to the user's own assistant when declining (declined: it pulls toward the assistant frame).
 
+## Amendment 2026-11-09 (ADR-0030)
+The response "fade only" holds for the first version (FS-4). From level L2 of the terrain work (spec/07) the cat moves away from the user's work using a memory-only attention field, and fades only as the fallback. Rung 3 (window geometry) stays deferred and becomes level L3, behind its own permission and a Settings switch.
+
 ## Consequences and when to revisit
 The cat may rarely walk for someone who is always at the keyboard or mouse; that is intended. Revisit rung 3 if fading proves not enough in the alpha, and the per-day counter when the next consent version is needed anyway. Details: `spec/06-character-and-movement.md`, plan `docs/plans/character-and-movement.md`.
