@@ -3,7 +3,7 @@
 
 import { emitTo } from "@tauri-apps/api/event";
 import type { Lang } from "./lines.ts";
-import type { Consent, DayStat, Settings } from "./state.ts";
+import type { Consent, Settings } from "./state.ts";
 
 /** The brains the pet can use. */
 export type ProviderId = "gemini" | "claude" | "openai";
@@ -81,7 +81,7 @@ export interface SettingsSnapshot {
   usage: { chat: number; chatCap: number; proactive: number; proactiveCap: number };
   memory: MemoryView;
   /** What "Copy stats" puts on the clipboard. Empty unless the user opted in. */
-  stats: { installId: string; events: { e: string; t: number }[]; days: DayStat[] };
+  stats: { installId: string; events: { e: string; t: number }[] };
 }
 
 /** Settings window -> pet window. */
