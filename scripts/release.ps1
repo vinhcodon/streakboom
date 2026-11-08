@@ -21,8 +21,9 @@
                    download path of github.com answered 504), upload the manifest, publish the release, and
                    commit and push the same manifest as updates/latest.json (a second place the app reads it
                    from, see updater.rs). Needs gh logged in, a clean git tree under app/, scripts/ and updates/,
-                   and an entry "## <version> (date)" in CHANGELOG.md. After publishing it deletes every other
-                   release and tag (ADR-0028: only the latest release is kept; the notes stay in CHANGELOG.md).
+                   and an entry "## <version> (date)" in CHANGELOG.md. After publishing it deletes every older
+                   release and tag except the one right before the new one (ADR-0028: the latest two releases are
+                   kept; the notes of all versions stay in CHANGELOG.md).
 
 .EXAMPLE
   .\scripts\release.ps1 -Repo someone/streakboom -Notes "Fixes the bubble position"
@@ -128,12 +129,15 @@ if ($Publish) {
     git push origin HEAD
     if ($LASTEXITCODE -ne 0) { throw "git push failed" }
 
-    # Keep only the latest release: delete every other release and its tag (the commits stay; the notes live in CHANGELOG.md).
-    $old = ((& $gh api "repos/$Repo/releases?per_page=100") | ConvertFrom-Json) | Where-Object { $_.tag_name -ne $tag } | ForEach-Object { $_.tag_name }
+    # Keep the new release and the one right before it (a way back if the new one is bad); delete every older release and its tag
+    # (the commits stay; the notes live in CHANGELOG.md).
+    $others = ((& $gh api "repos/$Repo/releases?per_page=100") | ConvertFrom-Json) | Where-Object { $_.tag_name -ne $tag } | Sort-Object { [datetime]$_.created_at } -Descending
+    $old = $others | Select-Object -Skip 1 | ForEach-Object { $_.tag_name }
     foreach ($t in $old) {
       & $gh release delete $t --repo $Repo --cleanup-tag --yes
       if ($LASTEXITCODE -ne 0) { Write-Warning "could not delete the old release $t" } else { Write-Host "Deleted the old release $t (notes stay in CHANGELOG.md)" }
     }
+    if ($others) { Write-Host "Kept the previous release $(($others | Select-Object -First 1).tag_name) as a way back." }
 
     Write-Host ""
     Write-Host "Published $tag. Check from here (the repository copy may lag a few minutes behind a cache):"

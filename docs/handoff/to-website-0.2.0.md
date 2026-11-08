@@ -6,7 +6,7 @@
 
 ## Update 2026-11-08 (later): version 0.2.1 and the one-release policy
 - The current version is **0.2.1** (a small fix: fact-noting no longer uses up the daily chat limit; the pet's "enough for today" line is in character). Use 0.2.1 where this note says 0.2.0; the status wording becomes "First official release line (v0.2.1)" or simply the current version.
-- **GitHub keeps only the latest release** (ADR-0028). `v0.2.0` is deleted too. The notes of every version are in **`CHANGELOG.md`** at the repository root (raw: `https://raw.githubusercontent.com/vinhcodon/streakboom/main/CHANGELOG.md`).
+- **GitHub keeps only the latest two releases** (ADR-0028; today only `v0.2.1` exists, `v0.2.0` was deleted). Older tags and installers return 404. The notes of every version are in **`CHANGELOG.md`** at the repository root (raw: `https://raw.githubusercontent.com/vinhcodon/streakboom/main/CHANGELOG.md`).
 - So the site's "updates" section (`site/app.js` reads `releases?per_page=5`) will always show one release. Better: build it from `CHANGELOG.md` (fetch the raw file, show the newest few entries, keep working if the fetch fails) and keep the download button on `releases/latest`.
 - Everything else below still applies.
 
