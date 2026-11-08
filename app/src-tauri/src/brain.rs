@@ -57,6 +57,50 @@ pub struct Turn {
 
 // ------------------------------------------------------------------ prompts
 
+/// The pet shows an emotion with its body while it speaks. The model names it in a leading tag,
+/// which `split_mood` removes before anything is displayed.
+pub const MOODS: [&str; 7] = ["neutral", "happy", "warm", "sassy", "surprised", "curious", "sad"];
+const MOOD_RULE: &str = " Start every reply with exactly one tag in square brackets saying how you feel, chosen from     [neutral] [happy] [warm] [sassy] [surprised] [curious] [sad]. Use [neutral] most of the time.     Use [sad] only when the user is sad or something sad happened, and then stay gentle: no jokes.     Use [sassy] only for playful teasing, never when the user is upset. The tag is never part of what you say aloud.";
+
+/// Splits a leading (or trailing) mood tag off a reply: returns (text, mood). Anything that is not
+/// in the list becomes "neutral", and a bracketed word of the right shape is removed anyway so a
+/// stray tag never reaches the screen.
+pub fn split_mood(raw: &str) -> (String, String) {
+    let mut text = raw.trim().to_string();
+    let mut mood = "neutral".to_string();
+    let tag = |s: &str| -> Option<(String, usize)> {
+        // a "[word]" at the very start: (word, bytes consumed)
+        let s = s.trim_start();
+        let rest = s.strip_prefix('[')?;
+        let end = rest.find(']')?;
+        let word = rest[..end].trim().trim_start_matches("mood:").trim().to_lowercase();
+        if word.is_empty() || word.len() > 14 || !word.chars().all(|c| c.is_ascii_alphabetic()) {
+            return None;
+        }
+        Some((word, (s.len() - rest.len()) + end + 1))
+    };
+    if let Some((w, n)) = tag(&text) {
+        let lead = text.len() - text.trim_start().len();
+        if MOODS.contains(&w.as_str()) {
+            mood = w;
+        }
+        text = text[lead + n..].trim_start().to_string();
+    }
+    // a tag the model put at the end instead
+    if let Some(i) = text.rfind('[') {
+        let tail = &text[i..];
+        if let Some((w, n)) = tag(tail) {
+            if n == tail.trim_end().len() {
+                if MOODS.contains(&w.as_str()) && mood == "neutral" {
+                    mood = w;
+                }
+                text = text[..i].trim_end().to_string();
+            }
+        }
+    }
+    (text, mood)
+}
+
 pub fn persona(lang: &str, tier: u8, gentle: bool) -> String {
     let language = if lang == "vi" { "Vietnamese" } else { "English" };
     let mut s = String::from(
@@ -70,6 +114,7 @@ pub fn persona(lang: &str, tier: u8, gentle: bool) -> String {
     if gentle {
         s.push_str(" Be warm and kind; no sarcasm.");
     }
+    s.push_str(MOOD_RULE);
     match tier {
         0 | 1 => s.push_str(" You barely know the user yet, so be a little shy."),
         3 | 4 => s.push_str(" You are close friends with the user."),
@@ -511,6 +556,19 @@ mod tests {
         assert!(model_ok("gemini-3.1-flash-lite") && !model_ok("a/b") && !model_ok("") && !model_ok("x?key=1"));
     }
 
+
+    #[test]
+    fn mood_tags_are_split_off_and_never_shown() {
+        assert_eq!(split_mood("[happy] Hello there!"), ("Hello there!".into(), "happy".into()));
+        assert_eq!(split_mood("  [Sad]  I'm here."), ("I'm here.".into(), "sad".into()));
+        assert_eq!(split_mood("[mood: warm] Aw."), ("Aw.".into(), "warm".into()));
+        assert_eq!(split_mood("No tag at all."), ("No tag at all.".into(), "neutral".into()));
+        assert_eq!(split_mood("[excited] Wow!"), ("Wow!".into(), "neutral".into())); // unknown: removed, neutral
+        assert_eq!(split_mood("Fine. [sassy]"), ("Fine.".into(), "sassy".into())); // at the end
+        assert_eq!(split_mood("Use arr[0] here."), ("Use arr[0] here.".into(), "neutral".into())); // real brackets stay
+        assert_eq!(split_mood("[happy]"), ("".into(), "happy".into()));
+        assert!(persona("en", 2, false).contains("[neutral]"));
+    }
 
     #[test]
     fn known_facts_reach_the_persona_and_are_bounded() {

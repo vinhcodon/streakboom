@@ -100,6 +100,23 @@ test("belly-rub poses play, settle and come back to idle", () => {
   }
 });
 
+test("the mood poses play, settle and return to idle; sad folds the ears down", () => {
+  for (const p of ["nod", "smirk", "gasp", "curious", "sad"] as PetState[]) {
+    const r = new Rig();
+    r.setPose(p, 1, 0);
+    for (let i = 0; i < 240; i++) r.step(1 / 120);
+    if (p === "sad") {
+      const base = new Rig().frame().key.earL.b;
+      const k = r.frame().key.earL.b;
+      assert.ok(k[0] < base[0] - 3, `ear tip x ${k[0]} vs ${base[0]}`); // swung outward
+    }
+    r.setPose("idle", 1, 0);
+    for (let i = 0; i < 1200; i++) r.step(1 / 120);
+    assert.equal(r.mode, "idle", p);
+    assert.ok(Math.abs(r.frame().key.earL.b[0] - new Rig().frame().key.earL.b[0]) < 0.1, "ears back up");
+  }
+});
+
 test("every pose has a look", () => {
   for (const p of Object.keys(LOOKS)) assert.ok(POSE_NAMES.includes(LOOKS[p as PetState].base));
 });

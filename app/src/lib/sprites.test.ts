@@ -27,3 +27,15 @@ test("timed poses chain sensibly: drowsy falls asleep, everything else returns t
   assert.ok(TIMED.drowsy!.ms >= 600 && TIMED.drowsy!.ms <= 1500);
   assert.ok(TIMED.wake!.ms >= 400 && TIMED.wake!.ms <= 1000);
 });
+
+import { moodPose, MOODS } from "./sprites.ts";
+
+test("every mood has a reaction, unknown moods are a plain nod, and gentle tone drops sass", () => {
+  for (const m of MOODS) assert.ok(moodPose(m, false));
+  assert.equal(moodPose("neutral", false), "nod");
+  assert.equal(moodPose("whatever", false), "nod");
+  assert.equal(moodPose(undefined, false), "nod");
+  assert.equal(moodPose("sassy", false), "smirk");
+  assert.equal(moodPose("sassy", true), "nod");
+  assert.equal(moodPose("sad", true), "sad");
+});

@@ -5,7 +5,7 @@
   import { getCurrentWebviewWindow } from "@tauri-apps/api/webviewWindow";
   import { onMount } from "svelte";
   import Pet from "$lib/PetRig.svelte";
-  import { needsWakeFirst, TIMED, type PetState } from "$lib/sprites";
+  import { moodPose, needsWakeFirst, TIMED, type PetState } from "$lib/sprites";
   import type { Trigger } from "$lib/lines";
   import { pick, remember, resolveLang } from "$lib/selector";
   import { newScratch, scratchStep } from "$lib/gestures";
@@ -117,6 +117,7 @@
   let chatUser = $state("");
   let chatReply = $state("");
   let chatSlow = $state(false);
+  let replyMood = "neutral"; // how the last answer felt ("none" = it was an error, so no reaction)
   let chatDraft = false; // the user has typed something in the bubble's text box
   let updateVersion = $state(""); // the version the update offer is about
   let history: Turn[] = [];
@@ -660,18 +661,19 @@
     clearTimeout(slowTimer);
     slowTimer = setTimeout(() => (chatSlow = true), 8_000);
     stopTimers();
+    replyMood = "neutral";
     enter("think"); // the pet tilts its head and looks up while it waits
     resetMenuTimer();
     try {
-      const reply = clip(
-        await invoke<string>("brain_chat", {
-          lang,
-          tier: tierOf(data.closeness),
-          gentle: data.settings.gentle,
-          history,
-          known: knownFor(mem, lang),
-        })
-      );
+      const out = await invoke<{ text: string; mood: string }>("brain_chat", {
+        lang,
+        tier: tierOf(data.closeness),
+        gentle: data.settings.gentle,
+        history,
+        known: knownFor(mem, lang),
+      });
+      const reply = clip(out.text);
+      replyMood = out.mood;
       history = [...history, { role: "model" as const, text: reply }].slice(-8);
       chatReply = reply;
       void maybeRemember();
@@ -681,6 +683,7 @@
       if (k === "invalid_key") brainBad = true;
       if (k === "rate_limit") data = coolDown(data, Date.now());
       chatReply = ui.err[k];
+      replyMood = "none";
     } finally {
       clearTimeout(slowTimer);
       chatSlow = false;
@@ -688,7 +691,8 @@
       chatPhase = "reply";
       // If the chat was closed while waiting, still deliver the answer as a plain bubble.
       if (panel !== "chat") showBubble(chatReply, 5000);
-      enter("happy");
+      // act out the answer's feeling (a plain nod when there is none; nothing special after an error)
+      enter(replyMood === "none" ? "idle" : moodPose(replyMood, data.settings.gentle));
       resetMenuTimer();
       scheduleSave();
     }
@@ -927,16 +931,15 @@
         ? `Bây giờ là ${hour} giờ. Tâm trạng của bạn: ${mood}. Tình huống: ${trigger}. Hãy tự nói một câu ngắn với mình, không cần mình trả lời.`
         : `It is ${hour}:00. Your mood: ${mood}. Situation: ${trigger}. Say one short thing to me unprompted; no reply needed.`;
     try {
-      const reply = clip(
-        await invoke<string>("brain_chat", {
-          lang,
-          tier: tierOf(data.closeness),
-          gentle: data.settings.gentle,
-          history: [{ role: "user" as const, text: prompt }],
-        })
-      );
+      const out = await invoke<{ text: string; mood: string }>("brain_chat", {
+        lang,
+        tier: tierOf(data.closeness),
+        gentle: data.settings.gentle,
+        history: [{ role: "user" as const, text: prompt }],
+      });
+      const reply = clip(out.text);
       if (quiet || panel !== null || bubbleOn || pose === "held") return false;
-      enter("happy");
+      enter(moodPose(out.mood, data.settings.gentle));
       showBubble(reply, 5000);
       return true;
     } catch (e) {

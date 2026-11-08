@@ -13,6 +13,12 @@ export type PetState =
   | "drowsy" // eyes droop and it yawns, on the way to sleep
   | "purr" // belly rub: eyes closed in bliss, a slow sway
   | "huff" // the belly rub was a trap: flinch, half-lidded glare, tail flick
+  // reactions to what the pet says (see moodPose)
+  | "nod" // a small nod: nothing special
+  | "smirk" // playful teasing
+  | "gasp" // surprise
+  | "curious" // head tilted, eyes up
+  | "sad" // ears down, eyes low: sympathy
   | "wake"; // stretches and opens its eyes, on the way out of sleep
 
 export interface TimedPose {
@@ -31,7 +37,39 @@ export const TIMED: Partial<Record<PetState, TimedPose>> = {
   wake: { ms: 650 },
   purr: { ms: 2400 },
   huff: { ms: 1500 },
+  nod: { ms: 550 },
+  smirk: { ms: 1900 },
+  gasp: { ms: 1400 },
+  curious: { ms: 2100 },
+  sad: { ms: 2800 },
 };
+
+/** The feelings a chat answer can carry (the model names one; see brain.rs). */
+export const MOODS = ["neutral", "happy", "warm", "sassy", "surprised", "curious", "sad"] as const;
+export type Mood = (typeof MOODS)[number];
+
+/**
+ * The body language for an answer's mood. Anything unknown is a plain nod, so an answer never
+ * triggers a big reaction by accident. Sarcasm is dropped in the gentle tone.
+ */
+export function moodPose(mood: string | undefined, gentle: boolean): PetState {
+  switch (mood) {
+    case "happy":
+      return "happy";
+    case "warm":
+      return "purr";
+    case "sassy":
+      return gentle ? "nod" : "smirk";
+    case "surprised":
+      return "gasp";
+    case "curious":
+      return "curious";
+    case "sad":
+      return "sad";
+    default:
+      return "nod";
+  }
+}
 
 /**
  * A sleeping pet never jumps straight into another pose: it wakes up first (stretch, eyes

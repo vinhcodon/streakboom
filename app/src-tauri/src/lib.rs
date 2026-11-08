@@ -534,7 +534,7 @@ async fn brain_connect(
         }
         state.dirty.store(true, Ordering::Relaxed);
         Ok(ConnectOut {
-            reply,
+            reply: brain::split_mood(&reply).0,
             model: current_model(&state),
         })
     })
@@ -587,6 +587,13 @@ fn brain_set_model(state: State<AppState>, model: Option<String>) -> Result<Stri
     Ok(current_model(&state))
 }
 
+/// A chat answer: the words to show, and the emotion the pet should act out while saying them.
+#[derive(Serialize)]
+struct ChatReply {
+    text: String,
+    mood: String,
+}
+
 #[tauri::command]
 async fn brain_chat(
     app: AppHandle,
@@ -595,12 +602,14 @@ async fn brain_chat(
     gentle: bool,
     history: Vec<Turn>,
     known: Option<Vec<String>>,
-) -> Result<String, AiError> {
+) -> Result<ChatReply, AiError> {
     tauri::async_runtime::spawn_blocking(move || {
         let key = brain::load_key().ok_or_else(|| AiError::new(Kind::InvalidKey, "no key"))?;
         let state = app.state::<AppState>();
         let system = brain::persona_with(&lang, tier, gentle, known.as_deref().unwrap_or(&[]));
-        run_generate(&state, &key, &system, &history)
+        let raw = run_generate(&state, &key, &system, &history)?;
+        let (text, mood) = brain::split_mood(&raw);
+        Ok(ChatReply { text, mood })
     })
     .await
     .map_err(|_| task_failed())?

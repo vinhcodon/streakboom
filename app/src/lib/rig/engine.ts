@@ -67,8 +67,9 @@ interface Look {
   cheek: number;
   mouth: Mouth;
   dots: number;
+  droop: number; // ears folded down, 0..1
 }
-const REST: Look = { base: "stand", theta: 0, walk: 0, roll: 0, dy: 0, gx: 0, gy: 0, lid: 1, happy: 0, wide: 0, cheek: 0.6, mouth: "smile", dots: 0 };
+const REST: Look = { base: "stand", theta: 0, walk: 0, roll: 0, dy: 0, gx: 0, gy: 0, lid: 1, happy: 0, wide: 0, cheek: 0.6, mouth: "smile", dots: 0, droop: 0 };
 /** What each pose looks like. Poses that only differ in expression share the same body key. */
 export const LOOKS: Record<PetState, Look> = {
   idle: REST,
@@ -82,6 +83,11 @@ export const LOOKS: Record<PetState, Look> = {
   drowsy: { ...REST, base: "sit", roll: -3, dy: 4, lid: 0.45, mouth: "yawn" },
   wake: { ...REST, base: "stretch", theta: 0.7, lid: 0.6 },
   purr: { ...REST, happy: 1, roll: -5, dy: 2, cheek: 0.95, mouth: "smile" },
+  nod: { ...REST, dy: 3 },
+  smirk: { ...REST, lid: 0.62, roll: 4, gx: 2, mouth: "smile", cheek: 0.8 },
+  gasp: { ...REST, wide: 1, mouth: "o", cheek: 0.4 },
+  curious: { ...REST, roll: 8, gx: 3, gy: -3, wide: 0.45, mouth: "flat", dots: 0 },
+  sad: { ...REST, roll: -6, dy: 5, gy: 2, lid: 0.7, mouth: "flat", cheek: 0.2, droop: 1 },
   huff: { ...REST, roll: 7, dy: -1, lid: 0.55, mouth: "flat", cheek: 0.3 },
 };
 
@@ -125,6 +131,7 @@ export class Rig {
   private cheek = new Spring(0.6, 60);
   private dots = new Spring(0, 90);
   private tail = new Spring(0, 50);
+  private droop = new Spring(0, 70);
   private hop = new Spring(0, 380, 0.28);
   private sq = new Spring(0, 320, 0.32);
   private tilt = new Spring(0, 130, 0.8);
@@ -135,7 +142,7 @@ export class Rig {
   private all(): Spring[] {
     return [
       ...Object.values(this.pw), this.theta, this.walk, this.roll, this.headDy, this.gx, this.gy, this.lid, this.happy,
-      this.wide, this.cheek, this.dots, this.tail, this.hop, this.sq, this.tilt, ...Object.values(this.mouths),
+      this.wide, this.cheek, this.dots, this.tail, this.droop, this.hop, this.sq, this.tilt, ...Object.values(this.mouths),
     ];
   }
 
@@ -163,6 +170,7 @@ export class Rig {
     this.wide.t = look.wide;
     this.cheek.t = look.cheek;
     this.dots.t = look.dots;
+    this.droop.t = look.droop;
     for (const m of MOUTHS) this.mouths[m].t = m === look.mouth ? 1 : 0;
     this.tilt.t = pose === "held" ? tilt : 0;
     if (changed || replay) this.kick(pose, changed);
@@ -172,6 +180,8 @@ export class Rig {
   private kick(pose: PetState, changed: boolean) {
     if (pose === "happy") this.hop.v = -300; // bounces up and settles
     else if (pose === "purr") this.sq.v = 0.9; // a slow, soft sway
+    else if (pose === "gasp") this.hop.v = -330; // a startled jump
+    else if (pose === "smirk") this.twitch(); // a flick of the tail
     else if (pose === "huff") {
       this.hop.v = -260; // flinches...
       this.twitch(); // ...and flicks its tail
@@ -288,6 +298,23 @@ export class Rig {
         const dy = p[1] - oy;
         p[0] = ox + dx * c - dy * s;
         p[1] = oy + dx * s + dy * c;
+      }
+    }
+    // ears fold down about their base: each tip swings outward and down
+    const dr = Math.max(0, Math.min(1, this.droop.x));
+    if (dr > 0.01) {
+      for (const [ear, sign] of [[key.earL, -1], [key.earR, 1]] as const) {
+        const bx = (ear.a[0] + ear.c[0]) / 2;
+        const by = (ear.a[1] + ear.c[1]) / 2;
+        const ang = sign * 0.85 * dr;
+        const cs = Math.cos(ang);
+        const sn = Math.sin(ang);
+        for (const p of [ear.b, ear.ib]) {
+          const dx = p[0] - bx;
+          const dy = p[1] - by;
+          p[0] = bx + dx * cs - dy * sn;
+          p[1] = by + dx * sn + dy * cs;
+        }
       }
     }
     const hang = this.pw.hang.x;
