@@ -1,16 +1,17 @@
 # Streakboom
 
-A small desktop pet for Windows. It lives on top of your screen as a round "mochi cat", reacts to being stroked, poked and carried, says scripted lines in Vietnamese or English, and, if you give it your own Google Gemini API key, you can chat with it.
+A small desktop pet for Windows. It lives on top of your screen as a round "mochi cat", reacts to being stroked, poked and carried, says scripted lines in Vietnamese or English, and, if you give it your own API key (Gemini, Claude or OpenAI), you can chat with it, and it will remember a few things about you.
 
 > **Status: closed alpha (v0.1.x), Windows 10/11 only.** The installer is not code-signed yet, so Windows SmartScreen will warn when you run it.
 
 ## What it does
 
-- **A pet that is alive without any AI.** A mood and closeness model, about 170 hand-written lines per language (sarcastic ones can be turned off with "gentle tone"), quiet hours, and no guilt: the pet never dies or starves, it only gets "a bit lonely".
-- **Gestures instead of buttons.** Sweep the cursor back and forth over its head to scratch it, click to poke, drag to carry it (it hangs by the scruff and leans with your cursor). It wanders sideways on its own and always stays on screen, even at the very top and bottom.
-- **Bring your own brain.** Add a free Gemini API key (from Google AI Studio) and double-click the pet to chat. Some of its unprompted lines are then written by the model, within a daily cap. Your key stays on your computer.
+- **A pet that is alive without any AI.** A mood and closeness model, 182 hand-written lines per language (sarcastic ones can be turned off with "gentle tone"), quiet hours, and no guilt: the pet never dies or starves, it only gets "a bit lonely".
+- **Gestures instead of buttons.** Sweep the cursor over its head to scratch it, over its belly to rub it (it usually loves it; sometimes it is a trap), click to poke, drag to carry it (it hangs by the scruff and leans with your cursor). Its eyes follow your cursor when it is over the pet. It wanders sideways on its own, always stays on screen, and moves like one animal, not a set of pictures.
+- **Bring your own brain.** Add your own key and double-click the pet to chat. Gemini has a free tier; Claude and OpenAI are paid (a Claude Pro/Team or ChatGPT Plus subscription does not include API access). Some of its unprompted lines are then written by the model, within a daily cap, and each answer comes with a feeling the pet acts out. It answers in the language you write in. Your key stays on your computer.
+- **It remembers a little, and you control it.** A name for the pet, what to call you, a usual part of the day, milestones, and (with a brain, on by default, switchable) a few short facts from your chats. Settings > Memory shows all of it and can forget any part.
 - **Polite.** It stays quiet in fullscreen apps, during quiet hours and in Quiet mode, and never takes the keyboard focus for plain speech.
-- **Updates itself, but asks first.** It checks GitHub for a newer signed version and the pet offers to update; it never restarts on its own.
+- **Updates itself, your way.** Install automatically when you are idle, ask first (the default), or never check. It can also start with Windows (off by default; it asks once, politely).
 
 ## Install
 
@@ -25,36 +26,41 @@ Windows needs the WebView2 runtime; the installer downloads it if it is missing.
 | Do this | To get this |
 |---|---|
 | Sweep the cursor over its head | scratch (the pet is happy, closeness grows) |
+| Sweep the cursor over its belly | a belly rub (bliss, or sometimes a playful trap) |
 | Click once | a poke |
 | Drag | carry it; it lands with a little squash |
 | Double-click | open the chat bubble (a scripted "how are you" until it has a brain) |
 | Right-click the pet, or the tray icon | Settings, Quiet mode, Quit |
 
-**Giving it a brain:** try to chat, or click the disabled text box, and the pet asks. Choose "Get a free brain" and follow the steps in the settings window: open Google AI Studio, create an API key, paste it, tick "I am 18 or older", and connect. You can pick the model there (the default is `gemini-3.1-flash-lite`, which answered in about a second when tested).
+On a fresh install the pet shows a four-card tour (replay it in Settings, About).
 
-**Settings** (General, Brain, Privacy, About) open from the tray icon or the pet's right-click menu.
+**Giving it a brain:** try to chat, or click the disabled text box, and the pet asks. Choose "Get a free brain" and follow the steps on the Brain page of Settings: pick Gemini, Claude or OpenAI, open the provider's console, create an API key, paste it, tick "I am 18 or older" and connect. You can pick the model there. Claude and OpenAI need credit on the provider's side; set a low monthly spend limit there. With keys for several brains you choose which one answers.
+
+**Settings** (General, Personality, Brain, Memory, Privacy, About) open from the tray icon or the pet's right-click menu.
 
 ## Privacy and your data
 
-- Your API key is stored in the Windows Credential Manager (entry `gemini-api-key.streakboom`) and sent only to Google, in a request header. It is never written to a file or sent to any other window of the app.
-- With Google's free tier, what you send may be used and read by Google, and API users must be 18 or older (clients in the EEA, Switzerland and the UK must use paid services). The app says so before you connect.
-- Chats are kept in memory only.
-- **Usage stats are off by default.** If you opt in, the app records funnel event names (for example "opened the chat") and timestamps with a random id, in a local queue. Nothing is sent automatically; **Settings, Privacy, Copy stats** puts it on your clipboard so you can share it by hand. Opting out deletes the id and the queue.
-- Files live in `%APPDATA%\com.streakboom.app\`: `state.json` (window position, Quiet mode, chosen model) and `pet.json` (everything else).
+- Your API keys are stored in the Windows Credential Manager (one entry per brain: `gemini-api-key`, `claude-api-key`, `openai-api-key`, service `streakboom`) and sent only to the provider you chose, in a request header. They are never written to a file or sent to any other window of the app.
+- With Google's free tier, what you send may be used and read by Google, and API users must be 18 or older (clients in the EEA, Switzerland and the UK must use paid services). For Claude and OpenAI, what you send goes to Anthropic or OpenAI to be answered; see their terms. The app says so before you connect.
+- Chats are kept in memory only. What the pet remembers is stored on your computer in `memory.json`: the names you gave, coarse habit counts (for example how many sessions began in each hour of the day), touch counts, milestones and the short facts it noted from your chats. The facts are sent to the brain you use, together with later chats you start. You can see, edit, delete or switch off all of it in Settings > Memory.
+- **Usage stats are off by default.** If you opt in, the app records funnel event names (for example "opened the chat") and timestamps with a random id, in a local queue. Nothing is sent automatically; **Settings, Privacy, Copy stats** puts it on your clipboard so you can share it by hand. Opting out deletes the id and the queue. (A change to also count a few per-day numbers is specified but not built; it will ask you again before it starts: see `spec/05-north-star-metrics.md`.)
+- Files live in `%APPDATA%\com.streakboom.app\`: `state.json` (window position, Quiet mode, the brain in use and the chosen models), `pet.json` (everything else about the pet) and `memory.json` (what it remembers).
 
 ## Project layout
 
 ```
 app/                    the application (Tauri 2 + SvelteKit + Svelte 5)
   src/lib/              pure logic and shared code: state model, line selection, gestures,
-                        line pools, UI strings, the cat rig (PetRig.svelte, rig/), window messages (bus.ts)
+                        line pools, UI strings, memory (memory.ts, memlines.ts), the cat rig
+                        (PetRig.svelte, rig/), window messages (bus.ts)
   src/routes/           the three windows: + page (the pet), bubble/, settings/
   src-tauri/            the Rust core: window control, drag and bubble placement (layout.rs),
-                        Gemini client and credential store (brain.rs), updater (updater.rs)
+                        the brains and credential store (brain.rs, claude.rs, openai.rs),
+                        updater (updater.rs)
 scripts/                release.ps1 (signed build and update manifest), test-update/ (configs
                         for trying the update flow against a local server)
-spec/                   the requirements and design documents (see below)
-docs/                   engineering-log.md: what was built, measured and learned, in order
+spec/                   how the product works now (see below)
+docs/                   the record around it: decisions/, hypotheses/, handoff/, plans/, engineering-log.md
 ```
 
 ### How it fits together
@@ -72,9 +78,9 @@ npm run tauri dev          # run the app with hot reload
 ```
 
 ```powershell
-npm test                   # Node tests for the pure logic (src/lib/*.test.ts)
+npm test                   # Node tests for the pure logic (src/lib/*.test.ts), 77 tests
 npm run check              # svelte-check (types)
-cd src-tauri; cargo test   # Rust tests (Gemini client against a mock server, window geometry)
+cd src-tauri; cargo test   # Rust tests (the three brain clients against a mock server, window geometry), 33 tests
 ```
 
 ```powershell
@@ -91,25 +97,30 @@ Updates are signed with a private key that is **not** in this repository (`%USER
 To release a version:
 
 1. Bump `version` in `app/src-tauri/tauri.conf.json`, `app/src-tauri/Cargo.toml` and `app/package.json`. (If you edit these with Windows PowerShell 5.1, do not use `Set-Content -Encoding utf8`: it adds a byte-order mark.)
-2. Commit and push.
-3. `.\scripts\release.ps1 -Repo vinhcodon/streakboom -Notes "what changed"` builds the signed installer and writes `dist\latest.json`.
-4. `gh release create v<version> dist\Streakboom_<version>_x64-setup.exe dist\latest.json --repo vinhcodon/streakboom --latest` (not a draft or pre-release, or the app will not find it).
+2. Commit **only the files you changed** (explicit paths, never `git add -A`; see ADR-0023) and push. Release from a clean tree.
+3. `.\scripts\release.ps1 -Repo vinhcodon/streakboom -Notes "what changed"` builds the signed installer and writes `dist\latest.json`. Run it with `powershell.exe -File` (inside PowerShell, its native stderr output can abort it).
+4. `gh release create v<version> dist\Streakboom_<version>_x64-setup.exe dist\latest.json --repo vinhcodon/streakboom --latest` (not a draft or pre-release, or the app will not find it). `gh` must be on your PATH (`%LOCALAPPDATA%\Programs\GitHub CLI` on the author's machine).
 
 `scripts/test-update/` holds two config overrides for rehearsing the update flow (a version bump and permission for plain HTTP to a local server); the manifest address can be overridden with the `STREAKBOOM_UPDATE_URL` environment variable. An update is only installed if its signature verifies, whatever the address.
 
 ## Documentation
 
-| Document | What it is |
+The documents are split by the kind of statement they make, so each fact has one home.
+
+| Where | What it is |
 |---|---|
-| [`spec/01-product-hypothesis.md`](spec/01-product-hypothesis.md) | The original requirements, hypotheses and decisions log |
-| [`spec/02-onboarding-flow.md`](spec/02-onboarding-flow.md) | From a scripted pet to a pet with a brain: screens, messages, funnel events |
-| [`spec/03-naive-pet-design.md`](spec/03-naive-pet-design.md) | The no-AI pet: character, mood and closeness model, lines, tone, interactions |
-| [`spec/04-technical-design.md`](spec/04-technical-design.md) | Stack, architecture, data and privacy, Gemini integration, decisions, open items |
-| [`docs/engineering-log.md`](docs/engineering-log.md) | The spikes, measurements and per-milestone record, including what was *not* verified |
+| [`spec/`](spec) | **How the product works now.** [`01-product-requirements.md`](spec/01-product-requirements.md) (what it must be), [`02-onboarding-flow.md`](spec/02-onboarding-flow.md) (naive to brained), [`03-naive-pet-design.md`](spec/03-naive-pet-design.md) (the pet, memory, lines), [`04-technical-design.md`](spec/04-technical-design.md) (stack, architecture, brains, data), [`05-north-star-metrics.md`](spec/05-north-star-metrics.md) (Bond Days, specified, not built) |
+| [`docs/decisions/`](docs/decisions/README.md) | **What was decided, and why**: one short record per decision, with the alternatives rejected |
+| [`docs/hypotheses/`](docs/hypotheses/README.md) | **What we believe but have not proven**, how it would be settled, and the technical assumptions not yet verified |
+| [`docs/handoff/`](docs/handoff/README.md) | **Notes passed between sessions**, kept as received, with an index of what became of each |
+| [`docs/plans/`](docs/plans/README.md) | **What we will do next**: the roadmap and the plan for each piece of work |
+| [`docs/engineering-log.md`](docs/engineering-log.md) | **The history**: spikes, measurements and per-round records, including what was not verified |
+
+[`docs/README.md`](docs/README.md) explains how to keep them in step.
 
 ## Roadmap
 
-Done: the naive pet, the key flow, the brained pet, opt-in stats with Copy stats, the installer and signed auto-update. Next: the closed alpha with a handful of observed first-time users. Open: a place to send stats (or keep Copy stats for the alpha), code signing, crash reporting without content, a macOS port, more gestures (belly rub, chasing the cursor), streaming replies, and testing on more machines (multi-monitor, mixed DPI). The full list is in section 8 of the technical design.
+Done: the naive pet, the key flow, three brains, memory, gestures, emotional reactions, opt-in stats with Copy stats, the installer and signed auto-update. Next, in order: the closed alpha with a handful of observed first-time users, preceded by the north star counters (Bond Days) and a first real-key test of the Claude and OpenAI brains. Open: a place to send stats (or keep Copy stats for the alpha), code signing, crash reporting without content, a macOS port, and testing on more machines (multi-monitor, mixed DPI). The ordered plan is in [`docs/plans/roadmap.md`](docs/plans/roadmap.md).
 
 ## License
 

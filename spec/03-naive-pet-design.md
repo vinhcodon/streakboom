@@ -1,78 +1,89 @@
-# Naive Pet Design (Alpha 1.0)
+# Naive Pet Design
 
-Goal: a pet with no AI that is charming enough to keep for 7 days (Hypothesis 4) and builds the attachment that makes users willing to give it a "brain" (Hypothesis 2b).
+Goal: a pet with no AI that is charming enough to keep for 7 days (hypothesis H4) and that builds the attachment which makes users willing to give it a "brain" (H2b). Hypotheses: [`../docs/hypotheses/`](../docs/hypotheses/README.md). Decisions: [`../docs/decisions/`](../docs/decisions/README.md) (ADR-0011 character and gestures, ADR-0012 motion, ADR-0013 tone, ADR-0014 memory). "Built" below means it exists in the 0.1.14 code; "not built" is stated explicitly.
 
 ## Decisions
-- **Character:** a small animal. Decided: a round "mochi cat" (see the character paragraph under Behaviors).
-- **Personality:** playful, mischievous, mildly sarcastic. Teasing never targets the user's worth or work quality; it targets the situation (the clock, the coffee, the pile of tabs).
+- **Character:** a round 2D "mochi cat" (ADR-0011).
+- **Personality:** playful, mischievous, mildly sarcastic. Teasing never targets the user's worth or work quality; it targets the situation (the clock, the coffee, the pile of tabs). A Gentle tone setting drops the sarcastic lines (ADR-0013).
 - **Languages:** Vietnamese and English line pools, chosen by system language, switchable in Settings.
 - **No guilt:** the pet never dies, starves or gets sick. Neglect only makes it "a bit lonely", and it is delighted when the user returns.
-- **Naive ≠ dumb:** it does not pretend to understand free text. Free-text input is disabled with an in-character hint.
+- **Naive is not dumb:** it does not pretend to understand free text. Free-text input is disabled with an in-character hint until a brain is connected.
 
 ## State model
-Two values, stored locally, small and cheap.
+Two values plus a streak, stored locally in `pet.json`, small and cheap.
 
 | State | Range | Moves up when | Moves down when |
 |---|---|---|---|
-| Mood | 0–100 | Interactions (pet, snack, play), user returns after absence | Slow decay toward a neutral baseline (~50); never below 25 |
-| Closeness | 0–100 | Daily check-in (first interaction of the day), streak of days, interactions | Very slow decay; floor at 10; never resets |
+| Mood | 25 to 100 | Interactions (pet, snack, play, how), returning after absence | Slow decay toward about 50; never below 25 |
+| Closeness | 10 to 100 | A daily check-in (first launch of a day), a streak of days, gestures (capped per day) | Very slow decay after long absence; floor at 10; never resets |
 
-Derived mood bands: Sleepy (night/idle), Content, Playful, Bored, Lonely-but-hopeful. Mood chooses animation and line pool; closeness unlocks new lines and gestures.
+Derived mood bands: Sleepy (late night), Content, Playful, Bored, Lonely-but-hopeful. Mood chooses the line pool; closeness unlocks lines.
 
-## Closeness tiers (content unlocks)
-1. **Stranger (0–19):** shy, short lines, keeps distance on screen.
-2. **Acquaintance (20–49):** teasing starts, follows the cursor briefly.
-3. **Friend (50–79):** inside jokes, remembers the user's name and routine times, rare "brain" hints.
-4. **Close (80–100):** richer animations, special reactions to milestones (day 7, day 30).
+## Closeness tiers
+1. **Stranger (0 to 19):** shy, short lines. Built (lines by tier).
+2. **Acquaintance (20 to 49):** teasing starts. Built as lines. The belly-rub "trap" starts here. "Follows the cursor briefly": not built as such; the eyes follow the cursor while it is over the pet at every tier.
+3. **Friend (50 to 79):** inside jokes and rare "brain" hints. Built as lines. Remembering the user's name and a usual part of the day comes from memory (below), not from the tier.
+4. **Close (80 to 100):** warmer lines and milestone reactions (streak days 3, 7 and 30, and shared memory milestones). "Richer animations": not built.
 
-The "brain request" (see 02-onboarding-flow.md) is more natural at tier 2–3, but is triggered by behavior, not by tier alone.
+The brain request (spec/02) is more natural at tier 2 or 3, but it is triggered by behavior, not by tier alone.
 
 ## Behaviors
-- **Idle loop:** idle, look around, groom/stretch, yawn, sit, nap.
-- **Movement:** short walks along screen edges or the taskbar; never covers the center of the screen; stays out of the way of the active window's title bar and primary buttons where possible.
-- **Character (revised after review):** a small round "mochi cat": head nearly as big as the body, large dark eyes with white highlights, pink cheeks, a belly patch, forehead stripes, and a tail that carries mood. Poses: idle, look around, think (while waiting for an answer), happy (closed ^ ^ eyes, bounce), land (squash after being put down), walk (side view), held (hanging by the scruff, leaning with the cursor), sleep (curled loaf with z's). Poses flow into one another instead of cutting: views cross-fade, the pet turns around before and after walking, jolts when picked up, yawns (drowsy) before it sleeps and stretches (wake) before it does anything else after sleeping. The sarcastic side shows in half-lidded eyes and a lopsided smirk, planned as an extra expression for spicy lines (not built yet).
-- **Interactions (revised after M4 review; the 5-button menu was removed as clumsy):** gestures, not buttons. Click = poke reaction; drag = carry; sweeping the cursor back and forth over the head = scratch (mood and closeness up, daily cap still applies); double-click = one speech bubble with a text box (scripted "how are you" without a brain, free chat with one). Settings live in the tray menu and a small gear in the chat bubble. Planned next: belly rub (usually liked, about 1 in 4 a playful "trap" bite with a sarcastic line), eyes following the cursor, chase play. Gestures are invisible, so the pet hints at the head scratch up to 3 times, at least 20 h apart, until the user does it once. The snack and play line pools are kept for the later gestures and for unprompted lines.
-- **Reactive to the system (no content reading):** time of day, session length, idle time, battery low, lid-open after absence, weekday vs weekend, holidays. No window titles or screen content in naive mode.
+- **Idle loop:** standing, an occasional blink and tail twitch, looking around, thinking while waiting for an answer, a drowsy yawn before sleep, curled sleep with z's, and a stretch on waking. Built. "Groom" and "sit" as separate idle behaviors: not built (the sit and loaf are key poses used by drowsy and sleep).
+- **Movement:** short walks along the screen edge, always clamped on screen, turning at the edges through the front view. The pet is only clickable where the cat is (the rest of its window is click-through).
+- **Character and motion (ADR-0011, ADR-0012):** a small round cat: head nearly as big as the body, large dark eyes with highlights, pink cheeks, a belly patch, forehead stripes, a tail. Motion is a spring-driven blend of hand-drawn key poses (stand, sit, loaf, hang, stretch; front and side views) on a canvas; a pose change is a continuous morph, not a swap. Poses: idle, look, think, happy (hop), land (squash), walk, held (hangs by the scruff, leans with the cursor), drowsy, sleep, wake, purr (belly rub enjoyed), huff (belly rub trap), nod, smirk, gasp, curious and sad (ears fold down). Mood poses are acted out for the feeling of a chat answer (ADR-0016). Standing still costs no redraws.
+- **Interactions (gestures, not buttons, ADR-0011):**
+  - Click: a poke reaction. Drag: carry it. Double-click: one speech bubble with a text box (a scripted "how are you" without a brain, free chat with one).
+  - Sweep the cursor back and forth over the head: scratch (mood and closeness up; a daily cap on closeness still applies).
+  - Over the belly (the lower 45% of the sprite): a rub. Usually liked (`purr`, a "belly" line). Sometimes a trap (`huff`, a "huff" line, no gain): only from tier 2, after at least 2 rubs since the last trap, at least 3 minutes apart, then a 35% chance.
+  - Eyes follow the cursor while it is over the pet and the cat is calm. Chasing the cursor across the screen: not wanted, not built.
+  - Settings: tray menu, right-click menu on the pet, and the gear in the chat bubble.
+  - Hints: one gesture at a time (head scratch, then belly rub), at least 20 hours apart, until the user has done it.
+- **Reactive to the system (no content reading):** time of day, session length and idle time (a timer). Built. Weekday versus weekend, battery low, lid open after absence and holidays: **not built**. No window titles or screen content are read.
+- **Polite:** nothing is said in fullscreen or presentation mode, in quiet hours, in Quiet mode, while dragging or while another bubble is open.
 
 ## Line system
-- **Line pools by trigger:** greeting, return-after-absence, long-session, late-night, morning, idle, interaction-reaction, milestone, brain-hint.
-- **Each line has tags:** language, mood band, closeness tier, trigger, cooldown.
-- **Selection:** filter by tags, exclude recently used (rolling window), weighted random. Never repeat the same line within a session.
-- **Target size for alpha:** about 150 lines per language (about 15 per trigger on average, more for greetings and idle), written by hand and reviewed for tone.
-- **Rate limits:** max one proactive bubble every ~10–15 minutes by default; none during quiet hours or when a fullscreen/meeting app is detected (to be validated technically); user can set "quiet", "normal", "chatty".
+- **Line pools by trigger:** greeting, return, morning, night, long session, idle, click, pet, how, milestone, brain hint, gesture hint, belly hint, belly, huff. The "snack" and "play" pools exist and are unused (no buttons any more; reserved for future gestures).
+- **Each line has tags:** language, mood band, closeness tier, hours, trigger. Lines marked `~` are sarcastic and hidden in the Gentle tone.
+- **Selection:** filter by tags, exclude recently used (a rolling window of 24), weighted random.
+- **Size today:** 182 lines per language (about 14% sarcastic), written by hand. Tests check that both languages match, that no text repeats, that lines fit a bubble (110 characters), that sarcasm stays between a few lines and 40%, and that every tier and mood has gentle-tone coverage.
+- **Rate limits:** one proactive bubble every 10 to 15 minutes by default (4 to 7 chatty, none when quiet); never during quiet hours, Quiet mode or fullscreen and presentation.
+
+## Memory (ADR-0014)
+Separate from the mood state, in `memory.json`, owned by the pet window.
+- **No AI needed:** the pet's name and what to call the user (typed by the user, never guessed); coarse habit counts (sessions per hour of day and weekday; a usual part of the day is stated only after 8 sessions and when it holds at least half of them); touch counts; milestones shared once (7, 30 and 100 days, 100 and 500 touches, the first chat, 25 chats).
+- **With a brain:** every 4 chat messages up to 3 short lasting facts are noted (at most 20 kept, deduplicated, editable, on by default with a switch). They go into chats the user starts as background.
+- **Where it is used:** at app start, on head scratches (a quarter of the time) and for milestones; never in the pet's unprompted lines, because the screen may be shared. The pet never claims a memory it does not hold.
+- **Control:** Settings > Memory shows everything and can forget habits, facts or everything.
 
 ## Tone guide
 - Short: one sentence, two at most.
 - Teasing, not nagging: "Four hours without a stretch. I'm judging you, kindly." Not: "You are working too much."
 - Never medical or moral advice; reminders to rest are suggestions with humor.
 - Never mention the user's performance, only the situation.
-- Self-aware about being limited, to set up the brain upgrade without a hard sell: "I only know a few words. I'd learn more if I had a brain."
+- Self-aware about being limited, to set up the brain upgrade without a hard sell.
 
 ### Example lines (samples for tone review)
 - Greeting (EN, tier 1): "Oh. You're here. I wasn't waiting. Much."
 - Greeting (VI, tier 1): "À, bạn đến rồi. Mình đâu có đợi. Hơi hơi thôi."
 - Long session (EN): "Three hours. Even I got up and left the pixel twice."
-- Long session (VI): "Ba tiếng rồi đó. Ngay cả mình cũng đã ngủ gật hai giấc."
 - Return after absence (EN): "You're back! I only rearranged your desktop in my head a little."
-- Brain hint (VI, tier 3): "Mình chỉ biết vài câu thôi. Có bộ não thì mình sẽ nói chuyện hay hơn nhiều đó."
+- Belly trap (EN): "It was a trap! You fell for the oldest trick in the book."
 
 ## Persistence and privacy
-- Local file only (mood, closeness, last-seen, preferences, used-line history).
-- No chat content exists in naive mode. Telemetry (opt-in) carries funnel events only.
+- Local files only: `pet.json` (mood, closeness, streak, settings, used-line history, AI usage, gesture and update bookkeeping, telemetry consent and queue), `memory.json` (the memory above), `state.json` (window position, Quiet mode, chosen provider and models). Chat history is in memory only.
+- No chat content is stored in naive mode. With a brain, the short facts noted from chats are stored and listed in Settings (see ADR-0014). Telemetry is opt-in and carries funnel event names today (spec/05 proposes per-day counts under a new consent).
 
-## Success metrics (alpha)
-- D3 and D7 retention in naive mode.
-- Interactions per active day (clicks, pets, menu uses).
-- Rate of hiding/closing the pet per day (should be low).
-- Share of users who reach closeness tier 2 and tier 3.
-- Proactive-bubble dismissal rate (if high, lower frequency).
+## Success metrics
+The north star and its inputs and guardrails are defined in [`05-north-star-metrics.md`](05-north-star-metrics.md) (Bond Days). The earlier list for the alpha (D3/D7 retention in naive mode, interactions per active day, hide rate, tier 2 and 3 reached, bubble dismissal rate) is folded into it; hide rate and dismissal rate cannot be measured yet.
 
 ## Risks
-- Line pool too small → repetition kills charm by day 3. Mitigation: many triggers, cooldowns, weekly new lines in alpha.
-- Sarcasm lands as rude in some cultures or moods. Mitigation: tone guide, "gentle" toggle in Settings.
-- Art cost of animations. Mitigation: a small set (idle, walk, sleep, react, carried) reused across moods with tint/bubble variation.
+- Line pool too small, so repetition kills charm by day 3. Mitigation: many triggers, cooldowns, new lines during the alpha.
+- Sarcasm lands as rude in some cultures or moods. Mitigation: the tone guide and the Gentle switch.
+- The belly trap may annoy. Mitigation: it is rare, never first, never twice in a row, and not in the Gentle-tone smirk.
+- Art cost. Mitigation: a small set of key poses reused with springs and expression variants.
 
 ## Open items
-- Species and art style (needs the artist/asset decision).
-- Technical feasibility of fullscreen/meeting detection on Windows and macOS.
-- Who writes and reviews the Vietnamese lines.
+- Who reviews the Vietnamese lines.
+- Technical feasibility of fullscreen and meeting detection with real apps (built on a Windows API, unverified in practice).
+- Emotions for scripted lines; weekday and holiday lines; battery and lid-open reactions.
+- Whether the cat's in-between frames need more key poses (the wake stretch looks weakest).

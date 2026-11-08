@@ -1,84 +1,95 @@
-# Technical Design (Alpha 1.0)
+# Technical Design
 
-The stable design of the app. What was built and measured, milestone by milestone (including the early spikes and the numbers behind the decisions below), is in [`../docs/engineering-log.md`](../docs/engineering-log.md).
+The stable design of the app as of 0.1.14. What was built and measured, round by round (including the early spikes and the numbers behind the decisions), is in [`../docs/engineering-log.md`](../docs/engineering-log.md). The reasons behind the choices are in [`../docs/decisions/`](../docs/decisions/README.md); the unverified assumptions are in [`../docs/hypotheses/`](../docs/hypotheses/README.md).
 
 ## 1. Stack
-- **Shell:** Tauri 2 (Rust core + system webview). Windows 10/11 with WebView2 first; macOS later; Linux out of scope.
-- **Frontend:** SvelteKit as a single-page app (`adapter-static`), Svelte 5 runes, TypeScript. The pet is a layered **vector rig animated with CSS** (no sprite sheets, no canvas).
-- **Rust side:** window control, our own drag with screen clamping, speech-bubble placement, OS credential store (`keyring`), Gemini client (`ureq` + rustls), signed auto-update (`tauri-plugin-updater`), fullscreen/presentation detection (`SHQueryUserNotificationState`).
-- **Rendering flag:** WebView2 runs with `--disable-gpu`. Measured: continuous animation on a transparent window costs 4-15x more CPU with the GPU process than with software rendering of a 120 px pet.
+- **Shell:** Tauri 2 (Rust core plus the system webview), Windows 10/11 with WebView2 first (ADR-0003, ADR-0004).
+- **Frontend:** SvelteKit as a single-page app (`adapter-static`), Svelte 5 runes, TypeScript. The pet is drawn on a **Canvas 2D** from a spring-driven rig (`src/lib/rig/`, `PetRig.svelte`): hand-drawn key poses blended by springs (ADR-0012). It replaced an earlier CSS layered rig.
+- **Rust side:** window control, our own drag with screen clamping, speech-bubble placement, the OS credential store (`keyring`), the brain clients (`brain.rs` with Gemini and the provider layer, `claude.rs`, `openai.rs`; `ureq` with rustls), signed auto-update (`tauri-plugin-updater`), start with Windows (`tauri-plugin-autostart`), fullscreen and presentation detection (`SHQueryUserNotificationState`).
+- **Rendering flag:** WebView2 runs with `--disable-gpu`. Measured: continuous animation on a transparent window costs 4 to 15 times more CPU with the GPU process than with software rendering of a 120 px pet (ADR-0005).
 
 ## 2. Architecture
 
-Three windows. The pet window owns all state and logic; the others are views.
+Three windows. The pet window owns all state and logic; the others are views (ADR-0006).
 
 ```
- main  (pet, 140x140)          bubble  (created on demand)     settings  (created on demand)
+ main  (pet, 140x140)          bubble  (created on demand)     settings  (created on demand, 680x600)
  - owns all state + logic      - view only                     - view + brain commands
- - drag, gestures, timers      - speech, chat, ask,            - General / Brain / Privacy / About
- - AI calls, telemetry queue     consent, update offer         - API key typed here, goes to Rust
+ - drag, gestures, timers      - speech, chat, ask, consent,   - General / Personality / Brain /
+ - AI calls, telemetry queue     update, name, choice, tour      Memory / Privacy / About
+ - memory (memory.json)                                        - API key typed here, goes to Rust
         ^                              ^                              ^
         +---------- events (src/lib/bus.ts), plain JSON, always via the pet window ------+
 
  Rust core: drag + clamp to the work area, bubble placement (above/below/right/left, always on screen),
             hit-test thread (click-through except over the pet), tray + right-click menu,
-            credential store, Gemini client, updater, atomic save of pet.json
+            credential store, brain clients (three providers), updater, autostart,
+            atomic save of pet.json, memory.json and state.json
 ```
 
 Principles:
-- **The API key never reaches the pet window.** It is typed in the settings window, validated by one tiny request in Rust, stored in the OS credential store and sent only in the `x-goog-api-key` header. Chat goes through a Rust command that reads the key itself. This keeps the key out of webview memory and devtools and avoids CORS and CSP.
-- **One writer of state.** The pet window writes `pet.json`; the other windows send actions or patches (`bubble-action`, `settings-patch`, `brain-changed`) and receive snapshots.
-- **Nothing runs when nothing happens.** A standing pet has no continuous animation (only a short blink or tail twitch every few seconds); walking, being carried and the one-shot poses animate. The bubble window is destroyed after 45 s hidden to give its memory back; the settings window exists only while open.
+- **API keys never reach the pet window** (ADR-0007). A key is typed in the settings window, validated by one tiny request in Rust, stored in the OS credential store (one entry per provider) and sent only in the provider's header. Chat goes through a Rust command that reads the key itself. This keeps the key out of webview memory and devtools and avoids CORS and CSP.
+- **One writer of state.** The pet window writes `pet.json` and `memory.json`; the other windows send actions or patches (`bubble-action`, `settings-patch`, `brain-changed`) and receive snapshots.
+- **Nothing runs when nothing happens.** A standing pet does not repaint; a short blink or tail twitch every few seconds. The redraw rate follows the motion: full speed while a spring moves, about 30 fps walking, about 11 fps for sleep and thinking (the settled cat is cached; only z's and dots are drawn). The bubble window is destroyed after 45 s hidden; the settings window exists only while open.
 - **The pet is the only thing that can be clicked** on its window: a Rust thread toggles click-through by hit-testing the cursor against the pet.
-- **Never interrupt.** Proactive lines, update offers and consent cards are suppressed in Quiet mode, quiet hours, fullscreen/presentation, while dragging or while another bubble is open.
+- **Never interrupt.** Proactive lines, update offers and cards are suppressed in Quiet mode, quiet hours, fullscreen or presentation, while dragging or while another bubble is open.
 
 ## 3. Milestones
-- **M0 Spikes** (done): transparency, click-through, memory/CPU, keyring.
+- **M0 Spikes** (done): transparency, click-through, memory and CPU, keyring.
 - **M1 UI shell** (done): transparent always-on-top window, drag, tray, position memory, multi-monitor handling.
-- **M2 Naive pet** (done): mood and closeness model, local persistence, line selector with cooldowns, quiet hours, proactive rate limiting, VI/EN line pools (168 per language).
+- **M2 Naive pet** (done): mood and closeness, local persistence, line selector with cooldowns, quiet hours, proactive rate limiting, VI/EN line pools (182 per language today).
 - **M3 Onboarding and BYOK** (done): brain request, key flow, credential store, error mapping to pet voice, delete key.
-- **M4 Brained pet** (done): Gemini client, system prompt, short in-memory context, daily caps, timeout and failover, rate-limit cooldown.
-- **M5 Telemetry and packaging** (partly done): opt-in consent and local funnel queue with a "Copy stats" button (done); NSIS installer (done); signed auto-update through GitHub Releases (done). **Open:** a sending backend for telemetry, code signing, crash reporting without content.
-- **M6 Closed alpha** (next): 5-10 observed first-time users, then a wider group; evaluate funnel and retention.
+- **M4 Brained pet** (done): the brain client, system prompt, short in-memory context, daily caps, timeout and failover, rate-limit cooldown.
+- **M5 Telemetry and packaging** (partly done): opt-in consent and local funnel queue with "Copy stats" (done); NSIS installer (done); signed auto-update through GitHub Releases (done). **Open:** a sending backend, code signing, crash reporting without content.
+- **Rounds after M5** (done, recorded in the log): gesture interaction, three-window architecture, the mochi cat, continuous spring motion, memory phases 1 and 2, belly rub and cursor-following eyes, emotional reactions, language following, start with Windows, the first-run tour, the reorganized Settings and update modes, Claude and OpenAI as brains.
+- **M6 Closed alpha** (next): 5 to 10 observed first-time users, then a wider group; evaluate funnel, retention and Bond Days. The ordered work to get there is in [`../docs/plans/roadmap.md`](../docs/plans/roadmap.md).
 
-Redesign rounds after M4 (gesture interaction, three-window architecture, mochi-cat character) are recorded in the engineering log.
+## 4. Brain providers
+One brain is in use at a time; keys of several can be stored (ADR-0008). All calls are made from Rust, are stateless, and use short prompts: the system prompt asks for under two sentences, a max output limit applies, and the context is the last 8 turns kept in memory only.
 
-## 4. Gemini integration
-- Official Generative Language API (`v1beta`, `generateContent`), stateless (chosen over the stateful Interactions API, which stores interactions by default). Called from Rust only.
-- Key in the `x-goog-api-key` header, never in a URL, never logged.
-- Default model `gemini-3.1-flash-lite`: with a real key the newest full Flash models timed out or returned 503 "high demand" while the lite model answered in about a second. The user can pick or change the model; on a timeout or 5xx the client fails over to the next best model.
-- Prompts are short; the system prompt asks for under two sentences, plus a max output token limit and an 8-turn context kept in memory only.
-- Caps: 60 chat turns and 6 proactive AI lines per local day, and a 2-minute cooldown after a 429.
-- Errors map to kinds (invalid key, rate limit, network, region, blocked, empty, server, model, storage) and then to pet-voice messages (see [`02-onboarding-flow.md`](02-onboarding-flow.md)); a connect error shows the technical detail behind a toggle and a copy button.
-- Google's free-tier terms are surfaced in the key flow: data may be used and human-reviewed; API users must be 18 or older; clients serving the EEA, Switzerland and the UK must use paid services.
+| | Gemini (Google) | Claude (Anthropic) | OpenAI |
+|---|---|---|---|
+| API | `generateContent`, v1beta | Messages API, `anthropic-version` 2023-06-01 | Chat Completions |
+| Key header | `x-goog-api-key` | `x-api-key` | `Authorization: Bearer` |
+| Default model | `gemini-3.1-flash-lite` | `claude-haiku-5-5` | `gpt-4.1-mini` |
+| Automatic model order | lite Flash models first, newest first | Haiku, then Sonnet, then others, Opus last | "mini", then "nano", then full size; audio, image, search, embedding and code-agent models excluded |
+| Cost | free tier available; free data may be used and reviewed by Google; clients serving the EEA, Switzerland and the UK need paid services | paid; a Claude Pro or Team subscription does not include the API | paid; a ChatGPT Plus subscription does not include the API |
+| Verified with a real key | yes | **no** | **no** |
+
+- A key never appears in a URL or a log. A model name is only plain name characters.
+- On a timeout, a 5xx or an unknown model the client lists the key's models and fails over to the next best one, remembering it if it works. A bad key or a rate limit is never failed over.
+- Caps: 60 chat turns and 6 proactive AI lines per local day, and a 2-minute cooldown after a rate limit.
+- Errors map to kinds (invalid key, rate limit, network, region, blocked, empty, server, model, storage, billing) and then to pet-voice messages (spec/02); a connect error shows the technical detail behind a toggle and a copy button.
+- **Mood tags:** every chat answer starts with one bracketed feeling tag chosen by the model; Rust removes it before display and returns the text and the mood separately (ADR-0016).
+- **Language:** in chats the user starts the brain answers in the language of the latest message (ADR-0015).
+- **Facts:** a second small request every 4 messages picks up to 3 short facts; Rust filters them (length, secrets, links, digits, repeats) (ADR-0014).
+- Gemini was chosen over the stateful Interactions API because it is stateless. The default Gemini model was changed after the newest full Flash models timed out or returned 503 while the lite model answered in about a second.
 
 ## 5. Data and privacy
-- `%APPDATA%\com.streakboom.app\state.json`: window position, Quiet mode, chosen model.
-- `%APPDATA%\com.streakboom.app\pet.json`: mood, closeness, streak, settings, recent lines, AI usage, gesture and update bookkeeping, telemetry consent and queue. Written atomically (temp file, then rename).
-- API key: Windows Credential Manager, entry `gemini-api-key.streakboom`.
-- Chat history: in memory only, never persisted.
-- Telemetry: opt-in, off by default, a random install id created only on consent and deleted on opt-out, funnel event names and timestamps only (never keys, chat or personal data), each event once per install. The queue stays on the machine; nothing is sent automatically.
+Files in `%APPDATA%\com.streakboom.app\`:
+- `state.json`: window position, Quiet mode, the active provider and the chosen model per provider.
+- `pet.json`: mood, closeness, streak, settings (including the update mode), recent lines, AI usage, gesture, startup, tour and update bookkeeping, telemetry consent and queue. Written atomically (temp file, then rename).
+- `memory.json`: the pet's name and what to call the user, coarse habit counts, touch counts, shared milestones, noted facts, and the memory settings. Written atomically; the user can see, edit and delete all of it in Settings > Memory.
+- API keys: Windows Credential Manager, one entry per provider (`gemini-api-key`, `claude-api-key`, `openai-api-key`, service `streakboom`).
+- Chat history: in memory only, never persisted. The facts noted from chats are persisted (see above) and are sent to the active provider with later chats the user starts.
+- Telemetry: opt-in, off by default, a random install id created only on consent and deleted on opt-out, funnel event names and timestamps only today, each event once per install; the queue stays on the machine and nothing is sent automatically (ADR-0009). Per-day counts are specified in spec/05 and need a new consent version.
 - Logs: none that contain keys or message content.
 
 ## 6. Testing
-- **Node** (`node --test`): state model and decay, line selection and coverage, gestures, reveal rhythm, telemetry rules, update snoozing.
-- **Rust** (`cargo test`): Gemini client against a one-shot mock HTTP server, error mapping, model choice, window geometry (clamping and bubble placement).
+- **Node** (`node --test`, 77 tests): state model and decay, line selection and coverage, gestures, reveal rhythm, telemetry rules, update snoozing, start-with-Windows and tour rules, the rig (key schema, springs, continuity, poses), memory rules and lines.
+- **Rust** (`cargo test`, 33 tests): the three clients against a one-shot mock HTTP server, error mapping, model ordering, mood tags, fact filtering, language rule, window geometry.
 - **Static:** `svelte-check`.
-- **Manual matrix still to run:** Windows 10 and 11, a second and a lower-end machine, multi-monitor, 100% and 150% DPI, fullscreen video, screen sharing, an 8-hour soak test watching memory growth.
+- **Manual matrix still to run:** Windows 10 and 11, a second and a lower-end machine, multi-monitor, 100%, 125% and 150% DPI, fullscreen video, screen sharing, an 8-hour soak test, a reboot with start with Windows, and real Claude and OpenAI keys.
 
 ## 7. Decisions
-1. **Frontend:** Svelte (SvelteKit SPA).
-2. **Gemini only, BYOK;** OAuth rejected for alpha.
-3. **Platform:** Windows only for alpha; macOS after the alpha validates the funnel.
-4. **Code signing:** the closed alpha ships unsigned and testers accept the SmartScreen warning. Sign before any wide release. Unsigned installers lower install conversion, so alpha numbers at the "install" step understate what a signed release would see.
-5. **Memory target:** about 120 MB for all processes (a "<40 MB" target is not achievable with a webview). Measured at 111 MB idle with the on-demand bubble window.
-6. **Distribution and updates:** GitHub Releases of the public repo; the app offers an update through the pet and never installs by itself. The private signing key lives outside the repo.
-7. **Telemetry:** opt-in, funnel events only; the specific analytics service is still to be chosen (see open items).
+The decisions are recorded one by one, with reasons and alternatives, in [`../docs/decisions/`](../docs/decisions/README.md). In short: Svelte on Tauri (ADR-0004); BYOK with Gemini, Claude and OpenAI, API keys only, one in use at a time (ADR-0001, ADR-0008); Windows only for the alpha (ADR-0003); an unsigned alpha installer with signed auto-update through GitHub Releases that asks first (ADR-0010); about 120 MB total memory (ADR-0005); opt-in local telemetry (ADR-0009).
 
 ## 8. Open items
-- Telemetry sending: choose an analytics service, or keep "Copy stats" for the closed alpha.
+- Telemetry sending: choose an analytics service, or keep "Copy stats" for the closed alpha. Bond Days counters first (spec/05).
 - Code signing, and crash reporting that excludes content.
 - macOS port.
 - Multi-monitor, mixed-DPI and second-machine checks; fullscreen detection with real games and videos.
-- Gestures not built yet: belly rub (usually liked, sometimes a playful "trap"), cursor-following eyes, chase play. The unused "snack" and "play" line pools are reserved for them.
-- Streaming replies (show words as they arrive) instead of requesting the whole answer.
+- Real-key tests of the Claude and OpenAI clients.
+- A cheaper walking draw; more key poses for the in-between frames.
+- Emotions for scripted lines.
+- Streaming replies are not built and not planned while answers stay under two sentences (ADR-0020).

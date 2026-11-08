@@ -1,0 +1,77 @@
+# Roadmap: from 0.1.14 to a closed alpha
+
+Status: **proposed, waiting for Vinh's approval of the order and of the decisions in section 5.** Written 2026-11-08 after reading all project documents and the code. Nothing here is started except where marked done.
+
+Goal of this stretch: run a closed alpha with 5 to 10 observed first-time users and get a first baseline of the north star (Bond Days, [`../../spec/05-north-star-metrics.md`](../../spec/05-north-star-metrics.md)) to test hypotheses H1, H2b, H4 and H5 ([`../hypotheses/README.md`](../hypotheses/README.md)).
+
+## Phase 0. Housekeeping (done on 2026-11-08)
+- `gh` installed under `%LOCALAPPDATA%\Programs\GitHub CLI` and added to the user PATH (it had been a portable copy outside the PATH, which is why applications reported it unavailable). Restart the Claude desktop app and any open terminal to pick up the PATH.
+- Documents reorganized into `spec/` (how it works now), `docs/decisions/`, `docs/hypotheses/`, `docs/handoff/`, `docs/plans/` and the engineering log; README and specs 01 to 04 brought up to date with 0.1.14.
+- Process rule written down (ADR-0023): commit explicit paths, release from a clean tree.
+
+## Phase 1. Settle what is in `main` and in 0.1.14
+**Why first:** `main` and the 0.1.14 installer contain the reverted Bond Days prototype; the revert is committed (`18e13de`) but not released. Counters would be recorded locally for anyone with consent on, under the old wording.
+**Steps**
+1. Decide the release vehicle (decision R1): a small 0.1.15 that only removes the prototype, or fold the removal into the first Bond Days release.
+2. If a small release: build from a clean tree, run `npm run check`, `npm test`, `cargo test`, release with the documented steps, and verify the manifest and an update from 0.1.14 on this machine.
+3. Hypothesis A10: after updating, confirm `pet.json` has no `days` array and no counters.
+**Done when** installed copies no longer contain the prototype, or Vinh has accepted that they do until the next release.
+
+## Phase 2. Bond Days, built from the plan
+Plan and tests: [`bond-days.md`](bond-days.md) (steps 0 to 6, decisions D1 to D8 answered). Order and gates:
+1. Step 0: agree the working-tree rules (branch or worktree; ADR-0023).
+2. Step 1 to 2: pure functions in `bond.ts` and the schema with the consent version, with their unit tests first.
+3. Step 3 to 4: thin call sites in the pet window; the new funnel events (`tier_2`, `tier_3`, `pet_named`).
+4. Step 5 to 6: the export fields, the new consent wording and card, the second privacy switch, and the documentation changes (README, specs, ADR-0009) in the same change.
+5. Manual checks 1 to 10 in the real window (plan section 5.2), on this machine, using the DevTools port recipe.
+6. Gate: all three test suites green, the manual list done, wording and docs updated, a one-line note to people who already opted in.
+**Risks to watch:** consent scope, concurrent edits, chat leaking into engagement, the write volume, idle CPU (must stay near 0).
+
+## Phase 3. Real-key verification of the Claude and OpenAI brains
+**Why:** both clients exist and are covered by mock-server tests only (hypothesis A6).
+**Needs from Vinh:** a small prepaid balance and a key for each, or a tester who has them.
+**Steps**
+1. For each brain: connect, chat in both languages, trigger the "no credit" and "bad key" errors on purpose, check the model list and the automatic choice, check the mood tags, check the facts note.
+2. Note any reasoning-model empty answers (OpenAI) and any model-name problems (Claude's default is `claude-haiku-5-5`).
+3. Fix what is found; add a test for each bug; record results in the engineering log.
+**Done when** each brain has completed a real chat and a real error case, or the failures are written down.
+
+## Phase 4. Alpha readiness
+Verify the assumptions in the hypotheses register before outsiders see the app.
+
+| Item | Hypothesis | Action |
+|---|---|---|
+| Second and lower-end machine; CPU and RAM | A1 | Run the measurement recipe in the engineering log; compare with the 120 MB / 7 to 15% walking budget |
+| Visual check without GPU; 125% and 150% DPI | A2 | Look at the rig on several screens |
+| Multi-monitor and mixed DPI | A3 | Manual matrix in spec/04 section 6 |
+| Fullscreen, video, screen sharing | A4 | Real apps; confirm the pet stays silent |
+| 8-hour soak | A5 | Watch memory growth |
+| Start with Windows across a reboot and an update | A7 | Reboot test from the installed build |
+| SmartScreen and install conversion | A8 | See decision R3 below |
+| First-time reaction to the tour, the trap rate, the mood tags, the new Settings | A9 | Observed sessions (Phase 5) |
+
+Also decide: **R2** where stats go (keep "Copy stats" for the alpha, or pick a sending backend) and **R3** whether to buy a code-signing certificate before the alpha or accept the SmartScreen warning. Crash reporting without content stays out of the alpha unless a tester loses data.
+
+## Phase 5. The closed alpha
+1. Recruit 5 to 10 first-time users (people the author can observe or call).
+2. Observation protocol: install, first 10 minutes (watch the tour, the first gestures, the consent card), a call after day 3 and day 7. Write down where people stop.
+3. Collect "Copy stats" JSON from consenting testers; compute Bond Days, engagement rate, chat share and D3/D7 with the formulas in spec/05. **No thresholds are set until the baseline exists** (a fixed decision).
+4. Record outcomes in the hypotheses register (status and evidence), and turn changes of direction into decision records. Decide the fate of H3 (see the register).
+
+## Phase 6. After the alpha (not scheduled)
+Candidates, in no order: a cheaper walking draw; emotions for scripted lines; more key poses for the in-between frames; the hide-pet rate (needs a Rust event); weekday, battery and lid-open reactions; a macOS port; code signing and a stats backend if the alpha supports going wider; streaming replies only if answers get longer.
+
+## Dependencies at a glance
+```
+Phase 0 (done) -> Phase 1 -> Phase 2 -----------------> Phase 4 -> Phase 5
+                    \-> Phase 3 (can run in parallel) -----^
+```
+Phase 2 and Phase 3 touch different code (counters and consent versus the brain clients), so they can run in parallel if the working-tree rules in Phase 2 step 0 are followed.
+
+## 5. Decisions needed from Vinh
+- **R1.** Release vehicle for removing the prototype: a small 0.1.15 now, or fold it into the Bond Days release.
+- **R2.** Stats: keep "Copy stats" for the alpha, or choose a sending backend (and which).
+- **R3.** Code signing before the alpha, or accept the SmartScreen warning for the alpha.
+- **R4.** The fate of hypothesis H3 (chat utility) against the companion positioning: retire it, keep it as secondary, or replace it with H5.
+- **R5.** Who can supply real Claude and OpenAI keys for Phase 3, and how much budget.
+- **R6.** Permission to start Phase 2, step 0 (a branch or worktree), once this roadmap is approved.

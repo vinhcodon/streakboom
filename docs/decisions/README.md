@@ -1,0 +1,35 @@
+# Decisions
+
+What was **decided**, why, and what was rejected. One short file per decision (an architecture decision record). A decision is not a hypothesis (see `../hypotheses/`): it is settled until someone reopens it on purpose.
+
+**Rules**
+- A new decision gets the next number. A changed decision gets a new record that says "supersedes ADR-NNNN", and the old one is marked superseded; do not rewrite history.
+- Every decision names its source (a spec section, a log entry or a handoff) so the reasoning can be checked.
+- The specs in `../../spec/` describe how the product works now; these records say why. If they disagree, fix the spec or write a new record.
+- The commit history dates everything to 2026-11-07 and 2026-11-08, so dates here are approximate: "alpha 1.0 planning" means decided before the build started.
+
+| ADR | Decision | Status | Date |
+|---|---|---|---|
+| [0001](0001-byok-no-hosted-inference.md) | Bring your own key; the app hosts no inference | accepted | alpha 1.0 planning |
+| [0002](0002-audience-and-two-stages.md) | Mass market first; a naive pet first, a brained pet second | accepted | alpha 1.0 planning |
+| [0003](0003-windows-only-alpha.md) | Windows 10/11 only for the alpha | accepted | alpha 1.0 planning |
+| [0004](0004-tauri-svelte-stack.md) | Tauri 2 with SvelteKit (Svelte 5, TypeScript) | accepted | alpha 1.0 planning |
+| [0005](0005-memory-budget-and-software-rendering.md) | About 120 MB total memory; WebView2 runs with --disable-gpu | accepted | alpha 1.0 spikes |
+| [0006](0006-three-windows-single-state-owner.md) | Three windows; the pet window is the only owner and writer of state | accepted | 2026-11-08 |
+| [0007](0007-keys-in-credential-store.md) | API keys live in the OS credential store and never reach the pet window | accepted | alpha 1.0 planning |
+| [0008](0008-providers-one-active-api-keys-only.md) | Gemini, Claude and OpenAI, one brain in use at a time, API keys only | accepted | 2026-11-08 |
+| [0009](0009-opt-in-local-telemetry.md) | Telemetry is opt-in, anonymous and local; nothing is sent | accepted | alpha 1.0 planning |
+| [0010](0010-distribution-and-updates.md) | GitHub Releases, signed auto-update, unsigned installer for the alpha, update modes | accepted | 2026-11-08 |
+| [0011](0011-mochi-cat-2d-gestures.md) | A flat 2D mochi cat, controlled by gestures instead of buttons | accepted | 2026-11-08 |
+| [0012](0012-spring-driven-canvas-rig.md) | Motion is a spring-driven blend of hand-drawn key poses on a canvas; idle means no redraw | accepted | 2026-11-08 |
+| [0013](0013-no-guilt-playful-character.md) | The pet never dies; the tone is playful and mildly sarcastic, with a gentle switch | accepted | alpha 1.0 planning |
+| [0014](0014-memory-design.md) | The pet remembers little, locally, and the user controls it | accepted | 2026-11-08 |
+| [0015](0015-language-follows-the-user.md) | Interface language is a setting; the chat answers in the language the user writes in | accepted | 2026-11-08 |
+| [0016](0016-emotions-tagged-by-the-model.md) | The pet acts out the feeling of a chat answer, named by the model | accepted | 2026-11-08 |
+| [0017](0017-settings-left-navigation.md) | Settings: a left navigation with one page per section | accepted | 2026-11-08 |
+| [0018](0018-start-with-windows-opt-in.md) | Start with Windows is an opt-in, asked politely once or twice | accepted | 2026-11-08 |
+| [0019](0019-first-run-tour.md) | A four-card first-run tour, replayable from Settings | accepted | 2026-11-08 |
+| [0020](0020-no-streaming-for-now.md) | Streaming chat replies are not built | accepted | 2026-11-08 |
+| [0021](0021-positioning-companion-not-assistant.md) | The pet is a companion, not an assistant | accepted | 2026-11-08 |
+| [0022](0022-north-star-bond-days.md) | North star: Bond Days, with decisions D1 to D8 | accepted (not yet built) | 2026-11-08 |
+| [0023](0023-process-commit-explicit-paths.md) | Commit only the files you changed; never git add -A in a shared checkout | accepted | 2026-11-08 |

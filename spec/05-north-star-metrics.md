@@ -1,7 +1,7 @@
 # 05. North star and metrics: "Bond Days"
 
 Status: **decisions D1 to D8 answered by Vinh on 2026-11-08 (section 7); still no feature code until Vinh gives the go-ahead to start the plan.**
-Written 2026-11-08 from the local working tree (not from GitHub `main`), after reading `app/src/lib/state.ts`, `telemetry.ts`, `bus.ts`, `memory.ts`, `app/src/routes/+page.svelte` and `settings/+page.svelte`, the README privacy section and specs 01 to 04. Input: `docs/handoff/north-star-bond-days.md`.
+Settled choices are recorded in ADR-0021 (positioning) and ADR-0022 (this north star); the claims it tests are hypotheses H5 and H8 in `../docs/hypotheses/README.md`; the order of work is in `../docs/plans/roadmap.md`. Written 2026-11-08 from the local working tree (not from GitHub `main`), after reading `app/src/lib/state.ts`, `telemetry.ts`, `bus.ts`, `memory.ts`, `app/src/routes/+page.svelte` and `settings/+page.svelte`, the README privacy section and specs 01 to 04. Input: `docs/handoff/north-star-bond-days.md`.
 
 ## 0. What the repository looks like today (and where the handoff is out of date)
 
@@ -174,4 +174,4 @@ Stays in `pet.json` on the machine. Nothing is sent automatically and no network
 
 ## 8. What could not be verified
 
-See `docs/plan-bond-days.md`, section 6.
+See `docs/plans/bond-days.md`, section 6.

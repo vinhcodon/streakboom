@@ -1,6 +1,6 @@
 # Plan: implementing "Bond Days" (companion to `spec/05-north-star-metrics.md`)
 
-Status: **decisions D1 to D8 answered on 2026-11-08 (all as recommended, except D1: commit the revert, no release). Waiting for the go-ahead to start step 1.** Based on the local working tree on 2026-11-08 (see spec section 0 for how it differs from the handoff and from `main`).
+Part of [`roadmap.md`](roadmap.md) (Phase 2). Status: **decisions D1 to D8 answered on 2026-11-08 (all as recommended, except D1: commit the revert, no release). Waiting for the go-ahead to start step 1.** Based on the local working tree on 2026-11-08 (see spec section 0 for how it differs from the handoff and from `main`).
 
 ## 1. Decisions (answered by Vinh, 2026-11-08; the recommendation column is what was chosen, except D1)
 
