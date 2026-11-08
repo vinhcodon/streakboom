@@ -20,7 +20,7 @@ Status: **proposed 2026-11-08, asked by Vinh to be carried out story by story.**
 | E5 | Proactive but frugal | 3 / 6 | Polite and rate-limited; context timing comes through E8 (strongest) |
 | E6 | Measurement and alpha | 1 / 7 | Counters built; no baseline, no tool, no testers |
 | E7 | Verification and release | 4 / 9 | The 8-hour soak was stopped at 2 h 23 (memory flat) to diagnose CPU; real keys, devices open; the 0.2.1 to 0.2.2 update was seen working |
-| E8 | Focus-safety and places | 1 / 15 | Spec and ADR-0029 written; code waits for the CPU gate |
+| E8 | Focus-safety and places | 2 / 15 | Spec and ADR-0029 written; code waits for the CPU gate |
 
 Against the roadmap: Phases 0 to 2 done; **Phase 4 in progress** (E7: the soak was stopped early; PR-3 and PR-4 done; PF-3, PR-8, VE-2, VE-3 open); Phase 3 blocked on keys (VE-4, VE-5, PE-3); Phase 5 not started (E6).
 
@@ -111,7 +111,7 @@ Order by decision D2: the CPU baseline (PR-3, PR-4, PR-9) comes first; the pure 
 | ID | Story | Size | Status | Depends on |
 |---|---|---|---|---|
 | FS-0 | Decide the focus-safety rungs and write the ADR (ADR-0029) | S | done | |
-| FS-1 | Pure focus decision `focus.ts` with Node tests (walk and speak permissions, ghost with hysteresis) | S | ready | PR-4 |
+| FS-1 | Pure focus decision `focus.ts` with Node tests (walk and speak permissions, ghost with hysteresis) | S | done (`decideFocus`, 14 tests; not wired yet) | PR-4 |
 | FS-2 | Rust probe `focus_probe`: last-input time and pointer offset read by the hit-test thread; `windows-sys` features; Rust test for the tick arithmetic | M | ready | PR-4 |
 | FS-3 | Hold walks and unprompted lines while the user is active (replaces PR-6 and PF-4) | M | blocked (FS-1, FS-2) | FS-1, FS-2 |
 | FS-4 | Fade and click-through while the user types near the cat | S | blocked (FS-3) | FS-3 |

@@ -105,7 +105,7 @@ Most of the time the cat is still; movement comes in short bursts. **Target (agr
 4. Caret rectangle: **rejected** (unreliable in browsers and Electron, UI Automation is heavy and looks like surveillance).
 Hard rules: no global keyboard hook, no reading window contents or titles, no new network calls. `GetLastInputInfo` returns a single tick count: it cannot tell which keys, only that the user did something. It also counts mouse movement, which the decision logic accounts for below.
 
-### 3.1 Inputs, outputs and the decision (pure logic, `app/src/lib/focus.ts`)
+### 3.1 Inputs, outputs and the decision (pure logic, `app/src/lib/focus.ts`; built in FS-1: `decideFocus(prevState, input, now)` returns the new state and `{ walkAllowed, speakAllowed, ghost, alpha, active }`; the module and its 14 tests exist, nothing calls it yet)
 Inputs per probe: `idleMs` (ms since the last input; unknown means no restriction), `pointer` (distance in logical px from the cat's center, and whether the pointer is over the cat, or unknown), `busy` (existing `is_busy`), the current `pose`, `quiet`, and the previous output (for hysteresis).
 Constants (proposals, tunable after manual checks): `ACTIVE_MS = 3000`, `NEAR_PX = 200`, `CALM_MS = 5000`, `LINE_MS = 6000`, `GHOST_ON_MS = 300`, `GHOST_OFF_MS = 1500`, `GHOST_ALPHA = 0.35`.
 Derived: `active = idleMs < ACTIVE_MS`; `near = pointer known and distance < NEAR_PX and the pointer is not over the cat`.
@@ -114,7 +114,7 @@ Derived: `active = idleMs < ACTIVE_MS`; `near = pointer known and distance < NEA
 |---|---|
 | `walkAllowed` | `idleMs >= CALM_MS`. If a walk is in progress and the user becomes active, the walk ends within one tick (the cat stops and sits). |
 | `speakAllowed` | `idleMs >= LINE_MS`. An unprompted line waits and is retried (the existing 2-minute retry); it is never forced while the user is active. |
-| `ghost` | on when `active and near` has held for `GHOST_ON_MS`; off when `idleMs >= GHOST_OFF_MS` or the pointer is over the cat or far away. While ghosted the cat is faded to `GHOST_ALPHA` **and click-through** (the hit region is emptied), and fades back over 400 ms. |
+| `ghost` | on when the user did something within `GHOST_OFF_MS` (1.5 s) and the pointer is near, for `GHOST_ON_MS`; off when `idleMs >= GHOST_OFF_MS` or the pointer is over the cat, far away or unknown (the fade-on limit is the come-back limit, so it cannot fade again in the gap before "active" expires: found while writing the tests). `active` (3 s) is also returned, for the walk and for later hops; it no longer gates the fade. A user who pauses typing for more than 1.5 s sees the cat return and fade again when they resume: tune `GHOST_OFF_MS` in the manual checks (FS-5). While ghosted the cat is faded to `GHOST_ALPHA` **and click-through** (the hit region is emptied), and fades back over 400 ms. |
 | `yield` | no step aside or hop in the first version: fading is the whole response (less motion, less CPU). A sideways step may be added later, rate-limited. |
 
 Priority: fullscreen/busy/Quiet mode/asleep rules stay as they are and win; the dragged-to spot is respected when the user is idle and faded when they type near it. A pointer over the cat always turns the ghost off at once (the user wants to touch it).
