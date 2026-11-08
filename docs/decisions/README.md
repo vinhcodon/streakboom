@@ -33,4 +33,5 @@ What was **decided**, why, and what was rejected. One short file per decision (a
 | [0021](0021-positioning-companion-not-assistant.md) | The pet is a companion, not an assistant | accepted | 2026-11-08 |
 | [0022](0022-north-star-bond-days.md) | North star: Bond Days, with decisions D1 to D8 | accepted (built; released in 0.1.15) | 2026-11-08 |
 | [0023](0023-process-commit-explicit-paths.md) | Commit only the files you changed; never git add -A in a shared checkout | accepted | 2026-11-08 |
+| [0025](0025-update-delivery-with-fallbacks.md) | Update delivery has two manifest addresses, the installer through the GitHub API, and a retry | accepted (built; not yet released) | 2026-11-08 |
 | [0024](0024-mascot-name-peak.md) | The mascot is named Peak; each user can name their own pet | accepted | 2026-11-08 |

@@ -108,10 +108,12 @@ To release a version:
 
 1. Bump `version` in `app/src-tauri/tauri.conf.json`, `app/src-tauri/Cargo.toml` and `app/package.json`. (If you edit these with Windows PowerShell 5.1, do not use `Set-Content -Encoding utf8`: it adds a byte-order mark.)
 2. Commit **only the files you changed** (explicit paths, never `git add -A`; see ADR-0023) and push. Release from a clean tree.
-3. `.\scripts\release.ps1 -Repo vinhcodon/streakboom -Notes "what changed"` builds the signed installer and writes `dist\latest.json`. Run it with `powershell.exe -File` (inside PowerShell, its native stderr output can abort it).
-4. `gh release create v<version> dist\Streakboom_<version>_x64-setup.exe dist\latest.json --repo vinhcodon/streakboom --latest` (not a draft or pre-release, or the app will not find it). `gh` must be on your PATH (`%LOCALAPPDATA%\Programs\GitHub CLI` on the author's machine).
+3. `.\scripts\release.ps1 -Repo vinhcodon/streakboom -Notes "what changed" -Publish` builds the signed installer, writes `dist\latest.json` and publishes: it needs a clean git tree and `gh` logged in (on the author's PATH via `%LOCALAPPDATA%\Programs\GitHub CLI`). It creates the release as a draft with the installer, points the manifest at the installer through the GitHub API, uploads the manifest, publishes the release as the latest, and commits and pushes the same manifest as `updates/latest.json`. Run it with `powershell.exe -File` (inside PowerShell, native stderr output can abort it). Without `-Publish` it only builds, and you upload the two files from `dist\` by hand.
+4. Check that `https://raw.githubusercontent.com/vinhcodon/streakboom/main/updates/latest.json` shows the new version (it can lag a few minutes).
 
-`scripts/test-update/` holds two config overrides for rehearsing the update flow (a version bump and permission for plain HTTP to a local server); the manifest address can be overridden with the `STREAKBOOM_UPDATE_URL` environment variable. An update is only installed if its signature verifies, whatever the address.
+The app reads the manifest from that repository copy first and from the release asset second, because on 2026-11-08 GitHub's public release-download path returned 504 for hours while the API and raw files worked (ADR-0025). Copies installed before that change read only the release asset and need one manual install to get it.
+
+`scripts/test-update/` holds two config overrides for rehearsing the update flow (a version bump and permission for plain HTTP to a local server); the manifest address can be overridden with the `STREAKBOOM_UPDATE_URL` environment variable (one address, or several separated by commas, tried in order). An update is only installed if its signature verifies, whatever the address.
 
 ## Documentation 📚
 

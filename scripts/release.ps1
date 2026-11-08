@@ -16,6 +16,11 @@
 .PARAMETER Repo   GitHub "owner/name" that hosts the releases.
 .PARAMETER Notes  Release notes shown in the update info (optional).
 .PARAMETER KeyPath Updater private key (default: ~\.tauri\streakboom-updater.key).
+.PARAMETER Publish  Also do the GitHub part: create the release (as a draft) with the installer, point the
+                   manifest at the installer through the GitHub API (which kept working when the public
+                   download path of github.com answered 504), upload the manifest, publish the release, and
+                   commit and push the same manifest as updates/latest.json (a second place the app reads it
+                   from, see updater.rs). Needs gh logged in, and a clean git tree.
 
 .EXAMPLE
   .\scripts\release.ps1 -Repo someone/streakboom -Notes "Fixes the bubble position"
@@ -23,7 +28,8 @@
 param(
   [Parameter(Mandatory = $true)][string]$Repo,
   [string]$Notes = "",
-  [string]$KeyPath = (Join-Path $env:USERPROFILE ".tauri\streakboom-updater.key")
+  [string]$KeyPath = (Join-Path $env:USERPROFILE ".tauri\streakboom-updater.key"),
+  [switch]$Publish
 )
 $ErrorActionPreference = "Stop"
 $root = Split-Path -Parent $PSScriptRoot
@@ -76,3 +82,48 @@ Write-Host ""
 Write-Host "Done. Upload these two files to a GitHub release tagged v$version :"
 Write-Host "  $(Join-Path $dist $exeName)"
 Write-Host "  $(Join-Path $dist 'latest.json')"
+
+if ($Publish) {
+  # --- publish: a clean tree, a draft release with the installer, the manifest, then publish and mirror
+  Push-Location $root
+  try {
+    $dirty = git status --porcelain
+    if ($dirty) { throw "The git tree is not clean (see ADR-0023: commit explicit paths first):`n$dirty" }
+    $gh = (Get-Command gh -ErrorAction SilentlyContinue).Source
+    if (-not $gh) { $gh = Join-Path $env:LOCALAPPDATA "Programs\GitHub CLI\gh.exe" }
+    if (-not (Test-Path $gh)) { throw "gh not found; install it and run 'gh auth login'" }
+    $tag = "v$version"
+    $exePath = Join-Path $dist $exeName
+    $manifestPath = Join-Path $dist "latest.json"
+
+    & $gh release create $tag $exePath --repo $Repo --title "Streakboom $version" --notes $Notes --draft
+    if ($LASTEXITCODE -ne 0) { throw "gh release create failed" }
+    # (filtered here, not with --jq: Windows PowerShell 5.1 mangles quotes passed to native programs)
+    $releases = (& $gh api "repos/$Repo/releases") | ConvertFrom-Json
+    $id = ($releases | Where-Object { $_.tag_name -eq $tag } | Select-Object -First 1).assets | Where-Object { $_.name -eq $exeName } | Select-Object -First 1 -ExpandProperty id
+    if (-not $id) { throw "could not read the installer's asset id" }
+
+    # the installer address goes through the API (Accept: application/octet-stream, which the updater sends)
+    $m = Get-Content $manifestPath -Raw | ConvertFrom-Json
+    $m.platforms."windows-x86_64".url = "https://api.github.com/repos/$Repo/releases/assets/$id"
+    [System.IO.File]::WriteAllText($manifestPath, ($m | ConvertTo-Json -Depth 5), (New-Object System.Text.UTF8Encoding($false)))
+
+    & $gh release upload $tag $manifestPath --repo $Repo --clobber
+    if ($LASTEXITCODE -ne 0) { throw "gh release upload failed" }
+    & $gh release edit $tag --repo $Repo --draft=false --latest
+    if ($LASTEXITCODE -ne 0) { throw "gh release edit failed" }
+
+    # the second copy of the manifest, in the repository
+    New-Item -ItemType Directory -Force (Join-Path $root "updates") | Out-Null
+    Copy-Item $manifestPath (Join-Path $root "updates\latest.json") -Force
+    git add updates/latest.json
+    git commit -m "Update manifest for $version"
+    git push origin HEAD
+    if ($LASTEXITCODE -ne 0) { throw "git push failed" }
+
+    Write-Host ""
+    Write-Host "Published $tag. Check from here (the repository copy may lag a few minutes behind a cache):"
+    Write-Host "  https://raw.githubusercontent.com/$Repo/main/updates/latest.json"
+    Write-Host "  https://api.github.com/repos/$Repo/releases/assets/$id   (send Accept: application/octet-stream)"
+  } finally { Pop-Location }
+}

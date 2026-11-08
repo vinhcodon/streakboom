@@ -81,7 +81,10 @@ Files in `%APPDATA%\com.streakboom.app\`:
 - **Static:** `svelte-check`.
 - **Manual matrix still to run:** Windows 10 and 11, a second and a lower-end machine, multi-monitor, 100%, 125% and 150% DPI, fullscreen video, screen sharing, an 8-hour soak test, a reboot with start with Windows, and real Claude and OpenAI keys.
 
-## 7. Decisions
+## 7. Updates
+The app reads an update manifest from two addresses in order (a copy in the repository, then the release asset), each with a 20 s timeout, and repeats a failed check once after 4 s; the installer address in the manifest goes through the GitHub API; the signature is always verified. See ADR-0025 and `scripts/release.ps1 -Publish`.
+
+## 7b. Decisions
 The decisions are recorded one by one, with reasons and alternatives, in [`../docs/decisions/`](../docs/decisions/README.md). In short: Svelte on Tauri (ADR-0004); BYOK with Gemini, Claude and OpenAI, API keys only, one in use at a time (ADR-0001, ADR-0008); Windows only for the alpha (ADR-0003); an unsigned alpha installer with signed auto-update through GitHub Releases that asks first (ADR-0010); about 120 MB total memory (ADR-0005); opt-in local telemetry (ADR-0009).
 
 ## 8. Open items
