@@ -116,21 +116,27 @@ applyLang();
 startPeak(document.getElementById("peak"), document.getElementById("poses"));
 
 async function getText(url) {
-  const res = await fetch(url, { signal: AbortSignal.timeout(8000) });
+  const res = await fetch(url, { signal: AbortSignal.timeout(6000) });
   if (!res.ok) throw new Error(res.status);
   return res.text();
 }
 
 async function loadEntries() {
+  // Both requests start together, so a host that hangs costs one timeout (6 s), not two in a row.
+  // The manifest (committed by the release script) has the newest version and its notes as one paragraph.
+  const changelog = getText(CHANGELOG_URL).then(parseChangelog);
+  const manifest = getText(MANIFEST_URL).then((text) => {
+    const m = JSON.parse(text);
+    return [{ version: m.version, date: (m.pub_date || "").slice(0, 10), title: "", items: [m.notes].filter(Boolean) }];
+  });
+  manifest.catch(() => {}); // only used if the changelog fails; no unhandled rejection otherwise
   try {
-    const parsed = parseChangelog(await getText(CHANGELOG_URL));
+    const parsed = await changelog;
     if (parsed.length) return parsed;
   } catch {
-    // fall through to the update manifest
+    // fall through to the manifest
   }
-  // the manifest (committed by the release script) has the newest version and its notes as one paragraph
-  const m = JSON.parse(await getText(MANIFEST_URL));
-  return [{ version: m.version, date: (m.pub_date || "").slice(0, 10), title: "", items: [m.notes].filter(Boolean) }];
+  return manifest;
 }
 
 try {
