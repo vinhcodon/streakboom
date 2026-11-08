@@ -32,6 +32,7 @@ export type BubbleAction =
   | { type: "chat-send"; text: string }
   | { type: "chat-blocked" } // the disabled text box was clicked (no brain yet)
   | { type: "typing"; nonEmpty: boolean }
+  | { type: "alive" } // the user is still here (clicked, focused or pressed a key in the bubble)
   | { type: "close" }
   | { type: "ask-yes" }
   | { type: "ask-later" }

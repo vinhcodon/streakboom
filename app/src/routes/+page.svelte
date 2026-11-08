@@ -344,7 +344,9 @@
   function resetMenuTimer() {
     clearTimeout(menuTimer);
     if (panel !== "chat" && panel !== "ask" && panel !== "update" && panel !== "input") return;
-    const ms = panel === "input" ? 60_000 : panel === "update" ? 30_000 : panel === "chat" && chatPhase === "reply" ? 20_000 : 12_000;
+    // A conversation gets time to think and read: it only closes after a real pause (any click or
+    // key in the bubble starts the wait again).
+    const ms = panel === "input" ? 60_000 : panel === "update" ? 30_000 : panel === "chat" ? (chatPhase === "reply" ? 75_000 : 50_000) : 12_000;
     menuTimer = setTimeout(() => {
       if (panel === "chat" && (chatDraft || busy)) resetMenuTimer();
       else {
@@ -691,6 +693,9 @@
         break;
       case "chat-blocked":
         onChatBlocked();
+        break;
+      case "alive":
+        resetMenuTimer();
         break;
       case "typing":
         chatDraft = a.nonEmpty;

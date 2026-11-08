@@ -117,8 +117,19 @@
     void fromBubble({ type: "typing", nonEmpty });
   }
 
+  // Any sign of life in the bubble keeps a conversation open (the pet window would otherwise close
+  // an idle chat). Throttled so typing does not flood the other window.
+  let lastAlive = 0;
+  function alive() {
+    const now = Date.now();
+    if (now - lastAlive < 2000) return;
+    lastAlive = now;
+    void fromBubble({ type: "alive" });
+  }
+
   function onKey(e: KeyboardEvent) {
     if (e.key === "Escape") void fromBubble({ type: "close" });
+    else alive();
   }
 
   onMount(() => {
@@ -145,7 +156,7 @@
   });
 </script>
 
-<svelte:window onkeydown={onKey} oncontextmenu={(e) => e.preventDefault()} />
+<svelte:window onkeydown={onKey} onpointerdown={alive} onfocus={alive} oncontextmenu={(e) => e.preventDefault()} />
 
 {#if view.kind !== "none"}
   <div class="root {side}" bind:this={root}>
