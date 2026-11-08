@@ -9,7 +9,7 @@ Status: **proposed 2026-11-08, asked by Vinh to be carried out story by story.**
 4. **Done means:** tests for the pure logic, the spec and README updated in the same commit, the engineering-log entry saying what was **not** verified, explicit-path commit (ADR-0023). Behavior the website describes also gets the website session told (README, Release and auto-update, step 1). A release is a separate step the author orders.
 5. Statuses: `done`, `doing`, `ready` (can start), `needs Vinh` (a decision or an action only Vinh can do), `blocked` (waits for something named), `later`.
 
-## Progress (2026-11-08, version 0.2.2; counts exclude stories merged into others)
+## Progress (2026-11-08, version 0.2.3; counts exclude stories merged into others)
 
 | Epic | Quality | Done / stories | Where it stands |
 |---|---|---|---|
@@ -31,7 +31,7 @@ Against the roadmap: Phases 0 to 2 done; **Phase 4 in progress** (E7: the soak w
 | PR-1 | Eyes follow the cursor while it is over the pet | S | done | |
 | PR-2 | Start with Windows as an opt-in (ADR-0018) | S | done (not verified across a reboot) | |
 | PR-3 | Break the CPU down: idle versus walking versus sleeping, per process, against the budget | S | done 2026-11-08 (about 25 painted frames per second on average; blink and twitch keep the cat in full mode about 20% of the time; CPU follows frames; see the engineering log) | |
-| PR-4 | Bring the CPU within the budget, first round: a "soft" redraw mode at about 24 fps for blink, twitch and look; springs stop within 1% of target; walk stays 30 fps and sleep 11 fps after the author saw 20 and 5 fps look wrong Measured after the correction: frames per second 25.4 to 14.4, median CPU 16.9% to 9.3%, mean 19% to 13.2% (engineering log). The target of D8 (under 1% standing) is **not** reached | M | done (round 1; unreleased) | PR-3 |
+| PR-4 | Bring the CPU within the budget, first round: a "soft" redraw mode at about 24 fps for blink, twitch and look; springs stop within 1% of target; walk stays 30 fps and sleep 11 fps after the author saw 20 and 5 fps look wrong Measured after the correction: frames per second 25.4 to 14.4, median CPU 16.9% to 9.3%, mean 19% to 13.2% (engineering log). The target of D8 (under 1% standing) is **not** reached | M | done (released in 0.2.3) | PR-3 |
 | PR-9 | Decide the CPU target and do a second round: the floor is about 1.3% plus about 0.55% per painted frame, so under 1% standing is unreachable with software drawing; candidates: blinks every 4 to 9 s, a lighter look gesture, shorter walks (sleep and walk rates were already tried lower and looked wrong); or accept about 3 to 5% standing and 15 to 20% walking | S | needs Vinh | PR-4 |
 | PR-5 | Decision: read only the time of the last keyboard or mouse input (no content, no hook) to know whether the user is typing | S | done (rungs 1 and 2 plus fading, ADR-0029) | |
 | PR-6 | The pet stays still while the user is typing | M | merged into FS-3 (spec/06) | |
@@ -102,9 +102,9 @@ Open question for CO-3: the "rest rhythm" idea (using the habit counts for more 
 | VE-3 | Run on a lower-end second machine (A1) | S | needs Vinh (a machine) | |
 | VE-4 | Real-key test of the Claude brain: connect, chat in both languages, the no-credit and bad-key errors, the mood tags (Phase 3) | M | blocked (a key) | |
 | VE-5 | The same for the OpenAI brain | M | blocked (a key) | |
-| VE-6 | A real update from one version to the next (**observed once**: the installed 0.2.1 became 0.2.2 by itself at 22:06:56 on 2026-11-08; who accepted the offer was not observed) and the first real clean-up of an old release (the release after 0.2.3) | S | partly done | next release |
+| VE-6 | A real update from one version to the next (**observed once**: the installed 0.2.1 became 0.2.2 by itself at 22:06:56 on 2026-11-08; who accepted the offer was not observed) and the first real clean-up of an old release (**done**: publishing 0.2.3 deleted v0.2.1 and its tag and kept v0.2.2) | S | mostly done (a watched update 0.2.2 to 0.2.3 is still open) | |
 | VE-7 | Update the installed copy to 0.2.2 | S | done (the app updated itself at 22:06:56) | |
-| VE-8 | A full 8-hour soak on the build after the CPU fix | S | blocked (a release with PR-4, and PR-9) | PR-9 |
+| VE-8 | A full 8-hour soak on the build after the CPU fix | S | ready after the installed copy is on 0.2.3 (and PR-9 for the final target) | PR-9 |
 
 ## E8. Focus-safety and places (spec/06, plan `character-and-movement.md`)
 Order by decision D2: the CPU baseline (PR-3, PR-4, PR-9) comes first; the pure logic FS-1 and the probe FS-2 are ready.
