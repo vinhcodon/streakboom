@@ -1,0 +1,11 @@
+{
+    "version":  "0.1.16",
+    "notes":  "Update delivery with fallbacks: two manifest addresses, retry, installer through the GitHub API. Note: copies installed before 0.1.16 need one manual install to get it.",
+    "pub_date":  "2026-11-08T10:17:19Z",
+    "platforms":  {
+                      "windows-x86_64":  {
+                                             "signature":  "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVUcHBlQXhYUlVURmdTa3lyLzFIclplazFuQnUzRThXVmppUlNvUXpXSE82OU9XTDBYR0ZDVWFNbDkxd2JNOVlCV20vSU9RWlkvN3RZMUpDcmEwY21scWdpYkEwamNLNEFNPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzk0MTMzMDM4CWZpbGU6U3RyZWFrYm9vbV8wLjEuMTZfeDY0LXNldHVwLmV4ZQl2ZXJzaW9uOjAuMS4xNgpocjF5S2Q1RVNEdDV3Uk03Tzg1bjBDMmJ5UlFoS0tYMDFVemMwbGtxL3Q5WHFKeitXbWJ0VTZuOEM1dVpKOFZOQ1V3bXcrQkE1NU96b0JGMGwxQ1REQT09Cg==",
+                                             "url":  "https://api.github.com/repos/vinhcodon/streakboom/releases/assets/723580752"
+                                         }
+                  }
+}
