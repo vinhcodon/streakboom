@@ -47,7 +47,7 @@ Windows needs the WebView2 runtime; the installer downloads it if it is missing.
 ```
 app/                    the application (Tauri 2 + SvelteKit + Svelte 5)
   src/lib/              pure logic and shared code: state model, line selection, gestures,
-                        line pools, UI strings, the cat rig (Pet.svelte), window messages (bus.ts)
+                        line pools, UI strings, the cat rig (PetRig.svelte, rig/), window messages (bus.ts)
   src/routes/           the three windows: + page (the pet), bubble/, settings/
   src-tauri/            the Rust core: window control, drag and bubble placement (layout.rs),
                         Gemini client and credential store (brain.rs), updater (updater.rs)

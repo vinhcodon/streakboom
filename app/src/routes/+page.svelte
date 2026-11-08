@@ -4,7 +4,7 @@
   import { invoke } from "@tauri-apps/api/core";
   import { getCurrentWebviewWindow } from "@tauri-apps/api/webviewWindow";
   import { onMount } from "svelte";
-  import Pet from "$lib/Pet.svelte";
+  import Pet from "$lib/PetRig.svelte";
   import { needsWakeFirst, TIMED, type PetState } from "$lib/sprites";
   import type { Trigger } from "$lib/lines";
   import { pick, remember, resolveLang } from "$lib/selector";

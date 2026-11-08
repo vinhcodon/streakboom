@@ -1,4 +1,4 @@
-// The pet's poses. The art itself is the vector rig in Pet.svelte; the rest of the app only
+// The pet's poses. The art itself is the canvas rig in PetRig.svelte (rig/); the rest of the app only
 // needs the pose names and how the timed poses chain into one another.
 
 export type PetState =
