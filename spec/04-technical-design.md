@@ -1,6 +1,6 @@
 # Technical Design
 
-The stable design of the app as of 0.2.1. What was built and measured, round by round (including the early spikes and the numbers behind the decisions), is in [`../docs/engineering-log.md`](../docs/engineering-log.md). The reasons behind the choices are in [`../docs/decisions/`](../docs/decisions/README.md); the unverified assumptions are in [`../docs/hypotheses/`](../docs/hypotheses/README.md).
+The stable design of the app as of 0.2.2. What was built and measured, round by round (including the early spikes and the numbers behind the decisions), is in [`../docs/engineering-log.md`](../docs/engineering-log.md). The reasons behind the choices are in [`../docs/decisions/`](../docs/decisions/README.md); the unverified assumptions are in [`../docs/hypotheses/`](../docs/hypotheses/README.md).
 
 ## 1. Stack
 - **Shell:** Tauri 2 (Rust core plus the system webview), Windows 10/11 with WebView2 first (ADR-0003, ADR-0004).

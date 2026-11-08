@@ -2,6 +2,11 @@
 
 Release notes of every version of Streakboom, newest first. **GitHub keeps the latest release and the one right before it** (installer and update manifest; the previous one is a way back if the newest is bad); when a new version is published, anything older is deleted together with its tag and its notes stay here (ADR-0028). The git history keeps every commit.
 
+## 0.2.2 (2026-11-08)
+- Peak no longer speaks while it is asleep or dozing off: an unprompted line now waits and is tried again two minutes later, and the pet does not start dozing off while it is showing a bubble.
+- Settings, About has a button that opens the website, streakboom.com.
+- Release housekeeping: GitHub keeps the two newest releases and the notes of every version stay in this file.
+
 ## 0.2.1 (2026-11-08)
 - Chat: the background requests that note a few lasting facts from your chats no longer use up the daily chat limit (they have their own small limit), so all 60 daily chat turns are your own messages.
 - When Peak has talked enough for the day it now says so in its own words (one of four lines per language, picked at random) and no longer in a technical way. Settings, Brain still shows today's use.

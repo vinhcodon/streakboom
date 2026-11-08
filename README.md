@@ -2,7 +2,7 @@
 
 An open-source desktop pet for Windows. Meet **Peak**, a cheerful golden chibi cat inspired by the soft, squishy look of mochi illustrations. Peak lives on top of your screen, reacts to being stroked, poked and carried, says short lines in Vietnamese or English, and keeps you company. It is a companion, not an assistant: it is lovable with no AI at all, and if you give it your own API key (Gemini, Claude or OpenAI) it can also chat and remember a few things about you.
 
-> **Status: first official release line (v0.2.1), Windows 10/11 only.** Earlier 0.1.x builds were development builds and have been withdrawn. The installer is not code-signed yet, so Windows SmartScreen will warn when you run it. The Claude and OpenAI brains have not yet been tried with real keys (Gemini has).
+> **Status: first official release line (v0.2.2), Windows 10/11 only.** Earlier 0.1.x builds were development builds and have been withdrawn. The installer is not code-signed yet, so Windows SmartScreen will warn when you run it. The Claude and OpenAI brains have not yet been tried with real keys (Gemini has).
 
 🌐 **Website:** [streakboom.com](https://streakboom.com), with the latest download and release notes (Vietnamese and English).
 
