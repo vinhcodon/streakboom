@@ -1,11 +1,11 @@
 {
-    "version":  "0.2.0",
-    "notes":  "The first official release of Streakboom. A round mochi-cat desktop pet for Windows: gestures (scratch, belly rub, poke, carry), mood and memory you control, optional AI brains (Gemini, Claude, OpenAI; bring your own key), opt-in stats with per-day counts, signed auto-update with fallbacks, and Peak\u0027s face as the app icon. Earlier 0.1.x builds were development builds and are withdrawn. The installer is not code-signed yet, so SmartScreen will warn.",
-    "pub_date":  "2026-11-08T10:39:49Z",
+    "version":  "0.2.1",
+    "notes":  "Chat: the background fact-noting requests no longer use up the daily chat limit (they have their own), and when Peak has talked enough it says so in its own words, without numbers.",
+    "pub_date":  "2026-11-08T11:04:12Z",
     "platforms":  {
                       "windows-x86_64":  {
-                                             "signature":  "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVUcHBlQXhYUlVURm4rMCtqL0NRM1ZwTFhOQWFva3RaZjNFSFlkdlQwdHJ6NkdIYWxLcmU3S2xLdnFobFJtNXBSNURTSkhXczFGS3dwdjExcTZPUEd6Tk9OWHpMVXJ3RkFjPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzk0MTM0Mzg4CWZpbGU6U3RyZWFrYm9vbV8wLjIuMF94NjQtc2V0dXAuZXhlCXZlcnNpb246MC4yLjAKbFdFSlpSb25oS2VOUTRDRDlvOHlGOUk2TmU1cDFQT2VnUFNlSFFyWEhtQUxtNFc0ZnZNK05mbG80djV3Z0ZZSzN2dzZ6UC9kR3ZpdmZSRGlEZGM5QkE9PQo=",
-                                             "url":  "https://api.github.com/repos/vinhcodon/streakboom/releases/assets/723628398"
+                                             "signature":  "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVUcHBlQXhYUlVURnNHU2ViaHA4QkJvSVJaaTdOTDQvendvYUpGSHBsYmZwZjdMOE5HUmoxVlcxaHpOc3dxQ2JIYzE0Wnh3UExqN1JXc1FGN1VFVFBUR01jbXhFanJ0cGdBPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzk0MTM1ODUxCWZpbGU6U3RyZWFrYm9vbV8wLjIuMV94NjQtc2V0dXAuZXhlCXZlcnNpb246MC4yLjEKUkNxZ2hSQ2lPL3Q3Z3FUL3dPMEsvTHZkSWF5QytyN1NQS29ZWjBpdnRqdm9USVpKRDhQc2d3cEpGVHArTXlrWGpyK2xpMFliQlJyc1RrN3RGQmpzQkE9PQo=",
+                                             "url":  "https://api.github.com/repos/vinhcodon/streakboom/releases/assets/723678130"
                                          }
                   }
 }
