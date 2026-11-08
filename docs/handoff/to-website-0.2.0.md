@@ -4,8 +4,14 @@
 **To:** whoever works on `site/` (GitHub Pages, `.github/workflows/pages.yml`)
 **Status:** a reminder; nothing in `site/` was changed by this note. Please read the README and `docs/decisions/0026-first-official-release-0-2-0.md` first.
 
+## Update 2026-11-08 (later): version 0.2.1 and the one-release policy
+- The current version is **0.2.1** (a small fix: fact-noting no longer uses up the daily chat limit; the pet's "enough for today" line is in character). Use 0.2.1 where this note says 0.2.0; the status wording becomes "First official release line (v0.2.1)" or simply the current version.
+- **GitHub keeps only the latest release** (ADR-0028). `v0.2.0` is deleted too. The notes of every version are in **`CHANGELOG.md`** at the repository root (raw: `https://raw.githubusercontent.com/vinhcodon/streakboom/main/CHANGELOG.md`).
+- So the site's "updates" section (`site/app.js` reads `releases?per_page=5`) will always show one release. Better: build it from `CHANGELOG.md` (fetch the raw file, show the newest few entries, keep working if the fetch fails) and keep the download button on `releases/latest`.
+- Everything else below still applies.
+
 ## What changed
-1. **Streakboom 0.2.0 is the first official release.** The 0.1.x builds were development builds. All 17 old GitHub releases and tags (v0.1.0 to v0.1.16) were deleted; only `v0.2.0` remains in Releases (the git history is kept).
+1. **Streakboom 0.2.0 is the first official release.** The 0.1.x builds were development builds. All 17 old GitHub releases and tags (v0.1.0 to v0.1.16) were deleted; only the latest release remains in Releases (v0.2.0 at the time of writing, now v0.2.1) (the git history is kept).
 2. **Old links are dead.** Any link to `releases/tag/v0.1.x` or `releases/download/v0.1.x/...` returns 404. Only use `.../releases/latest` and the browser_download_url of the latest release.
 3. The app icon is now Peak's face (`assets/peak-icon-1024.png`).
 

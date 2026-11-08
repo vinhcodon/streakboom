@@ -20,7 +20,9 @@
                    manifest at the installer through the GitHub API (which kept working when the public
                    download path of github.com answered 504), upload the manifest, publish the release, and
                    commit and push the same manifest as updates/latest.json (a second place the app reads it
-                   from, see updater.rs). Needs gh logged in, and a clean git tree under app/, scripts/ and updates/.
+                   from, see updater.rs). Needs gh logged in, a clean git tree under app/, scripts/ and updates/,
+                   and an entry "## <version> (date)" in CHANGELOG.md. After publishing it deletes every other
+                   release and tag (ADR-0028: only the latest release is kept; the notes stay in CHANGELOG.md).
 
 .EXAMPLE
   .\scripts\release.ps1 -Repo someone/streakboom -Notes "Fixes the bubble position"
@@ -88,8 +90,12 @@ if ($Publish) {
   Push-Location $root
   try {
     # Only what feeds the build and the release has to be clean; other work in the checkout (for example the site/ folder) does not.
-    $dirty = git status --porcelain -- app scripts updates
+    $dirty = git status --porcelain -- app scripts updates CHANGELOG.md
     if ($dirty) { throw "The git tree is not clean (see ADR-0023: commit explicit paths first):`n$dirty" }
+    # Older releases are deleted after this one is published (ADR-0028), so their notes must already be in CHANGELOG.md.
+    if (-not (Select-String -Path (Join-Path $root "CHANGELOG.md") -Pattern "^## $([regex]::Escape($version)) " -Quiet)) {
+      throw "CHANGELOG.md has no '## $version (date)' entry. Write the release notes there and commit it first."
+    }
     $gh = (Get-Command gh -ErrorAction SilentlyContinue).Source
     if (-not $gh) { $gh = Join-Path $env:LOCALAPPDATA "Programs\GitHub CLI\gh.exe" }
     if (-not (Test-Path $gh)) { throw "gh not found; install it and run 'gh auth login'" }
@@ -121,6 +127,13 @@ if ($Publish) {
     git commit -m "Update manifest for $version"
     git push origin HEAD
     if ($LASTEXITCODE -ne 0) { throw "git push failed" }
+
+    # Keep only the latest release: delete every other release and its tag (the commits stay; the notes live in CHANGELOG.md).
+    $old = ((& $gh api "repos/$Repo/releases?per_page=100") | ConvertFrom-Json) | Where-Object { $_.tag_name -ne $tag } | ForEach-Object { $_.tag_name }
+    foreach ($t in $old) {
+      & $gh release delete $t --repo $Repo --cleanup-tag --yes
+      if ($LASTEXITCODE -ne 0) { Write-Warning "could not delete the old release $t" } else { Write-Host "Deleted the old release $t (notes stay in CHANGELOG.md)" }
+    }
 
     Write-Host ""
     Write-Host "Published $tag. Check from here (the repository copy may lag a few minutes behind a cache):"

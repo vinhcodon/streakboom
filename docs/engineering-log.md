@@ -159,3 +159,7 @@ Follow-ups before M1:
 - *Fix:* `isDozing(pose)` (sleep or drowsy) in `sprites.ts`; unprompted lines are blocked while dozing and retried 2 minutes later, checked again after the model call, the memory notice and the milestone line skip a dozing cat, and `pickNext` never starts dozing while a bubble shows. Typed or touched interactions (click, scratch, belly, double-click) still wake the cat first, as before.
 - *Verified:* 93 JS tests (new: `isDozing` is true only for sleep and drowsy), `svelte-check` 0 errors.
 - *Not verified:* in the running app (the soak test is using the installed copy, so nothing was restarted); a real unprompted line landing on a sleeping cat, before and after. The check would force `window.__pet.proactive()` while the cat is asleep. Not released; it goes into the next version.
+
+**Only the latest release is kept (done 2026-11-08, ADR-0028):** after 0.2.1 was published, `v0.2.0` and its tag were deleted (`gh release delete v0.2.0 --cleanup-tag --yes`); `gh release list` and the tag list now show only `v0.2.1`. `CHANGELOG.md` holds the notes of 0.2.1 and 0.2.0. `scripts/release.ps1 -Publish` now refuses to run without a `## <version> ` entry in `CHANGELOG.md` and deletes all other releases and tags after publishing.
+- *Verified:* the release and tag lists; the script parses.
+- *Not verified:* the new automatic deletion inside a real `-Publish` run (the next release will be its first run); the website's release list with a single release.

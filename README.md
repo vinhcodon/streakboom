@@ -29,6 +29,8 @@ To use it, follow [Install](#install). To build it or change it, follow [Develop
 2. Run it. If SmartScreen says "Windows protected your PC", choose **More info**, then **Run anyway**. It installs for the current user only (no administrator rights) into `%LOCALAPPDATA%\Streakboom`.
 3. Uninstall from Windows Settings, Apps.
 
+Only the latest release is kept on GitHub; the release notes of every version are in [CHANGELOG.md](CHANGELOG.md).
+
 Windows needs the WebView2 runtime; the installer downloads it if it is missing.
 
 ## Using it 🖱️
