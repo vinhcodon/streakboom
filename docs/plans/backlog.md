@@ -29,7 +29,7 @@ Against the roadmap: Phases 0 to 2 done; **Phase 4 in progress** (E7: VE-1 runni
 | PR-0 | The pet is always on top, click-through except over the cat, with idle, walk, sleep and wake | M | done | |
 | PR-1 | Eyes follow the cursor while it is over the pet | S | done | |
 | PR-2 | Start with Windows as an opt-in (ADR-0018) | S | done (not verified across a reboot) | |
-| PR-3 | Break the CPU down: idle versus walking versus sleeping, per process, against the budget (the soak shows about 17% of one core on average) | S | ready | |
+| PR-3 | Break the CPU down: idle versus walking versus sleeping, per process, against the budget (the soak shows about 17% of one core on average) | S | doing: outside breakdown done (renderer and GPU dominate, 12% with no window moving, 30% walking, far above the budget); the per-pose attribution needs a restart with the debug port | |
 | PR-4 | Bring the CPU within the budget (idle near 0) | M | blocked (PR-3) | PR-3 |
 | PR-5 | Decision: read only the time of the last keyboard or mouse input (no content, no hook) to know whether the user is typing; reverses a line of spec/05 | S | needs Vinh | |
 | PR-6 | The pet stays still while the user is typing | M | blocked (PR-5) | PR-5 |
