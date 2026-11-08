@@ -1,6 +1,6 @@
 # 06. Character, movement and focus-safety
 
-Status: **approved by Vinh on 2026-11-08 (version 0.2.2); no feature code exists yet for anything marked "new".** Step 0 of the plan (the CPU baseline, D2) comes first. Source: [`../docs/handoff/character-and-movement.md`](../docs/handoff/character-and-movement.md) (a product discussion in Claude chat), checked against the code. Plan and steps: [`../docs/plans/character-and-movement.md`](../docs/plans/character-and-movement.md). Backlog: [`../docs/plans/backlog.md`](../docs/plans/backlog.md) (epic E8 and the stories named below).
+Status: **approved by Vinh on 2026-11-08 (version 0.2.3); no feature code exists yet for anything marked "new".** Step 0 of the plan (the CPU baseline, D2) comes first. Source: [`../docs/handoff/character-and-movement.md`](../docs/handoff/character-and-movement.md) (a product discussion in Claude chat), checked against the code. Plan and steps: [`../docs/plans/character-and-movement.md`](../docs/plans/character-and-movement.md). Backlog: [`../docs/plans/backlog.md`](../docs/plans/backlog.md) (epic E8 and the stories named below).
 
 Product line: **"Một chú mèo nhỏ sống trên màn hình của bạn"** (a small cat living on your screen). Three promises: *nhỏ* (small: little space, attention and CPU), *sống* (alive: its own routine), *trên màn hình của bạn* (a housemate in the user's space, not a servant). Companion, not assistant (ADR-0021).
 

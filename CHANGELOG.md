@@ -2,6 +2,10 @@
 
 Release notes of every version of Streakboom, newest first. **GitHub keeps the latest release and the one right before it** (installer and update manifest; the previous one is a way back if the newest is bad); when a new version is published, anything older is deleted together with its tag and its notes stay here (ADR-0028). The git history keeps every commit.
 
+## 0.2.3 (2026-11-08)
+- Peak is much lighter on your computer: it paints about 14 frames a second on average instead of about 25, and the processor use at the median drops from about 17% to about 9% of one core. Small motions (a blink, a tail flick, the eyes looking around) use a lighter redraw, and a blink or a flick now ends in under a second.
+- Walking and sleeping keep their smooth pace.
+
 ## 0.2.2 (2026-11-08)
 - Peak no longer speaks while it is asleep or dozing off: an unprompted line now waits and is tried again two minutes later, and the pet does not start dozing off while it is showing a bubble.
 - Settings, About has a button that opens the website, streakboom.com.
