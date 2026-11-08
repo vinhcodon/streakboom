@@ -1,6 +1,6 @@
 # Plan: character, movement and focus-safety
 
-Status: **proposed 2026-11-08, waiting for Vinh to approve the spec ([`../../spec/06-character-and-movement.md`](../../spec/06-character-and-movement.md)) before any feature code.** Decisions D1 to D4 are answered (spec section 0, ADR-0029). The work sits in epic E8 and in E1, E3 and E5 of [`backlog.md`](backlog.md).
+Status: **spec approved by Vinh on 2026-11-08 ([`../../spec/06-character-and-movement.md`](../../spec/06-character-and-movement.md)); work proceeds story by story from step 0.** Decisions D1 to D8 are answered (spec section 0, ADR-0029). The work sits in epic E8 and in E1, E3 and E5 of [`backlog.md`](backlog.md).
 
 ## Order (D2: CPU first)
 Step 0 is a gate: steps 1 to 5 do not start until the baseline CPU is understood and brought down, because every later step adds motion or a probe.

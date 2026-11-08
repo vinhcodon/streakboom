@@ -14,7 +14,7 @@ Notes handed **from one session or conversation to another** (a product discussi
 |---|---|---|---|---|
 | [`north-star-bond-days.md`](north-star-bond-days.md) | product discussion in Claude chat (Vinh and Claude) | 2026-11-08 | **received; spec, plan, implementation and release (0.1.15) done** | Specified in [`../../spec/05-north-star-metrics.md`](../../spec/05-north-star-metrics.md); planned in [`../plans/bond-days.md`](../plans/bond-days.md); settled points are in ADR-0021 and ADR-0022; open claims are in hypotheses H5 and H8. |
 
-| [`character-and-movement.md`](character-and-movement.md) | product discussion in Claude chat (Vinh and Claude) | 2026-11-08 | **received; spec, plan and ADR written, decisions D1 to D4 answered; code not started** | Spec [`../../spec/06-character-and-movement.md`](../../spec/06-character-and-movement.md); plan [`../plans/character-and-movement.md`](../plans/character-and-movement.md); [ADR-0029](../decisions/0029-focus-safety-recent-input-and-pointer-fade.md); stories in the backlog (E8). Out of date when received: see spec/06 section 0.1. |
+| [`character-and-movement.md`](character-and-movement.md) | product discussion in Claude chat (Vinh and Claude) | 2026-11-08 | **received; spec 06 approved on 2026-11-08 (decisions D1 to D8 answered); code not started** | Spec [`../../spec/06-character-and-movement.md`](../../spec/06-character-and-movement.md); plan [`../plans/character-and-movement.md`](../plans/character-and-movement.md); [ADR-0029](../decisions/0029-focus-safety-recent-input-and-pointer-fade.md); stories in the backlog (E8). Out of date when received: see spec/06 section 0.1. |
 
 ### Notes sent out
 

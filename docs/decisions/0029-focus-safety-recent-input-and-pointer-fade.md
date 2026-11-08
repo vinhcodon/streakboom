@@ -1,6 +1,6 @@
 # ADR-0029: Focus-safety uses recent input and the pointer, and fades the cat; no hook, no window geometry
 
-- **Status:** accepted (decisions answered by Vinh 2026-11-08; the feature is not built)
+- **Status:** accepted (every point answered by Vinh on 2026-11-08, including the points first written as proposals: no counter, fade only, starting constants, CPU target; the feature is not built)
 - **Date:** 2026-11-08
 - **Decided by:** Vinh (author), with Claude
 

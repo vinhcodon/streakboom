@@ -1,6 +1,6 @@
 # 06. Character, movement and focus-safety
 
-Status: **draft for Vinh's review, written 2026-11-08 (version 0.2.2). No feature code exists for anything marked "new".** Source: [`../docs/handoff/character-and-movement.md`](../docs/handoff/character-and-movement.md) (a product discussion in Claude chat), checked against the code. Plan and steps: [`../docs/plans/character-and-movement.md`](../docs/plans/character-and-movement.md). Backlog: [`../docs/plans/backlog.md`](../docs/plans/backlog.md) (epic E8 and the stories named below).
+Status: **approved by Vinh on 2026-11-08 (version 0.2.2); no feature code exists yet for anything marked "new".** Step 0 of the plan (the CPU baseline, D2) comes first. Source: [`../docs/handoff/character-and-movement.md`](../docs/handoff/character-and-movement.md) (a product discussion in Claude chat), checked against the code. Plan and steps: [`../docs/plans/character-and-movement.md`](../docs/plans/character-and-movement.md). Backlog: [`../docs/plans/backlog.md`](../docs/plans/backlog.md) (epic E8 and the stories named below).
 
 Product line: **"Một chú mèo nhỏ sống trên màn hình của bạn"** (a small cat living on your screen). Three promises: *nhỏ* (small: little space, attention and CPU), *sống* (alive: its own routine), *trên màn hình của bạn* (a housemate in the user's space, not a servant). Companion, not assistant (ADR-0021).
 
@@ -12,9 +12,13 @@ Product line: **"Một chú mèo nhỏ sống trên màn hình của bạn"** (a
 | D2 | Order: CPU or new movement first? | **Fix the baseline CPU first** (PR-3, PR-4), then focus-safety, then places and new movement. | plan, backlog |
 | D3 | "Too big for me" refusal | **Vague, in the cat's voice, never mentioning an assistant** ("Cái đó khó quá với một con mèo."). | section 1.4 |
 | D4 | Sarcasm level | **Keep about 14%** (the Gentle switch stays). Revisit with alpha feedback. | section 1.5 |
+| D5 | No per-day counter for how often the cat fades | **Agreed:** no new counter (it would need consent version 3). | section 4, ADR-0029 |
+| D6 | Response when the user types near the cat | **Fade and click-through only**; no sidestep in the first version. | section 3.1 |
+| D7 | The constants of sections 3.1 and 2.3 (thresholds 3, 5 and 6 s, near radius 200 px, fade to 35%, a 3 x 3 grid, three drags to teach a spot) | **Agreed as starting values**, tuned in the manual checks. | sections 2.3, 3.1 |
+| D8 | CPU target | **Under 1% of a core standing, 7 to 15% at most walking**; PR-4 measures against it and reports honestly if software drawing cannot reach it. | section 2.1 |
 | Q2 | Default cat name | **Already decided in ADR-0024:** "Peak" is the project's character; each user's pet starts unnamed and is named after a day or two; if testers dislike the naming card, offer "Peak" as the suggested name there. | nothing to do |
 
-Still open (not blocking the first steps, to settle before the step that needs them): zone definition across monitors and DPI (section 2.3, proposal given), what happens to a favorite spot when the monitor setup changes (2.3), which new movement kinds are worth their art and CPU (2.4, after the CPU gate), and whether a per-day "yield" count is worth a new consent version (section 4).
+Still open (not blocking the first steps, to settle before the step that needs them): how zones and favorite spots survive a changed monitor setup, DPI or taskbar (section 2.3 gives a proposal; story PL-0), and which new movement kinds are worth their art and CPU (section 2.2, after the CPU gate).
 
 ## 0.1 What the code does today (verified 2026-11-08) and where the handoff is out of date
 
