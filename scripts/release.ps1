@@ -20,7 +20,7 @@
                    manifest at the installer through the GitHub API (which kept working when the public
                    download path of github.com answered 504), upload the manifest, publish the release, and
                    commit and push the same manifest as updates/latest.json (a second place the app reads it
-                   from, see updater.rs). Needs gh logged in, and a clean git tree.
+                   from, see updater.rs). Needs gh logged in, and a clean git tree under app/, scripts/ and updates/.
 
 .EXAMPLE
   .\scripts\release.ps1 -Repo someone/streakboom -Notes "Fixes the bubble position"
@@ -87,7 +87,8 @@ if ($Publish) {
   # --- publish: a clean tree, a draft release with the installer, the manifest, then publish and mirror
   Push-Location $root
   try {
-    $dirty = git status --porcelain
+    # Only what feeds the build and the release has to be clean; other work in the checkout (for example the site/ folder) does not.
+    $dirty = git status --porcelain -- app scripts updates
     if ($dirty) { throw "The git tree is not clean (see ADR-0023: commit explicit paths first):`n$dirty" }
     $gh = (Get-Command gh -ErrorAction SilentlyContinue).Source
     if (-not $gh) { $gh = Join-Path $env:LOCALAPPDATA "Programs\GitHub CLI\gh.exe" }
