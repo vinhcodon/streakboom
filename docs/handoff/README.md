@@ -14,6 +14,12 @@ Notes handed **from one session or conversation to another** (a product discussi
 |---|---|---|---|---|
 | [`north-star-bond-days.md`](north-star-bond-days.md) | product discussion in Claude chat (Vinh and Claude) | 2026-11-08 | **received; spec, plan, implementation and release (0.1.15) done** | Specified in [`../../spec/05-north-star-metrics.md`](../../spec/05-north-star-metrics.md); planned in [`../plans/bond-days.md`](../plans/bond-days.md); settled points are in ADR-0021 and ADR-0022; open claims are in hypotheses H5 and H8. |
 
+### Notes sent out
+
+| File | To | Date | Status | What it asks |
+|---|---|---|---|---|
+| [`to-website-0.2.0.md`](to-website-0.2.0.md) | the session working on `site/` (GitHub Pages) | 2026-11-08 | **sent, not yet acted on** | Update the site for the first official release: status wording, the release list with one release, the download link, the feature and privacy text, the dead `v0.1.x` links |
+
 ## Where the handoff was out of date when received
 
 Checked against the working tree on 2026-11-08 (details in spec/05 section 0):

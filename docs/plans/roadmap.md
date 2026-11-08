@@ -1,6 +1,6 @@
 # Roadmap: from the first official release (0.2.0) to the first outside users
 
-Status: **approved 2026-11-08 with the answers in section 5; Phases 1 and 2 are done and released in 0.1.15, the rest is open.** Written 2026-11-08 after reading all project documents and the code.
+Status: **approved 2026-11-08 with the answers in section 5; Phases 1 and 2 are done and shipped (the counters in 0.1.15, then the first official release 0.2.0, ADR-0026); the rest is open. A reminder to update the website is in `../handoff/to-website-0.2.0.md`.** Written 2026-11-08 after reading all project documents and the code.
 
 Goal of this stretch: run a closed alpha with 5 to 10 observed first-time users and get a first baseline of the north star (Bond Days, [`../../spec/05-north-star-metrics.md`](../../spec/05-north-star-metrics.md)) to test hypotheses H1, H2b, H4 and H5 ([`../hypotheses/README.md`](../hypotheses/README.md)).
 
