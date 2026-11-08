@@ -1,4 +1,5 @@
 mod brain;
+mod claude;
 mod layout;
 mod updater;
 
@@ -40,6 +41,11 @@ struct Prefs {
     /// Model the user picked on purpose. None = automatic (fast model, with failover).
     #[serde(default)]
     model: Option<String>,
+    /// Which provider answers ("gemini" or "claude"; none = gemini) and the model chosen for Claude.
+    #[serde(default)]
+    provider: Option<String>,
+    #[serde(default)]
+    claude_model: Option<String>,
 }
 
 #[derive(Clone, Copy)]
@@ -72,7 +78,9 @@ struct AppState {
     path: PathBuf,
     pet_path: PathBuf,
     memory_path: PathBuf,
+    /// Model of the active provider (None = automatic).
     model: Mutex<Option<String>>,
+    provider: Mutex<brain::Provider>,
     hit: Mutex<Rect>,
     dirty: AtomicBool,
     last_self_move_ms: AtomicU64,
@@ -455,22 +463,56 @@ fn quit_app(app: &AppHandle) {
 
 // ------------------------------------------------------------------- brain
 
+/// The provider that answers now.
+fn active(state: &AppState) -> brain::Provider {
+    *state.provider.lock().unwrap()
+}
+
+fn prefs_model(prefs: &Prefs, p: brain::Provider) -> Option<String> {
+    match p {
+        brain::Provider::Gemini => prefs.model.clone(),
+        brain::Provider::Claude => prefs.claude_model.clone(),
+    }
+}
+
+fn set_prefs_model(prefs: &mut Prefs, p: brain::Provider, model: Option<String>) {
+    match p {
+        brain::Provider::Gemini => prefs.model = model,
+        brain::Provider::Claude => prefs.claude_model = model,
+    }
+}
+
+fn current_model(state: &AppState) -> String {
+    let p = active(state);
+    state
+        .model
+        .lock()
+        .unwrap()
+        .clone()
+        .unwrap_or_else(|| p.default_model().to_string())
+}
+
+/// One request to the active provider, with failover to another model when the model is unknown,
+/// overloaded or timing out. A bad key or a rate limit is never failed over.
 fn run_generate(state: &AppState, key: &str, system: &str, turns: &[Turn]) -> Result<String, AiError> {
+    let p = active(state);
     let model = current_model(state);
-    match brain::generate(brain::API_BASE, key, &model, system, turns) {
+    match brain::generate_for(p, key, &model, system, turns) {
         // The model name may not exist for this key: ask the API what it offers.
         Err(e) if e.kind == Kind::Model => {
-            let list = brain::list_models(brain::API_BASE, key)?;
-            let m = brain::pick_model_except(&list, &model).ok_or(e)?;
+            let m = brain::models_for(p, key)?.into_iter().find(|n| *n != model).ok_or(e)?;
             *state.model.lock().unwrap() = Some(m.clone());
-            brain::generate(brain::API_BASE, key, &m, system, turns)
+            brain::generate_for(p, key, &m, system, turns)
         }
         // This model is overloaded or timing out (503 / no answer): switch to another one
-        // instead of hammering the same model. A bad key or rate limit is never failed over.
+        // instead of hammering the same model.
         Err(e) if matches!(e.kind, Kind::Server | Kind::Network) => {
-            let list = brain::list_models(brain::API_BASE, key).map_err(|_| e.clone())?;
-            let m = brain::pick_model_except(&list, &model).ok_or_else(|| e.clone())?;
-            let out = brain::generate(brain::API_BASE, key, &m, system, turns);
+            let m = brain::models_for(p, key)
+                .map_err(|_| e.clone())?
+                .into_iter()
+                .find(|n| *n != model)
+                .ok_or_else(|| e.clone())?;
+            let out = brain::generate_for(p, key, &m, system, turns);
             if out.is_ok() {
                 *state.model.lock().unwrap() = Some(m);
             }
@@ -484,10 +526,65 @@ fn task_failed() -> AiError {
     AiError::new(Kind::Unknown, "task failed")
 }
 
-/// True when an API key is stored in the OS credential store.
+/// Which providers have a key, and which one answers now.
+#[derive(Serialize)]
+struct ProviderInfo {
+    active: String,
+    gemini: bool,
+    claude: bool,
+}
+
+fn provider_info(state: &AppState) -> ProviderInfo {
+    ProviderInfo {
+        active: active(state).id().to_string(),
+        gemini: brain::load_key(brain::Provider::Gemini).is_some(),
+        claude: brain::load_key(brain::Provider::Claude).is_some(),
+    }
+}
+
+fn provider_or_active(state: &AppState, provider: Option<String>) -> Result<brain::Provider, AiError> {
+    match provider.filter(|p| !p.is_empty()) {
+        Some(p) => brain::Provider::parse(&p).ok_or_else(|| AiError::new(Kind::Unknown, "unknown provider")),
+        None => Ok(active(state)),
+    }
+}
+
+/// Make `p` the active provider: its own chosen model (or automatic) is loaded.
+fn switch_provider(state: &AppState, p: brain::Provider) {
+    *state.provider.lock().unwrap() = p;
+    let model = prefs_model(&state.prefs.lock().unwrap(), p).filter(|m| brain::model_ok(m));
+    *state.model.lock().unwrap() = model;
+    state.prefs.lock().unwrap().provider = Some(p.id().to_string());
+    state.dirty.store(true, Ordering::Relaxed);
+}
+
 #[tauri::command]
-async fn brain_status() -> bool {
-    tauri::async_runtime::spawn_blocking(|| brain::load_key().is_some())
+async fn brain_provider(app: AppHandle) -> ProviderInfo {
+    tauri::async_runtime::spawn_blocking(move || provider_info(&app.state::<AppState>()))
+        .await
+        .unwrap_or(ProviderInfo { active: "gemini".into(), gemini: false, claude: false })
+}
+
+/// Choose which provider answers. Its key must already be stored.
+#[tauri::command]
+async fn brain_set_provider(app: AppHandle, provider: String) -> Result<ProviderInfo, AiError> {
+    tauri::async_runtime::spawn_blocking(move || {
+        let state = app.state::<AppState>();
+        let p = brain::Provider::parse(&provider).ok_or_else(|| AiError::new(Kind::Unknown, "unknown provider"))?;
+        if brain::load_key(p).is_none() {
+            return Err(AiError::new(Kind::InvalidKey, "no key"));
+        }
+        switch_provider(&state, p);
+        Ok(provider_info(&state))
+    })
+    .await
+    .map_err(|_| task_failed())?
+}
+
+/// True when the active provider has a key stored in the OS credential store.
+#[tauri::command]
+async fn brain_status(app: AppHandle) -> bool {
+    tauri::async_runtime::spawn_blocking(move || brain::load_key(active(&app.state::<AppState>())).is_some())
         .await
         .unwrap_or(false)
 }
@@ -496,23 +593,16 @@ async fn brain_status() -> bool {
 struct ConnectOut {
     reply: String,
     model: String,
+    provider: String,
 }
 
-fn current_model(state: &AppState) -> String {
-    state
-        .model
-        .lock()
-        .unwrap()
-        .clone()
-        .unwrap_or_else(|| brain::DEFAULT_MODEL.to_string())
-}
-
-/// Validate a pasted key with one tiny request; store it only if Google accepts it.
-/// `model` is the user's explicit choice (None = automatic). Returns the pet's first
-/// AI-written line and the model that actually answered.
+/// Validate a pasted key with one tiny request; store it only if the provider accepts it, and
+/// make that provider the active one. `model` is the user's explicit choice (None = automatic).
+/// Returns the pet's first AI-written line and the model that actually answered.
 #[tauri::command]
 async fn brain_connect(
     app: AppHandle,
+    provider: Option<String>,
     key: String,
     lang: String,
     tier: u8,
@@ -529,8 +619,10 @@ async fn brain_connect(
     }
     tauri::async_runtime::spawn_blocking(move || {
         let state = app.state::<AppState>();
+        let p = provider_or_active(&state, provider)?;
         // A fresh connection starts from the user's choice, or from the automatic default.
-        let previous = std::mem::replace(&mut *state.model.lock().unwrap(), model.clone());
+        let previous_provider = std::mem::replace(&mut *state.provider.lock().unwrap(), p);
+        let previous_model = std::mem::replace(&mut *state.model.lock().unwrap(), model.clone());
         let turns = [Turn {
             role: "user".into(),
             text: brain::hello_prompt(&lang),
@@ -538,19 +630,23 @@ async fn brain_connect(
         let reply = match run_generate(&state, &key, &brain::persona(&lang, tier, gentle), &turns) {
             Ok(r) => r,
             Err(e) => {
-                *state.model.lock().unwrap() = previous; // a failed attempt must not change a working setup
+                // a failed attempt must not change a working setup
+                *state.provider.lock().unwrap() = previous_provider;
+                *state.model.lock().unwrap() = previous_model;
                 return Err(e);
             }
         };
-        brain::store_key(&key)?;
+        brain::store_key(p, &key)?;
         {
             let mut prefs = state.prefs.lock().unwrap();
-            prefs.model = model;
+            set_prefs_model(&mut prefs, p, model);
+            prefs.provider = Some(p.id().to_string());
         }
         state.dirty.store(true, Ordering::Relaxed);
         Ok(ConnectOut {
             reply: brain::split_mood(&reply).0,
             model: current_model(&state),
+            provider: p.id().to_string(),
         })
     })
     .await
@@ -560,14 +656,16 @@ async fn brain_connect(
 /// Models the key can use for chat, best first. Uses `key` if given (while connecting),
 /// otherwise the stored key (settings).
 #[tauri::command]
-async fn brain_models(key: Option<String>) -> Result<Vec<String>, AiError> {
+async fn brain_models(app: AppHandle, provider: Option<String>, key: Option<String>) -> Result<Vec<String>, AiError> {
     tauri::async_runtime::spawn_blocking(move || {
+        let state = app.state::<AppState>();
+        let p = provider_or_active(&state, provider)?;
         let key = match key.map(|k| k.trim().to_string()).filter(|k| !k.is_empty()) {
             Some(k) if brain::key_ok(&k) => k,
             Some(_) => return Err(AiError::new(Kind::InvalidKey, "format")),
-            None => brain::load_key().ok_or_else(|| AiError::new(Kind::InvalidKey, "no key"))?,
+            None => brain::load_key(p).ok_or_else(|| AiError::new(Kind::InvalidKey, "no key"))?,
         };
-        Ok(brain::chat_models(&brain::list_models(brain::API_BASE, &key)?))
+        brain::models_for(p, &key)
     })
     .await
     .map_err(|_| task_failed())?
@@ -583,9 +681,10 @@ struct ModelInfo {
 /// The model currently used for chat.
 #[tauri::command]
 fn brain_model(state: State<AppState>) -> ModelInfo {
+    let p = active(&state);
     ModelInfo {
         model: current_model(&state),
-        auto: state.prefs.lock().unwrap().model.is_none(),
+        auto: prefs_model(&state.prefs.lock().unwrap(), p).is_none(),
     }
 }
 
@@ -596,8 +695,9 @@ fn brain_set_model(state: State<AppState>, model: Option<String>) -> Result<Stri
     if model.as_deref().is_some_and(|m| !brain::model_ok(m)) {
         return Err(AiError::new(Kind::Model, "bad model name"));
     }
+    let p = active(&state);
     *state.model.lock().unwrap() = model.clone();
-    state.prefs.lock().unwrap().model = model;
+    set_prefs_model(&mut state.prefs.lock().unwrap(), p, model);
     state.dirty.store(true, Ordering::Relaxed);
     Ok(current_model(&state))
 }
@@ -620,8 +720,8 @@ async fn brain_chat(
     follow_user: Option<bool>,
 ) -> Result<ChatReply, AiError> {
     tauri::async_runtime::spawn_blocking(move || {
-        let key = brain::load_key().ok_or_else(|| AiError::new(Kind::InvalidKey, "no key"))?;
         let state = app.state::<AppState>();
+        let key = brain::load_key(active(&state)).ok_or_else(|| AiError::new(Kind::InvalidKey, "no key"))?;
         let system = brain::persona_with(&lang, tier, gentle, known.as_deref().unwrap_or(&[]), follow_user.unwrap_or(false));
         let raw = run_generate(&state, &key, &system, &history)?;
         let (text, mood) = brain::split_mood(&raw);
@@ -637,8 +737,8 @@ async fn brain_chat(
 #[tauri::command]
 async fn brain_remember(app: AppHandle, lang: String, transcript: String, known: Vec<String>) -> Result<Vec<String>, AiError> {
     tauri::async_runtime::spawn_blocking(move || {
-        let key = brain::load_key().ok_or_else(|| AiError::new(Kind::InvalidKey, "no key"))?;
         let state = app.state::<AppState>();
+        let key = brain::load_key(active(&state)).ok_or_else(|| AiError::new(Kind::InvalidKey, "no key"))?;
         let text: String = transcript.chars().take(2000).collect();
         let turns = [Turn { role: "user".into(), text }];
         let raw = run_generate(&state, &key, &brain::extract_prompt(&lang, &known), &turns)?;
@@ -648,20 +748,33 @@ async fn brain_remember(app: AppHandle, lang: String, transcript: String, known:
     .map_err(|_| task_failed())?
 }
 
+/// Remove a stored key. If it was the active provider's and another has a key, that one takes over.
 #[tauri::command]
-async fn brain_forget() -> Result<(), AiError> {
-    tauri::async_runtime::spawn_blocking(brain::delete_key)
-        .await
-        .map_err(|_| task_failed())?
+async fn brain_forget(app: AppHandle, provider: Option<String>) -> Result<ProviderInfo, AiError> {
+    tauri::async_runtime::spawn_blocking(move || {
+        let state = app.state::<AppState>();
+        let p = provider_or_active(&state, provider)?;
+        brain::delete_key(p)?;
+        if active(&state) == p {
+            if let Some(other) = brain::Provider::ALL.into_iter().find(|o| *o != p && brain::load_key(*o).is_some()) {
+                switch_provider(&state, other);
+            }
+        }
+        Ok(provider_info(&state))
+    })
+    .await
+    .map_err(|_| task_failed())?
 }
 
-/// Open Google AI Studio's key page in the default browser (fixed URL, nothing user-supplied).
+/// Open the provider's key page in the default browser (fixed URLs, nothing user-supplied).
 #[tauri::command]
-fn open_key_page(app: AppHandle) -> Result<(), String> {
+fn open_key_page(app: AppHandle, provider: Option<String>) -> Result<(), String> {
     use tauri_plugin_opener::OpenerExt;
-    app.opener()
-        .open_url("https://aistudio.google.com/apikey", None::<&str>)
-        .map_err(|e| e.to_string())
+    let p = provider
+        .as_deref()
+        .and_then(brain::Provider::parse)
+        .unwrap_or_else(|| active(&app.state::<AppState>()));
+    app.opener().open_url(p.key_page(), None::<&str>).map_err(|e| e.to_string())
 }
 // ------------------------------------------------------------- positioning
 
@@ -815,7 +928,11 @@ pub fn run() {
                 prefs: Mutex::new(prefs.clone()),
                 pet_path: dir.join("pet.json"),
                 memory_path: dir.join("memory.json"),
-                model: Mutex::new(prefs.model.clone().filter(|m| brain::model_ok(m))),
+                model: Mutex::new({
+                    let p = prefs.provider.as_deref().and_then(brain::Provider::parse).unwrap_or_default();
+                    prefs_model(&prefs, p).filter(|m| brain::model_ok(m))
+                }),
+                provider: Mutex::new(prefs.provider.as_deref().and_then(brain::Provider::parse).unwrap_or_default()),
                 path,
                 hit: Mutex::new(Rect {
                     x: PET_LEFT,
@@ -897,6 +1014,8 @@ pub fn run() {
             brain_models,
             brain_model,
             brain_set_model,
+            brain_provider,
+            brain_set_provider,
             brain_chat,
             brain_remember,
             brain_forget,

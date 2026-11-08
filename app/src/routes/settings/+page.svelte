@@ -13,8 +13,41 @@
   import { UI, type ErrKind } from "$lib/ui";
 
   let snap = $state<SettingsSnapshot | null>(null);
+  // Which brain the Brain page is showing (the one in use at first; the others can be set up too).
+  let editing = $state<"gemini" | "claude">("gemini");
+  let editingInit = false;
+  const hasKeyHere = $derived(snap ? snap.keys[editing] : false);
+  const isActive = $derived(snap?.provider === editing);
+  $effect(() => {
+    if (snap && !editingInit) {
+      editingInit = true;
+      editing = snap.provider;
+    }
+  });
+  function pickProvider(p: "gemini" | "claude") {
+    editing = p;
+    replacing = false;
+    err = "";
+    errDetail = "";
+    keyInput = "";
+    ageOk = false;
+    models = [];
+    modelsKey = "";
+    modelPick = "";
+  }
+  async function useThisBrain() {
+    try {
+      const info = await invoke<{ active: "gemini" | "claude"; gemini: boolean; claude: boolean }>("brain_set_provider", { provider: editing });
+      if (snap) snap = { ...snap, provider: info.active, keys: { gemini: info.gemini, claude: info.claude }, hasKey: info[info.active], brainBad: false };
+      void brainChanged({ type: "switched" });
+    } catch (e) {
+      err = ui.err[errKind(e)];
+    }
+  }
   const ui = $derived(UI[snap?.lang ?? "en"]);
   const s = $derived(snap?.settings);
+  const pv = $derived(ui.providers[editing]);
+  const companyNow = $derived(ui.providers[snap?.provider ?? "gemini"].company);
 
   // brain
   let models = $state<string[]>([]);
@@ -129,7 +162,7 @@
     void fromSettings({ type: "mem", action: "fact-set", id, value: v });
   }
   const setLearn = (v: boolean) => void fromSettings({ type: "mem", action: "learn", value: v });
-  const showWizard = $derived(!snap?.hasKey || snap?.brainBad || replacing);
+  const showWizard = $derived(!hasKeyHere || (isActive && !!snap?.brainBad) || replacing);
 
   function patch<K extends keyof Settings>(key: K, value: Settings[K]) {
     if (snap) snap = { ...snap, settings: { ...snap.settings, [key]: value } }; // optimistic
@@ -148,7 +181,7 @@
 
   async function loadModels(key: string | null) {
     try {
-      models = await invoke<string[]>("brain_models", { key });
+      models = await invoke<string[]>("brain_models", { key, provider: editing });
       modelsKey = key ?? "";
     } catch {
       models = []; // the list is a nicety; "automatic" always works
@@ -156,6 +189,7 @@
   }
 
   async function refreshModel() {
+    if (!isActive) return;
     try {
       const m = await invoke<{ model: string; auto: boolean }>("brain_model");
       modelName = m.model;
@@ -167,7 +201,7 @@
 
   async function pickModel(m: string) {
     modelPick = m;
-    if (showWizard) return; // while connecting, the choice is applied by brain_connect
+    if (showWizard || !isActive) return; // while connecting, the choice is applied by brain_connect
     try {
       modelName = await invoke<string>("brain_set_model", { model: m || null });
     } catch (e) {
@@ -178,11 +212,11 @@
   // With a key stored (and not replacing) list the key's models for changing; while the wizard
   // is open, list them once a plausible key has been typed (debounced).
   // (It depends on `brainMode`, not on `snap`, so toggling a setting does not refetch the list.)
-  const brainMode = $derived(!snap ? "none" : showWizard ? "wizard" : "manage");
+  const brainMode = $derived(!snap ? "none" : `${showWizard ? "wizard" : "manage"}:${editing}`);
   $effect(() => {
     clearTimeout(modelsTimer);
     if (brainMode === "none") return;
-    if (brainMode === "manage") {
+    if (brainMode.startsWith("manage")) {
       loadModels(null);
       refreshModel();
       return;
@@ -195,7 +229,7 @@
 
   async function openStudio() {
     try {
-      await invoke("open_key_page");
+      await invoke("open_key_page", { provider: editing });
       waitingForReturn = true;
       void fromSettings({ type: "track", event: "get_key_clicked" });
     } catch {
@@ -215,6 +249,7 @@
     void fromSettings({ type: "track", event: "key_pasted" });
     try {
       const out = await invoke<{ reply: string; model: string }>("brain_connect", {
+        provider: editing,
         key: keyInput,
         lang: snap.lang,
         tier: snap.tier,
@@ -225,7 +260,7 @@
       keyInput = "";
       ageOk = false;
       replacing = false;
-      if (snap) snap = { ...snap, hasKey: true, brainBad: false };
+      if (snap) snap = { ...snap, hasKey: true, brainBad: false, provider: editing, keys: { ...snap.keys, [editing]: true } };
       void brainChanged({ type: "connected", reply: out.reply, model: out.model });
     } catch (e) {
       const m = (e as { message?: string } | null)?.message;
@@ -254,11 +289,11 @@
       return;
     }
     try {
-      await invoke("brain_forget");
+      const info = await invoke<{ active: "gemini" | "claude"; gemini: boolean; claude: boolean }>("brain_forget", { provider: editing });
       confirmForget = false;
       modelName = "";
       models = [];
-      if (snap) snap = { ...snap, hasKey: false, brainBad: false };
+      if (snap) snap = { ...snap, hasKey: info[info.active], brainBad: false, provider: info.active, keys: { gemini: info.gemini, claude: info.claude } };
       void brainChanged({ type: "removed" });
     } catch (e) {
       confirmForget = false;
@@ -384,25 +419,38 @@
     <section id="sec-brain" class="card">
       <h2>{ui.sectionBrain}</h2>
       <div class="row">
+        <span class="lbl">{ui.brainPick}</span>
+        {#each ["gemini", "claude"] as p (p)}
+          <button class="seg" class:on={editing === p} onclick={() => pickProvider(p as "gemini" | "claude")}>
+            {ui.providers[p as "gemini" | "claude"].name}{snap.provider === p && snap.keys[p as "gemini" | "claude"] ? " ✓" : ""}
+          </button>
+        {/each}
+      </div>
+      <div class="row">
         <span class="lbl">{ui.brainLabel}</span>
-        <b>{snap.hasKey ? (snap.brainBad ? "⚠ " + ui.brainBad : ui.brainOn) : ui.brainOff}</b>
+        <b>{hasKeyHere ? (isActive ? (snap.brainBad ? "⚠ " + ui.brainBad : ui.brainOn + " · " + ui.brainInUse) : ui.brainSaved) : ui.brainOff}</b>
       </div>
 
       {#if !showWizard}
-        <div class="muted">{ui.modelNow}: <b class="sel">{modelName}</b></div>
-        {@render modelChips()}
+        {#if isActive}
+          <div class="muted">{ui.modelNow}: <b class="sel">{modelName}</b></div>
+          {@render modelChips()}
+        {:else}
+          <div class="row"><button class="seg primary" onclick={useThisBrain}>{ui.useBrain}</button></div>
+        {/if}
         <div class="row">
           <button class="seg" onclick={startReplace}>{ui.replaceKey}</button>
           <button class="seg" class:danger={confirmForget} onclick={forgetKey}>{confirmForget ? ui.sure : ui.removeKey}</button>
         </div>
       {:else}
         <ol class="steps">
-          <li>{ui.step1} <button class="seg primary" onclick={openStudio}>{ui.openStudio}</button></li>
-          <li>{ui.step2}</li>
-          <li>{ui.step3}</li>
+          <li>{pv.step1} <button class="seg primary" onclick={openStudio}>{pv.open}</button></li>
+          <li>{pv.step2}</li>
+          <li>{pv.step3}</li>
         </ol>
-        <label class="chk"><input type="checkbox" bind:checked={ageOk} /> {ui.age}</label>
-        <p class="muted">{ui.dataNote}</p>
+        <p class="muted">{pv.cost}</p>
+        <label class="chk"><input type="checkbox" bind:checked={ageOk} /> {pv.age}</label>
+        <p class="muted">{pv.dataNote}</p>
         <input
           class="key"
           type="password"
@@ -432,7 +480,7 @@
             {#if showDetail}<div class="muted sel detail">{errDetail}</div>{/if}
           {/if}
         {/if}
-        <p class="muted">{ui.keyNote}</p>
+        <p class="muted">{pv.keyNote}</p>
       {/if}
     </section>
     {/if}
@@ -476,7 +524,7 @@
         <input type="checkbox" checked={snap.memory.aiLearn} onchange={(e) => setAi(e.currentTarget.checked)} />
         {ui.memAi}
       </label>
-      <p class="muted">{ui.memAiNote}</p>
+      <p class="muted">{ui.memAiNote.replace("{company}", companyNow)}</p>
       <div class="muted">{ui.memFacts}</div>
       {#each snap.memory.facts as f (f.id)}
         <div class="row">

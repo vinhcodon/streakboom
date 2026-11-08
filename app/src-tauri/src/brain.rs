@@ -1,5 +1,6 @@
-//! The pet's "brain": a thin client for the Gemini `generateContent` REST API using the user's
-//! own API key (BYOK), plus storage of that key in the OS credential store.
+//! The pet's "brain": thin clients for the Gemini `generateContent` API and (in `claude.rs`) the
+//! Claude Messages API, using the user's own API key (BYOK), plus storage of each key in the OS
+//! credential store. One provider is active at a time (`Provider`).
 //!
 //! The key only ever travels from the OS credential store to Google, in the `x-goog-api-key`
 //! header. It is never logged and never included in error messages.
@@ -17,7 +18,8 @@ pub const API_BASE: &str = "https://generativelanguage.googleapis.com/v1beta";
 /// Verified with a real key: answers a short prompt in about a second.
 pub const DEFAULT_MODEL: &str = "gemini-3.1-flash-lite";
 const KEY_SERVICE: &str = "streakboom";
-const KEY_USER: &str = "gemini-api-key";
+const KEY_USER_GEMINI: &str = "gemini-api-key";
+const KEY_USER_CLAUDE: &str = "claude-api-key";
 const MAX_OUTPUT_TOKENS: u32 = 512;
 const MAX_TURNS: usize = 8;
 const MAX_TURN_CHARS: usize = 500;
@@ -34,7 +36,70 @@ pub enum Kind {
     Server,
     Model,
     Storage,
+    /// The account has no credit or the plan does not allow the request (paid providers).
+    Billing,
     Unknown,
+}
+
+/// Who answers. The user brings a key for one or more of them and picks one to use.
+#[derive(Serialize, Deserialize, Clone, Copy, PartialEq, Eq, Debug, Default, Hash)]
+#[serde(rename_all = "lowercase")]
+pub enum Provider {
+    #[default]
+    Gemini,
+    Claude,
+}
+
+impl Provider {
+    pub const ALL: [Provider; 2] = [Provider::Gemini, Provider::Claude];
+    pub fn parse(s: &str) -> Option<Provider> {
+        match s {
+            "gemini" => Some(Provider::Gemini),
+            "claude" => Some(Provider::Claude),
+            _ => None,
+        }
+    }
+    pub fn id(self) -> &'static str {
+        match self {
+            Provider::Gemini => "gemini",
+            Provider::Claude => "claude",
+        }
+    }
+    pub fn default_model(self) -> &'static str {
+        match self {
+            Provider::Gemini => DEFAULT_MODEL,
+            Provider::Claude => crate::claude::DEFAULT_MODEL,
+        }
+    }
+    fn key_user(self) -> &'static str {
+        match self {
+            Provider::Gemini => KEY_USER_GEMINI,
+            Provider::Claude => KEY_USER_CLAUDE,
+        }
+    }
+    /// Where the user creates a key (fixed addresses; nothing user-supplied is ever opened).
+    pub fn key_page(self) -> &'static str {
+        match self {
+            Provider::Gemini => "https://aistudio.google.com/apikey",
+            Provider::Claude => "https://console.anthropic.com/settings/keys",
+        }
+    }
+}
+
+/// One request to the chosen provider.
+pub fn generate_for(p: Provider, key: &str, model: &str, system: &str, turns: &[Turn]) -> Result<String, AiError> {
+    match p {
+        Provider::Gemini => generate(API_BASE, key, model, system, turns),
+        Provider::Claude => crate::claude::generate(crate::claude::API_BASE, key, model, system, turns),
+    }
+}
+
+/// Chat models the key can use, best first.
+pub fn models_for(p: Provider, key: &str) -> Result<Vec<String>, AiError> {
+    match p {
+        Provider::Gemini => Ok(chat_models(&list_models(API_BASE, key)?)),
+        Provider::Claude => Ok(crate::claude::chat_models(&crate::claude::list_models(crate::claude::API_BASE, key)?)),
+    }
 }
 
 #[derive(Serialize, Debug, Clone)]
@@ -260,7 +325,7 @@ pub fn parse_facts(raw: &str, known: &[String]) -> Vec<String> {
 /// Loose sanity check only: Google has changed key formats before, so no prefix is required.
 pub fn key_ok(key: &str) -> bool {
     let k = key.trim();
-    (20..=200).contains(&k.len()) && k.chars().all(|c| c.is_ascii_graphic())
+    (20..=400).contains(&k.len()) && k.chars().all(|c| c.is_ascii_graphic())
 }
 
 pub fn classify(status: u16, body: &str) -> AiError {
@@ -391,7 +456,7 @@ pub fn chat_models(list: &Value) -> Vec<String> {
 
 // ------------------------------------------------------------------- HTTP
 
-fn agent() -> ureq::Agent {
+pub(crate) fn agent() -> ureq::Agent {
     ureq::AgentBuilder::new()
         .timeout_connect(Duration::from_secs(8))
         .timeout(Duration::from_secs(20))
@@ -399,6 +464,11 @@ fn agent() -> ureq::Agent {
 }
 
 fn read_json(resp: Result<ureq::Response, ureq::Error>) -> Result<Value, AiError> {
+    read_json_with(resp, classify)
+}
+
+/// Reads a JSON answer; an HTTP error is turned into an `AiError` by the provider's `classify`.
+pub(crate) fn read_json_with(resp: Result<ureq::Response, ureq::Error>, classify: fn(u16, &str) -> AiError) -> Result<Value, AiError> {
     match resp {
         Ok(r) => {
             let body = r
@@ -435,21 +505,21 @@ pub fn list_models(base: &str, key: &str) -> Result<Value, AiError> {
 
 // ------------------------------------------------------------ credential store
 
-pub fn store_key(key: &str) -> Result<(), AiError> {
-    keyring::Entry::new(KEY_SERVICE, KEY_USER)
+pub fn store_key(p: Provider, key: &str) -> Result<(), AiError> {
+    keyring::Entry::new(KEY_SERVICE, p.key_user())
         .and_then(|e| e.set_password(key.trim()))
         .map_err(|_| AiError::new(Kind::Storage, "credential store"))
 }
 
-pub fn load_key() -> Option<String> {
-    keyring::Entry::new(KEY_SERVICE, KEY_USER)
+pub fn load_key(p: Provider) -> Option<String> {
+    keyring::Entry::new(KEY_SERVICE, p.key_user())
         .and_then(|e| e.get_password())
         .ok()
         .filter(|k| !k.is_empty())
 }
 
-pub fn delete_key() -> Result<(), AiError> {
-    match keyring::Entry::new(KEY_SERVICE, KEY_USER).and_then(|e| e.delete_credential()) {
+pub fn delete_key(p: Provider) -> Result<(), AiError> {
+    match keyring::Entry::new(KEY_SERVICE, p.key_user()).and_then(|e| e.delete_credential()) {
         Ok(()) | Err(keyring::Error::NoEntry) => Ok(()),
         Err(_) => Err(AiError::new(Kind::Storage, "credential store")),
     }
@@ -664,7 +734,7 @@ mod tests {
         assert!(key_ok("  AIzaSyExampleExampleExample1234567  "));
         assert!(!key_ok("short"));
         assert!(!key_ok("has space inside the key value 123"));
-        assert!(!key_ok(&"a".repeat(300)));
+        assert!(!key_ok(&"a".repeat(500)));
         assert!(persona("vi", 3, true).contains("Vietnamese"));
         assert!(persona("en", 1, true).contains("no sarcasm"));
         assert!(persona("en", 1, false).contains("under 2 sentences"));

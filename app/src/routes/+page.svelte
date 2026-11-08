@@ -115,6 +115,16 @@
   // brain (BYOK). The key itself never reaches this window: it lives in the settings window's
   // input box and the OS credential store.
   let hasKey = $state(false);
+  let providerInfo = $state<{ active: "gemini" | "claude"; gemini: boolean; claude: boolean }>({ active: "gemini", gemini: false, claude: false });
+  /** Re-reads which brain is in use and whether it has a key (the keys themselves never come here). */
+  async function refreshBrain() {
+    try {
+      providerInfo = await invoke("brain_provider");
+      hasKey = await invoke<boolean>("brain_status");
+    } catch {
+      /* keep what we had */
+    }
+  }
   let brainBad = $state(false); // stored key was rejected; ask for a new one
   let busy = $state(false);
   let chatPhase = $state<"compose" | "thinking" | "reply">("compose");
@@ -759,7 +769,7 @@
       mem = resetExtract(addFacts(mem, facts, Date.now(), () => crypto.randomUUID()));
       if (mem.facts.length > before && !mem.aiNotice) {
         mem = { ...mem, aiNotice: true };
-        setTimeout(() => !panel && !bubbleOn && showBubble(ui.memNotice, 9000), 2500);
+        setTimeout(() => !panel && !bubbleOn && showBubble(ui.memNotice.replace("{company}", ui.providers[providerInfo.active].company), 9000), 2500);
       }
       pushSettings();
     } catch (e) {
@@ -872,6 +882,8 @@
       hasKey,
       brainBad,
       tier: tierOf(data.closeness),
+      provider: providerInfo.active,
+      keys: { gemini: providerInfo.gemini, claude: providerInfo.claude },
       memory: memoryView(),
       stats:
         data.telemetry.consent === "on"
@@ -907,6 +919,7 @@
     brainBad = false;
     if (c.type === "connected") {
       hasKey = true;
+      void refreshBrain().then(pushSettings);
       data = { ...data, brain: { ...data.brain, connectedAt: Date.now() } };
       if (panel === "ask") closePanel();
       stopTimers();
@@ -914,8 +927,12 @@
       showBubble(`${clip(c.reply)}\n· ${c.model}`, 6000);
       track("key_valid");
       track("first_ai_message");
+    } else if (c.type === "switched") {
+      void refreshBrain().then(pushSettings);
+      return;
     } else {
       hasKey = false;
+      void refreshBrain().then(pushSettings);
       data = { ...data, brain: { ...data.brain, connectedAt: 0 } };
       showBubble(ui.removed);
     }
@@ -1129,11 +1146,7 @@
       } catch {
         /* start fresh */
       }
-      try {
-        hasKey = await invoke<boolean>("brain_status");
-      } catch {
-        hasKey = false;
-      }
+      await refreshBrain(); // which brain is in use, and whether it has a key
       const now = Date.now();
       const isNew = stored === null;
       const s = startSession(parse(stored, now), now);

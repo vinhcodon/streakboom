@@ -10,6 +10,7 @@ export type ErrKind =
   | "server"
   | "model"
   | "storage"
+  | "billing"
   | "unknown";
 
 export interface UiStrings {
@@ -83,6 +84,11 @@ export interface UiStrings {
   memForgetAll: string;
   memForgetNote: string;
   memEmpty: string;
+  providers: Record<"gemini" | "claude", { name: string; company: string; step1: string; step2: string; step3: string; open: string; age: string; cost: string; dataNote: string; keyNote: string }>;
+  brainSaved: string;
+  brainInUse: string;
+  useBrain: string;
+  brainPick: string;
   pgGeneral: string;
   pgPersonality: string;
   pgBrain: string;
@@ -224,6 +230,36 @@ export const UI: Record<Lang, UiStrings> = {
     memForgetAll: "Forget everything",
     memForgetNote: "Forgetting habits keeps the names. Forgetting everything also removes the names.",
     memEmpty: "Nothing yet.",
+    providers: {
+      gemini: {
+        name: "Gemini (Google)",
+        company: "Google",
+        step1: "Open Google AI Studio and sign in.",
+        step2: "Click “Create API key”.",
+        step3: "Copy the key and paste it below.",
+        open: "Open Google AI Studio",
+        age: "I am 18 or older (Google requires this)",
+        cost: "Free tier available; no card needed to start.",
+        dataNote: "Free keys: Google may use what you send me, and have people read it, to improve its products. Don't tell me anything sensitive. I also jot down a few lasting facts from our chats; they stay on this computer and go to Google with each chat (you can see, edit or turn this off in Memory).",
+        keyNote: "Your key stays on this computer and is only sent to Google. Tip: make a key just for me so it's easy to revoke.",
+      },
+      claude: {
+        name: "Claude (Anthropic)",
+        company: "Anthropic",
+        step1: "Open the Anthropic Console and sign in.",
+        step2: "Add some credit to the account, then create an API key.",
+        step3: "Copy the key and paste it below.",
+        open: "Open Anthropic Console",
+        age: "I am 18 or older (Anthropic requires this)",
+        cost: "Paid: Anthropic bills you per use and the account needs credit. I keep answers short and cap daily use (60 chats, 6 unprompted lines), so it stays small.",
+        dataNote: "What you send me goes to Anthropic to be answered; see Anthropic's terms for how it handles API data. Don't tell me anything sensitive. I also jot down a few lasting facts from our chats; they stay on this computer and go to Anthropic with each chat (you can see, edit or turn this off in Memory).",
+        keyNote: "Your key stays on this computer and is only sent to Anthropic. Tip: make a key just for me so it's easy to revoke.",
+      },
+    },
+    brainSaved: "key saved, not in use",
+    brainInUse: "in use",
+    useBrain: "Use this brain",
+    brainPick: "Brain",
     pgGeneral: "General",
     pgPersonality: "Personality",
     pgBrain: "Brain",
@@ -256,11 +292,11 @@ export const UI: Record<Lang, UiStrings> = {
     startupLater: "Not now",
     startupOn: "Done. I'll be here when you log in. Change it any time in Settings.",
     memAi: "Remember things I tell it in chats",
-    memAiNote: "On by default. Every chat you start sends these notes to Google along with your message so the pet can use them, and a short extra request picks new ones out of your chat. Turn it off to stop both.",
+    memAiNote: "On by default. Every chat you start sends these notes to {company} along with your message so the pet can use them, and a short extra request picks new ones out of your chat. Turn it off to stop both.",
     memFacts: "What it noted from chats",
     memFactsNone: "Nothing noted yet. Edit or delete anything here.",
     memForgetFacts: "Forget noted facts",
-    memNotice: "I jotted down something you told me. It's in Settings > What the pet remembers, where you can edit or delete it, and it goes to Google with our chats. You can turn it off there.",
+    memNotice: "I jotted down something you told me. It's in Settings > What the pet remembers, where you can edit or delete it, and it goes to {company} with our chats. You can turn it off there.",
     sectionAbout: "About",
     versionLabel: "Version",
     checkUpdates: "Check for updates",
@@ -308,6 +344,7 @@ export const UI: Record<Lang, UiStrings> = {
       server: "Google's side is having a moment. Try again soon.",
       model: "My brain model seems to have moved. Try again later.",
       storage: "I couldn't store the key safely on this computer.",
+      billing: "That account has no credit left. Add credit on the provider's site, then try again.",
       unknown: "Something odd happened. Try again?",
     },
   },
@@ -380,6 +417,36 @@ export const UI: Record<Lang, UiStrings> = {
     memForgetAll: "Quên hết",
     memForgetNote: "Quên thói quen vẫn giữ tên. Quên hết thì xóa cả tên.",
     memEmpty: "Chưa có gì.",
+    providers: {
+      gemini: {
+        name: "Gemini (Google)",
+        company: "Google",
+        step1: "Mở Google AI Studio và đăng nhập.",
+        step2: "Bấm “Create API key”.",
+        step3: "Sao chép key rồi dán vào ô bên dưới.",
+        open: "Mở Google AI Studio",
+        age: "Mình từ 18 tuổi trở lên (Google yêu cầu)",
+        cost: "Có bậc miễn phí; không cần thẻ để bắt đầu.",
+        dataNote: "Key miễn phí: Google có thể dùng những gì bạn gửi cho mình, và cho người đọc, để cải thiện sản phẩm. Đừng kể điều nhạy cảm nhé. Mình cũng ghi lại vài điều lâu dài từ các cuộc trò chuyện; chúng nằm trên máy này và được gửi cho Google cùng mỗi lần chat (bạn xem, sửa hoặc tắt trong mục Trí nhớ).",
+        keyNote: "Key chỉ nằm trên máy này và chỉ được gửi cho Google. Mẹo: tạo một key riêng cho mình để dễ thu hồi.",
+      },
+      claude: {
+        name: "Claude (Anthropic)",
+        company: "Anthropic",
+        step1: "Mở Anthropic Console và đăng nhập.",
+        step2: "Nạp một ít tiền vào tài khoản, rồi tạo API key.",
+        step3: "Sao chép key rồi dán vào ô bên dưới.",
+        open: "Mở Anthropic Console",
+        age: "Mình từ 18 tuổi trở lên (Anthropic yêu cầu)",
+        cost: "Trả phí: Anthropic tính tiền theo lượt dùng và tài khoản cần có tiền. Mình giữ câu trả lời ngắn và giới hạn mỗi ngày (60 lượt chat, 6 câu tự nói) nên chi phí nhỏ.",
+        dataNote: "Những gì bạn gửi cho mình sẽ đến Anthropic để được trả lời; xem điều khoản của Anthropic về cách họ xử lý dữ liệu API. Đừng kể điều nhạy cảm nhé. Mình cũng ghi lại vài điều lâu dài từ các cuộc trò chuyện; chúng nằm trên máy này và được gửi cho Anthropic cùng mỗi lần chat (bạn xem, sửa hoặc tắt trong mục Trí nhớ).",
+        keyNote: "Key chỉ nằm trên máy này và chỉ được gửi cho Anthropic. Mẹo: tạo một key riêng cho mình để dễ thu hồi.",
+      },
+    },
+    brainSaved: "đã lưu key, chưa dùng",
+    brainInUse: "đang dùng",
+    useBrain: "Dùng bộ não này",
+    brainPick: "Bộ não",
     pgGeneral: "Chung",
     pgPersonality: "Tính cách",
     pgBrain: "Bộ não",
@@ -416,7 +483,7 @@ export const UI: Record<Lang, UiStrings> = {
     memFacts: "Những điều đã ghi từ trò chuyện",
     memFactsNone: "Chưa ghi gì. Bạn có thể sửa hoặc xóa mọi mục ở đây.",
     memForgetFacts: "Quên các điều đã ghi",
-    memNotice: "Mình vừa ghi lại điều bạn kể. Nó nằm ở Cài đặt > Pet nhớ gì, bạn sửa hoặc xóa được, và nó được gửi cho Google cùng các cuộc trò chuyện. Bạn tắt được ở đó.",
+    memNotice: "Mình vừa ghi lại điều bạn kể. Nó nằm ở Cài đặt > Pet nhớ gì, bạn sửa hoặc xóa được, và nó được gửi cho {company} cùng các cuộc trò chuyện. Bạn tắt được ở đó.",
     sectionAbout: "Về app",
     versionLabel: "Phiên bản",
     checkUpdates: "Kiểm tra cập nhật",
@@ -464,6 +531,7 @@ export const UI: Record<Lang, UiStrings> = {
       server: "Bên Google đang trục trặc. Lát nữa thử lại nhé.",
       model: "Mô hình của mình có vẻ đã đổi chỗ. Lát nữa thử lại nhé.",
       storage: "Mình không lưu được key an toàn trên máy này.",
+      billing: "Tài khoản đó hết tiền rồi. Nạp thêm trên trang của nhà cung cấp rồi thử lại nhé.",
       unknown: "Có chuyện lạ xảy ra. Thử lại nhé?",
     },
   },

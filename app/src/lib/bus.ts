@@ -72,6 +72,8 @@ export interface SettingsSnapshot {
   hasKey: boolean;
   brainBad: boolean;
   tier: number; // closeness tier, for the tone of the first AI line
+  provider: "gemini" | "claude"; // the brain that answers now
+  keys: { gemini: boolean; claude: boolean }; // which brains have a key stored
   memory: MemoryView;
   /** What "Copy stats" puts on the clipboard. Empty unless the user opted in. */
   stats: { installId: string; events: { e: string; t: number }[] };
@@ -94,7 +96,8 @@ export type SettingsPatch =
 /** Settings window -> pet window, after the key or model changed (calls go straight to Rust). */
 export type BrainChange =
   | { type: "connected"; reply: string; model: string }
-  | { type: "removed" };
+  | { type: "removed" }
+  | { type: "switched" }; // the user picked another brain that already has a key
 
 export const toBubble = (view: BubbleView) => emitTo("bubble", "bubble-view", view).catch(() => {});
 export const fromBubble = (a: BubbleAction) => emitTo("main", "bubble-action", a).catch(() => {});
