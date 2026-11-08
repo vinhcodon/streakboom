@@ -4,6 +4,8 @@ An open-source desktop pet for Windows. Meet **Peak**, a cheerful golden chibi c
 
 > **Status: first official release line (v0.2.1), Windows 10/11 only.** Earlier 0.1.x builds were development builds and have been withdrawn. The installer is not code-signed yet, so Windows SmartScreen will warn when you run it. The Claude and OpenAI brains have not yet been tried with real keys (Gemini has).
 
+🌐 **Website:** [streakboom.com](https://streakboom.com), with the latest download and release notes (Vietnamese and English).
+
 ## Meet Peak 🐱
 
 Peak is the name of the character in this project. Your own copy can be given any name: after a day or two the pet asks what you would like to call it, and you can change that, or what it calls you, in Settings, Memory. Peak was designed and drawn for Streakboom (see [Art and credits](#art-and-credits)).
@@ -70,7 +72,11 @@ app/                    the application (Tauri 2 + SvelteKit + Svelte 5)
                         the brains and credential store (brain.rs, claude.rs, openai.rs),
                         updater (updater.rs)
 scripts/                release.ps1 (signed build and update manifest), test-update/ (configs
-                        for trying the update flow against a local server)
+                        for trying the update flow against a local server); build-site.mjs,
+                        site-dev.mjs, gen-assets.html (the website, see Website below)
+site/                   the website: plain HTML, CSS and JavaScript, served at streakboom.com
+assets/                 peak-icon-1024.png, the source of the app icon (npm run tauri icon)
+updates/                latest.json, the update manifest the app reads first
 spec/                   how the product works now (see below)
 docs/                   the record around it: decisions/, hypotheses/, handoff/, plans/, engineering-log.md
 ```
@@ -116,6 +122,17 @@ To release a version:
 The app reads the manifest from that repository copy first and from the release asset second, because on 2026-11-08 GitHub's public release-download path returned 504 for hours while the API and raw files worked (ADR-0025). Copies installed before that change read only the release asset and need one manual install to get it.
 
 `scripts/test-update/` holds two config overrides for rehearsing the update flow (a version bump and permission for plain HTTP to a local server); the manifest address can be overridden with the `STREAKBOOM_UPDATE_URL` environment variable (one address, or several separated by commas, tried in order). An update is only installed if its signature verifies, whatever the address.
+
+## Website 🌐
+
+The site in `site/` is a single static page with no framework: hero with an interactive Peak, features, install steps, privacy, FAQ and the latest releases, in English and Vietnamese. The download button, version and release notes are read from GitHub Releases when the page loads (with the manifest in `updates/latest.json` as a fallback), so a new release needs no change to the site. On phones and non-Windows computers the download is replaced by "send the link to my PC".
+
+- **Peak on the page is the app's own cat.** `scripts/build-site.mjs` turns `app/src/lib/rig/*.ts` into browser JavaScript in `site/peak/` (generated, git-ignored), so the page cannot drift from the app. Needs Node 22.13 or newer.
+- **Preview:** `node scripts/site-dev.mjs`, then open `http://localhost:4173`.
+- **Icons and share image:** with the preview running, open `http://localhost:4173/__gen` and press Save all. It redraws `site/assets/` (favicon, touch icon, header logo, share image) and `assets/peak-icon-1024.png` from the rig.
+- **Deploy:** pushing to `main` with changes in `site/`, `app/src/lib/rig/` or `scripts/build-site.mjs` runs `.github/workflows/pages.yml`, which builds Peak and publishes to GitHub Pages.
+- **Domain:** `streakboom.com` (registered at name.com). DNS: four `A` records (185.199.108.153, .109.153, .110.153, .111.153) and four `AAAA` records (2606:50c0:8000::153 to 8003::153) for the root, and a `CNAME` for `www` to `vinhcodon.github.io`. The custom domain and Enforce HTTPS are set in the repository's Settings, Pages. `www` and the old `vinhcodon.github.io/streakboom` address redirect to `https://streakboom.com/`.
+- **Share previews:** Facebook and Zalo cache the title and image of a link. After changing `site/assets/og-image.jpg` or the page title, press Scrape Again in the Facebook Sharing Debugger.
 
 ## Documentation 📚
 
