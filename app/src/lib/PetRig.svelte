@@ -1,7 +1,7 @@
 <script lang="ts">
   // The mochi cat, drawn on a canvas from a spring-driven rig (see rig/engine.ts). Pose changes
   // are continuous morphs, not swaps. While the cat stands still nothing redraws at all (CPU ~0);
-  // only a short blink or tail twitch now and then (about 24 fps) and light z's/dots at about 5 fps.
+  // only a short blink or tail twitch now and then (about 24 fps) and light z's/dots at about 11 fps.
   import { onMount } from "svelte";
   import type { PetState } from "$lib/sprites";
   import { Rig } from "$lib/rig/engine";
@@ -27,8 +27,8 @@
   // Frame intervals of the slower modes (see Rig.mode). Every painted frame costs real CPU here
   // (software drawing), so these are as slow as still looks smooth (PR-4, engineering log).
   const SOFT_MS = 41; // about 24 fps: a blink, a tail flick, the eyes looking around
-  const WALK_MS = 50; // about 20 fps
-  const LIGHT_MS = 200; // about 5 fps: the z's of sleep, the dots of thinking
+  const WALK_MS = 33; // about 30 fps: two paints per window move (the walk tick is 66 ms), so the steps stay even
+  const LIGHT_MS = 90; // about 11 fps: the z's of sleep, the dots of thinking (5 fps looked slow and choppy)
 
   let dpr = 1;
   let cache: HTMLCanvasElement | null = null; // the settled cat, drawn once, while only z's or dots move

@@ -138,7 +138,7 @@ test("the rig files can be copied to the website by stripping types alone", () =
 });
 
 // ---- redraw cost (PR-4): every painted frame costs real CPU with software drawing ----
-const FRAME_S: Record<string, number> = { full: 1 / 60, soft: 0.041, walk: 0.05, light: 0.2, idle: Infinity };
+const FRAME_S: Record<string, number> = { full: 1 / 60, soft: 0.041, walk: 0.033, light: 0.09, idle: Infinity };
 /** Frames a loop would paint while the rig is stepped for `sec` seconds, as `PetRig.svelte` schedules them. */
 function framesDuring(r: Rig, sec: number, events: (t: number) => void = () => {}): number {
   let frames = 0;
@@ -187,7 +187,7 @@ test("a pose change is a big motion (full speed); a turn or a hop too", () => {
   assert.equal(r.mode, "full");
 });
 
-test("redraw budget: a standing cat that blinks every 4.5 s and flicks its tail every 13 s paints under 6 frames a second, a sleeping cat under 6", () => {
+test("redraw budget: a standing cat that blinks every 4.5 s and flicks its tail every 13 s paints under 6 frames a second, a sleeping cat under 12", () => {
   const stand = new Rig();
   stand.setPose("idle", 1, 0, true);
   let nextBlink = 3;
@@ -204,6 +204,17 @@ test("redraw budget: a standing cat that blinks every 4.5 s and flicks its tail 
   sleep.setPose("sleep", 1, 0, true);
   framesDuring(sleep, 6); // falling asleep is a big motion; count the steady state after it
   const fs = framesDuring(sleep, 60);
-  assert.ok(fs / 60 < 6, `sleeping: ${(fs / 60).toFixed(1)} frames per second`);
-  assert.ok(fs / 60 > 2, "the z's still move");
+  assert.ok(fs / 60 < 12, `sleeping: ${(fs / 60).toFixed(1)} frames per second`);
+  assert.ok(fs / 60 > 8, "the z's keep a smooth pace (a slower rate looked choppy)");
+});
+
+test("a blink or a tail flick while walking keeps the walk pace (no change of rhythm)", () => {
+  const r = new Rig();
+  r.setPose("walk", 1, 0, true);
+  for (let i = 0; i < 1200; i++) r.step(1 / 120);
+  assert.equal(r.mode, "walk");
+  r.blink();
+  r.twitch();
+  r.step(1 / 120);
+  assert.equal(r.mode, "walk");
 });

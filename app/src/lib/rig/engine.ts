@@ -260,14 +260,16 @@ export class Rig {
   /**
    * How much redrawing is needed (each painted frame is costly with software drawing, so every
    * mode is the slowest rate that still reads as smooth): nothing (standing still), a trickle
-   * (z's and dots, about 5 fps), a steady walk (about 20 fps), "soft" for small motion only (a
-   * blink, a tail flick, the eyes looking around: about 24 fps), or full speed while a big motion
-   * runs (a pose change, a turn, a hop, being carried).
+   * (z's and dots, about 11 fps), a steady walk (about 30 fps, two paints per window move so the
+   * steps stay even), "soft" for small motion only (a blink, a tail flick, the eyes looking
+   * around: about 24 fps), or full speed while a big motion runs (a pose change, a turn, a hop,
+   * being carried). While walking, the walk rate also covers the small motions: a blink must not
+   * change the pace of the steps.
    */
   get mode(): "idle" | "light" | "walk" | "soft" | "full" {
     if (this.major().some((s) => !s.settled)) return "full";
-    if (this.all().some((s) => !s.settled) || this.lookT >= 0 || this.blinkT >= 0) return "soft";
     if (this.walk.x > 0.01) return "walk";
+    if (this.all().some((s) => !s.settled) || this.lookT >= 0 || this.blinkT >= 0) return "soft";
     if (this.pose === "sleep" || this.pose === "think") return "light";
     return "idle";
   }
