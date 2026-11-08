@@ -1,11 +1,11 @@
 {
-    "version":  "0.2.2",
-    "notes":  "Peak no longer speaks while asleep or dozing off; Settings, About opens the website (streakboom.com).",
-    "pub_date":  "2026-11-08T14:00:13Z",
+    "version":  "0.2.3",
+    "notes":  "Lighter redraw: about 45% less processor use at the median; blinks and tail flicks end sooner; walking and sleeping keep their smooth pace.",
+    "pub_date":  "2026-11-08T16:16:22Z",
     "platforms":  {
                       "windows-x86_64":  {
-                                             "signature":  "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVUcHBlQXhYUlVURnAzZXQyOUNBZ3p6MVhabU54aTViZU96aDRsUUxOQ2JpRy9Hbkk4OWR0SjczL3haOFdDTUtFRXRvYnNNUWFiR3AxS3ZQU2dzWHBPdWlxUHpCRkROYUF3PQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzk0MTQ2NDEyCWZpbGU6U3RyZWFrYm9vbV8wLjIuMl94NjQtc2V0dXAuZXhlCXZlcnNpb246MC4yLjIKMXJYSjRKa045ZUZlZXlqS3QxQVZaRytueEoxSE1abkZtQUsrSDRYb3hGT0VuVDNwanlNTzZDMzM2REVCYmtaekd4dEh2NVkyRlUyY1A4M3BvQU1LQ0E9PQo=",
-                                             "url":  "https://api.github.com/repos/vinhcodon/streakboom/releases/assets/724104749"
+                                             "signature":  "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVUcHBlQXhYUlVURmxQQUVVaERxMjVFTXBzZGkzMDRTNmRvODNjS1hNTDY5bmlZaS9LV01kNi81bkluUFpmbXhLbktlK1FQL3NqZVlRaUM1SUlrSEdjbDdMV3BBOVdLMndrPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzk0MTU0NTgxCWZpbGU6U3RyZWFrYm9vbV8wLjIuM194NjQtc2V0dXAuZXhlCXZlcnNpb246MC4yLjMKdlN4RlNYd25vZ1d4eTBHZ1p1SXRad0VJWm1QaEVpOUMrZzVwWksvOHlCejBOdDU0L213Z2REclFKVFRTQWE5SmFQdHcwOFpCS085Y1JDT1hUL3YzQmc9PQo=",
+                                             "url":  "https://api.github.com/repos/vinhcodon/streakboom/releases/assets/724470734"
                                          }
                   }
 }
