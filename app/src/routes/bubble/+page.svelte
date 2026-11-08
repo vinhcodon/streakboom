@@ -70,6 +70,7 @@
           lastKey = "none";
           lastFocusKey = "";
           draft = "";
+          typingSent = false;
           await invoke("bubble_hide").catch(() => {});
         }
         return;
@@ -96,7 +97,7 @@
     const text = draft.trim();
     if (!text || !chatReady) return;
     draft = "";
-    void fromBubble({ type: "typing", nonEmpty: false });
+    reportTyping(); // the box is empty again: tell the pet window, and remember that we did
     void fromBubble({ type: "chat-send", text });
   }
 
@@ -106,16 +107,21 @@
     if (!value) return;
     const field = view.field;
     draft = "";
+    reportTyping();
     void fromBubble({ type: "input", field, value });
   }
 
-  let wasEmpty = true;
-  function onInput() {
+  // The pet window never closes a chat while there is text in the box. It is told whenever the box
+  // goes from empty to non-empty or back; `typingSent` is what it was last told. (Forgetting to
+  // update it after a send once made the second message of a chat unprotected.)
+  let typingSent = false;
+  function reportTyping() {
     const nonEmpty = draft.trim().length > 0;
-    if (nonEmpty === !wasEmpty) return;
-    wasEmpty = !nonEmpty;
+    if (nonEmpty === typingSent) return;
+    typingSent = nonEmpty;
     void fromBubble({ type: "typing", nonEmpty });
   }
+  const onInput = reportTyping;
 
   // Any sign of life in the bubble keeps a conversation open (the pet window would otherwise close
   // an idle chat). Throttled so typing does not flood the other window.
@@ -185,6 +191,7 @@
             placeholder={view.placeholder}
             maxlength="20"
             autocomplete="off"
+            oninput={reportTyping}
             onkeydown={(e) => e.key === "Enter" && submitInput()}
           />
         </div>

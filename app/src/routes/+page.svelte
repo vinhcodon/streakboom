@@ -344,11 +344,11 @@
   function resetMenuTimer() {
     clearTimeout(menuTimer);
     if (panel !== "chat" && panel !== "ask" && panel !== "update" && panel !== "input") return;
-    // A conversation gets time to think and read: it only closes after a real pause (any click or
-    // key in the bubble starts the wait again).
-    const ms = panel === "input" ? 60_000 : panel === "update" ? 30_000 : panel === "chat" ? (chatPhase === "reply" ? 75_000 : 50_000) : 12_000;
+    // An idle chat closes by itself, as before (any click or key in the bubble starts the wait
+    // again), but never while there is text in the box (see the check below).
+    const ms = panel === "input" ? 60_000 : panel === "update" ? 30_000 : panel === "chat" && chatPhase === "reply" ? 20_000 : 12_000;
     menuTimer = setTimeout(() => {
-      if (panel === "chat" && (chatDraft || busy)) resetMenuTimer();
+      if ((panel === "chat" || panel === "input") && (chatDraft || busy)) resetMenuTimer();
       else {
         if (panel === "update") updateLater(); // ignoring the offer counts as "later"
         closePanel();
