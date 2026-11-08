@@ -59,7 +59,27 @@ export class Spring {
 
 export type Mouth = "smile" | "open" | "flat" | "o" | "yawn";
 const MOUTHS: Mouth[] = ["smile", "open", "flat", "o", "yawn"];
-const LEG_PHASE = [Math.PI, 0, 0, Math.PI]; // far back, far front, near back, near front
+// A cat walks with a lateral sequence: each foot lands a quarter of a cycle after the one before it on the
+// same side (near back, near front, far back, far front), and a foot is on the ground longer than in the air.
+// (The legs used to swing as a diagonal pair, a trot, with no foot lift, which read as a pendulum.)
+// Order of the legs here: far back, far front, near back, near front; the value is when each lands (cycle fraction).
+const LEG_LANDS = [0.5, 0.75, 0, 0.25];
+const GAIT_RATE = 11; // radians of gait phase per second at full walk (about 1.75 steps a second)
+const STANCE = 0.62; // the share of a step a foot is on the ground
+const SWING_ANGLE = 0.45; // radians each leg swings forward and back around the hip
+const FOOT_LIFT = 2.6; // how far a foot rises while it swings forward (cat units; a leg is about 6 long)
+
+/**
+ * One leg at cycle position u (0 = the foot has just landed). On the ground the foot moves steadily from
+ * forward to back (positive angle = back, the cat faces +x); in the air it swings forward, eased, and rises.
+ */
+export function gaitLeg(u: number): { ang: number; lift: number } {
+  const f = ((u % 1) + 1) % 1;
+  if (f < STANCE) return { ang: -SWING_ANGLE + (2 * SWING_ANGLE * f) / STANCE, lift: 0 };
+  const s = (f - STANCE) / (1 - STANCE);
+  const e = s * s * (3 - 2 * s);
+  return { ang: SWING_ANGLE - 2 * SWING_ANGLE * e, lift: FOOT_LIFT * Math.sin(Math.PI * s) };
+}
 
 interface Look {
   base: PoseName;
@@ -232,7 +252,7 @@ export class Rig {
 
   step(dt: number) {
     this.time += dt;
-    this.walk.x > 0.02 && (this.phase += dt * 9 * this.walk.x);
+    this.walk.x > 0.02 && (this.phase += dt * GAIT_RATE * this.walk.x);
     // blink: the lid closes for 130 ms, then follows the pose again
     let lidTarget = LOOKS[this.pose].lid;
     if (this.blinkT >= 0) {
@@ -294,13 +314,14 @@ export class Rig {
     let nod = 0;
     if (wk > 0.001) {
       key.legs.forEach((l, i) => {
-        const ang = 0.42 * Math.sin(this.phase + LEG_PHASE[i]) * wk;
+        const g = gaitLeg(this.phase / (2 * Math.PI) - LEG_LANDS[i]);
+        const ang = g.ang * wk;
         const c = Math.cos(ang);
         const s = Math.sin(ang);
         const dx = l.fx - l.hx;
         const dy = l.fy - l.hy;
         l.fx = l.hx + dx * c - dy * s;
-        l.fy = l.hy + dx * s + dy * c;
+        l.fy = l.hy + dx * s + dy * c - g.lift * wk;
       });
       key.body.y -= 1.7 * Math.abs(swing) * wk;
       nod = 2 * swing * wk;

@@ -35,6 +35,9 @@ export interface FocusState {
 export interface FocusOut {
   /** May the cat start (or keep) a walk? Walks end within a tick when this turns false. */
   walkAllowed: boolean;
+  /** May a walk in progress go on? False only when the user is active and the pointer is near the cat (or unknown):
+   *  working far away from the cat is no reason to stop it in the middle of a step. */
+  keepWalking: boolean;
   /** May an unprompted line be shown now? When false it waits and is tried again later. */
   speakAllowed: boolean;
   /** Fade the cat and let clicks pass through it. */
@@ -53,7 +56,8 @@ const known = (n: number | null): n is number => typeof n === "number" && Number
  * One probe. Returns the new state and the answer. `now` is any monotonic clock in ms (only differences
  * matter). The previous state is not modified.
  *
- * - walkAllowed: the user has been idle for CALM_MS.
+ * - walkAllowed: the user has been idle for CALM_MS (to start a walk).
+ * - keepWalking: a walk in progress stops only if the user is active and the pointer is near the cat (or unknown).
  * - speakAllowed: the user has been idle for LINE_MS.
  * - ghost: turns on when the user did something within GHOST_OFF_MS and the pointer is near (and not on the cat)
  *   for GHOST_ON_MS; turns off at once when the pointer is on the cat or far or unknown, or when the user has been
@@ -63,32 +67,34 @@ const known = (n: number | null): n is number => typeof n === "number" && Number
  */
 export function decideFocus(prev: FocusState, input: FocusInput, now: number): { state: FocusState; out: FocusOut } {
   const idle = input.idleMs;
-  if (!known(idle)) return done({ ghost: false, nearSince: null }, true, true, false);
+  if (!known(idle)) return done({ ghost: false, nearSince: null }, true, true, false, true);
 
   const active = idle < ACTIVE_MS;
   const walkAllowed = idle >= CALM_MS;
+  const close = input.pointer !== null && Number.isFinite(input.pointer.dist) && input.pointer.dist < NEAR_PX; // on the cat counts as close
+  const keepWalking = !(active && (input.pointer === null || close)); // unknown pointer: be careful
   const speakAllowed = idle >= LINE_MS;
 
   const p = input.pointer;
   const near = p !== null && Number.isFinite(p.dist) && !p.over && p.dist < NEAR_PX;
   const hidden = input.busy || input.quiet;
 
-  if (hidden || !near) return done({ ghost: false, nearSince: null }, walkAllowed, speakAllowed, active);
+  if (hidden || !near) return done({ ghost: false, nearSince: null }, walkAllowed, speakAllowed, active, keepWalking);
 
   if (prev.ghost) {
     // already faded: stay so while the user keeps working near it; come back when they stop
-    if (idle >= GHOST_OFF_MS) return done({ ghost: false, nearSince: null }, walkAllowed, speakAllowed, active);
-    return done({ ghost: true, nearSince: prev.nearSince }, walkAllowed, speakAllowed, active);
+    if (idle >= GHOST_OFF_MS) return done({ ghost: false, nearSince: null }, walkAllowed, speakAllowed, active, keepWalking);
+    return done({ ghost: true, nearSince: prev.nearSince }, walkAllowed, speakAllowed, active, keepWalking);
   }
 
   // Fading needs the user to be working right now: the same limit that brings the cat back (GHOST_OFF_MS), so it
   // cannot fade again in the gap between "come back" and "no longer active" (that would flicker).
-  if (idle >= GHOST_OFF_MS) return done({ ghost: false, nearSince: null }, walkAllowed, speakAllowed, active);
+  if (idle >= GHOST_OFF_MS) return done({ ghost: false, nearSince: null }, walkAllowed, speakAllowed, active, keepWalking);
   const since = prev.nearSince ?? now;
   const ghost = now - since >= GHOST_ON_MS;
-  return done({ ghost, nearSince: since }, walkAllowed, speakAllowed, active);
+  return done({ ghost, nearSince: since }, walkAllowed, speakAllowed, active, keepWalking);
 }
 
-function done(state: FocusState, walkAllowed: boolean, speakAllowed: boolean, active: boolean): { state: FocusState; out: FocusOut } {
-  return { state, out: { walkAllowed, speakAllowed, ghost: state.ghost, alpha: state.ghost ? GHOST_ALPHA : 1, active } };
+function done(state: FocusState, walkAllowed: boolean, speakAllowed: boolean, active: boolean, keepWalking: boolean): { state: FocusState; out: FocusOut } {
+  return { state, out: { walkAllowed, keepWalking, speakAllowed, ghost: state.ghost, alpha: state.ghost ? GHOST_ALPHA : 1, active } };
 }

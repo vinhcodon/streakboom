@@ -31,7 +31,7 @@ function run(steps: [number, Partial<FocusInput>][], start: FocusState = initial
 test("unknown idle time means no restriction at all (a platform without the probe behaves as before)", () => {
   for (const idleMs of [null, NaN, -5, Infinity]) {
     const r = decideFocus(initialFocus(), input({ idleMs: idleMs as number | null }), 1000);
-    assert.deepEqual(r.out, { walkAllowed: true, speakAllowed: true, ghost: false, alpha: 1, active: false }, String(idleMs));
+    assert.deepEqual(r.out, { walkAllowed: true, keepWalking: true, speakAllowed: true, ghost: false, alpha: 1, active: false }, String(idleMs));
     assert.deepEqual(r.state, initialFocus());
   }
 });
@@ -193,4 +193,14 @@ test("the limits are ordered: hold < come back < active < walk < line", () => {
   assert.ok(GHOST_OFF_MS < ACTIVE_MS);
   assert.ok(ACTIVE_MS < CALM_MS);
   assert.ok(CALM_MS < LINE_MS);
+});
+
+test("a walk in progress goes on unless the user is active near the cat (no stopping in mid-step for work far away)", () => {
+  const keep = (idleMs: number, pointer: FocusInput["pointer"]) => decideFocus(initialFocus(), input({ idleMs, pointer }), 0).out.keepWalking;
+  assert.equal(keep(100, { dist: 600, over: false }), true); // active, but far from the cat
+  assert.equal(keep(100, { dist: NEAR_PX - 1, over: false }), false); // active and near
+  assert.equal(keep(100, { dist: 10, over: true }), false); // active, on the cat
+  assert.equal(keep(100, null), false); // active, pointer unknown: be careful
+  assert.equal(keep(ACTIVE_MS, { dist: 10, over: false }), true); // not active any more
+  assert.equal(keep(60_000, null), true);
 });

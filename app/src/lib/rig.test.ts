@@ -1,7 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { POSE_KEYS, POSE_NAMES, type Key } from "./rig/keys.ts";
-import { Rig, Spring, blendKeys, LOOKS } from "./rig/engine.ts";
+import { Rig, Spring, blendKeys, LOOKS, gaitLeg } from "./rig/engine.ts";
 import type { PetState } from "./sprites.ts";
 import { stripTypeScriptTypes } from "node:module";
 import { readFileSync } from "node:fs";
@@ -217,4 +217,25 @@ test("a blink or a tail flick while walking keeps the walk pace (no change of rh
   r.twitch();
   r.step(1 / 120);
   assert.equal(r.mode, "walk");
+});
+
+test("the gait: a lateral sequence, two or more feet always down, continuous, and a foot rises only while it swings", () => {
+  // each foot lands a quarter step after the previous one on the same side: near back 0, near front 0.25, far back 0.5, far front 0.75
+  const lands = { farBack: 0.5, farFront: 0.75, nearBack: 0, nearFront: 0.25 };
+  let prev: Record<string, { ang: number; lift: number }> | null = null;
+  for (let t = 0; t < 2; t += 0.01) {
+    const g = Object.fromEntries(Object.entries(lands).map(([k, l]) => [k, gaitLeg(t - l)]));
+    const down = Object.values(g).filter((x) => x.lift === 0).length;
+    assert.ok(down >= 2, `at ${t.toFixed(2)} only ${down} feet are down`);
+    for (const x of Object.values(g)) assert.ok(x.lift >= 0 && x.lift <= 3 && Math.abs(x.ang) <= 0.5);
+    if (prev) for (const k of Object.keys(g)) assert.ok(Math.abs(g[k].ang - prev[k].ang) < 0.12, `${k} jumps at ${t.toFixed(2)}`);
+    prev = g;
+  }
+  // a foot that has just landed is forward, and it moves back on the ground
+  assert.ok(gaitLeg(0).ang < 0 && gaitLeg(0.3).ang > gaitLeg(0).ang && gaitLeg(0.3).lift === 0);
+  // while it swings forward it is raised and comes back to the landing position
+  assert.ok(gaitLeg(0.8).lift > 1);
+  assert.ok(Math.abs(gaitLeg(0.9999).ang - gaitLeg(0).ang) < 0.02);
+  // one cycle later is the same
+  assert.deepEqual(gaitLeg(0.37), gaitLeg(1.37));
 });

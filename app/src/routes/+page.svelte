@@ -91,6 +91,8 @@
   } from "$lib/state";
   import type { FunnelEvent } from "$lib/telemetry";
   import { UI, type ErrKind } from "$lib/ui";
+  import { decideFocus, initialFocus, type FocusOut } from "$lib/focus";
+  import { glideOut, rampIn, takeSteps } from "$lib/gait";
   import { engage as engagePure, markShown as markShownPure, minuteIncrement, noShown, type DayCounter, type DayStat } from "$lib/bond";
 
   // Pet window layout (logical px) - keep in sync with src-tauri/src/lib.rs.
@@ -155,6 +157,7 @@
   let tiltTimer: ReturnType<typeof setTimeout> | undefined;
   let walkTimer: ReturnType<typeof setInterval> | undefined;
   let walkEndTimer: ReturnType<typeof setTimeout> | undefined;
+  let glideTimer: ReturnType<typeof setInterval> | undefined; // the window coasting to a stop after a walk
   let bubbleTimer: ReturnType<typeof setTimeout> | undefined;
   let menuTimer: ReturnType<typeof setTimeout> | undefined;
   let clickTimer: ReturnType<typeof setTimeout> | undefined;
@@ -333,12 +336,51 @@
     bubbleTimer = setTimeout(() => (bubbleOn = false), Math.max(minMs, 4000 + text.length * 60));
   }
 
+  // ------------------------------------------------------- focus-safety (spec/06 section 3, ADR-0029)
+  // The cat does not walk and does not speak unprompted while the user is working. The only signals are how
+  // long ago the user last did anything and where the pointer is (one number and one position from Rust);
+  // `focus.ts` decides. The probe is read when a decision is needed (before a walk, twice a second during one,
+  // before an unprompted line), not on a timer, so a standing cat costs nothing extra.
+  const FOCUS_RETRY_MS = 45_000; // an unprompted line held back for the user's work is tried again after this long
+  const FOCUS_ALLOW: FocusOut = { walkAllowed: true, keepWalking: true, speakAllowed: true, ghost: false, alpha: 1, active: false };
+  let focusState = initialFocus();
+  let focusOut: FocusOut = FOCUS_ALLOW;
+  async function probeFocus(): Promise<FocusOut> {
+    try {
+      const p = await invoke<{ idleMs: number | null; dx: number | null; dy: number | null; over: boolean }>("focus_probe");
+      const pointer = p.dx !== null && p.dy !== null ? { dist: Math.hypot(p.dx, p.dy), over: p.over } : null;
+      const r = decideFocus(focusState, { idleMs: p.idleMs, pointer, busy: false, quiet }, Date.now());
+      focusState = r.state;
+      focusOut = r.out;
+    } catch {
+      focusState = initialFocus();
+      focusOut = FOCUS_ALLOW; // unknown: no restriction, as before
+    }
+    return focusOut;
+  }
+
+  /** Show something unprompted, but wait for a pause in the user's work (about 4 minutes at most, then give up). */
+  function sayWhenCalm(show: () => void, firstDelayMs = 0, tries = 12) {
+    void (async () => {
+      await new Promise((r) => setTimeout(r, firstDelayMs));
+      for (let i = 0; i < tries; i++) {
+        const fo = await probeFocus();
+        if (fo.speakAllowed && !panel && !bubbleOn && !isDozing(pose) && !quiet) {
+          show();
+          return;
+        }
+        await new Promise((r) => setTimeout(r, 20_000));
+      }
+    })();
+  }
+
   // ------------------------------------------------------------- behaviour
   function stopTimers() {
     clearTimeout(nextTimer);
     clearTimeout(sleepTimer);
     clearInterval(walkTimer);
     clearTimeout(walkEndTimer);
+    clearInterval(glideTimer);
   }
 
   let wakeThen: PetState | null = null; // what to do once the pet has finished waking up
@@ -354,6 +396,7 @@
     }
     clearInterval(walkTimer);
     clearTimeout(walkEndTimer);
+    clearInterval(glideTimer); // any other change of state ends the coasting at once
     clearTimeout(sleepTimer);
     clearTimeout(oneShotTimer);
     pose = next;
@@ -387,28 +430,79 @@
     if (panel) return scheduleNext();
     const r = Math.random();
     if (r < 0.5) enter("look");
-    else if (r < 0.85) enter("walk");
+    else if (r < 0.85) void tryWalk();
     else enter(bubbleOn ? "look" : "drowsy"); // yawns first, then falls asleep (never while it is speaking)
+  }
+
+  /** A walk starts only if the user has paused; otherwise the cat stays where it is and tries again later. */
+  async function tryWalk() {
+    const fo = await probeFocus();
+    if (pose !== "idle") return; // something else took over while the probe was read
+    if (fo.walkAllowed) enter("walk");
+    else scheduleNext();
   }
 
   function startWalk() {
     dir = Math.random() < 0.5 ? -1 : 1;
     const scale = window.devicePixelRatio || 1;
-    const stepPx = Math.max(1, Math.round((WALK_SPEED * scale * WALK_TICK_MS) / 1000));
+    // pixels per tick at full speed; fractional, the remainder is carried (see gait.ts)
+    const fullStep = (WALK_SPEED * scale * WALK_TICK_MS) / 1000;
+    let ticks = 0;
+    let carry = 0;
     walkTimer = setInterval(async () => {
       try {
-        const hitEdge = await invoke<boolean>("move_by", { dx: dir * stepPx });
+        ticks++;
+        // about twice a second, and only after the first second and a half: has the user started working near
+        // the cat? Then the walk eases to a stop. (Stopping a step at once looked like a jolt.)
+        if (ticks % 8 === 0 && ticks * WALK_TICK_MS >= 1500) {
+          const fo = await probeFocus();
+          if (pose !== "walk") return;
+          if (!fo.keepWalking) return stopWalking();
+        }
+        // the window speeds up as the legs start (the legs follow a spring, see Rig)
+        const want = fullStep * rampIn(ticks * WALK_TICK_MS);
+        const s = takeSteps(carry, want);
+        carry = s.carry;
+        if (s.move === 0) return;
+        const hitEdge = await invoke<boolean>("move_by", { dx: dir * s.move });
         if (hitEdge) dir = dir === 1 ? -1 : 1;
       } catch {
         enter("idle");
       }
     }, WALK_TICK_MS);
-    walkEndTimer = setTimeout(() => enter("idle"), rand(3_000, 8_000));
+    walkEndTimer = setTimeout(() => stopWalking(), rand(3_000, 8_000));
+  }
+
+  /**
+   * End a walk gently: the legs begin to settle at once (the pose becomes idle) and the window keeps moving for a
+   * moment at a speed that falls to zero, so the cat coasts to a stop instead of halting mid-step.
+   */
+  function stopWalking() {
+    if (pose !== "walk") return;
+    const scale = window.devicePixelRatio || 1;
+    const fullStep = (WALK_SPEED * scale * WALK_TICK_MS) / 1000;
+    const d = dir;
+    enter("idle"); // clears the walk timers and any earlier glide
+    const t0 = Date.now();
+    let carry = 0;
+    glideTimer = setInterval(async () => {
+      const ms = Date.now() - t0;
+      const f = glideOut(ms);
+      if (f <= 0 || pose !== "idle") return clearInterval(glideTimer);
+      const s = takeSteps(carry, fullStep * f);
+      carry = s.carry;
+      if (s.move === 0) return;
+      try {
+        await invoke<boolean>("move_by", { dx: d * s.move });
+      } catch {
+        clearInterval(glideTimer);
+      }
+    }, WALK_TICK_MS);
   }
 
   // ---------------------------------------------------------------- panels
   function openPanel(p: Exclude<Panel, null>) {
-    if (pose === "walk") enter("idle");
+    if (pose === "walk") stopWalking();
     panel = p;
     resetMenuTimer();
   }
@@ -817,7 +911,7 @@
       mem = resetExtract(addFacts(mem, facts, Date.now(), () => crypto.randomUUID()));
       if (mem.facts.length > before && !mem.aiNotice) {
         mem = { ...mem, aiNotice: true };
-        setTimeout(() => !panel && !bubbleOn && !isDozing(pose) && showBubble(ui.memNotice.replace("{company}", ui.providers[providerInfo.active].company), 9000), 2500);
+        sayWhenCalm(() => showBubble(ui.memNotice.replace("{company}", ui.providers[providerInfo.active].company), 9000), 2500);
       }
       pushSettings();
     } catch (e) {
@@ -1020,6 +1114,7 @@
     } catch {
       /* assume not busy */
     }
+    const fo = await probeFocus();
     const blocked =
       quiet ||
       busyNow ||
@@ -1028,8 +1123,8 @@
       isDozing(pose) ||
       panel !== null ||
       bubbleOn;
-    if (blocked) {
-      proactiveTimer = setTimeout(() => fireProactive(), 2 * MIN);
+    if (blocked || !fo.speakAllowed) {
+      proactiveTimer = setTimeout(() => fireProactive(), blocked ? 2 * MIN : FOCUS_RETRY_MS);
       return;
     }
     const t = Date.now();
@@ -1082,8 +1177,8 @@
       }
     }
     // The pet may have dozed off while the model was answering: wait, do not talk in its sleep.
-    if (isDozing(pose) || bubbleOn || panel !== null) {
-      proactiveTimer = setTimeout(() => fireProactive(), 2 * MIN);
+    if (isDozing(pose) || bubbleOn || panel !== null || !focusOut.speakAllowed) {
+      proactiveTimer = setTimeout(() => fireProactive(), focusOut.speakAllowed ? 2 * MIN : FOCUS_RETRY_MS);
       return;
     }
     if (say(trigger)) markShown();
@@ -1104,7 +1199,8 @@
         history: [{ role: "user" as const, text: prompt }],
       });
       const reply = clip(out.text);
-      if (quiet || panel !== null || bubbleOn || pose === "held" || isDozing(pose)) return false;
+      const fo = await probeFocus(); // the user may have started typing while the model was answering
+      if (quiet || panel !== null || bubbleOn || pose === "held" || isDozing(pose) || !fo.speakAllowed) return false;
       enter(moodPose(out.mood, data.settings.gentle));
       showBubble(reply, 5000);
       return true;
@@ -1283,7 +1379,7 @@
         }, 1500);
         setTimeout(shareNextMark, 25_000);
         if (isNew && !data.tour.done) setTimeout(startTour, 4000);
-        if (s.milestone) setTimeout(() => !isDozing(pose) && say("milestone", { days: s.milestone! }), 8000);
+        if (s.milestone) sayWhenCalm(() => say("milestone", { days: s.milestone! }), 8000);
       }
       scheduleProactive();
       // Test hook (like window.__cat): lets a debugger trigger the real unprompted-line path now.
