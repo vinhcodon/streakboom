@@ -83,6 +83,21 @@ export interface UiStrings {
   memForgetAll: string;
   memForgetNote: string;
   memEmpty: string;
+  pgGeneral: string;
+  pgPersonality: string;
+  pgBrain: string;
+  pgMemory: string;
+  pgPrivacy: string;
+  pgAbout: string;
+  sectionPersonality: string;
+  updatesLabel: string;
+  updatesAuto: string;
+  updatesAsk: string;
+  updatesOff: string;
+  updatesNoteAuto: string;
+  updatesNoteAsk: string;
+  updatesNoteOff: string;
+  updatingNow: string;
   tourSteps: string[];
   tourNext: string;
   tourDone: string;
@@ -109,7 +124,7 @@ export interface UiStrings {
   updateNow: string;
   updating: string;
   updateFailed: string;
-  updatesOff: string;
+  updModeOff: string;
   updateText: string; // contains {v}
   updateYes: string;
   updateLater: string;
@@ -209,6 +224,21 @@ export const UI: Record<Lang, UiStrings> = {
     memForgetAll: "Forget everything",
     memForgetNote: "Forgetting habits keeps the names. Forgetting everything also removes the names.",
     memEmpty: "Nothing yet.",
+    pgGeneral: "General",
+    pgPersonality: "Personality",
+    pgBrain: "Brain",
+    pgMemory: "Memory",
+    pgPrivacy: "Privacy",
+    pgAbout: "About",
+    sectionPersonality: "Personality",
+    updatesLabel: "Updates",
+    updatesAuto: "Install automatically",
+    updatesAsk: "Ask me",
+    updModeOff: "Don't check",
+    updatesNoteAuto: "When a new version is out and you are not busy, the pet installs it and restarts by itself.",
+    updatesNoteAsk: "The pet tells you when a new version is out and installs it only if you say yes.",
+    updatesNoteOff: "No automatic checks. You can still check by hand in About.",
+    updatingNow: "A new version is out ({v}). Updating now; I'll be right back.",
     tourSteps: [
       "Hi! I'm your desktop pet. Drag me anywhere you like; I'll always stay on your screen.",
       "Click me to poke me. Double-click me to open a chat bubble.",
@@ -350,6 +380,21 @@ export const UI: Record<Lang, UiStrings> = {
     memForgetAll: "Quên hết",
     memForgetNote: "Quên thói quen vẫn giữ tên. Quên hết thì xóa cả tên.",
     memEmpty: "Chưa có gì.",
+    pgGeneral: "Chung",
+    pgPersonality: "Tính cách",
+    pgBrain: "Bộ não",
+    pgMemory: "Trí nhớ",
+    pgPrivacy: "Riêng tư",
+    pgAbout: "Về app",
+    sectionPersonality: "Tính cách",
+    updatesLabel: "Cập nhật",
+    updatesAuto: "Tự cài đặt",
+    updatesAsk: "Hỏi tôi",
+    updModeOff: "Không kiểm tra",
+    updatesNoteAuto: "Khi có bản mới và bạn không bận, pet tự cài và tự khởi động lại.",
+    updatesNoteAsk: "Pet báo khi có bản mới và chỉ cài nếu bạn đồng ý.",
+    updatesNoteOff: "Không kiểm tra tự động. Bạn vẫn kiểm tra tay được trong mục Về app.",
+    updatingNow: "Có bản mới ({v}). Mình cập nhật ngay, quay lại liền nhé.",
     tourSteps: [
       "Chào bạn! Mình là thú cưng trên màn hình của bạn. Kéo mình đi đâu cũng được, mình luôn ở lại trong màn hình.",
       "Bấm vào mình để chọc mình. Bấm đúp để mở khung trò chuyện.",

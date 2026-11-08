@@ -643,6 +643,7 @@
   let updateRetry: ReturnType<typeof setTimeout> | undefined;
   async function autoCheckUpdate() {
     clearTimeout(updateRetry);
+    if (data.settings.updates === "off") return;
     try {
       const info = await invoke<{ version: string } | null>("update_check");
       if (!info || !shouldOfferUpdate(data, info.version, Date.now())) return;
@@ -652,6 +653,13 @@
         return;
       }
       updateVersion = info.version;
+      if (data.settings.updates === "auto") {
+        // Installing restarts the app: say so, then go (only when nothing else is going on).
+        closePanel();
+        showBubble(ui.updatingNow.replace("{v}", info.version), 600_000);
+        setTimeout(() => void startUpdate(), 2500);
+        return;
+      }
       openPanel("update");
     } catch {
       /* offline, or no manifest yet: stay quiet */

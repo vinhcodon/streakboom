@@ -8,6 +8,7 @@ export interface Settings {
   qhOn: boolean; // quiet hours: no proactive lines
   qhStart: number;
   qhEnd: number;
+  updates: "auto" | "ask" | "off"; // install by itself when idle / offer through the pet / do not check
 }
 
 /** Bookkeeping for the "give me a brain" (API key) request. The key itself is never stored here. */
@@ -247,6 +248,7 @@ export const DEFAULT_SETTINGS: Settings = {
   qhOn: false,
   qhStart: 22,
   qhEnd: 7,
+  updates: "ask",
 };
 
 export function defaultData(now: number): PetData {
@@ -303,6 +305,7 @@ export function parse(json: string | null | undefined, now: number): PetData {
         qhOn: !!s.qhOn,
         qhStart: clamp(Math.floor(num(s.qhStart, 22)), 0, 23),
         qhEnd: clamp(Math.floor(num(s.qhEnd, 7)), 0, 23),
+        updates: s.updates === "auto" || s.updates === "off" ? s.updates : "ask",
       },
       brain: {
         asks: clamp(Math.floor(num(o.brain?.asks, 0)), 0, 99),

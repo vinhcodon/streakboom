@@ -399,8 +399,8 @@ fn open_settings_window(app: &AppHandle, section: Option<&str>) {
     *app.state::<AppState>().settings_section.lock().unwrap() = section.map(str::to_string);
     let _ = WebviewWindowBuilder::new(app, "settings", WebviewUrl::App("settings".into()))
         .title("Streakboom")
-        .inner_size(480.0, 640.0)
-        .min_inner_size(420.0, 440.0)
+        .inner_size(680.0, 600.0)
+        .min_inner_size(580.0, 420.0)
         .center()
         .resizable(true)
         .additional_browser_args(BROWSER_ARGS)

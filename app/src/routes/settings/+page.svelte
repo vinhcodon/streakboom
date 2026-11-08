@@ -274,9 +274,16 @@
     err = "";
   }
 
+  // One page per section, chosen in the left column.
+  const PAGES = ["general", "personality", "brain", "memory", "privacy", "about"] as const;
+  type Page = (typeof PAGES)[number];
+  let page = $state<Page>("general");
+  const pageLabel = (p: Page) => ({ general: ui.pgGeneral, personality: ui.pgPersonality, brain: ui.pgBrain, memory: ui.pgMemory, privacy: ui.pgPrivacy, about: ui.pgAbout })[p];
   function goto(section: string | null | undefined) {
-    if (!section) return;
-    tick().then(() => document.getElementById(`sec-${section}`)?.scrollIntoView({ behavior: "smooth", block: "start" }));
+    if (section && (PAGES as readonly string[]).includes(section)) {
+      page = section as Page;
+      tick().then(() => document.getElementById("pane")?.scrollTo({ top: 0 }));
+    }
   }
 
   onMount(() => {
@@ -310,10 +317,17 @@
 
 <svelte:window oncontextmenu={(e) => { if (!(e.target as HTMLElement)?.closest("input, .sel")) e.preventDefault(); }} />
 
-<main>
+<div class="shell">
+  <nav class="nav" aria-label="Settings">
+    {#each PAGES as p (p)}
+      <button class="navbtn" class:on={page === p} onclick={() => goto(p)}>{pageLabel(p)}</button>
+    {/each}
+  </nav>
+<main id="pane">
   {#if !snap || !s}
     <p class="muted">…</p>
   {:else}
+    {#if page === "general"}
     <section id="sec-general" class="card">
       <h2>{ui.sectionGeneral}</h2>
       <div class="row">
@@ -322,6 +336,24 @@
           <button class="seg" class:on={s.lang === v} onclick={() => patch("lang", v as Settings["lang"])}>{label}</button>
         {/each}
       </div>
+      <label class="chk">
+        <input type="checkbox" checked={autostart} onchange={(e) => setAutostart(e.currentTarget.checked)} />
+        {ui.autostart}
+      </label>
+      <p class="muted">{ui.autostartNote}</p>
+      <div class="row">
+        <span class="lbl">{ui.updatesLabel}</span>
+        {#each [["auto", ui.updatesAuto], ["ask", ui.updatesAsk], ["off", ui.updModeOff]] as [v, label]}
+          <button class="seg" class:on={s.updates === v} onclick={() => patch("updates", v as Settings["updates"])}>{label}</button>
+        {/each}
+      </div>
+      <p class="muted">{s.updates === "auto" ? ui.updatesNoteAuto : s.updates === "off" ? ui.updatesNoteOff : ui.updatesNoteAsk}</p>
+    </section>
+    {/if}
+
+    {#if page === "personality"}
+    <section id="sec-personality" class="card">
+      <h2>{ui.sectionPersonality}</h2>
       <div class="row">
         <span class="lbl">{ui.chattiness}</span>
         {#each [["quiet", ui.quiet], ["normal", ui.normal], ["chatty", ui.chatty]] as [v, label]}
@@ -332,14 +364,6 @@
         <input type="checkbox" checked={s.gentle} onchange={(e) => patch("gentle", e.currentTarget.checked)} />
         {ui.gentle}
       </label>
-      <label class="chk">
-        <input type="checkbox" checked={autostart} onchange={(e) => setAutostart(e.currentTarget.checked)} />
-        {ui.autostart}
-      </label>
-      <p class="muted">{ui.autostartNote}</p>
-      <div class="row">
-        <button class="seg" onclick={() => fromSettings({ type: "tour" })}>{ui.tourReplay}</button>
-      </div>
       <div class="row">
         <label class="chk">
           <input type="checkbox" checked={s.qhOn} onchange={(e) => patch("qhOn", e.currentTarget.checked)} />
@@ -354,7 +378,9 @@
         <button class="step" onclick={() => stepHour("qhEnd", 1)}>+</button>
       </div>
     </section>
+    {/if}
 
+    {#if page === "brain"}
     <section id="sec-brain" class="card">
       <h2>{ui.sectionBrain}</h2>
       <div class="row">
@@ -409,7 +435,9 @@
         <p class="muted">{ui.keyNote}</p>
       {/if}
     </section>
+    {/if}
 
+    {#if page === "memory"}
     <section id="sec-memory" class="card">
       <h2>{ui.sectionMemory}</h2>
       <p class="muted">{ui.memIntro}</p>
@@ -466,7 +494,9 @@
       </div>
       <p class="muted">{ui.memForgetNote}</p>
     </section>
+    {/if}
 
+    {#if page === "privacy"}
     <section id="sec-privacy" class="card">
       <h2>{ui.sectionPrivacy}</h2>
       <div class="row">
@@ -483,9 +513,14 @@
         <p class="muted">{ui.statsHint}</p>
       {/if}
     </section>
+    {/if}
 
+    {#if page === "about"}
     <section id="sec-about" class="card">
       <h2>{ui.sectionAbout}</h2>
+      <div class="row">
+        <button class="seg" onclick={() => fromSettings({ type: "tour" })}>{ui.tourReplay}</button>
+      </div>
       <div class="row">
         <span class="lbl">{ui.versionLabel}</span>
         <b class="sel">{version}</b>
@@ -502,8 +537,10 @@
         {#if upMsg}<p class="muted">{upMsg}</p>{/if}
       {/if}
     </section>
+    {/if}
   {/if}
 </main>
+</div>
 
 {#snippet modelChips()}
   <div class="models">
@@ -526,7 +563,42 @@
     color: #222;
     font: 14px/1.45 "Segoe UI", system-ui, sans-serif;
   }
+  .shell {
+    display: flex;
+    height: 100vh;
+  }
+  .nav {
+    flex: 0 0 150px;
+    box-sizing: border-box;
+    padding: 14px 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    background: #efece3;
+    border-right: 1px solid #e3dfd2;
+  }
+  .navbtn {
+    text-align: left;
+    border: 0;
+    background: transparent;
+    border-radius: 8px;
+    padding: 8px 10px;
+    font: inherit;
+    color: #333;
+    cursor: pointer;
+  }
+  .navbtn:hover {
+    background: #e6e2d6;
+  }
+  .navbtn.on {
+    background: #fff;
+    font-weight: 600;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.12);
+  }
   main {
+    flex: 1;
+    min-width: 0;
+    overflow-y: auto;
     padding: 14px;
     display: flex;
     flex-direction: column;
