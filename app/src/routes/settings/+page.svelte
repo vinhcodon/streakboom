@@ -8,13 +8,13 @@
   import { emitTo } from "@tauri-apps/api/event";
   import { getCurrentWebviewWindow } from "@tauri-apps/api/webviewWindow";
   import { onMount, tick } from "svelte";
-  import { brainChanged, fromSettings, type SettingsSnapshot } from "$lib/bus";
+  import { brainChanged, fromSettings, type ProviderId, type SettingsSnapshot } from "$lib/bus";
   import type { Settings } from "$lib/state";
   import { UI, type ErrKind } from "$lib/ui";
 
   let snap = $state<SettingsSnapshot | null>(null);
   // Which brain the Brain page is showing (the one in use at first; the others can be set up too).
-  let editing = $state<"gemini" | "claude">("gemini");
+  let editing = $state<ProviderId>("gemini");
   let editingInit = false;
   const hasKeyHere = $derived(snap ? snap.keys[editing] : false);
   const isActive = $derived(snap?.provider === editing);
@@ -24,7 +24,7 @@
       editing = snap.provider;
     }
   });
-  function pickProvider(p: "gemini" | "claude") {
+  function pickProvider(p: ProviderId) {
     editing = p;
     replacing = false;
     err = "";
@@ -35,10 +35,23 @@
     modelsKey = "";
     modelPick = "";
   }
+  // The model of the brain in use, for the "Answering with" line.
+  async function loadActiveModel() {
+    try {
+      activeModel = (await invoke<{ model: string }>("brain_model")).model;
+    } catch {
+      activeModel = "";
+    }
+  }
+  $effect(() => {
+    void snap?.provider;
+    void snap?.hasKey;
+    if (snap?.hasKey) void loadActiveModel();
+  });
   async function useThisBrain() {
     try {
-      const info = await invoke<{ active: "gemini" | "claude"; gemini: boolean; claude: boolean }>("brain_set_provider", { provider: editing });
-      if (snap) snap = { ...snap, provider: info.active, keys: { gemini: info.gemini, claude: info.claude }, hasKey: info[info.active], brainBad: false };
+      const info = await invoke<{ active: ProviderId; gemini: boolean; claude: boolean; openai: boolean }>("brain_set_provider", { provider: editing });
+      if (snap) snap = { ...snap, provider: info.active, keys: { gemini: info.gemini, claude: info.claude, openai: info.openai }, hasKey: info[info.active], brainBad: false };
       void brainChanged({ type: "switched" });
     } catch (e) {
       err = ui.err[errKind(e)];
@@ -47,6 +60,15 @@
   const ui = $derived(UI[snap?.lang ?? "en"]);
   const s = $derived(snap?.settings);
   const pv = $derived(ui.providers[editing]);
+  const usageLine = $derived(
+    snap
+      ? ui.usageToday
+          .replace("{chat}", String(snap.usage.chat))
+          .replace("{chatCap}", String(snap.usage.chatCap))
+          .replace("{proactive}", String(snap.usage.proactive))
+          .replace("{proactiveCap}", String(snap.usage.proactiveCap))
+      : ""
+  );
   const companyNow = $derived(ui.providers[snap?.provider ?? "gemini"].company);
 
   // brain
@@ -57,6 +79,8 @@
   let modelsTimer: ReturnType<typeof setTimeout> | undefined;
   let replacing = $state(false); // user chose "Replace key" while a key exists
   let ageOk = $state(false);
+  let activateAfter = $state(true); // use the brain right after connecting it
+  let activeModel = $state(""); // the model the brain in use answers with
   let keyInput = $state("");
   let busy = $state(false);
   let connSecs = $state(0);
@@ -255,13 +279,19 @@
         tier: snap.tier,
         gentle: snap.settings.gentle,
         model: modelPick || null,
+        activate: activateAfter,
       });
       modelName = out.model;
       keyInput = "";
       ageOk = false;
       replacing = false;
-      if (snap) snap = { ...snap, hasKey: true, brainBad: false, provider: editing, keys: { ...snap.keys, [editing]: true } };
-      void brainChanged({ type: "connected", reply: out.reply, model: out.model });
+      if (snap) {
+        const keys = { ...snap.keys, [editing]: true };
+        // the brain in use only changes if the user wanted it to
+        const provider = activateAfter ? editing : snap.provider;
+        snap = { ...snap, hasKey: keys[provider], brainBad: false, provider, keys };
+      }
+      void brainChanged({ type: activateAfter ? "connected" : "switched", reply: out.reply, model: out.model });
     } catch (e) {
       const m = (e as { message?: string } | null)?.message;
       err = ui.err[errKind(e)];
@@ -289,11 +319,11 @@
       return;
     }
     try {
-      const info = await invoke<{ active: "gemini" | "claude"; gemini: boolean; claude: boolean }>("brain_forget", { provider: editing });
+      const info = await invoke<{ active: ProviderId; gemini: boolean; claude: boolean; openai: boolean }>("brain_forget", { provider: editing });
       confirmForget = false;
       modelName = "";
       models = [];
-      if (snap) snap = { ...snap, hasKey: info[info.active], brainBad: false, provider: info.active, keys: { gemini: info.gemini, claude: info.claude } };
+      if (snap) snap = { ...snap, hasKey: info[info.active], brainBad: false, provider: info.active, keys: { gemini: info.gemini, claude: info.claude, openai: info.openai } };
       void brainChanged({ type: "removed" });
     } catch (e) {
       confirmForget = false;
@@ -418,11 +448,15 @@
     {#if page === "brain"}
     <section id="sec-brain" class="card">
       <h2>{ui.sectionBrain}</h2>
+      {#if snap.hasKey}
+        <p class="activeline">{ui.activeLine.replace("{name}", ui.providers[snap.provider].name).replace("{model}", activeModel || "…")}</p>
+        <p class="muted">{usageLine}</p>
+      {/if}
       <div class="row">
         <span class="lbl">{ui.brainPick}</span>
-        {#each ["gemini", "claude"] as p (p)}
-          <button class="seg" class:on={editing === p} onclick={() => pickProvider(p as "gemini" | "claude")}>
-            {ui.providers[p as "gemini" | "claude"].name}{snap.provider === p && snap.keys[p as "gemini" | "claude"] ? " ✓" : ""}
+        {#each ["gemini", "claude", "openai"] as p (p)}
+          <button class="seg" class:on={editing === p} onclick={() => pickProvider(p as ProviderId)}>
+            {ui.providers[p as ProviderId].name}{snap.provider === p && snap.keys[p as ProviderId] ? " ✓" : ""}
           </button>
         {/each}
       </div>
@@ -450,6 +484,9 @@
         </ol>
         <p class="muted">{pv.cost}</p>
         <label class="chk"><input type="checkbox" bind:checked={ageOk} /> {pv.age}</label>
+        {#if snap.hasKey && !isActive}
+          <label class="chk"><input type="checkbox" bind:checked={activateAfter} /> {ui.activateNow}</label>
+        {/if}
         <p class="muted">{pv.dataNote}</p>
         <input
           class="key"
@@ -610,6 +647,13 @@
     background: #f6f4ee;
     color: #222;
     font: 14px/1.45 "Segoe UI", system-ui, sans-serif;
+  }
+  .activeline {
+    margin: 0;
+    padding: 6px 10px;
+    background: #fff7e0;
+    border-radius: 8px;
+    font-weight: 600;
   }
   .shell {
     display: flex;

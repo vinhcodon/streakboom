@@ -5,6 +5,9 @@ import { emitTo } from "@tauri-apps/api/event";
 import type { Lang } from "./lines.ts";
 import type { Consent, Settings } from "./state.ts";
 
+/** The brains the pet can use. */
+export type ProviderId = "gemini" | "claude" | "openai";
+
 /** What the bubble window should show. The pet window resolves all text (language included). */
 export type BubbleView =
   | { kind: "none" }
@@ -72,8 +75,10 @@ export interface SettingsSnapshot {
   hasKey: boolean;
   brainBad: boolean;
   tier: number; // closeness tier, for the tone of the first AI line
-  provider: "gemini" | "claude"; // the brain that answers now
-  keys: { gemini: boolean; claude: boolean }; // which brains have a key stored
+  provider: ProviderId; // the brain that answers now
+  keys: Record<ProviderId, boolean>; // which brains have a key stored
+  /** Today's use of the brain, against the daily caps. */
+  usage: { chat: number; chatCap: number; proactive: number; proactiveCap: number };
   memory: MemoryView;
   /** What "Copy stats" puts on the clipboard. Empty unless the user opted in. */
   stats: { installId: string; events: { e: string; t: number }[] };

@@ -1,5 +1,6 @@
 mod brain;
 mod claude;
+mod openai;
 mod layout;
 mod updater;
 
@@ -46,6 +47,8 @@ struct Prefs {
     provider: Option<String>,
     #[serde(default)]
     claude_model: Option<String>,
+    #[serde(default)]
+    openai_model: Option<String>,
 }
 
 #[derive(Clone, Copy)]
@@ -472,6 +475,7 @@ fn prefs_model(prefs: &Prefs, p: brain::Provider) -> Option<String> {
     match p {
         brain::Provider::Gemini => prefs.model.clone(),
         brain::Provider::Claude => prefs.claude_model.clone(),
+        brain::Provider::OpenAI => prefs.openai_model.clone(),
     }
 }
 
@@ -479,6 +483,7 @@ fn set_prefs_model(prefs: &mut Prefs, p: brain::Provider, model: Option<String>)
     match p {
         brain::Provider::Gemini => prefs.model = model,
         brain::Provider::Claude => prefs.claude_model = model,
+        brain::Provider::OpenAI => prefs.openai_model = model,
     }
 }
 
@@ -532,6 +537,7 @@ struct ProviderInfo {
     active: String,
     gemini: bool,
     claude: bool,
+    openai: bool,
 }
 
 fn provider_info(state: &AppState) -> ProviderInfo {
@@ -539,6 +545,7 @@ fn provider_info(state: &AppState) -> ProviderInfo {
         active: active(state).id().to_string(),
         gemini: brain::load_key(brain::Provider::Gemini).is_some(),
         claude: brain::load_key(brain::Provider::Claude).is_some(),
+        openai: brain::load_key(brain::Provider::OpenAI).is_some(),
     }
 }
 
@@ -562,7 +569,7 @@ fn switch_provider(state: &AppState, p: brain::Provider) {
 async fn brain_provider(app: AppHandle) -> ProviderInfo {
     tauri::async_runtime::spawn_blocking(move || provider_info(&app.state::<AppState>()))
         .await
-        .unwrap_or(ProviderInfo { active: "gemini".into(), gemini: false, claude: false })
+        .unwrap_or(ProviderInfo { active: "gemini".into(), gemini: false, claude: false, openai: false })
 }
 
 /// Choose which provider answers. Its key must already be stored.
@@ -608,6 +615,7 @@ async fn brain_connect(
     tier: u8,
     gentle: bool,
     model: Option<String>,
+    activate: Option<bool>,
 ) -> Result<ConnectOut, AiError> {
     let key = key.trim().to_string();
     if !brain::key_ok(&key) {
@@ -637,16 +645,23 @@ async fn brain_connect(
             }
         };
         brain::store_key(p, &key)?;
+        let answered_with = current_model(&state);
         {
             let mut prefs = state.prefs.lock().unwrap();
             set_prefs_model(&mut prefs, p, model);
-            prefs.provider = Some(p.id().to_string());
+        }
+        // The new key is saved either way; whether it takes over is the user's choice.
+        if activate.unwrap_or(true) {
+            state.prefs.lock().unwrap().provider = Some(p.id().to_string());
+        } else {
+            *state.provider.lock().unwrap() = previous_provider;
+            *state.model.lock().unwrap() = previous_model;
         }
         state.dirty.store(true, Ordering::Relaxed);
         Ok(ConnectOut {
             reply: brain::split_mood(&reply).0,
-            model: current_model(&state),
-            provider: p.id().to_string(),
+            model: answered_with,
+            provider: active(&state).id().to_string(),
         })
     })
     .await

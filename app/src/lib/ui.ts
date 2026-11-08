@@ -1,4 +1,5 @@
 import type { Lang } from "./lines.ts";
+import type { ProviderId } from "./bus.ts";
 
 export type ErrKind =
   | "invalid_key"
@@ -84,11 +85,14 @@ export interface UiStrings {
   memForgetAll: string;
   memForgetNote: string;
   memEmpty: string;
-  providers: Record<"gemini" | "claude", { name: string; company: string; step1: string; step2: string; step3: string; open: string; age: string; cost: string; dataNote: string; keyNote: string }>;
+  providers: Record<ProviderId, { name: string; company: string; step1: string; step2: string; step3: string; open: string; age: string; cost: string; dataNote: string; keyNote: string }>;
   brainSaved: string;
   brainInUse: string;
   useBrain: string;
   brainPick: string;
+  activateNow: string;
+  activeLine: string;
+  usageToday: string;
   pgGeneral: string;
   pgPersonality: string;
   pgBrain: string;
@@ -251,15 +255,30 @@ export const UI: Record<Lang, UiStrings> = {
         step3: "Copy the key and paste it below.",
         open: "Open Anthropic Console",
         age: "I am 18 or older (Anthropic requires this)",
-        cost: "Paid: Anthropic bills you per use and the account needs credit. I keep answers short and cap daily use (60 chats, 6 unprompted lines), so it stays small.",
+        cost: "Paid: Anthropic bills you per use and the account needs credit. A Claude Pro or Team subscription does not include the API. I keep answers short and cap daily use (60 chats, 6 unprompted lines). Tip: set a low monthly spend limit in the Console.",
         dataNote: "What you send me goes to Anthropic to be answered; see Anthropic's terms for how it handles API data. Don't tell me anything sensitive. I also jot down a few lasting facts from our chats; they stay on this computer and go to Anthropic with each chat (you can see, edit or turn this off in Memory).",
         keyNote: "Your key stays on this computer and is only sent to Anthropic. Tip: make a key just for me so it's easy to revoke.",
+      },
+      openai: {
+        name: "OpenAI (ChatGPT API)",
+        company: "OpenAI",
+        step1: "Open the OpenAI Platform and sign in.",
+        step2: "Add some credit or a payment method, then create an API key.",
+        step3: "Copy the key and paste it below.",
+        open: "Open OpenAI Platform",
+        age: "I am 18 or older (OpenAI requires this)",
+        cost: "Paid: OpenAI bills you per use. A ChatGPT Plus subscription does not include the API. I keep answers short and cap daily use (60 chats, 6 unprompted lines). Tip: set a low monthly spend limit in the platform's billing settings.",
+        dataNote: "What you send me goes to OpenAI to be answered; see OpenAI's terms for how it handles API data. Don't tell me anything sensitive. I also jot down a few lasting facts from our chats; they stay on this computer and go to OpenAI with each chat (you can see, edit or turn this off in Memory).",
+        keyNote: "Your key stays on this computer and is only sent to OpenAI. Tip: make a key just for me so it's easy to revoke.",
       },
     },
     brainSaved: "key saved, not in use",
     brainInUse: "in use",
     useBrain: "Use this brain",
     brainPick: "Brain",
+    activateNow: "Use this brain right after connecting",
+    activeLine: "Answering with: {name} · {model}",
+    usageToday: "Today: {chat} / {chatCap} chats, {proactive} / {proactiveCap} unprompted lines",
     pgGeneral: "General",
     pgPersonality: "Personality",
     pgBrain: "Brain",
@@ -438,15 +457,30 @@ export const UI: Record<Lang, UiStrings> = {
         step3: "Sao chép key rồi dán vào ô bên dưới.",
         open: "Mở Anthropic Console",
         age: "Mình từ 18 tuổi trở lên (Anthropic yêu cầu)",
-        cost: "Trả phí: Anthropic tính tiền theo lượt dùng và tài khoản cần có tiền. Mình giữ câu trả lời ngắn và giới hạn mỗi ngày (60 lượt chat, 6 câu tự nói) nên chi phí nhỏ.",
+        cost: "Trả phí: Anthropic tính tiền theo lượt dùng và tài khoản cần có tiền. Gói Claude Pro hay Team không bao gồm API. Mình giữ câu trả lời ngắn và giới hạn mỗi ngày (60 lượt chat, 6 câu tự nói). Mẹo: đặt giới hạn chi tiêu hằng tháng thấp trong Console.",
         dataNote: "Những gì bạn gửi cho mình sẽ đến Anthropic để được trả lời; xem điều khoản của Anthropic về cách họ xử lý dữ liệu API. Đừng kể điều nhạy cảm nhé. Mình cũng ghi lại vài điều lâu dài từ các cuộc trò chuyện; chúng nằm trên máy này và được gửi cho Anthropic cùng mỗi lần chat (bạn xem, sửa hoặc tắt trong mục Trí nhớ).",
         keyNote: "Key chỉ nằm trên máy này và chỉ được gửi cho Anthropic. Mẹo: tạo một key riêng cho mình để dễ thu hồi.",
+      },
+      openai: {
+        name: "OpenAI (ChatGPT API)",
+        company: "OpenAI",
+        step1: "Mở OpenAI Platform và đăng nhập.",
+        step2: "Nạp một ít tiền hoặc thêm phương thức thanh toán, rồi tạo API key.",
+        step3: "Sao chép key rồi dán vào ô bên dưới.",
+        open: "Mở OpenAI Platform",
+        age: "Mình từ 18 tuổi trở lên (OpenAI yêu cầu)",
+        cost: "Trả phí: OpenAI tính tiền theo lượt dùng. Gói ChatGPT Plus không bao gồm API. Mình giữ câu trả lời ngắn và giới hạn mỗi ngày (60 lượt chat, 6 câu tự nói). Mẹo: đặt giới hạn chi tiêu hằng tháng thấp trong phần thanh toán của trang đó.",
+        dataNote: "Những gì bạn gửi cho mình sẽ đến OpenAI để được trả lời; xem điều khoản của OpenAI về cách họ xử lý dữ liệu API. Đừng kể điều nhạy cảm nhé. Mình cũng ghi lại vài điều lâu dài từ các cuộc trò chuyện; chúng nằm trên máy này và được gửi cho OpenAI cùng mỗi lần chat (bạn xem, sửa hoặc tắt trong mục Trí nhớ).",
+        keyNote: "Key chỉ nằm trên máy này và chỉ được gửi cho OpenAI. Mẹo: tạo một key riêng cho mình để dễ thu hồi.",
       },
     },
     brainSaved: "đã lưu key, chưa dùng",
     brainInUse: "đang dùng",
     useBrain: "Dùng bộ não này",
     brainPick: "Bộ não",
+    activateNow: "Dùng bộ não này ngay sau khi kết nối",
+    activeLine: "Đang trả lời bằng: {name} · {model}",
+    usageToday: "Hôm nay: {chat} / {chatCap} lượt chat, {proactive} / {proactiveCap} câu tự nói",
     pgGeneral: "Chung",
     pgPersonality: "Tính cách",
     pgBrain: "Bộ não",

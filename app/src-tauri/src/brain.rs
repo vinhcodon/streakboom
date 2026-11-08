@@ -20,6 +20,7 @@ pub const DEFAULT_MODEL: &str = "gemini-3.1-flash-lite";
 const KEY_SERVICE: &str = "streakboom";
 const KEY_USER_GEMINI: &str = "gemini-api-key";
 const KEY_USER_CLAUDE: &str = "claude-api-key";
+const KEY_USER_OPENAI: &str = "openai-api-key";
 const MAX_OUTPUT_TOKENS: u32 = 512;
 const MAX_TURNS: usize = 8;
 const MAX_TURN_CHARS: usize = 500;
@@ -48,14 +49,16 @@ pub enum Provider {
     #[default]
     Gemini,
     Claude,
+    OpenAI,
 }
 
 impl Provider {
-    pub const ALL: [Provider; 2] = [Provider::Gemini, Provider::Claude];
+    pub const ALL: [Provider; 3] = [Provider::Gemini, Provider::Claude, Provider::OpenAI];
     pub fn parse(s: &str) -> Option<Provider> {
         match s {
             "gemini" => Some(Provider::Gemini),
             "claude" => Some(Provider::Claude),
+            "openai" => Some(Provider::OpenAI),
             _ => None,
         }
     }
@@ -63,18 +66,21 @@ impl Provider {
         match self {
             Provider::Gemini => "gemini",
             Provider::Claude => "claude",
+            Provider::OpenAI => "openai",
         }
     }
     pub fn default_model(self) -> &'static str {
         match self {
             Provider::Gemini => DEFAULT_MODEL,
             Provider::Claude => crate::claude::DEFAULT_MODEL,
+            Provider::OpenAI => crate::openai::DEFAULT_MODEL,
         }
     }
     fn key_user(self) -> &'static str {
         match self {
             Provider::Gemini => KEY_USER_GEMINI,
             Provider::Claude => KEY_USER_CLAUDE,
+            Provider::OpenAI => KEY_USER_OPENAI,
         }
     }
     /// Where the user creates a key (fixed addresses; nothing user-supplied is ever opened).
@@ -82,6 +88,7 @@ impl Provider {
         match self {
             Provider::Gemini => "https://aistudio.google.com/apikey",
             Provider::Claude => "https://console.anthropic.com/settings/keys",
+            Provider::OpenAI => "https://platform.openai.com/api-keys",
         }
     }
 }
@@ -91,6 +98,7 @@ pub fn generate_for(p: Provider, key: &str, model: &str, system: &str, turns: &[
     match p {
         Provider::Gemini => generate(API_BASE, key, model, system, turns),
         Provider::Claude => crate::claude::generate(crate::claude::API_BASE, key, model, system, turns),
+        Provider::OpenAI => crate::openai::generate(crate::openai::API_BASE, key, model, system, turns),
     }
 }
 
@@ -99,6 +107,7 @@ pub fn models_for(p: Provider, key: &str) -> Result<Vec<String>, AiError> {
     match p {
         Provider::Gemini => Ok(chat_models(&list_models(API_BASE, key)?)),
         Provider::Claude => Ok(crate::claude::chat_models(&crate::claude::list_models(crate::claude::API_BASE, key)?)),
+        Provider::OpenAI => Ok(crate::openai::chat_models(&crate::openai::list_models(crate::openai::API_BASE, key)?)),
     }
 }
 

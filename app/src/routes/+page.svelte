@@ -43,10 +43,13 @@
     type BubbleView,
     type MemField,
     type MemoryView,
+    type ProviderId,
     type SettingsPatch,
     type SettingsSnapshot,
   } from "$lib/bus";
   import {
+    AI_CHAT_DAILY_CAP,
+    AI_PROACTIVE_DAILY_CAP,
     aiGate,
     bandOf,
     coolDown,
@@ -115,7 +118,7 @@
   // brain (BYOK). The key itself never reaches this window: it lives in the settings window's
   // input box and the OS credential store.
   let hasKey = $state(false);
-  let providerInfo = $state<{ active: "gemini" | "claude"; gemini: boolean; claude: boolean }>({ active: "gemini", gemini: false, claude: false });
+  let providerInfo = $state<{ active: ProviderId; gemini: boolean; claude: boolean; openai: boolean }>({ active: "gemini", gemini: false, claude: false, openai: false });
   /** Re-reads which brain is in use and whether it has a key (the keys themselves never come here). */
   async function refreshBrain() {
     try {
@@ -883,7 +886,13 @@
       brainBad,
       tier: tierOf(data.closeness),
       provider: providerInfo.active,
-      keys: { gemini: providerInfo.gemini, claude: providerInfo.claude },
+      keys: { gemini: providerInfo.gemini, claude: providerInfo.claude, openai: providerInfo.openai },
+      usage: {
+        chat: data.ai.day === dayKey(Date.now()) ? data.ai.chat : 0,
+        chatCap: AI_CHAT_DAILY_CAP,
+        proactive: data.ai.day === dayKey(Date.now()) ? data.ai.proactive : 0,
+        proactiveCap: AI_PROACTIVE_DAILY_CAP,
+      },
       memory: memoryView(),
       stats:
         data.telemetry.consent === "on"
