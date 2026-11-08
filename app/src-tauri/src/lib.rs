@@ -602,11 +602,12 @@ async fn brain_chat(
     gentle: bool,
     history: Vec<Turn>,
     known: Option<Vec<String>>,
+    follow_user: Option<bool>,
 ) -> Result<ChatReply, AiError> {
     tauri::async_runtime::spawn_blocking(move || {
         let key = brain::load_key().ok_or_else(|| AiError::new(Kind::InvalidKey, "no key"))?;
         let state = app.state::<AppState>();
-        let system = brain::persona_with(&lang, tier, gentle, known.as_deref().unwrap_or(&[]));
+        let system = brain::persona_with(&lang, tier, gentle, known.as_deref().unwrap_or(&[]), follow_user.unwrap_or(false));
         let raw = run_generate(&state, &key, &system, &history)?;
         let (text, mood) = brain::split_mood(&raw);
         Ok(ChatReply { text, mood })
@@ -626,7 +627,7 @@ async fn brain_remember(app: AppHandle, lang: String, transcript: String, known:
         let text: String = transcript.chars().take(2000).collect();
         let turns = [Turn { role: "user".into(), text }];
         let raw = run_generate(&state, &key, &brain::extract_prompt(&lang, &known), &turns)?;
-        Ok(brain::parse_facts(&raw, &known, &lang))
+        Ok(brain::parse_facts(&raw, &known))
     })
     .await
     .map_err(|_| task_failed())?

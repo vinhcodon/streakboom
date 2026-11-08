@@ -671,6 +671,7 @@
         gentle: data.settings.gentle,
         history,
         known: knownFor(mem, lang),
+        followUser: true, // answer in the language the user writes in
       });
       const reply = clip(out.text);
       replyMood = out.mood;
