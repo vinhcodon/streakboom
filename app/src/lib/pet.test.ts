@@ -8,6 +8,7 @@ import type { Ctx } from "./selector.ts";
 import {
   AI_CHAT_DAILY_CAP,
   AI_COOLDOWN_MS,
+  AI_NOTE_DAILY_CAP,
   AI_PROACTIVE_DAILY_CAP,
   aiGate,
   coolDown,
@@ -222,6 +223,17 @@ test("AI usage: daily caps, cooldown after a rate limit, reset next day", () => 
   assert.equal(aiGate(d, "proactive", T0 + DAY), "ok"); // new day
   for (let i = 0; i < AI_CHAT_DAILY_CAP; i++) d = recordAi(d, "chat", T0);
   assert.equal(aiGate(d, "chat", T0), "cap");
+  // fact-noting requests have their own counter and never use up the chat cap
+  let n = defaultData(T0);
+  for (let i = 0; i < AI_NOTE_DAILY_CAP; i++) n = recordAi(n, "note", T0);
+  assert.equal(aiGate(n, "note", T0), "cap");
+  assert.equal(aiGate(n, "chat", T0), "ok");
+  assert.equal(n.ai.chat, 0);
+  assert.equal(aiGate(n, "note", T0 + DAY), "ok");
+  // data saved before the note counter existed still works
+  const old = { ...defaultData(T0), ai: { day: dayKey(T0), chat: 5, proactive: 1, coolUntil: 0 } as unknown as ReturnType<typeof defaultAi> };
+  assert.equal(aiGate(old, "note", T0), "ok");
+  assert.equal(recordAi(old, "note", T0).ai.note, 1);
   d = coolDown(defaultData(T0), T0);
   assert.equal(aiGate(d, "chat", T0 + 1000), "cooldown");
   assert.equal(aiGate(d, "chat", T0 + AI_COOLDOWN_MS + 1), "ok");
@@ -308,7 +320,7 @@ test("hint lines exist in both languages and in gentle tone", () => {
 test("parse keeps AI usage and defaults old saves", () => {
   assert.deepEqual(parse(JSON.stringify({ mood: 50 }), T0).ai, defaultAi());
   const p = parse(JSON.stringify({ ai: { day: "2026-11-07", chat: 3, proactive: 2, coolUntil: 9 } }), T0);
-  assert.deepEqual(p.ai, { day: "2026-11-07", chat: 3, proactive: 2, coolUntil: 9 });
+  assert.deepEqual(p.ai, { day: "2026-11-07", chat: 3, proactive: 2, note: 0, coolUntil: 9 });
 });
 
 test("parse restores brain bookkeeping and defaults old saves", () => {

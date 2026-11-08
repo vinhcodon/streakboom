@@ -51,7 +51,7 @@ The brain request (spec/02) is more natural at tier 2 or 3, but it is triggered 
 ## Memory (ADR-0014)
 Separate from the mood state, in `memory.json`, owned by the pet window.
 - **No AI needed:** the pet's name and what to call the user (typed by the user, never guessed); coarse habit counts (sessions per hour of day and weekday; a usual part of the day is stated only after 8 sessions and when it holds at least half of them); touch counts; milestones shared once (7, 30 and 100 days, 100 and 500 touches, the first chat, 25 chats).
-- **With a brain:** every 4 chat messages up to 3 short lasting facts are noted (at most 20 kept, deduplicated, editable, on by default with a switch). They go into chats the user starts as background.
+- **With a brain:** every 4 chat messages up to 3 short lasting facts are noted (at most 20 kept, deduplicated, editable, on by default with a switch). These background requests have their own daily cap (20) and do not use up the 60 chat turns (ADR-0027). They go into chats the user starts as background.
 - **Where it is used:** at app start, on head scratches (a quarter of the time) and for milestones; never in the pet's unprompted lines, because the screen may be shared. The pet never claims a memory it does not hold.
 - **Control:** Settings > Memory shows everything and can forget habits, facts or everything.
 

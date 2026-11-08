@@ -14,7 +14,7 @@ Order of work: Gemini, then Claude, then OpenAI. Keys of several can be stored; 
 Automatic failover between providers (declined); a subscription OAuth login (declined on terms grounds); a hosted proxy (see ADR-0001).
 
 ## Consequences and when to revisit
-Paid brains need cost notes, daily caps (60 chats, 6 unprompted lines) and a low spend-limit tip. If Anthropic offers an official third-party sign-in, revisit. The Claude and OpenAI clients have never run against real keys.
+Paid brains need cost notes, daily caps (60 chats, 6 unprompted lines; fact-noting got its own cap of 20 in ADR-0027) and a low spend-limit tip. If Anthropic offers an official third-party sign-in, revisit. The Claude and OpenAI clients have never run against real keys.
 
 ## Sources
 docs/engineering-log.md (Claude and OpenAI entries); spec/04 section 4

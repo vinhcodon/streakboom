@@ -27,6 +27,8 @@ Plan and tests: [`bond-days.md`](bond-days.md) (steps 0 to 6, decisions D1 to D8
 6. Gate: all three test suites green, the manual list done, wording and docs updated, a one-line note to people who already opted in.
 **Risks to watch:** consent scope, concurrent edits, chat leaking into engagement, the write volume, idle CPU (must stay near 0).
 
+**Follow-up 0.2.1 (built, unreleased, ADR-0027):** the author hit the daily chat cap in one day. Fact-noting requests now have their own cap (20) and no longer eat the 60 chat turns, and the pet declines in character with no numbers. Release it with the next batch when the author says so. Watch the chat-share metric: if people keep reaching 60, consider a setting for the cap.
+
 ## Phase 3. Real-key verification of the Claude and OpenAI brains
 **Why:** both clients exist and are covered by mock-server tests only (hypothesis A6).
 **Needs from Vinh:** a small prepaid balance and a key for each, or a tester who has them.

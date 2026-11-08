@@ -55,7 +55,7 @@ export interface UiStrings {
   sure: string;
   removed: string;
   thinking: string;
-  capHit: string;
+  capHit: string[]; // in-character ways to say "enough for today"; one is picked at random
   slowHint: string;
   copyStats: string;
   statsCopied: string;
@@ -208,7 +208,12 @@ export const UI: Record<Lang, UiStrings> = {
     sure: "Sure?",
     removed: "Key removed. I'm back to my few words.",
     thinking: "…",
-    capHit: "I've talked a lot today. Let's keep the rest for tomorrow.",
+    capHit: [
+      "I've talked a lot today. Let's keep the rest for tomorrow.",
+      "My voice is worn out for today. Come find me tomorrow?",
+      "I'm all talked out. Pet me instead, we'll chat tomorrow.",
+      "Shh, I'm resting my words. Tomorrow, I promise.",
+    ],
     slowHint: "Google is slow right now. I'm still trying, this can take up to a minute or two.",
     copyStats: "Copy stats",
     statsCopied: "Copied",
@@ -413,7 +418,12 @@ export const UI: Record<Lang, UiStrings> = {
     sure: "Chắc chứ?",
     removed: "Đã xóa key. Mình lại chỉ biết vài câu.",
     thinking: "…",
-    capHit: "Hôm nay mình nói nhiều rồi. Phần còn lại để mai nhé.",
+    capHit: [
+      "Hôm nay mình nói nhiều rồi. Phần còn lại để mai nhé.",
+      "Mình hết hơi rồi, mai gặp lại nhé?",
+      "Mình nói mệt rồi. Vuốt ve mình đi, mai mình kể tiếp.",
+      "Suỵt, mình đang để dành lời cho ngày mai. Hứa đó.",
+    ],
     slowHint: "Google đang chậm. Mình vẫn đang thử, có thể mất tới một hai phút.",
     copyStats: "Sao chép thống kê",
     statsCopied: "Đã chép",

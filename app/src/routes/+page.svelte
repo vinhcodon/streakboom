@@ -744,7 +744,7 @@
     const gate = aiGate(data, "chat", Date.now());
     if (gate !== "ok") {
       chatUser = text;
-      chatReply = gate === "cap" ? ui.capHit : ui.err.rate_limit;
+      chatReply = gate === "cap" ? ui.capHit[Math.floor(Math.random() * ui.capHit.length)] : ui.err.rate_limit;
       chatPhase = "reply";
       resetMenuTimer();
       return;
@@ -807,12 +807,12 @@
   async function maybeRemember() {
     const c = countChat(mem);
     mem = c.memory;
-    if (!c.due || remembering || !canChat || aiGate(data, "chat", Date.now()) !== "ok") return scheduleSave();
+    if (!c.due || remembering || !canChat || aiGate(data, "note", Date.now()) !== "ok") return scheduleSave();
     remembering = true;
     const transcript = history.map((t) => (t.role === "user" ? "User: " : "Pet: ") + t.text).join("\n");
     try {
       const facts = await invoke<string[]>("brain_remember", { lang, transcript, known: mem.facts.map((f) => f.text) });
-      data = recordAi(data, "chat", Date.now());
+      data = recordAi(data, "note", Date.now());
       const before = mem.facts.length;
       mem = resetExtract(addFacts(mem, facts, Date.now(), () => crypto.randomUUID()));
       if (mem.facts.length > before && !mem.aiNotice) {

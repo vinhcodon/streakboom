@@ -58,7 +58,7 @@ One brain is in use at a time; keys of several can be stored (ADR-0008). All cal
 
 - A key never appears in a URL or a log. A model name is only plain name characters.
 - On a timeout, a 5xx or an unknown model the client lists the key's models and fails over to the next best one, remembering it if it works. A bad key or a rate limit is never failed over.
-- Caps: 60 chat turns and 6 proactive AI lines per local day, and a 2-minute cooldown after a rate limit.
+- Caps (per local day): 60 typed chat turns, 6 proactive AI lines and 20 background fact-noting requests (each counted separately, ADR-0027), and a 2-minute cooldown after a rate limit. When a cap is reached the pet declines in character, with a randomly picked line and no numbers; Settings > Brain shows today's use. (The separate fact-noting counter is in the code, planned for 0.2.1; 0.2.0 counted those requests in the 60.)
 - Errors map to kinds (invalid key, rate limit, network, region, blocked, empty, server, model, storage, billing) and then to pet-voice messages (spec/02); a connect error shows the technical detail behind a toggle and a copy button.
 - **Mood tags:** every chat answer starts with one bracketed feeling tag chosen by the model; Rust removes it before display and returns the text and the mood separately (ADR-0016).
 - **Language:** in chats the user starts the brain answers in the language of the latest message (ADR-0015).

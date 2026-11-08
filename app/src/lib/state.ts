@@ -26,27 +26,34 @@ export interface AiUsage {
   day: string;
   chat: number;
   proactive: number;
+  note: number; // background "note a few facts" requests; they never use up the chat cap
   coolUntil: number; // after a rate limit, no AI calls until then
 }
 
+export type AiKind = "chat" | "proactive" | "note";
+
 export const AI_CHAT_DAILY_CAP = 60;
 export const AI_PROACTIVE_DAILY_CAP = 6;
+export const AI_NOTE_DAILY_CAP = 20;
 export const AI_COOLDOWN_MS = 2 * 60_000;
 
-export const defaultAi = (): AiUsage => ({ day: "", chat: 0, proactive: 0, coolUntil: 0 });
+export const defaultAi = (): AiUsage => ({ day: "", chat: 0, proactive: 0, note: 0, coolUntil: 0 });
 
-const freshAi = (a: AiUsage, now: number): AiUsage => (a.day === dayKey(now) ? a : { ...a, day: dayKey(now), chat: 0, proactive: 0 });
+// `note` is missing in data saved before 0.2.1, so it is filled in here.
+const freshAi = (a: AiUsage, now: number): AiUsage =>
+  a.day === dayKey(now) ? { ...a, note: a.note ?? 0 } : { ...a, day: dayKey(now), chat: 0, proactive: 0, note: 0 };
+
+const CAPS: Record<AiKind, number> = { chat: AI_CHAT_DAILY_CAP, proactive: AI_PROACTIVE_DAILY_CAP, note: AI_NOTE_DAILY_CAP };
 
 /** "ok", or why not: "cooldown" (recent rate limit) / "cap" (daily limit reached). */
-export function aiGate(d: PetData, kind: "chat" | "proactive", now: number): "ok" | "cooldown" | "cap" {
+export function aiGate(d: PetData, kind: AiKind, now: number): "ok" | "cooldown" | "cap" {
   const a = freshAi(d.ai, now);
   if (now < a.coolUntil) return "cooldown";
-  if (kind === "chat" && a.chat >= AI_CHAT_DAILY_CAP) return "cap";
-  if (kind === "proactive" && a.proactive >= AI_PROACTIVE_DAILY_CAP) return "cap";
+  if (a[kind] >= CAPS[kind]) return "cap";
   return "ok";
 }
 
-export function recordAi(d: PetData, kind: "chat" | "proactive", now: number): PetData {
+export function recordAi(d: PetData, kind: AiKind, now: number): PetData {
   const a = freshAi(d.ai, now);
   return { ...d, ai: { ...a, [kind]: a[kind] + 1 } };
 }
@@ -354,6 +361,7 @@ export function parse(json: string | null | undefined, now: number): PetData {
         day: typeof o.ai?.day === "string" ? o.ai.day : "",
         chat: clamp(Math.floor(num(o.ai?.chat, 0)), 0, 99999),
         proactive: clamp(Math.floor(num(o.ai?.proactive, 0)), 0, 99999),
+        note: clamp(Math.floor(num(o.ai?.note, 0)), 0, 99999),
         coolUntil: num(o.ai?.coolUntil, 0),
       },
       telemetry: parseTelemetry(o.telemetry),
