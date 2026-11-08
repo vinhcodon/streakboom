@@ -59,8 +59,11 @@
     recordAsk,
     recordConsentAsk,
     recordEvent,
+    recordBellyHint,
     recordHint,
+    recordRub,
     recordScratch,
+    shouldHintBelly,
     setConsent,
     shouldAskBrain,
     shouldAskConsent,
@@ -93,6 +96,7 @@
   let pose = $state<PetState>("idle");
   let poseTick = $state(0); // bumped on every change of pose so one-shot animations replay
   let dir = $state<1 | -1>(1);
+  let gaze = $state<{ x: number; y: number } | null>(null); // where the cursor is over the cat (eyes follow)
   let tilt = $state(0); // degrees the pet leans while it is carried (follows the cursor's speed)
   let quiet = $state(false); // "Quiet mode": pet sleeps and says nothing
   let data = $state<PetData>(defaultData(Date.now()));
@@ -501,10 +505,41 @@
     const r = (e.currentTarget as HTMLElement).getBoundingClientRect();
     const res = scratchStep(scratch, { x: e.clientX - r.left, y: e.clientY - r.top, t: performance.now() }, r.height, r.width);
     scratch = res.state;
-    // The belly zone is detected too (for a later release) but does nothing yet.
     if (res.zone === "head") onHeadScratch();
+    else if (res.zone === "belly") onBellyRub();
+    // the eyes follow the cursor (in quarter steps, so a tiny move does not redraw anything)
+    const q = (v: number) => Math.round(Math.max(-1, Math.min(1, v)) * 4) / 4;
+    const gx = q(((e.clientX - r.left) / r.width - 0.5) * 2);
+    const gy = q(((e.clientY - r.top) / r.height - 0.45) * 2);
+    if (gaze?.x !== gx || gaze?.y !== gy) gaze = { x: gx, y: gy };
+  }
+
+  // Belly rub: usually bliss, now and then a trap (never on the first rubs, never twice in a row).
+  let rubsSinceHuff = 0;
+  let lastHuff = 0;
+  function onBellyRub() {
+    lonely = false;
+    const now = Date.now();
+    stopTimers();
+    data = recordRub(data);
+    touch("scratch");
+    rubsSinceHuff++;
+    const trap = tierOf(data.closeness) >= 2 && rubsSinceHuff >= 2 && now - lastHuff > 3 * MIN && Math.random() < 0.35;
+    if (trap) {
+      rubsSinceHuff = 0;
+      lastHuff = now;
+      enter("huff");
+      say("huff");
+    } else {
+      data = interact(data, "pet", now);
+      enter("purr");
+      say("belly");
+    }
+    track("first_interaction");
+    scheduleSave();
   }
   function onPetLeave() {
+    gaze = null;
     scratch = { ...scratch, pts: [] };
   }
   function onHeadScratch() {
@@ -863,6 +898,7 @@
     else if (t - sessionStart >= 90 * MIN && t - (said.long ?? 0) > 75 * MIN) trigger = "long";
     else if (hour >= 5 && hour < 11 && dayKey(said.morning ?? 0) !== dayKey(t)) trigger = "morning";
     else if (shouldHintGesture(data, t) && Math.random() < 0.7) trigger = "hint";
+    else if (shouldHintBelly(data, t) && Math.random() < 0.7) trigger = "hintbelly";
     else if (
       !hasKey &&
       tierOf(data.closeness) >= 3 &&
@@ -871,10 +907,11 @@
     )
       trigger = "brainhint";
     if (trigger === "hint") data = recordHint(data, t);
+    if (trigger === "hintbelly") data = recordBellyHint(data, t);
     // With a brain, about half of the proactive lines are written by the AI. Any problem
     // falls back to a scripted line, silently: unprompted chatter must never show errors.
     // (Gesture hints are always scripted: they teach something specific.)
-    if (trigger !== "hint" && canChat && Math.random() < 0.5 && aiGate(data, "proactive", t) === "ok") {
+    if (trigger !== "hint" && trigger !== "hintbelly" && canChat && Math.random() < 0.5 && aiGate(data, "proactive", t) === "ok") {
       data = recordAi(data, "proactive", t);
       scheduleSave();
       if (await aiProactive(trigger, hour)) return scheduleProactive();
@@ -1088,7 +1125,7 @@
     ondblclick={onDblClick}
     oncontextmenu={onPetMenu}
   >
-    <Pet {pose} {dir} {tilt} tick={poseTick} />
+    <Pet {pose} {dir} {tilt} {gaze} tick={poseTick} />
   </div>
 </main>
 

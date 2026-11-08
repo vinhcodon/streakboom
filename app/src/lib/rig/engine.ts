@@ -81,6 +81,8 @@ export const LOOKS: Record<PetState, Look> = {
   sleep: { ...REST, base: "loaf", lid: 0.06, mouth: "flat" },
   drowsy: { ...REST, base: "sit", roll: -3, dy: 4, lid: 0.45, mouth: "yawn" },
   wake: { ...REST, base: "stretch", theta: 0.7, lid: 0.6 },
+  purr: { ...REST, happy: 1, roll: -5, dy: 2, cheek: 0.95, mouth: "smile" },
+  huff: { ...REST, roll: 7, dy: -1, lid: 0.55, mouth: "flat", cheek: 0.3 },
 };
 
 /** How quickly the body arrives, by the pose it is heading to. */
@@ -169,9 +171,32 @@ export class Rig {
   /** One-shot moves, as impulses on springs. */
   private kick(pose: PetState, changed: boolean) {
     if (pose === "happy") this.hop.v = -300; // bounces up and settles
+    else if (pose === "purr") this.sq.v = 0.9; // a slow, soft sway
+    else if (pose === "huff") {
+      this.hop.v = -260; // flinches...
+      this.twitch(); // ...and flicks its tail
+    }
     else if (pose === "land") this.sq.x = -0.2; // squashes, then springs back past rest
     else if (pose === "held" && changed) this.sq.v = 2.4; // yanked up: stretches
     if (pose === "look") this.lookT = 0;
+  }
+
+  /**
+   * Where the eyes look while the cursor is over the cat (x, y in -1..1, null = nowhere). Only a
+   * calm cat follows it; the head and eyes ease toward it like every other move.
+   */
+  gaze: { x: number; y: number } | null = null;
+  lookAt(g: { x: number; y: number } | null) {
+    this.gaze = g;
+  }
+  private followGaze() {
+    if (this.lookT >= 0) return;
+    const look = LOOKS[this.pose];
+    const calm = this.pose === "idle" || this.pose === "look";
+    const g = calm ? this.gaze : null;
+    this.gx.t = look.gx + (g ? g.x * 4.5 : 0);
+    this.gy.t = look.gy + (g ? g.y * 3.5 : 0);
+    this.roll.t = look.roll + (g ? g.x * 2 : 0);
   }
 
   blink() {
@@ -205,6 +230,7 @@ export class Rig {
         this.roll.t = LOOKS[this.pose].roll;
       }
     }
+    this.followGaze();
     for (const s of this.all()) s.step(dt);
   }
 

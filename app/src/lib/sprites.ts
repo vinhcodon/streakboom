@@ -11,6 +11,8 @@ export type PetState =
   | "think"
   | "land"
   | "drowsy" // eyes droop and it yawns, on the way to sleep
+  | "purr" // belly rub: eyes closed in bliss, a slow sway
+  | "huff" // the belly rub was a trap: flinch, half-lidded glare, tail flick
   | "wake"; // stretches and opens its eyes, on the way out of sleep
 
 export interface TimedPose {
@@ -27,6 +29,8 @@ export const TIMED: Partial<Record<PetState, TimedPose>> = {
   think: { ms: 60_000 }, // a safety net: thinking normally ends when the answer arrives
   drowsy: { ms: 900, next: "sleep" },
   wake: { ms: 650 },
+  purr: { ms: 2400 },
+  huff: { ms: 1500 },
 };
 
 /**

@@ -7,7 +7,13 @@
   import { Rig } from "$lib/rig/engine";
   import { drawBody, drawFrame, drawFx } from "$lib/rig/draw";
 
-  let { pose, dir, tilt = 0, tick = 0 }: { pose: PetState; dir: 1 | -1; tilt?: number; tick?: number } = $props();
+  let {
+    pose,
+    dir,
+    tilt = 0,
+    tick = 0,
+    gaze = null,
+  }: { pose: PetState; dir: 1 | -1; tilt?: number; tick?: number; gaze?: { x: number; y: number } | null } = $props();
 
   const reduceMotion = typeof matchMedia === "function" && matchMedia("(prefers-reduced-motion: reduce)").matches;
   const rig = new Rig();
@@ -75,6 +81,12 @@
     last = performance.now();
     raf = requestAnimationFrame(loop);
   }
+
+  // the eyes follow the cursor while it is over the cat
+  $effect(() => {
+    rig.lookAt(gaze ? { x: gaze.x, y: gaze.y } : null);
+    if (!reduceMotion) wake();
+  });
 
   // follow the pose; the same pose with a new tick replays its one-shot move
   $effect(() => {

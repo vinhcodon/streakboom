@@ -132,12 +132,28 @@ export interface GestureMeta {
   scratches: number; // head scratches done so far
   hints: number; // nudges shown
   lastHint: number;
+  rubs: number; // belly rubs done so far
+  bellyHints: number;
+  lastBellyHint: number;
 }
 
 export const MAX_GESTURE_HINTS = 3;
 export const GESTURE_HINT_GAP_MS = 20 * 3_600_000;
 
-export const defaultGestures = (): GestureMeta => ({ scratches: 0, hints: 0, lastHint: 0 });
+export const MAX_BELLY_HINTS = 2;
+
+export const defaultGestures = (): GestureMeta => ({ scratches: 0, hints: 0, lastHint: 0, rubs: 0, bellyHints: 0, lastBellyHint: 0 });
+
+/** The belly hint only comes after the head scratch is known (one thing at a time), and stops once they rub. */
+export const shouldHintBelly = (d: PetData, now: number): boolean =>
+  d.gestures.scratches > 0 && d.gestures.rubs === 0 && d.gestures.bellyHints < MAX_BELLY_HINTS && now - d.gestures.lastBellyHint >= GESTURE_HINT_GAP_MS;
+
+export const recordBellyHint = (d: PetData, now: number): PetData => ({
+  ...d,
+  gestures: { ...d.gestures, bellyHints: d.gestures.bellyHints + 1, lastBellyHint: now },
+});
+
+export const recordRub = (d: PetData): PetData => ({ ...d, gestures: { ...d.gestures, rubs: d.gestures.rubs + 1 } });
 
 export const shouldHintGesture = (d: PetData, now: number): boolean =>
   d.gestures.scratches === 0 && d.gestures.hints < MAX_GESTURE_HINTS && now - d.gestures.lastHint >= GESTURE_HINT_GAP_MS;
@@ -285,6 +301,9 @@ export function parse(json: string | null | undefined, now: number): PetData {
         scratches: clamp(Math.floor(num(o.gestures?.scratches, 0)), 0, 999999),
         hints: clamp(Math.floor(num(o.gestures?.hints, 0)), 0, 99),
         lastHint: num(o.gestures?.lastHint, 0),
+        rubs: clamp(Math.floor(num(o.gestures?.rubs, 0)), 0, 999999),
+        bellyHints: clamp(Math.floor(num(o.gestures?.bellyHints, 0)), 0, 99),
+        lastBellyHint: num(o.gestures?.lastBellyHint, 0),
       },
     };
   } catch {

@@ -286,7 +286,7 @@ test("gesture hints: spaced out, limited, and stop once the user has scratched",
   const learned = recordScratch(defaultData(T0));
   assert.equal(shouldHintGesture(learned, T0 + 90 * HOUR), false);
   assert.equal(learned.gestures.scratches, 1);
-  assert.deepEqual(parse(JSON.stringify({ mood: 50 }), T0).gestures, { scratches: 0, hints: 0, lastHint: 0 });
+  assert.deepEqual(parse(JSON.stringify({ mood: 50 }), T0).gestures, { scratches: 0, hints: 0, lastHint: 0, rubs: 0, bellyHints: 0, lastBellyHint: 0 });
 });
 
 test("update offers: a snooze silences that version for a day, a newer version is offered at once", () => {
@@ -317,4 +317,27 @@ test("parse restores brain bookkeeping and defaults old saves", () => {
   const saved = parse(JSON.stringify({ brain: { asks: 2, snoozeUntil: 5, menuOpens: 4, chatTries: 1, connectedAt: 9 } }), T0);
   assert.deepEqual(saved.brain, { asks: 2, snoozeUntil: 5, menuOpens: 4, chatTries: 1, connectedAt: 9 });
   assert.equal(parse(JSON.stringify({ brain: { asks: "x" } }), T0).brain.asks, 0);
+});
+
+import { recordBellyHint, recordRub, shouldHintBelly } from "./state.ts";
+
+test("belly lines exist in both languages, in gentle tone, and stay short", () => {
+  for (const lang of ["en", "vi"] as const)
+    for (const trig of ["belly", "huff", "hintbelly"] as Trigger[]) {
+      for (const gentle of [false, true]) assert.ok(candidates(trig, ctx({ lang, gentle })).length > 0, `${lang} ${trig} gentle=${gentle}`);
+      for (const l of LINES.filter((x) => x.lang === lang && x.trigger === trig)) assert.ok(l.text.length <= 110, l.text);
+    }
+});
+
+test("the belly hint waits for the head scratch, is spaced out, limited, and stops after a rub", () => {
+  const T = Date.UTC(2026, 10, 8);
+  let d = defaultData(T);
+  assert.equal(shouldHintBelly(d, T + 90 * HOUR), false); // head scratch not discovered yet
+  d = recordScratch(d);
+  assert.equal(shouldHintBelly(d, T + 90 * HOUR), true);
+  d = recordBellyHint(d, T + 90 * HOUR);
+  assert.equal(shouldHintBelly(d, T + 91 * HOUR), false); // too soon
+  d = recordBellyHint(d, T + 120 * HOUR);
+  assert.equal(shouldHintBelly(d, T + 200 * HOUR), false); // max 2
+  assert.equal(shouldHintBelly(recordRub(recordScratch(defaultData(T))), T + 90 * HOUR), false);
 });

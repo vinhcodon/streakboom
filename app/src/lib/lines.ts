@@ -17,7 +17,10 @@ export type Trigger =
   | "how"
   | "milestone"
   | "brainhint"
-  | "hint"; // nudges toward a gesture the user has not discovered yet
+  | "hint" // nudges toward a gesture the user has not discovered yet (the head scratch)
+  | "hintbelly" // ...and the belly rub, once the head scratch is known
+  | "belly" // a belly rub it enjoys
+  | "huff"; // a belly rub that turned out to be a trap
 
 export interface Line {
   id: string;
@@ -403,6 +406,53 @@ const VI2: Line[] = [
   ], {}, "b"),
 ];
 
-export const LINES: Line[] = [...EN, ...EN2, ...VI, ...VI2];
+// Belly rubs (gesture round 2). Most are pleased; now and then it was a trap, and the pet huffs.
+const EN3: Line[] = [
+  ...mk("en", "belly", [
+    "Mmm. Left a bit. No, my left.",
+    "Okay, this is acceptable. More.",
+    "*purrs in pixels*",
+    "Don't stop. I mean it. Don't stop.",
+    "Whoever taught you that: I owe them a snack.",
+    "~Fine. You may continue. I'm not smiling. Ignore my face.",
+  ]),
+  ...mk("en", "huff", [
+    "It was a trap! You fell for the oldest trick in the book.",
+    "Hands off the belly. Boundaries. I have them. Occasionally.",
+    "~Four seconds of bliss, then betrayal. Classic me.",
+    "Enough. The belly is closed for business.",
+    "Hmph. I was enjoying it. Then I wasn't. Cats.",
+  ]),
+  ...mk("en", "hintbelly", [
+    "Psst. The belly works too. Same back-and-forth, a bit lower. Risky. Worth it.",
+    "~I'm not saying rub my belly. I'm just saying it exists.",
+    "New trick: stroke lower, on my belly. Usually safe. Usually.",
+  ]),
+];
+
+const VI3: Line[] = [
+  ...mk("vi", "belly", [
+    "Ưm. Sang trái chút. Không, trái của mình.",
+    "Được đó. Tiếp đi.",
+    "*gừ gừ bằng pixel*",
+    "Đừng dừng. Mình nói thật. Đừng dừng.",
+    "Ai dạy bạn vậy, mình nợ họ một món ăn vặt.",
+    "~Thôi được, bạn cứ tiếp tục. Mình không cười đâu. Kệ khuôn mặt mình.",
+  ]),
+  ...mk("vi", "huff", [
+    "Bẫy đó! Bạn mắc cái trò cũ rích nhất.",
+    "Bỏ tay khỏi bụng. Mình có ranh giới. Thỉnh thoảng.",
+    "~Bốn giây sung sướng rồi phản bội. Đúng chất mình.",
+    "Đủ rồi. Bụng đóng cửa.",
+    "Hừ. Đang thích. Rồi hết thích. Mèo mà.",
+  ]),
+  ...mk("vi", "hintbelly", [
+    "Này. Bụng cũng được nha. Cũng rê qua lại, thấp hơn chút. Hơi liều. Đáng thử.",
+    "~Mình không bảo bạn xoa bụng mình đâu. Mình chỉ nói bụng có tồn tại.",
+    "Chiêu mới: vuốt thấp xuống bụng mình. Thường thì an toàn. Thường thì.",
+  ]),
+];
+
+export const LINES: Line[] = [...EN, ...EN2, ...EN3, ...VI, ...VI2, ...VI3];
 
 export const MILESTONE_DAYS = [3, 7, 30];

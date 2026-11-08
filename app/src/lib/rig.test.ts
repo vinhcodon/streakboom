@@ -72,6 +72,34 @@ test("turning around passes through the front view", () => {
   assert.equal(r.frame().flip, true);
 });
 
+test("the eyes follow the cursor when calm, and ignore it while sleeping", () => {
+  const r = new Rig();
+  r.setPose("idle", 1, 0);
+  r.lookAt({ x: 1, y: -1 });
+  for (let i = 0; i < 240; i++) r.step(1 / 120);
+  const f = r.frame();
+  assert.ok(f.gx > 3 && f.gy < -2, `gaze ${f.gx},${f.gy}`);
+  assert.equal(r.mode, "idle"); // and it settles: no endless redrawing
+  r.lookAt(null);
+  for (let i = 0; i < 240; i++) r.step(1 / 120);
+  assert.ok(Math.abs(r.frame().gx) < 0.05);
+  r.setPose("sleep", 1, 0);
+  r.lookAt({ x: 1, y: 1 });
+  for (let i = 0; i < 600; i++) r.step(1 / 120);
+  assert.ok(Math.abs(r.frame().gx) < 0.05);
+});
+
+test("belly-rub poses play, settle and come back to idle", () => {
+  for (const p of ["purr", "huff"] as PetState[]) {
+    const r = new Rig();
+    r.setPose(p, 1, 0);
+    for (let i = 0; i < 240; i++) r.step(1 / 120);
+    r.setPose("idle", 1, 0);
+    for (let i = 0; i < 1200; i++) r.step(1 / 120);
+    assert.equal(r.mode, "idle", p);
+  }
+});
+
 test("every pose has a look", () => {
   for (const p of Object.keys(LOOKS)) assert.ok(POSE_NAMES.includes(LOOKS[p as PetState].base));
 });
