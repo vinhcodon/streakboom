@@ -5,7 +5,7 @@
   import { onMount } from "svelte";
   import type { PetState } from "$lib/sprites";
   import { Rig } from "$lib/rig/engine";
-  import { drawFrame } from "$lib/rig/draw";
+  import { drawBody, drawFrame, drawFx } from "$lib/rig/draw";
 
   let { pose, dir, tilt = 0, tick = 0 }: { pose: PetState; dir: 1 | -1; tilt?: number; tick?: number } = $props();
 
@@ -18,8 +18,37 @@
   let last = 0;
   let lastTick = -1;
 
+  let dpr = 1;
+  let cache: HTMLCanvasElement | null = null; // the settled cat, drawn once, while only z's or dots move
+  let cacheOk = false;
+
   function paint() {
+    cacheOk = false;
     if (ctx) drawFrame(ctx, rig.frame());
+  }
+
+  /** Sleeping and thinking: the cat does not change, only small effects do, so reuse one drawing of it. */
+  function paintLight() {
+    if (!ctx || !canvas) return;
+    const f = rig.frame();
+    if (!cache) {
+      cache = document.createElement("canvas");
+      cache.width = canvas.width;
+      cache.height = canvas.height;
+    }
+    if (!cacheOk) {
+      const cc = cache.getContext("2d")!;
+      cc.setTransform(1, 0, 0, 1, 0, 0);
+      cc.clearRect(0, 0, cache.width, cache.height);
+      cc.setTransform(dpr, 0, 0, dpr, 0, 0);
+      drawBody(cc, f);
+      cacheOk = true;
+    }
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.drawImage(cache, 0, 0);
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    drawFx(ctx, f);
   }
 
   // Redraw only as often as the motion needs (see Rig.mode): a standing cat costs nothing.
@@ -32,8 +61,9 @@
     // fixed 1/120 s sub-steps keep the springs stable at any frame rate
     const n = Math.max(1, Math.round(dt * 120));
     for (let i = 0; i < n; i++) rig.step(dt / n);
-    paint();
     const mode = rig.mode;
+    if (mode === "light") paintLight();
+    else paint();
     if (mode === "full") raf = requestAnimationFrame(loop);
     else if (mode === "walk") frameTimer = setTimeout(loop, 33);
     else if (mode === "light") frameTimer = setTimeout(loop, 90);
@@ -62,7 +92,7 @@
   });
 
   onMount(() => {
-    const dpr = Math.min(2, window.devicePixelRatio || 1);
+    dpr = Math.min(2, window.devicePixelRatio || 1);
     if (canvas) {
       canvas.width = 120 * dpr;
       canvas.height = 120 * dpr;

@@ -140,10 +140,8 @@ function drawMouth(c: CanvasRenderingContext2D, k: Key, f: Frame) {
   c.globalAlpha = 1;
 }
 
-export function drawFrame(c: CanvasRenderingContext2D, f: Frame) {
-  const k = f.key;
-  c.clearRect(0, 0, 120, 120);
-  c.save();
+/** The scene transform: mirror when facing left, hop/squash about the feet, lean about the scruff. */
+function scene(c: CanvasRenderingContext2D, f: Frame) {
   if (f.flip) {
     c.translate(120, 0);
     c.scale(-1, 1);
@@ -157,6 +155,13 @@ export function drawFrame(c: CanvasRenderingContext2D, f: Frame) {
     c.rotate((f.tilt * Math.PI) / 180);
     c.translate(-60, -22);
   }
+}
+
+/** Draws the cat itself (no z's or dots) into a context already cleared by the caller. */
+export function drawBody(c: CanvasRenderingContext2D, f: Frame) {
+  const k = f.key;
+  c.save();
+  scene(c, f);
 
   ellipse(c, k.shadow.x, k.shadow.y, k.shadow.rx, k.shadow.ry, 0, "#000", 0.08);
 
@@ -220,8 +225,15 @@ export function drawFrame(c: CanvasRenderingContext2D, f: Frame) {
     c.globalAlpha = 1;
   }
   c.restore();
+  c.restore(); // the scene
+}
 
-  // thinking dots and sleeping z's sit in front, outside the head
+/** Thinking dots and sleeping z's: small, in front of the cat, and the only thing that moves while it sleeps. */
+export function drawFx(c: CanvasRenderingContext2D, f: Frame) {
+  const k = f.key;
+  if (f.dots <= 0.01 && k.fx.z <= 0.01) return;
+  c.save();
+  scene(c, f);
   if (f.dots > 0.01) {
     [[98, 30, 3], [107, 23, 4], [116, 14, 5]].forEach(([x, y, r], i) => {
       const pulse = 0.5 + 0.5 * Math.sin(f.time * 5.2 + i * 1.3);
@@ -240,4 +252,11 @@ export function drawFrame(c: CanvasRenderingContext2D, f: Frame) {
     c.globalAlpha = 1;
   }
   c.restore();
+}
+
+/** A whole frame: the cat and its effects. */
+export function drawFrame(c: CanvasRenderingContext2D, f: Frame) {
+  c.clearRect(0, 0, 120, 120);
+  drawBody(c, f);
+  drawFx(c, f);
 }
