@@ -357,3 +357,13 @@ test("the 'start with Windows' question is polite: not on day one, twice at most
   assert.equal(shouldAskStartup(markStartupDone(defaultData(T)), T + 400 * HOUR, 9), false);
   assert.deepEqual(parse(JSON.stringify({ mood: 50 }), T).startup, { asks: 0, lastAsk: 0, done: false });
 });
+
+import { finishTour } from "./state.ts";
+
+test("the tour is shown once: a fresh state has not seen it, finishing marks it, old files parse as not seen", () => {
+  const d = defaultData(1);
+  assert.equal(d.tour.done, false);
+  assert.equal(finishTour(d).tour.done, true);
+  assert.equal(parse(JSON.stringify({ mood: 50 }), 1).tour.done, false); // the page marks existing users as done on load
+  assert.equal(parse(JSON.stringify({ tour: { done: true } }), 1).tour.done, true);
+});

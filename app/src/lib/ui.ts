@@ -83,6 +83,11 @@ export interface UiStrings {
   memForgetAll: string;
   memForgetNote: string;
   memEmpty: string;
+  tourSteps: string[];
+  tourNext: string;
+  tourDone: string;
+  tourSkip: string;
+  tourReplay: string;
   autostart: string;
   autostartNote: string;
   startupAsk: string;
@@ -204,6 +209,16 @@ export const UI: Record<Lang, UiStrings> = {
     memForgetAll: "Forget everything",
     memForgetNote: "Forgetting habits keeps the names. Forgetting everything also removes the names.",
     memEmpty: "Nothing yet.",
+    tourSteps: [
+      "Hi! I'm your desktop pet. Drag me anywhere you like; I'll always stay on your screen.",
+      "Click me to poke me. Double-click me to open a chat bubble.",
+      "Try stroking my head or my belly with your mouse, back and forth. One of them can be a trap.",
+      "Want me to talk for real? Add your own Gemini key in Settings (tray icon, or right-click me). I work without it too, with fewer words.",
+    ],
+    tourNext: "Next",
+    tourDone: "Got it",
+    tourSkip: "Skip",
+    tourReplay: "Show the tour again",
     autostart: "Start when I log in to Windows",
     autostartNote: "The pet appears by itself each time you turn on your computer. You can turn this off here any time.",
     startupAsk: "Want me to wake up with your computer? Then I'm already here when you sit down.",
@@ -335,6 +350,16 @@ export const UI: Record<Lang, UiStrings> = {
     memForgetAll: "Quên hết",
     memForgetNote: "Quên thói quen vẫn giữ tên. Quên hết thì xóa cả tên.",
     memEmpty: "Chưa có gì.",
+    tourSteps: [
+      "Chào bạn! Mình là thú cưng trên màn hình của bạn. Kéo mình đi đâu cũng được, mình luôn ở lại trong màn hình.",
+      "Bấm vào mình để chọc mình. Bấm đúp để mở khung trò chuyện.",
+      "Thử vuốt đầu hoặc bụng mình bằng chuột, qua lại. Một trong hai chỗ có thể là bẫy.",
+      "Muốn mình nói chuyện thật? Thêm khóa Gemini của bạn trong Cài đặt (biểu tượng khay hoặc bấm chuột phải vào mình). Không có khóa mình vẫn chạy, nhưng ít lời hơn.",
+    ],
+    tourNext: "Tiếp",
+    tourDone: "Hiểu rồi",
+    tourSkip: "Bỏ qua",
+    tourReplay: "Xem lại hướng dẫn",
     autostart: "Tự chạy khi tôi đăng nhập Windows",
     autostartNote: "Pet tự xuất hiện mỗi lần bạn bật máy. Bạn tắt được ở đây bất cứ lúc nào.",
     startupAsk: "Mình tự thức dậy cùng máy tính của bạn nhé? Bạn ngồi xuống là mình đã ở đây rồi.",

@@ -338,6 +338,9 @@
       </label>
       <p class="muted">{ui.autostartNote}</p>
       <div class="row">
+        <button class="seg" onclick={() => fromSettings({ type: "tour" })}>{ui.tourReplay}</button>
+      </div>
+      <div class="row">
         <label class="chk">
           <input type="checkbox" checked={s.qhOn} onchange={(e) => patch("qhOn", e.currentTarget.checked)} />
           {ui.quietHours}

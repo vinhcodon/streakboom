@@ -200,6 +200,13 @@ export const shouldAskStartup = (d: PetData, now: number, daysUsed: number): boo
 export const recordStartupAsk = (d: PetData, now: number): PetData => ({ ...d, startup: { ...d.startup, asks: d.startup.asks + 1, lastAsk: now } });
 export const markStartupDone = (d: PetData): PetData => ({ ...d, startup: { ...d.startup, done: true } });
 
+/** The first-run tour: shown once on a fresh install (and again whenever the user asks in Settings). */
+export interface TourMeta {
+  done: boolean;
+}
+export const defaultTour = (): TourMeta => ({ done: false });
+export const finishTour = (d: PetData): PetData => ({ ...d, tour: { done: true } });
+
 export const MAX_BRAIN_ASKS = 3;
 export const BRAIN_SNOOZE_MS = 2 * 24 * 3_600_000;
 export const MENU_OPENS_BEFORE_ASK = 3;
@@ -224,6 +231,7 @@ export interface PetData {
   gestures: GestureMeta;
   update: UpdateMeta;
   startup: StartupMeta;
+  tour: TourMeta;
 }
 
 export type InteractKind = "click" | "pet" | "snack" | "play" | "how";
@@ -262,6 +270,7 @@ export function defaultData(now: number): PetData {
     gestures: defaultGestures(),
     update: defaultUpdate(),
     startup: defaultStartup(),
+    tour: defaultTour(),
   };
 }
 
@@ -313,6 +322,7 @@ export function parse(json: string | null | undefined, now: number): PetData {
         offered: typeof o.update?.offered === "string" ? o.update.offered.slice(0, 40) : "",
         snoozeUntil: num(o.update?.snoozeUntil, 0),
       },
+      tour: { done: o.tour?.done === true },
       startup: {
         asks: clamp(Math.floor(num(o.startup?.asks, 0)), 0, 99),
         lastAsk: num(o.startup?.lastAsk, 0),

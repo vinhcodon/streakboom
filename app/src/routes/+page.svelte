@@ -56,6 +56,7 @@
     interact,
     parse,
     recordAi,
+    finishTour,
     markStartupDone,
     recordAsk,
     recordStartupAsk,
@@ -93,7 +94,7 @@
   const MIN = 60_000;
   const MAX_REPLY_CHARS = 240;
 
-  type Panel = null | "chat" | "ask" | "consent" | "update" | "input" | "choice";
+  type Panel = null | "chat" | "ask" | "consent" | "update" | "input" | "choice" | "tour";
   type Turn = { role: "user" | "model"; text: string };
 
   let pose = $state<PetState>("idle");
@@ -242,6 +243,23 @@
     scheduleSave();
   }
 
+  // First-run tour: a few short cards from the pet, once on a fresh install (and on request).
+  let tourStep = $state(0);
+  function startTour() {
+    if (quiet || panel) return;
+    tourStep = 0;
+    stopTimers();
+    enter("happy");
+    openPanel("tour");
+  }
+  function endTour() {
+    closePanel();
+    data = finishTour(data);
+    scheduleSave();
+    stopTimers();
+    enter("happy");
+  }
+
   async function answerStartup(yes: boolean) {
     closePanel();
     if (!yes) return;
@@ -365,14 +383,15 @@
   /** The chat and the ask card close themselves when left alone (never while typing or waiting). */
   function resetMenuTimer() {
     clearTimeout(menuTimer);
-    if (panel !== "chat" && panel !== "ask" && panel !== "update" && panel !== "input" && panel !== "choice") return;
+    if (panel !== "chat" && panel !== "ask" && panel !== "update" && panel !== "input" && panel !== "choice" && panel !== "tour") return;
     // An idle chat closes by itself, as before (any click or key in the bubble starts the wait
     // again), but never while there is text in the box (see the check below).
-    const ms = panel === "input" ? 60_000 : panel === "update" || panel === "choice" ? 30_000 : panel === "chat" && chatPhase === "reply" ? 20_000 : 12_000;
+    const ms = panel === "tour" ? 90_000 : panel === "input" ? 60_000 : panel === "update" || panel === "choice" ? 30_000 : panel === "chat" && chatPhase === "reply" ? 20_000 : 12_000;
     menuTimer = setTimeout(() => {
       if ((panel === "chat" || panel === "input") && (chatDraft || busy)) resetMenuTimer();
       else {
         if (panel === "update") updateLater(); // ignoring the offer counts as "later"
+        if (panel === "tour") endTour(); // walking away from the tour ends it
         closePanel();
       }
     }, ms);
@@ -751,6 +770,18 @@
       case "chat-blocked":
         onChatBlocked();
         break;
+      case "tour":
+        if (panel !== "tour") break;
+        if (a.action === "skip" || tourStep + 1 >= ui.tourSteps.length) endTour();
+        else {
+          tourStep++;
+          resetMenuTimer();
+          if (tourStep === 2) {
+            stopTimers();
+            enter("curious"); // "try stroking my head": it tilts its head, inviting
+          }
+        }
+        break;
       case "choice":
         if (panel === "choice") void answerStartup(a.yes);
         break;
@@ -845,6 +876,8 @@
   function onSettingsPatch(p: SettingsPatch) {
     if (p.type === "setting") {
       setSetting(p.key, p.value as never);
+    } else if (p.type === "tour") {
+      startTour();
     } else if (p.type === "startup") {
       if (p.on) data = markStartupDone(data);
       scheduleSave();
@@ -1013,6 +1046,17 @@
         skip: ui.nameSkip,
       };
     }
+    if (panel === "tour") {
+      const total = ui.tourSteps.length;
+      return {
+        kind: "tour",
+        step: tourStep + 1,
+        total,
+        text: ui.tourSteps[tourStep] ?? "",
+        next: tourStep + 1 < total ? ui.tourNext : ui.tourDone,
+        skip: ui.tourSkip,
+      };
+    }
     if (panel === "choice") return { kind: "choice", id: "startup", text: ui.startupAsk, yes: ui.startupYes, later: ui.startupLater };
     if (panel === "ask") return { kind: "ask", text: ui.askText, yes: ui.askYes, later: ui.askLater };
     if (panel === "update") {
@@ -1094,19 +1138,24 @@
       mem = recordSession(mem, now, s.data.streak, s.absentMs);
       lonely = s.lonely;
       if (isNew) track("first_launch"); // dropped unless already opted in; backfilled on consent
+      if (!isNew && !data.tour.done) data = finishTour(data); // an existing user never gets the tour unasked
       if (data.streak >= 3) track("active_d3");
       if (data.streak >= 7) track("active_d7");
       save();
 
       // One-time, equal-weight consent card shortly after launch, never over another panel.
+      // (After the tour, if there is one: it retries every 20 s for a few minutes while another card is open.)
       if (shouldAskConsent(data)) {
-        setTimeout(() => {
-          if (shouldAskConsent(data) && !panel && !bubbleOn && !quiet) {
+        let tries = 0;
+        const tryConsent = () => {
+          if (!shouldAskConsent(data) || quiet) return;
+          if (!panel && !bubbleOn) {
             data = recordConsentAsk(data);
             openPanel("consent");
             scheduleSave();
-          }
-        }, 12_000);
+          } else if (++tries < 15) setTimeout(tryConsent, 20_000);
+        };
+        setTimeout(tryConsent, 12_000);
       }
 
       // The window holds only the pet, so the clickable region never changes.
@@ -1122,6 +1171,7 @@
           say(s.returned ? "return" : "greeting");
         }, 1500);
         setTimeout(shareNextMark, 25_000);
+        if (isNew && !data.tour.done) setTimeout(startTour, 4000);
         if (s.milestone) setTimeout(() => say("milestone", { days: s.milestone! }), 8000);
       }
       scheduleProactive();
