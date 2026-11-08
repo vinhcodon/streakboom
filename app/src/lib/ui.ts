@@ -126,6 +126,7 @@ export interface UiStrings {
   memForgetFacts: string;
   memNotice: string;
   sectionAbout: string;
+  openWebsite: string;
   versionLabel: string;
   checkUpdates: string;
   checkingUpdates: string;
@@ -325,6 +326,7 @@ export const UI: Record<Lang, UiStrings> = {
     memForgetFacts: "Forget noted facts",
     memNotice: "I jotted down something you told me. It's in Settings > What the pet remembers, where you can edit or delete it, and it goes to {company} with our chats. You can turn it off there.",
     sectionAbout: "About",
+    openWebsite: "Open the website (streakboom.com)",
     versionLabel: "Version",
     checkUpdates: "Check for updates",
     checkingUpdates: "Checking…",
@@ -535,6 +537,7 @@ export const UI: Record<Lang, UiStrings> = {
     memForgetFacts: "Quên các điều đã ghi",
     memNotice: "Mình vừa ghi lại điều bạn kể. Nó nằm ở Cài đặt > Pet nhớ gì, bạn sửa hoặc xóa được, và nó được gửi cho {company} cùng các cuộc trò chuyện. Bạn tắt được ở đó.",
     sectionAbout: "Về app",
+    openWebsite: "Mở trang web (streakboom.com)",
     versionLabel: "Phiên bản",
     checkUpdates: "Kiểm tra cập nhật",
     checkingUpdates: "Đang kiểm tra…",

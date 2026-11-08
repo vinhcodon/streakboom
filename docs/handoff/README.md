@@ -18,7 +18,7 @@ Notes handed **from one session or conversation to another** (a product discussi
 
 | File | To | Date | Status | What it asks |
 |---|---|---|---|---|
-| [`to-website-0.2.0.md`](to-website-0.2.0.md) | the session working on `site/` (GitHub Pages) | 2026-11-08 | **sent, not yet acted on** | Update the site for the first official release: status wording, the release list with one release, the download link, the feature and privacy text, the dead `v0.1.x` links |
+| [`to-website-0.2.0.md`](to-website-0.2.0.md) | the session working on `site/` (GitHub Pages) | 2026-11-08 | **done by the website session (2026-11-08)**; its follow-up note was answered the same day | Update the site for the first official release: status wording, the release list, the download link, the feature and privacy text, the dead `v0.1.x` links. Outcome: the site (streakboom.com) reads `CHANGELOG.md` and `updates/latest.json`; the format contract is in ADR-0028; the rig rule is in the README (Website) and tested in `rig.test.ts`. From now on: when behavior or status described on the site changes, update the README and tell the website session (README, Release and auto-update, step 1). |
 
 ## Where the handoff was out of date when received
 

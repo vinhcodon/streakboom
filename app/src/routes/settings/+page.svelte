@@ -625,6 +625,9 @@
         <span class="lbl">{ui.versionLabel}</span>
         <b class="sel">{version}</b>
       </div>
+      <div class="row">
+        <button class="seg" onclick={() => invoke("open_website").catch(() => {})}>{ui.openWebsite}</button>
+      </div>
       {#if !updatesOn}
         <p class="muted">{ui.updatesOff}</p>
       {:else}

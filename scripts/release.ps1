@@ -35,6 +35,7 @@ param(
   [switch]$Publish
 )
 $ErrorActionPreference = "Stop"
+. (Join-Path $PSScriptRoot "release-lib.ps1")   # Select-ReleasesToPrune, Test-ChangelogEntry (tested by test-release-lib.ps1)
 $root = Split-Path -Parent $PSScriptRoot
 $app = Join-Path $root "app"
 if (-not (Test-Path $KeyPath)) { throw "Signing key not found: $KeyPath" }
@@ -94,8 +95,9 @@ if ($Publish) {
     $dirty = git status --porcelain -- app scripts updates CHANGELOG.md
     if ($dirty) { throw "The git tree is not clean (see ADR-0023: commit explicit paths first):`n$dirty" }
     # Older releases are deleted after this one is published (ADR-0028), so their notes must already be in CHANGELOG.md.
-    if (-not (Select-String -Path (Join-Path $root "CHANGELOG.md") -Pattern "^## $([regex]::Escape($version)) " -Quiet)) {
-      throw "CHANGELOG.md has no '## $version (date)' entry. Write the release notes there and commit it first."
+    # The website reads CHANGELOG.md, so the format is a contract (ADR-0028): "## x.y.z (YYYY-MM-DD)", optional ", title", then "- " lines.
+    if (-not (Test-ChangelogEntry -Lines (Get-Content (Join-Path $root "CHANGELOG.md") -Encoding UTF8) -Version $version)) {
+      throw "CHANGELOG.md has no usable entry for ${version}: a heading '## $version (YYYY-MM-DD)' followed by at least one line starting with '- '. Write the release notes there and commit it first."
     }
     $gh = (Get-Command gh -ErrorAction SilentlyContinue).Source
     if (-not $gh) { $gh = Join-Path $env:LOCALAPPDATA "Programs\GitHub CLI\gh.exe" }
@@ -130,14 +132,17 @@ if ($Publish) {
     if ($LASTEXITCODE -ne 0) { throw "git push failed" }
 
     # Keep the new release and the one right before it (a way back if the new one is bad); delete every older release and its tag
-    # (the commits stay; the notes live in CHANGELOG.md).
-    $others = ((& $gh api "repos/$Repo/releases?per_page=100") | ConvertFrom-Json) | Where-Object { $_.tag_name -ne $tag } | Sort-Object { [datetime]$_.created_at } -Descending
-    $old = $others | Select-Object -Skip 1 | ForEach-Object { $_.tag_name }
-    foreach ($t in $old) {
+    # (the commits stay; the notes live in CHANGELOG.md). Left-over drafts of an interrupted publish are deleted, never kept.
+    $plan = Select-ReleasesToPrune -Releases (((& $gh api "repos/$Repo/releases?per_page=100") | ConvertFrom-Json)) -CurrentTag $tag
+    foreach ($t in $plan.DeleteTags) {
       & $gh release delete $t --repo $Repo --cleanup-tag --yes
       if ($LASTEXITCODE -ne 0) { Write-Warning "could not delete the old release $t" } else { Write-Host "Deleted the old release $t (notes stay in CHANGELOG.md)" }
     }
-    if ($others) { Write-Host "Kept the previous release $(($others | Select-Object -First 1).tag_name) as a way back." }
+    foreach ($d in $plan.Drafts) {
+      if ($d -match '^\d+$') { & $gh api -X DELETE "repos/$Repo/releases/$d" | Out-Null } else { & $gh release delete $d --repo $Repo --yes }
+      if ($LASTEXITCODE -ne 0) { Write-Warning "could not delete the left-over draft release $d" } else { Write-Host "Deleted a left-over draft release ($d)" }
+    }
+    if ($plan.Keep.Count) { Write-Host "Kept the previous release $($plan.Keep[0]) as a way back." }
 
     Write-Host ""
     Write-Host "Published $tag. Check from here (the repository copy may lag a few minutes behind a cache):"

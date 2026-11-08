@@ -791,6 +791,15 @@ fn open_key_page(app: AppHandle, provider: Option<String>) -> Result<(), String>
         .unwrap_or_else(|| active(&app.state::<AppState>()));
     app.opener().open_url(p.key_page(), None::<&str>).map_err(|e| e.to_string())
 }
+
+/// The project's website (Settings, About). One fixed address, nothing user-supplied.
+const WEBSITE_URL: &str = "https://streakboom.com";
+
+#[tauri::command]
+fn open_website(app: AppHandle) -> Result<(), String> {
+    use tauri_plugin_opener::OpenerExt;
+    app.opener().open_url(WEBSITE_URL, None::<&str>).map_err(|e| e.to_string())
+}
 // ------------------------------------------------------------- positioning
 
 /// Place the window at the saved position if it is still on a connected monitor,
@@ -1029,6 +1038,7 @@ pub fn run() {
             brain_models,
             brain_model,
             brain_set_model,
+            open_website,
             brain_provider,
             brain_set_provider,
             brain_chat,

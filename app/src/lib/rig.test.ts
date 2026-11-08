@@ -3,6 +3,8 @@ import assert from "node:assert/strict";
 import { POSE_KEYS, POSE_NAMES, type Key } from "./rig/keys.ts";
 import { Rig, Spring, blendKeys, LOOKS } from "./rig/engine.ts";
 import type { PetState } from "./sprites.ts";
+import { stripTypeScriptTypes } from "node:module";
+import { readFileSync } from "node:fs";
 
 const shape = (v: unknown): unknown =>
   typeof v === "number" ? "n" : Array.isArray(v) ? v.map(shape) : Object.fromEntries(Object.keys(v as object).map((k) => [k, shape((v as Record<string, unknown>)[k])]));
@@ -119,4 +121,18 @@ test("the mood poses play, settle and return to idle; sad folds the ears down", 
 
 test("every pose has a look", () => {
   for (const p of Object.keys(LOOKS)) assert.ok(POSE_NAMES.includes(LOOKS[p as PetState].base));
+});
+
+// The website copies keys.ts, engine.ts and draw.ts into plain JavaScript by only stripping the types
+// (scripts/build-site.mjs). That fails on syntax that is not just types (enum, namespace, constructor parameter
+// properties) or on imports of other modules, and then the site silently stops deploying. Check it here.
+test("the rig files can be copied to the website by stripping types alone", () => {
+  const dir = new URL("./rig/", import.meta.url);
+  const allowed = new Set(["./keys.js", "./engine.js", "./draw.js"]);
+  for (const name of ["keys", "engine", "draw"]) {
+    const ts = readFileSync(new URL(`${name}.ts`, dir), "utf8");
+    const js = stripTypeScriptTypes(ts, { mode: "strip" }).replace(/(from\s+["']\.\/\w+)\.ts(["'])/g, "$1.js$2"); // throws on non-erasable syntax
+    for (const m of js.matchAll(/from\s+["']([^"']+)["']/g)) assert.ok(allowed.has(m[1]), `${name}.ts imports ${m[1]}; only the three rig files may be imported (types excepted)`);
+    assert.ok(!/^\s*import\s+["']/m.test(js), `${name}.ts has a side-effect import`);
+  }
 });

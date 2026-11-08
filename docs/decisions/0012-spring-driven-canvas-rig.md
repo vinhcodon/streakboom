@@ -13,6 +13,9 @@ Poses are weights on key drawings (front and side) that follow targets like crit
 ## Alternatives considered
 Cross-fading drawings with CSS (replaced); sprite sheets (not used); a pseudo-3D rig (rejected).
 
+## Constraint added 2026-11-08 (the website reuses the rig)
+`keys.ts`, `engine.ts` and `draw.ts` are copied to the website by erasing types only (`scripts/build-site.mjs`, Node's strip mode). Keep them to erasable TypeScript (no enum, namespace or constructor parameter properties) and import only each other (type imports from `../sprites.ts` are fine). `rig.test.ts` checks this; if the build breaks, the site silently stops deploying.
+
 ## Consequences and when to revisit
 The in-between frames of some blends are less polished (the end of the wake stretch). A cheaper walking draw is still open.
 
