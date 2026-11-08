@@ -1,6 +1,6 @@
 # ADR-0022: North star: Bond Days, with decisions D1 to D8
 
-- **Status:** accepted (built, awaiting release)
+- **Status:** accepted (built; released in 0.1.15)
 - **Date:** 2026-11-08
 - **Decided by:** Vinh (author), with Claude
 
@@ -14,7 +14,7 @@ Fixed: chat does not count; no alpha targets until a baseline exists; the chat c
 Counting chat (rejected by the author); counting pokes as care (outside).
 
 ## Consequences and when to revisit
-Built on 2026-11-08 following docs/plans/bond-days.md (bond.ts, consent version 2, the second Privacy switch); not yet released. The next release replaces the accidental prototype that 0.1.14 installers still contain (R1: no separate 0.1.15).
+Built on 2026-11-08 following docs/plans/bond-days.md (bond.ts, consent version 2, the second Privacy switch); released in 0.1.15 on 2026-11-08, which replaces the accidental prototype that 0.1.14 installers contained (R1: no separate release for the removal).
 
 ## Sources
 spec/05-north-star-metrics.md

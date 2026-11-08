@@ -1,8 +1,12 @@
 # Streakboom
 
-A small desktop pet for Windows. It lives on top of your screen as a round "mochi cat", reacts to being stroked, poked and carried, says scripted lines in Vietnamese or English, and, if you give it your own API key (Gemini, Claude or OpenAI), you can chat with it, and it will remember a few things about you.
+An open-source desktop pet for Windows. Meet **Peak**, a cheerful golden chibi cat inspired by the soft, squishy look of mochi illustrations. Peak lives on top of your screen, reacts to being stroked, poked and carried, says short lines in Vietnamese or English, and keeps you company. It is a companion, not an assistant: it is lovable with no AI at all, and if you give it your own API key (Gemini, Claude or OpenAI) it can also chat and remember a few things about you.
 
 > **Status: closed alpha (v0.1.x), Windows 10/11 only.** The installer is not code-signed yet, so Windows SmartScreen will warn when you run it.
+
+## Meet Peak
+
+Peak is the name of the character in this project. Your own copy can be given any name: after a day or two the pet asks what you would like to call it, and you can change that, or what it calls you, in Settings, Memory. Peak was designed and drawn for Streakboom (see [Art and credits](#art-and-credits)).
 
 ## What it does
 
@@ -10,8 +14,14 @@ A small desktop pet for Windows. It lives on top of your screen as a round "moch
 - **Gestures instead of buttons.** Sweep the cursor over its head to scratch it, over its belly to rub it (it usually loves it; sometimes it is a trap), click to poke, drag to carry it (it hangs by the scruff and leans with your cursor). Its eyes follow your cursor when it is over the pet. It wanders sideways on its own, always stays on screen, and moves like one animal, not a set of pictures.
 - **Bring your own brain.** Add your own key and double-click the pet to chat. Gemini has a free tier; Claude and OpenAI are paid (a Claude Pro/Team or ChatGPT Plus subscription does not include API access). Some of its unprompted lines are then written by the model, within a daily cap, and each answer comes with a feeling the pet acts out. It answers in the language you write in. Your key stays on your computer.
 - **It remembers a little, and you control it.** A name for the pet, what to call you, a usual part of the day, milestones, and (with a brain, on by default, switchable) a few short facts from your chats. Settings > Memory shows all of it and can forget any part.
+- **Free and open source.** The app costs nothing and the code is under the MIT license. An AI brain is optional and billed by the provider you choose (Gemini has a free tier; Claude and OpenAI are paid). Bug reports and ideas are welcome as GitHub issues.
+- **Light on your computer.** About 100 to 120 MB of memory across its processes and almost no CPU while it stands still; walking costs a few percent of one core (measured on one machine so far).
 - **Polite.** It stays quiet in fullscreen apps, during quiet hours and in Quiet mode, and never takes the keyboard focus for plain speech.
 - **Updates itself, your way.** Install automatically when you are idle, ask first (the default), or never check. It can also start with Windows (off by default; it asks once, politely).
+
+## Getting started
+
+To use it, follow [Install](#install). To build it or change it, follow [Develop](#develop) (Node.js and Rust; the app is Tauri 2 with SvelteKit, not Python).
 
 ## Install
 
@@ -120,7 +130,11 @@ The documents are split by the kind of statement they make, so each fact has one
 
 ## Roadmap
 
-Done: the naive pet, the key flow, three brains, memory, gestures, emotional reactions, opt-in stats with Copy stats, the north star counters (Bond Days, built and awaiting its first release), the installer and signed auto-update. Next, in order: release the counters, a first real-key test of the Claude and OpenAI brains, then the closed alpha with a handful of observed first-time users. Open: a place to send stats (or keep Copy stats for the alpha), code signing, crash reporting without content, a macOS port, and testing on more machines (multi-monitor, mixed DPI). The ordered plan is in [`docs/plans/roadmap.md`](docs/plans/roadmap.md).
+Done: the naive pet, the key flow, three brains, memory, gestures, emotional reactions, opt-in stats with Copy stats, the north star counters (Bond Days, released in 0.1.15), the installer and signed auto-update. Next, in order: a first real-key test of the Claude and OpenAI brains, then the closed alpha with a handful of observed first-time users. Open: a place to send stats (or keep Copy stats for the alpha), code signing, crash reporting without content, a macOS port, and testing on more machines (multi-monitor, mixed DPI). The ordered plan is in [`docs/plans/roadmap.md`](docs/plans/roadmap.md).
+
+## Art and credits
+
+Peak is an original character made for this project. The author chose the "mochi cat" direction from three concept sketches that Claude, an AI assistant made by Anthropic, proposed, and the animation rig (the key poses, the springs and the drawing code) was written with Claude's help. There are no image files: the cat is drawn entirely as vector shapes in code (`app/src/lib/rig/`), so the art is covered by the same MIT license as the code. The style is inspired by mochi and kawaii illustration in general; Peak is not based on any existing character, brand or mascot and is not affiliated with any.
 
 ## License
 

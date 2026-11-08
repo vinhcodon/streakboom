@@ -1,6 +1,6 @@
 # Roadmap: from 0.1.14 to a closed alpha
 
-Status: **approved 2026-11-08 with the answers in section 5; Phase 2 is done (unreleased), the rest is open.** Written 2026-11-08 after reading all project documents and the code.
+Status: **approved 2026-11-08 with the answers in section 5; Phases 1 and 2 are done and released in 0.1.15, the rest is open.** Written 2026-11-08 after reading all project documents and the code.
 
 Goal of this stretch: run a closed alpha with 5 to 10 observed first-time users and get a first baseline of the north star (Bond Days, [`../../spec/05-north-star-metrics.md`](../../spec/05-north-star-metrics.md)) to test hypotheses H1, H2b, H4 and H5 ([`../hypotheses/README.md`](../hypotheses/README.md)).
 
@@ -17,7 +17,7 @@ Goal of this stretch: run a closed alpha with 5 to 10 observed first-time users 
 3. Hypothesis A10: after updating, confirm `pet.json` has no `days` array and no counters.
 **Done when** installed copies no longer contain the prototype, or Vinh has accepted that they do until the next release.
 
-## Phase 2. Bond Days, built from the plan (code done 2026-11-08; manual checks and release open)
+## Phase 2. Bond Days, built from the plan (done and released in 0.1.15 on 2026-11-08; a few checks remain listed as not verified)
 Plan and tests: [`bond-days.md`](bond-days.md) (steps 0 to 6, decisions D1 to D8 answered). Order and gates:
 1. Step 0: agree the working-tree rules (branch or worktree; ADR-0023).
 2. Step 1 to 2: pure functions in `bond.ts` and the schema with the consent version, with their unit tests first.
