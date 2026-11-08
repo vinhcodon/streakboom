@@ -78,7 +78,7 @@ Feature filter for any idea: (1) can the user get it by prompting another assist
 ## 2. Movement and places
 
 ### 2.1 Budget
-Most of the time the cat is still; movement comes in short bursts. **Target (proposal, to confirm after the baseline is fixed in PR-4): with the cat standing still, near 0% CPU (under 1% of one core); walking at most the 7 to 15% measured in 0.1.7.** Every new movement kind is measured with `scripts/cpu-breakdown.ps1` before and after (plan, step 0) and must not raise the average noticeably. Reasons it is costly today: each walk tick moves a transparent topmost window (66 ms) and redraws the canvas at about 30 fps with software compositing (`--disable-gpu`).
+Most of the time the cat is still; movement comes in short bursts. **Target (agreed, D8; PR-4 first round measured 2026-11-08: about 7% of a core in the samples where nothing moved and about 24% walking, from 14% and 30%; the target is not reached, and a floor of about 1.3% plus about 0.55% per painted frame makes under 1% standing unreachable with software drawing, so it needs a decision, see backlog PR-9): with the cat standing still, near 0% CPU (under 1% of one core); walking at most the 7 to 15% measured in 0.1.7.** Every new movement kind is measured with `scripts/cpu-breakdown.ps1` before and after (plan, step 0) and must not raise the average noticeably. Reasons it is costly today: each walk tick moves a transparent topmost window (66 ms) and redraws the canvas at about 30 fps with software compositing (`--disable-gpu`).
 
 ### 2.2 Kinds of movement
 - **Exists:** sideways walk along one line; look, sit, doze, sleep.

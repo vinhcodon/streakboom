@@ -8,7 +8,7 @@
 Swapping two pictures read as jerky; the author wanted one cat that moves.
 
 ## Decision
-Poses are weights on key drawings (front and side) that follow targets like critically damped springs; turning is one spring that passes through the front view; extra springs drive the head, eyes, mouth, ears, hop and squash. Rendering is Canvas 2D, redrawn only as often as the motion needs (full speed while a spring moves, about 30 fps walking, about 11 fps for sleep and thinking, none standing still). The settled cat is cached while only z's or dots move.
+Poses are weights on key drawings (front and side) that follow targets like critically damped springs; turning is one spring that passes through the front view; extra springs drive the head, eyes, mouth, ears, hop and squash. Rendering is Canvas 2D, redrawn only as often as the motion needs (since PR-4: full speed only for big motions, about 24 fps for small ones such as a blink, about 20 fps walking, about 5 fps for sleep and thinking, none standing still). The settled cat is cached while only z's or dots move.
 
 ## Alternatives considered
 Cross-fading drawings with CSS (replaced); sprite sheets (not used); a pseudo-3D rig (rejected).

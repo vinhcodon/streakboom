@@ -1,7 +1,7 @@
 <script lang="ts">
   // The mochi cat, drawn on a canvas from a spring-driven rig (see rig/engine.ts). Pose changes
   // are continuous morphs, not swaps. While the cat stands still nothing redraws at all (CPU ~0);
-  // only a short blink or tail twitch now and then, and light z's/dots at ~12 fps.
+  // only a short blink or tail twitch now and then (about 24 fps) and light z's/dots at about 5 fps.
   import { onMount } from "svelte";
   import type { PetState } from "$lib/sprites";
   import { Rig } from "$lib/rig/engine";
@@ -23,6 +23,12 @@
   let frameTimer: ReturnType<typeof setTimeout> | undefined;
   let last = 0;
   let lastTick = -1;
+
+  // Frame intervals of the slower modes (see Rig.mode). Every painted frame costs real CPU here
+  // (software drawing), so these are as slow as still looks smooth (PR-4, engineering log).
+  const SOFT_MS = 41; // about 24 fps: a blink, a tail flick, the eyes looking around
+  const WALK_MS = 50; // about 20 fps
+  const LIGHT_MS = 200; // about 5 fps: the z's of sleep, the dots of thinking
 
   let dpr = 1;
   let cache: HTMLCanvasElement | null = null; // the settled cat, drawn once, while only z's or dots move
@@ -71,8 +77,9 @@
     if (mode === "light") paintLight();
     else paint();
     if (mode === "full") raf = requestAnimationFrame(loop);
-    else if (mode === "walk") frameTimer = setTimeout(loop, 33);
-    else if (mode === "light") frameTimer = setTimeout(loop, 90);
+    else if (mode === "soft") frameTimer = setTimeout(loop, SOFT_MS);
+    else if (mode === "walk") frameTimer = setTimeout(loop, WALK_MS);
+    else if (mode === "light") frameTimer = setTimeout(loop, LIGHT_MS);
   }
 
   function wake() {
@@ -95,7 +102,7 @@
     if (reduceMotion) {
       // jump straight to the end pose
       rig.setPose(pose, dir, tilt, replay);
-      for (let i = 0; i < 600 && rig.mode === "full"; i++) rig.step(1 / 60);
+      for (let i = 0; i < 600 && (rig.mode === "full" || rig.mode === "soft"); i++) rig.step(1 / 60);
       paint();
       return;
     }

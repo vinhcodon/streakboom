@@ -26,6 +26,8 @@ function mix(vals: any[], ws: number[]): any {
 export const blendKeys = (keys: Key[], ws: number[]): Key => mix(keys, ws) as Key;
 
 // ----------------------------------------------------------------------------- springs
+const EPS_X = 0.01;
+const EPS_V = 0.15;
 /** A critically damped spring by default: arrives without overshoot. */
 export class Spring {
   x: number;
@@ -43,9 +45,15 @@ export class Spring {
     const d = 2 * this.zeta * Math.sqrt(this.k);
     this.v += (this.k * (this.t - this.x) - d * this.v) * dt;
     this.x += this.v * dt;
+    // Close enough to the target to be invisible (under 1% of a weight, a hundredth of a pixel):
+    // land on it and stop, so the last slow part of the approach does not keep the redraw loop running.
+    if (Math.abs(this.t - this.x) < EPS_X && Math.abs(this.v) < EPS_V) {
+      this.x = this.t;
+      this.v = 0;
+    }
   }
   get settled() {
-    return Math.abs(this.t - this.x) < 1e-3 && Math.abs(this.v) < 1e-2;
+    return Math.abs(this.t - this.x) < EPS_X && Math.abs(this.v) < EPS_V;
   }
 }
 
@@ -138,6 +146,11 @@ export class Rig {
   private mouths = Object.fromEntries(MOUTHS.map((m) => [m, new Spring(m === "smile" ? 1 : 0, 170)])) as Record<Mouth, Spring>;
   private lookT = -1; // seconds into the "look around" gesture, -1 = not playing
   private blinkT = -1;
+
+  /** The springs whose motion is big on screen: the body blend, the turn, the walk, hops, squash, being held. */
+  private major(): Spring[] {
+    return [...Object.values(this.pw), this.theta, this.walk, this.hop, this.sq, this.tilt];
+  }
 
   private all(): Spring[] {
     return [
@@ -245,11 +258,15 @@ export class Rig {
   }
 
   /**
-   * How much redrawing is needed: nothing (standing still), a trickle (z's, dots: ~11 fps), a
-   * steady walk (~30 fps; the legs read fine at that rate), or full speed while a spring is moving.
+   * How much redrawing is needed (each painted frame is costly with software drawing, so every
+   * mode is the slowest rate that still reads as smooth): nothing (standing still), a trickle
+   * (z's and dots, about 5 fps), a steady walk (about 20 fps), "soft" for small motion only (a
+   * blink, a tail flick, the eyes looking around: about 24 fps), or full speed while a big motion
+   * runs (a pose change, a turn, a hop, being carried).
    */
-  get mode(): "idle" | "light" | "walk" | "full" {
-    if (this.all().some((s) => !s.settled) || this.lookT >= 0 || this.blinkT >= 0) return "full";
+  get mode(): "idle" | "light" | "walk" | "soft" | "full" {
+    if (this.major().some((s) => !s.settled)) return "full";
+    if (this.all().some((s) => !s.settled) || this.lookT >= 0 || this.blinkT >= 0) return "soft";
     if (this.walk.x > 0.01) return "walk";
     if (this.pose === "sleep" || this.pose === "think") return "light";
     return "idle";

@@ -136,3 +136,74 @@ test("the rig files can be copied to the website by stripping types alone", () =
     assert.ok(!/^\s*import\s+["']/m.test(js), `${name}.ts has a side-effect import`);
   }
 });
+
+// ---- redraw cost (PR-4): every painted frame costs real CPU with software drawing ----
+const FRAME_S: Record<string, number> = { full: 1 / 60, soft: 0.041, walk: 0.05, light: 0.2, idle: Infinity };
+/** Frames a loop would paint while the rig is stepped for `sec` seconds, as `PetRig.svelte` schedules them. */
+function framesDuring(r: Rig, sec: number, events: (t: number) => void = () => {}): number {
+  let frames = 0;
+  let owed = 0; // time since the last painted frame
+  for (let t = 0; t < sec; t += 1 / 120) {
+    events(t);
+    r.step(1 / 120);
+    owed += 1 / 120;
+    const gap = FRAME_S[r.mode];
+    if (owed >= gap) {
+      frames++;
+      owed = 0;
+    }
+  }
+  return frames;
+}
+
+test("a blink or a tail flick on a standing cat is soft motion that ends in about a second", () => {
+  const r = new Rig();
+  r.setPose("idle", 1, 0, true);
+  for (let i = 0; i < 1200; i++) r.step(1 / 120);
+  assert.equal(r.mode, "idle");
+  r.blink();
+  r.step(1 / 120);
+  assert.equal(r.mode, "soft");
+  let t = 0;
+  while (r.mode !== "idle" && t < 3) { r.step(1 / 120); t += 1 / 120; }
+  assert.ok(t < 1, `a blink settles in under a second, took ${t.toFixed(2)} s`);
+  r.twitch();
+  r.step(1 / 120);
+  assert.equal(r.mode, "soft");
+  t = 0;
+  while (r.mode !== "idle" && t < 3) { r.step(1 / 120); t += 1 / 120; }
+  assert.ok(t < 1.2, `a tail flick settles in about a second, took ${t.toFixed(2)} s`);
+});
+
+test("a pose change is a big motion (full speed); a turn or a hop too", () => {
+  const r = new Rig();
+  r.setPose("idle", 1, 0, true);
+  for (let i = 0; i < 1200; i++) r.step(1 / 120);
+  r.setPose("walk", 1, 0);
+  r.step(1 / 120);
+  assert.equal(r.mode, "full");
+  r.setPose("held", 1, 0);
+  r.step(1 / 120);
+  assert.equal(r.mode, "full");
+});
+
+test("redraw budget: a standing cat that blinks every 4.5 s and flicks its tail every 13 s paints under 6 frames a second, a sleeping cat under 6", () => {
+  const stand = new Rig();
+  stand.setPose("idle", 1, 0, true);
+  let nextBlink = 3;
+  let n = 0;
+  const f = framesDuring(stand, 120, (t) => {
+    if (t >= nextBlink) {
+      stand.blink();
+      if (++n % 3 === 0) stand.twitch();
+      nextBlink += 4.5;
+    }
+  });
+  assert.ok(f / 120 < 6, `standing: ${(f / 120).toFixed(1)} frames per second`);
+  const sleep = new Rig();
+  sleep.setPose("sleep", 1, 0, true);
+  framesDuring(sleep, 6); // falling asleep is a big motion; count the steady state after it
+  const fs = framesDuring(sleep, 60);
+  assert.ok(fs / 60 < 6, `sleeping: ${(fs / 60).toFixed(1)} frames per second`);
+  assert.ok(fs / 60 > 2, "the z's still move");
+});

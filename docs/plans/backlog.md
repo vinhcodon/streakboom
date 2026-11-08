@@ -13,7 +13,7 @@ Status: **proposed 2026-11-08, asked by Vinh to be carried out story by story.**
 
 | Epic | Quality | Done / stories | Where it stands |
 |---|---|---|---|
-| E1 | Presence | 5 / 8 | The pet is there; the CPU cause is found (PR-3 done), the fix (PR-4) is next; PR-6 moved to E8 |
+| E1 | Presence | 6 / 9 | The pet is there; the CPU was cut by about half (PR-4), the target needs a decision (PR-9); PR-6 moved to E8 |
 | E2 | Continuity and growth | 3 / 6 | Memory and tiers exist; growth is not visible |
 | E3 | Consistent personality | 1 / 6 | The character exists; the vague refusal, hour lines, own habits and the Vietnamese review are open |
 | E4 | Two-way care loop | 2 / 5 | Gestures answer; no lasting change yet (weakest) |
@@ -22,7 +22,7 @@ Status: **proposed 2026-11-08, asked by Vinh to be carried out story by story.**
 | E7 | Verification and release | 3 / 9 | The 8-hour soak was stopped at 2 h 23 (memory flat) to diagnose CPU; real keys, devices open; the 0.2.1 to 0.2.2 update was seen working |
 | E8 | Focus-safety and places | 1 / 15 | Spec and ADR-0029 written; code waits for the CPU gate |
 
-Against the roadmap: Phases 0 to 2 done; **Phase 4 in progress** (E7: the soak was stopped early; PR-3 done, PR-4 next; PF-3, PR-8, VE-2, VE-3 open); Phase 3 blocked on keys (VE-4, VE-5, PE-3); Phase 5 not started (E6).
+Against the roadmap: Phases 0 to 2 done; **Phase 4 in progress** (E7: the soak was stopped early; PR-3 and PR-4 done; PF-3, PR-8, VE-2, VE-3 open); Phase 3 blocked on keys (VE-4, VE-5, PE-3); Phase 5 not started (E6).
 
 ## E1. Presence
 | ID | Story | Size | Status | Depends on |
@@ -31,7 +31,8 @@ Against the roadmap: Phases 0 to 2 done; **Phase 4 in progress** (E7: the soak w
 | PR-1 | Eyes follow the cursor while it is over the pet | S | done | |
 | PR-2 | Start with Windows as an opt-in (ADR-0018) | S | done (not verified across a reboot) | |
 | PR-3 | Break the CPU down: idle versus walking versus sleeping, per process, against the budget | S | done 2026-11-08 (about 25 painted frames per second on average; blink and twitch keep the cat in full mode about 20% of the time; CPU follows frames; see the engineering log) | |
-| PR-4 | Bring the CPU within the budget: cap the full mode at about 30 fps outside held or dragged, end a blink or twitch with its own animation, sleep effects at about 5 fps, walk at about 20 fps with fewer window moves; measure after each change with `scripts/cpu-breakdown.ps1` and the in-page profiler | M | ready | PR-3 |
+| PR-4 | Bring the CPU within the budget, first round: a "soft" redraw mode at about 24 fps for blink, twitch and look; sleep at about 5 fps; walk at about 20 fps; springs stop within 1% of target. Result: frames per second 25.4 to 11.5, median CPU 16.9% to 6.9%, samples with no window moving 13.6% to 6.9%, walking 30% to 24% (engineering log). The target of D8 (under 1% standing) is **not** reached | M | done (round 1; unreleased) | PR-3 |
+| PR-9 | Decide the CPU target and do a second round: the floor is about 1.3% plus about 0.55% per painted frame, so under 1% standing is unreachable with software drawing; candidates: sleep at about 3 fps, blinks every 4 to 9 s, a lighter look gesture, shorter walks; or accept about 3 to 5% standing and 15 to 20% walking | S | needs Vinh | PR-4 |
 | PR-5 | Decision: read only the time of the last keyboard or mouse input (no content, no hook) to know whether the user is typing | S | done (rungs 1 and 2 plus fading, ADR-0029) | |
 | PR-6 | The pet stays still while the user is typing | M | merged into FS-3 (spec/06) | |
 | PR-7 | The pet plays more when the user has been idle a while | S | blocked (FS-2) | FS-2 |
@@ -103,15 +104,15 @@ Open question for CO-3: the "rest rhythm" idea (using the habit counts for more 
 | VE-5 | The same for the OpenAI brain | M | blocked (a key) | |
 | VE-6 | A real update from one version to the next (**observed once**: the installed 0.2.1 became 0.2.2 by itself at 22:06:56 on 2026-11-08; who accepted the offer was not observed) and the first real clean-up of an old release (the release after 0.2.3) | S | partly done | next release |
 | VE-7 | Update the installed copy to 0.2.2 | S | done (the app updated itself at 22:06:56) | |
-| VE-8 | A full 8-hour soak on the build after the CPU fix | S | blocked (PR-4) | PR-4 |
+| VE-8 | A full 8-hour soak on the build after the CPU fix | S | blocked (a release with PR-4, and PR-9) | PR-9 |
 
 ## E8. Focus-safety and places (spec/06, plan `character-and-movement.md`)
-Order by decision D2: the CPU baseline (PR-3, PR-4) comes first.
+Order by decision D2: the CPU baseline (PR-3, PR-4, PR-9) comes first; the pure logic FS-1 and the probe FS-2 are ready.
 | ID | Story | Size | Status | Depends on |
 |---|---|---|---|---|
 | FS-0 | Decide the focus-safety rungs and write the ADR (ADR-0029) | S | done | |
-| FS-1 | Pure focus decision `focus.ts` with Node tests (walk and speak permissions, ghost with hysteresis) | S | blocked (PR-4) | PR-4 |
-| FS-2 | Rust probe `focus_probe`: last-input time and pointer offset read by the hit-test thread; `windows-sys` features; Rust test for the tick arithmetic | M | blocked (PR-4) | PR-4 |
+| FS-1 | Pure focus decision `focus.ts` with Node tests (walk and speak permissions, ghost with hysteresis) | S | ready | PR-4 |
+| FS-2 | Rust probe `focus_probe`: last-input time and pointer offset read by the hit-test thread; `windows-sys` features; Rust test for the tick arithmetic | M | ready | PR-4 |
 | FS-3 | Hold walks and unprompted lines while the user is active (replaces PR-6 and PF-4) | M | blocked (FS-1, FS-2) | FS-1, FS-2 |
 | FS-4 | Fade and click-through while the user types near the cat | S | blocked (FS-3) | FS-3 |
 | FS-5 | Manual checks: overlap with a real text box, multi-monitor, DPI, CPU (spec/06 plan) | S | blocked (FS-4) | FS-4 |
@@ -122,8 +123,8 @@ Order by decision D2: the CPU baseline (PR-3, PR-4) comes first.
 | PL-3 | Places in memory, Settings view, Forget and a learning switch | M | blocked (PL-2) | PL-2 |
 | PL-4 | Dragging the cat teaches a favorite spot | S | blocked (PL-1, PL-2) | PL-1, PL-2 |
 | PL-5 | Resting distance by closeness tier | S | blocked (PL-2) | PL-2 |
-| PL-6 | New movement: curl up in a corner (measured for CPU) | M | blocked (PR-4, PL-1) | PR-4 |
-| PL-7 | New movement: a hop along an arc (measured for CPU) | M | blocked (PR-4, PL-1) | PR-4 |
+| PL-6 | New movement: curl up in a corner (measured for CPU) | M | blocked (PL-1) | PL-1 |
+| PL-7 | New movement: a hop along an arc (measured for CPU) | M | blocked (PL-1) | PL-1 |
 
 ## Suggested order
 1. **PR-3** (S): explain the CPU. It decides whether the presence quality is healthy at all, and it is the only open story that needs no decision and no waiting.
