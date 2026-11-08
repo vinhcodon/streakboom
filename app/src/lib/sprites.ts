@@ -77,3 +77,6 @@ export function moodPose(mood: string | undefined, gentle: boolean): PetState {
  */
 export const needsWakeFirst = (from: PetState, to: PetState): boolean =>
   from === "sleep" && to !== "sleep" && to !== "wake" && to !== "drowsy" && to !== "held";
+
+/** Asleep or dozing off: the pet must not start an unprompted line now (a sleeping cat does not talk). */
+export const isDozing = (p: PetState): boolean => p === "sleep" || p === "drowsy";

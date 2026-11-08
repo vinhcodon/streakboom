@@ -39,7 +39,7 @@ The brain request (spec/02) is more natural at tier 2 or 3, but it is triggered 
   - Settings: tray menu, right-click menu on the pet, and the gear in the chat bubble.
   - Hints: one gesture at a time (head scratch, then belly rub), at least 20 hours apart, until the user has done it.
 - **Reactive to the system (no content reading):** time of day, session length and idle time (a timer). Built. Weekday versus weekend, battery low, lid open after absence and holidays: **not built**. No window titles or screen content are read.
-- **Polite:** nothing is said in fullscreen or presentation mode, in quiet hours, in Quiet mode, while dragging or while another bubble is open.
+- **Polite:** nothing is said in fullscreen or presentation mode, in quiet hours, in Quiet mode, while dragging, while another bubble is open, or while the pet is asleep or dozing off (an unprompted line waits and is tried again 2 minutes later; the pet also does not doze off while a bubble is showing).
 
 ## Line system
 - **Line pools by trigger:** greeting, return, morning, night, long session, idle, click, pet, how, milestone, brain hint, gesture hint, belly hint, belly, huff. The "snack" and "play" pools exist and are unused (no buttons any more; reserved for future gestures).

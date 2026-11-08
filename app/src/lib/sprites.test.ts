@@ -1,7 +1,7 @@
 // Run with: node --test src/lib/sprites.test.ts
 import test from "node:test";
 import assert from "node:assert/strict";
-import { needsWakeFirst, TIMED } from "./sprites.ts";
+import { isDozing, needsWakeFirst, TIMED } from "./sprites.ts";
 import type { PetState } from "./sprites.ts";
 
 const ALL: PetState[] = ["idle", "look", "walk", "sleep", "held", "happy", "think", "land", "drowsy", "wake"];
@@ -38,4 +38,8 @@ test("every mood has a reaction, unknown moods are a plain nod, and gentle tone 
   assert.equal(moodPose("sassy", false), "smirk");
   assert.equal(moodPose("sassy", true), "nod");
   assert.equal(moodPose("sad", true), "sad");
+});
+
+test("a dozing pet (asleep or drifting off) does not start an unprompted line; every other pose may", () => {
+  for (const p of ALL) assert.equal(isDozing(p), p === "sleep" || p === "drowsy", p);
 });

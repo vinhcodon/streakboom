@@ -5,7 +5,7 @@
   import { getCurrentWebviewWindow } from "@tauri-apps/api/webviewWindow";
   import { onMount } from "svelte";
   import Pet from "$lib/PetRig.svelte";
-  import { moodPose, needsWakeFirst, TIMED, type PetState } from "$lib/sprites";
+  import { isDozing, moodPose, needsWakeFirst, TIMED, type PetState } from "$lib/sprites";
   import type { Trigger } from "$lib/lines";
   import { pick, remember, resolveLang } from "$lib/selector";
   import { newScratch, scratchStep } from "$lib/gestures";
@@ -388,7 +388,7 @@
     const r = Math.random();
     if (r < 0.5) enter("look");
     else if (r < 0.85) enter("walk");
-    else enter("drowsy"); // yawns first, then falls asleep
+    else enter(bubbleOn ? "look" : "drowsy"); // yawns first, then falls asleep (never while it is speaking)
   }
 
   function startWalk() {
@@ -817,7 +817,7 @@
       mem = resetExtract(addFacts(mem, facts, Date.now(), () => crypto.randomUUID()));
       if (mem.facts.length > before && !mem.aiNotice) {
         mem = { ...mem, aiNotice: true };
-        setTimeout(() => !panel && !bubbleOn && showBubble(ui.memNotice.replace("{company}", ui.providers[providerInfo.active].company), 9000), 2500);
+        setTimeout(() => !panel && !bubbleOn && !isDozing(pose) && showBubble(ui.memNotice.replace("{company}", ui.providers[providerInfo.active].company), 9000), 2500);
       }
       pushSettings();
     } catch (e) {
@@ -1025,6 +1025,7 @@
       busyNow ||
       inQuietHours(data.settings, hour) ||
       pose === "held" ||
+      isDozing(pose) ||
       panel !== null ||
       bubbleOn;
     if (blocked) {
@@ -1080,6 +1081,11 @@
         return scheduleProactive();
       }
     }
+    // The pet may have dozed off while the model was answering: wait, do not talk in its sleep.
+    if (isDozing(pose) || bubbleOn || panel !== null) {
+      proactiveTimer = setTimeout(() => fireProactive(), 2 * MIN);
+      return;
+    }
     if (say(trigger)) markShown();
     scheduleProactive();
   }
@@ -1098,7 +1104,7 @@
         history: [{ role: "user" as const, text: prompt }],
       });
       const reply = clip(out.text);
-      if (quiet || panel !== null || bubbleOn || pose === "held") return false;
+      if (quiet || panel !== null || bubbleOn || pose === "held" || isDozing(pose)) return false;
       enter(moodPose(out.mood, data.settings.gentle));
       showBubble(reply, 5000);
       return true;
@@ -1277,7 +1283,7 @@
         }, 1500);
         setTimeout(shareNextMark, 25_000);
         if (isNew && !data.tour.done) setTimeout(startTour, 4000);
-        if (s.milestone) setTimeout(() => say("milestone", { days: s.milestone! }), 8000);
+        if (s.milestone) setTimeout(() => !isDozing(pose) && say("milestone", { days: s.milestone! }), 8000);
       }
       scheduleProactive();
       // Test hook (like window.__cat): lets a debugger trigger the real unprompted-line path now.
