@@ -51,9 +51,33 @@ function renderDownload() {
   const exe = latest?.assets.find((a) => a.name.endsWith("-setup.exe"));
   if (!exe) return;
   btn.href = exe.browser_download_url;
+  document.getElementById("direct-dl").href = exe.browser_download_url;
   meta.removeAttribute("data-i18n");
   meta.textContent = `${latest.tag_name} · ${(exe.size / 1048576).toFixed(0)} MB · ${fmtDate(latest.published_at)}`;
 }
+
+// Peak is Windows only. On a phone, a Mac or Linux the .exe is useless, so offer to send the link to a PC instead.
+const platform = navigator.userAgentData?.platform || navigator.userAgent;
+const isWindows = /windows/i.test(platform) && !/phone|mobile/i.test(navigator.userAgent);
+document.body.classList.toggle("not-windows", !isWindows);
+
+const shareBtn = document.getElementById("share-btn");
+let toastTimer;
+shareBtn.addEventListener("click", async () => {
+  const url = location.href.split("#")[0];
+  try {
+    if (navigator.share) {
+      await navigator.share({ title: document.title, url });
+      return;
+    }
+    await navigator.clipboard.writeText(url);
+    shareBtn.textContent = t("link_copied");
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => (shareBtn.textContent = t("share_btn")), 2500);
+  } catch {
+    // share sheet dismissed, or clipboard blocked: nothing to do
+  }
+});
 
 // language
 document.getElementById("lang-btn").addEventListener("click", () => applyLang(lang === "vi" ? "en" : "vi"));

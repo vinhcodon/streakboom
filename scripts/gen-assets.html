@@ -1,0 +1,132 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Peak asset generator (dev only)</title>
+<style>
+  body { font: 14px system-ui; margin: 16px; background: #eee; }
+  img { display: block; margin: 8px 0; border: 1px solid #ccc; background: repeating-conic-gradient(#ddd 0 25%, #fff 0 50%) 0 0/16px 16px; max-width: 100%; }
+  button { font: inherit; padding: 6px 14px; }
+  #log { white-space: pre; }
+</style>
+</head>
+<body>
+<p>Draws the share image and icons with the app's own rig (site/peak/), then saves them into the repo.
+Run from <code>node scripts/site-dev.mjs</code>, open <code>/__gen</code>.</p>
+<button id="save">Save all</button>
+<div id="log"></div>
+<div id="out"></div>
+
+<script type="module">
+import { Rig } from "/peak/engine.js";
+import { drawFrame } from "/peak/draw.js";
+import { POSE_KEYS } from "/peak/keys.js";
+
+const GOLD = "#f5b83d";
+const INK = "#3b2f1e";
+
+const canvas = (w, h) => Object.assign(document.createElement("canvas"), { width: w, height: h });
+
+// Peak, standing and smiling, settled, on a transparent canvas of 120*scale px.
+function peak(scale) {
+  const rig = new Rig();
+  rig.setPose("idle", 1, 0, false);
+  for (let i = 0; i < 600; i++) rig.step(1 / 60);
+  const c = canvas(120 * scale, 120 * scale);
+  const x = c.getContext("2d");
+  x.setTransform(scale, 0, 0, scale, 0, 0);
+  drawFrame(x, rig.frame());
+  return c;
+}
+
+function bg(x, w, h) {
+  const g = x.createRadialGradient(w * 0.35, h * 0.3, 0, w * 0.35, h * 0.3, Math.max(w, h) * 0.9);
+  g.addColorStop(0, "#ffefc6");
+  g.addColorStop(1, GOLD);
+  x.fillStyle = g;
+  x.fillRect(0, 0, w, h);
+}
+
+// a square icon: gold tile, Peak's face. `radius` 0 = full bleed (apple-touch), >0 = rounded tile with transparent corners.
+function icon(size, radius) {
+  if (size < 128) {
+    // downscale in two steps so a favicon stays smooth, not blocky
+    const big = icon(256, radius);
+    const c = canvas(size, size);
+    const x = c.getContext("2d");
+    x.imageSmoothingQuality = "high";
+    x.drawImage(big, 0, 0, size, size);
+    return c;
+  }
+  const src = peak(8); // 960px, cropped to the head so it stays readable when tiny
+  const side = 106 * 8, cx = 60 * 8, cy = 60 * 8; // ears (y 22) to chin (y 98) centred with margin
+  const c = canvas(size, size);
+  const x = c.getContext("2d");
+  x.imageSmoothingQuality = "high";
+  if (radius) {
+    x.beginPath();
+    x.roundRect(0, 0, size, size, size * radius);
+    x.clip();
+  }
+  bg(x, size, size);
+  x.drawImage(src, cx - side / 2, cy - side / 2, side, side, size * 0.06, size * 0.06, size * 0.88, size * 0.88);
+  return c;
+}
+
+function share() {
+  const w = 1200, h = 630;
+  const c = canvas(w, h);
+  const x = c.getContext("2d");
+  bg(x, w, h);
+  // soft circle behind the cat
+  x.fillStyle = "rgba(255,255,255,.35)";
+  x.beginPath(); x.arc(310, 330, 250, 0, Math.PI * 2); x.fill();
+  x.drawImage(peak(5), 10, 30, 600, 600);
+  x.fillStyle = INK;
+  x.textBaseline = "alphabetic";
+  x.font = "800 92px 'Segoe UI', system-ui, sans-serif";
+  x.fillText("Streakboom", 600, 255);
+  x.font = "600 40px 'Segoe UI', system-ui, sans-serif";
+  x.fillText("Peak, chú mèo trên màn hình", 604, 335);
+  x.font = "400 38px 'Segoe UI', system-ui, sans-serif";
+  x.fillStyle = "rgba(59,47,30,.85)";
+  x.fillText("A desktop pet cat for Windows", 604, 390);
+  // pill
+  x.fillStyle = INK;
+  x.beginPath(); x.roundRect(604, 440, 520, 62, 31); x.fill();
+  x.fillStyle = "#fff4d6";
+  x.font = "600 30px 'Segoe UI', system-ui, sans-serif";
+  x.fillText("Free · Open source · No AI needed", 640, 482);
+  return c;
+}
+
+const files = {
+  "og-image.jpg": share(),
+  "favicon-32.png": icon(32, 0.22),
+  "apple-touch-icon.png": icon(180, 0),
+  "peak-icon-1024.png": icon(1024, 0.22),
+};
+
+const out = document.getElementById("out");
+for (const [name, c] of Object.entries(files)) {
+  const label = document.createElement("div");
+  label.textContent = `${name} (${c.width}x${c.height})`;
+  const img = new Image();
+  img.src = c.toDataURL(name.endsWith(".jpg") ? "image/jpeg" : "image/png", 0.9);
+  if (c.width < 100) img.style.width = "128px", img.style.imageRendering = "pixelated";
+  else if (c.width > 600) img.style.width = "600px";
+  out.append(label, img);
+}
+
+document.getElementById("save").onclick = async () => {
+  const log = document.getElementById("log");
+  log.textContent = "";
+  for (const [name, c] of Object.entries(files)) {
+    const blob = await new Promise((r) => (name.endsWith(".jpg") ? c.toBlob(r, "image/jpeg", 0.9) : c.toBlob(r, "image/png")));
+    const res = await fetch("/__save/" + name, { method: "POST", body: blob });
+    log.textContent += `${name}: ${await res.text()} (${blob.size} bytes)\n`;
+  }
+};
+</script>
+</body>
+</html>
