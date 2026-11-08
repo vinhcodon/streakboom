@@ -9,19 +9,20 @@ Status: **proposed 2026-11-08, asked by Vinh to be carried out story by story.**
 4. **Done means:** tests for the pure logic, the spec and README updated in the same commit, the engineering-log entry saying what was **not** verified, explicit-path commit (ADR-0023). Behavior the website describes also gets the website session told (README, Release and auto-update, step 1). A release is a separate step the author orders.
 5. Statuses: `done`, `doing`, `ready` (can start), `needs Vinh` (a decision or an action only Vinh can do), `blocked` (waits for something named), `later`.
 
-## Progress (2026-11-08, version 0.2.2)
+## Progress (2026-11-08, version 0.2.2; counts exclude stories merged into others)
 
 | Epic | Quality | Done / stories | Where it stands |
 |---|---|---|---|
-| E1 | Presence | 3 / 9 | The pet is there; the context signal and the CPU question are open |
+| E1 | Presence | 5 / 8 | The pet is there; the CPU cause is found (PR-3 done), the fix (PR-4) is next; PR-6 moved to E8 |
 | E2 | Continuity and growth | 3 / 6 | Memory and tiers exist; growth is not visible |
-| E3 | Consistent personality | 1 / 4 | The character exists; own habits and the Vietnamese review are open |
+| E3 | Consistent personality | 1 / 6 | The character exists; the vague refusal, hour lines, own habits and the Vietnamese review are open |
 | E4 | Two-way care loop | 2 / 5 | Gestures answer; no lasting change yet (weakest) |
-| E5 | Proactive but frugal | 3 / 7 | Polite and rate-limited; timing is not contextual yet (strongest) |
+| E5 | Proactive but frugal | 3 / 6 | Polite and rate-limited; context timing comes through E8 (strongest) |
 | E6 | Measurement and alpha | 1 / 7 | Counters built; no baseline, no tool, no testers |
-| E7 | Verification and release | 1 / 8 | Soak running; real keys, devices and update tests open |
+| E7 | Verification and release | 3 / 9 | The 8-hour soak was stopped at 2 h 23 (memory flat) to diagnose CPU; real keys, devices open; the 0.2.1 to 0.2.2 update was seen working |
+| E8 | Focus-safety and places | 1 / 15 | Spec and ADR-0029 written; code waits for the CPU gate |
 
-Against the roadmap: Phases 0 to 2 done; **Phase 4 in progress** (E7: VE-1 running, PF-3, PR-8, VE-2, VE-3 open); Phase 3 blocked on keys (VE-4, VE-5, PE-3); Phase 5 not started (E6).
+Against the roadmap: Phases 0 to 2 done; **Phase 4 in progress** (E7: the soak was stopped early; PR-3 done, PR-4 next; PF-3, PR-8, VE-2, VE-3 open); Phase 3 blocked on keys (VE-4, VE-5, PE-3); Phase 5 not started (E6).
 
 ## E1. Presence
 | ID | Story | Size | Status | Depends on |
@@ -29,12 +30,12 @@ Against the roadmap: Phases 0 to 2 done; **Phase 4 in progress** (E7: VE-1 runni
 | PR-0 | The pet is always on top, click-through except over the cat, with idle, walk, sleep and wake | M | done | |
 | PR-1 | Eyes follow the cursor while it is over the pet | S | done | |
 | PR-2 | Start with Windows as an opt-in (ADR-0018) | S | done (not verified across a reboot) | |
-| PR-3 | Break the CPU down: idle versus walking versus sleeping, per process, against the budget (the soak shows about 17% of one core on average) | S | doing: outside breakdown done (renderer and GPU dominate, 12% with no window moving, 30% walking, far above the budget); the per-pose attribution needs a restart with the debug port | |
-| PR-4 | Bring the CPU within the budget (idle near 0) | M | blocked (PR-3) | PR-3 |
-| PR-5 | Decision: read only the time of the last keyboard or mouse input (no content, no hook) to know whether the user is typing; reverses a line of spec/05 | S | needs Vinh | |
-| PR-6 | The pet stays still while the user is typing | M | blocked (PR-5) | PR-5 |
-| PR-7 | The pet plays more when the user has been idle a while | S | blocked (PR-5) | PR-5 |
-| PR-8 | Start with Windows across a reboot, and the tray icon after a restart (A7) | S | blocked (the soak ends about 03:40) | VE-1 |
+| PR-3 | Break the CPU down: idle versus walking versus sleeping, per process, against the budget | S | done 2026-11-08 (about 25 painted frames per second on average; blink and twitch keep the cat in full mode about 20% of the time; CPU follows frames; see the engineering log) | |
+| PR-4 | Bring the CPU within the budget: cap the full mode at about 30 fps outside held or dragged, end a blink or twitch with its own animation, sleep effects at about 5 fps, walk at about 20 fps with fewer window moves; measure after each change with `scripts/cpu-breakdown.ps1` and the in-page profiler | M | ready | PR-3 |
+| PR-5 | Decision: read only the time of the last keyboard or mouse input (no content, no hook) to know whether the user is typing | S | done (rungs 1 and 2 plus fading, ADR-0029) | |
+| PR-6 | The pet stays still while the user is typing | M | merged into FS-3 (spec/06) | |
+| PR-7 | The pet plays more when the user has been idle a while | S | blocked (FS-2) | FS-2 |
+| PR-8 | Start with Windows across a reboot, and the tray icon after a restart (A7) | S | ready (the soak no longer runs; needs Vinh to turn the option on and reboot) | |
 
 Acceptance (PR-6, PR-7): measured with a fake input clock in unit tests; no new timer while the pet stands still (idle CPU must not rise).
 
@@ -57,6 +58,8 @@ Open question for CO-3: the "rest rhythm" idea (using the habit counts for more 
 | PE-1 | Export all Vietnamese lines to one file for a native reader to review (and a way to apply the corrections) | S | ready | |
 | PE-2 | The pet's own habits and quirks: about 20 lines per language plus a repeating behavior or two (a favorite spot, a favorite time), with tests | M | ready | |
 | PE-3 | Voice consistency check of the Claude and OpenAI brains with real keys | S | blocked (keys, Phase 3) | VE-4, VE-5 |
+| PE-4 | The vague "too big for a cat" refusal in the persona (no assistant named), with a test or a checked example per language (spec/06 1.4) | S | ready | |
+| PE-5 | A few "on the hour" lines (quirk 4), in both languages, with the line-pool tests | S | ready | |
 
 ## E4. Two-way care loop
 | ID | Story | Size | Status | Depends on |
@@ -73,8 +76,8 @@ Open question for CO-3: the "rest rhythm" idea (using the habit counts for more 
 | PF-0 | Rate limits, quiet rules, never taking focus (ADR-0013 and spec/03) | M | done | |
 | PF-1 | No speaking while asleep or dozing off (0.2.2) | S | done (not seen in the real app) | |
 | PF-2 | AI lines within daily limits; limit refusals in the pet's voice; fact-noting has its own limit (0.2.1, ADR-0027) | S | done | |
-| PF-3 | Stronger silence test (A4): force a line during fullscreen, presentation and screen sharing; confirm nothing shows; also test a sleeping cat (PF-1) | S | blocked (the soak ends; needs a restart with the debug port) | VE-1 |
-| PF-4 | Hold an unprompted line while the user is typing, with a longest wait | M | blocked (PR-5) | PR-5 |
+| PF-3 | Stronger silence test (A4): force a line during fullscreen, presentation and screen sharing; confirm nothing shows; also test a sleeping cat (PF-1) | S | ready (Peak is running with the debug port now) | |
+| PF-4 | Hold an unprompted line while the user is typing, with a longest wait | M | merged into FS-3 (spec/06) | |
 | PF-5 | Tell the pet window when the pet is hidden from the tray, to measure the hide rate | S | ready | |
 | PF-6 | Adapt the line frequency to the engagement rate | M | later (needs a baseline, ME-5) | ME-5 |
 
@@ -93,13 +96,34 @@ Open question for CO-3: the "rest rhythm" idea (using the habit counts for more 
 | ID | Story | Size | Status | Depends on |
 |---|---|---|---|---|
 | VE-0 | Releases 0.2.0 to 0.2.2, the changelog, the two-release rule, the website link | L | done | |
-| VE-1 | The 8-hour memory and CPU soak (A5), started 19:40, ends about 03:40 | S | doing | |
+| VE-1 | The 8-hour memory and CPU soak (A5), started 19:40 | S | done early: stopped at 2 h 23 (memory flat, 121 to 127 MB with one step to 156 MB when an eighth process appeared), to diagnose the CPU; a full run follows after the CPU fix (VE-8) | |
 | VE-2 | Check at 125% and 150% DPI and with several monitors (A2, A3) | S | needs Vinh (a monitor or a display scale change) | |
 | VE-3 | Run on a lower-end second machine (A1) | S | needs Vinh (a machine) | |
 | VE-4 | Real-key test of the Claude brain: connect, chat in both languages, the no-credit and bad-key errors, the mood tags (Phase 3) | M | blocked (a key) | |
 | VE-5 | The same for the OpenAI brain | M | blocked (a key) | |
-| VE-6 | First real update from one version to the next and the first real clean-up of an old release (the release after 0.2.3) | S | later | next release |
-| VE-7 | Update the installed copy to 0.2.2 (after the soak) | S | blocked (VE-1) | VE-1 |
+| VE-6 | A real update from one version to the next (**observed once**: the installed 0.2.1 became 0.2.2 by itself at 22:06:56 on 2026-11-08; who accepted the offer was not observed) and the first real clean-up of an old release (the release after 0.2.3) | S | partly done | next release |
+| VE-7 | Update the installed copy to 0.2.2 | S | done (the app updated itself at 22:06:56) | |
+| VE-8 | A full 8-hour soak on the build after the CPU fix | S | blocked (PR-4) | PR-4 |
+
+## E8. Focus-safety and places (spec/06, plan `character-and-movement.md`)
+Order by decision D2: the CPU baseline (PR-3, PR-4) comes first.
+| ID | Story | Size | Status | Depends on |
+|---|---|---|---|---|
+| FS-0 | Decide the focus-safety rungs and write the ADR (ADR-0029) | S | done | |
+| FS-1 | Pure focus decision `focus.ts` with Node tests (walk and speak permissions, ghost with hysteresis) | S | blocked (PR-4) | PR-4 |
+| FS-2 | Rust probe `focus_probe`: last-input time and pointer offset read by the hit-test thread; `windows-sys` features; Rust test for the tick arithmetic | M | blocked (PR-4) | PR-4 |
+| FS-3 | Hold walks and unprompted lines while the user is active (replaces PR-6 and PF-4) | M | blocked (FS-1, FS-2) | FS-1, FS-2 |
+| FS-4 | Fade and click-through while the user types near the cat | S | blocked (FS-3) | FS-3 |
+| FS-5 | Manual checks: overlap with a real text box, multi-monitor, DPI, CPU (spec/06 plan) | S | blocked (FS-4) | FS-4 |
+| FS-6 | Clarify the "no input hook" line in spec/05 to say what is and is not read | S | blocked (FS-2) | FS-2 |
+| PL-0 | Decision: how zones and favorite spots survive a monitor, DPI or taskbar change (spec/06 2.3 gives a proposal) | S | needs Vinh | |
+| PL-1 | Vertical movement: a Rust `move_to` and the walk along both axes | M | blocked (PL-0, FS-5) | PL-0 |
+| PL-2 | `places.ts`: cell counts, taught spots, tier distance, monitor changes, with Node tests | M | blocked (PL-0) | PL-0 |
+| PL-3 | Places in memory, Settings view, Forget and a learning switch | M | blocked (PL-2) | PL-2 |
+| PL-4 | Dragging the cat teaches a favorite spot | S | blocked (PL-1, PL-2) | PL-1, PL-2 |
+| PL-5 | Resting distance by closeness tier | S | blocked (PL-2) | PL-2 |
+| PL-6 | New movement: curl up in a corner (measured for CPU) | M | blocked (PR-4, PL-1) | PR-4 |
+| PL-7 | New movement: a hop along an arc (measured for CPU) | M | blocked (PR-4, PL-1) | PR-4 |
 
 ## Suggested order
 1. **PR-3** (S): explain the CPU. It decides whether the presence quality is healthy at all, and it is the only open story that needs no decision and no waiting.
