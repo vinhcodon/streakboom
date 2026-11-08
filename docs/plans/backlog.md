@@ -20,7 +20,7 @@ Status: **proposed 2026-11-08, asked by Vinh to be carried out story by story.**
 | E5 | Proactive but frugal | 3 / 6 | Polite and rate-limited; context timing comes through E8 (strongest) |
 | E6 | Measurement and alpha | 1 / 7 | Counters built; no baseline, no tool, no testers |
 | E7 | Verification and release | 4 / 9 | The 8-hour soak was stopped at 2 h 23 (memory flat) to diagnose CPU; real keys, devices open; the 0.2.1 to 0.2.2 update was seen working |
-| E8 | Focus-safety and places | 2 / 15 | Spec and ADR-0029 written; code waits for the CPU gate |
+| E8 | Focus-safety and places | 3 / 15 | Spec and ADR-0029 written; code waits for the CPU gate |
 
 Against the roadmap: Phases 0 to 2 done; **Phase 4 in progress** (E7: the soak was stopped early; PR-3 and PR-4 done; PF-3, PR-8, VE-2, VE-3 open); Phase 3 blocked on keys (VE-4, VE-5, PE-3); Phase 5 not started (E6).
 
@@ -35,7 +35,7 @@ Against the roadmap: Phases 0 to 2 done; **Phase 4 in progress** (E7: the soak w
 | PR-9 | Decide the CPU target and do a second round: the floor is about 1.3% plus about 0.55% per painted frame, so under 1% standing is unreachable with software drawing; candidates: blinks every 4 to 9 s, a lighter look gesture, shorter walks (sleep and walk rates were already tried lower and looked wrong); or accept about 3 to 5% standing and 15 to 20% walking | S | needs Vinh | PR-4 |
 | PR-5 | Decision: read only the time of the last keyboard or mouse input (no content, no hook) to know whether the user is typing | S | done (rungs 1 and 2 plus fading, ADR-0029) | |
 | PR-6 | The pet stays still while the user is typing | M | merged into FS-3 (spec/06) | |
-| PR-7 | The pet plays more when the user has been idle a while | S | blocked (FS-2) | FS-2 |
+| PR-7 | The pet plays more when the user has been idle a while | S | blocked (FS-3) | FS-3 |
 | PR-8 | Start with Windows across a reboot, and the tray icon after a restart (A7) | S | ready (the soak no longer runs; needs Vinh to turn the option on and reboot) | |
 
 Acceptance (PR-6, PR-7): measured with a fake input clock in unit tests; no new timer while the pet stands still (idle CPU must not rise).
@@ -112,11 +112,11 @@ Order by decision D2: the CPU baseline (PR-3, PR-4, PR-9) comes first; the pure 
 |---|---|---|---|---|
 | FS-0 | Decide the focus-safety rungs and write the ADR (ADR-0029) | S | done | |
 | FS-1 | Pure focus decision `focus.ts` with Node tests (walk and speak permissions, ghost with hysteresis) | S | done (`decideFocus`, 14 tests; not wired yet) | PR-4 |
-| FS-2 | Rust probe `focus_probe`: last-input time and pointer offset read by the hit-test thread; `windows-sys` features; Rust test for the tick arithmetic | M | ready | PR-4 |
-| FS-3 | Hold walks and unprompted lines while the user is active (replaces PR-6 and PF-4) | M | blocked (FS-1, FS-2) | FS-1, FS-2 |
+| FS-2 | Rust probe `focus_probe`: last-input time and pointer offset read by the hit-test thread; `windows-sys` features; Rust test for the tick arithmetic | M | done (5 Rust tests; checked in the running app; not called by the page yet) | PR-4 |
+| FS-3 | Hold walks and unprompted lines while the user is active (replaces PR-6 and PF-4) | M | ready | FS-1, FS-2 |
 | FS-4 | Fade and click-through while the user types near the cat | S | blocked (FS-3) | FS-3 |
 | FS-5 | Manual checks: overlap with a real text box, multi-monitor, DPI, CPU (spec/06 plan) | S | blocked (FS-4) | FS-4 |
-| FS-6 | Clarify the "no input hook" line in spec/05 to say what is and is not read | S | blocked (FS-2) | FS-2 |
+| FS-6 | Clarify the "no input hook" line in spec/05 to say what is and is not read | S | ready | FS-2 |
 | PL-0 | Decision: how zones and favorite spots survive a monitor, DPI or taskbar change (spec/06 2.3 gives a proposal) | S | needs Vinh | |
 | PL-1 | Vertical movement: a Rust `move_to` and the walk along both axes | M | blocked (PL-0, FS-5) | PL-0 |
 | PL-2 | `places.ts`: cell counts, taught spots, tier distance, monitor changes, with Node tests | M | blocked (PL-0) | PL-0 |

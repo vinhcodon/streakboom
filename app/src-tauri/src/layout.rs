@@ -24,6 +24,25 @@ pub fn clamp_window(a: Area, x: i32, y: i32, left: i32, top: i32, size: i32) -> 
     (x.clamp(min_x, max_x.max(min_x)), y.clamp(min_y, max_y.max(min_y)))
 }
 
+/// Milliseconds since the user's last keyboard or mouse input, from two readings of the 32-bit
+/// millisecond tick counter (`GetTickCount` now, and the time `GetLastInputInfo` reports). The counter
+/// wraps about every 49.7 days, so the difference is taken with wrapping; a last-input time that is a
+/// moment *ahead* of the reading (input arrived between the two calls) counts as 0.
+pub fn idle_since(now_tick: u32, last_input_tick: u32) -> u32 {
+    let d = now_tick.wrapping_sub(last_input_tick);
+    if d > u32::MAX / 2 { 0 } else { d }
+}
+
+/// Where the pointer is, in logical px, measured from the centre of the cat. `cur` and `win` are physical
+/// px (the pointer and the pet window's top-left); the cat is a `pet_size` square at `(pet_left, pet_top)`
+/// inside the window (logical px). Positive x is to the right, positive y is down.
+#[allow(clippy::too_many_arguments)]
+pub fn pointer_offset(cur_x: f64, cur_y: f64, win_x: f64, win_y: f64, scale: f64, pet_left: f64, pet_top: f64, pet_size: f64) -> (f64, f64) {
+    let lx = (cur_x - win_x) / scale;
+    let ly = (cur_y - win_y) / scale;
+    (lx - (pet_left + pet_size / 2.0), ly - (pet_top + pet_size / 2.0))
+}
+
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize)]
 #[serde(rename_all = "lowercase")]
 pub enum Side {
@@ -140,6 +159,43 @@ mod tests {
         let q = place_bubble(short, 1920 - 120, 0, 120, 240, 80, 2);
         assert_eq!(q.side, Side::Left);
         assert_eq!(q.x, 1920 - 120 - 2 - 240);
+    }
+
+    #[test]
+    fn idle_time_is_the_difference_of_the_tick_counters() {
+        assert_eq!(idle_since(10_000, 4_000), 6_000);
+        assert_eq!(idle_since(5, 5), 0);
+        assert_eq!(idle_since(0, 0), 0);
+    }
+
+    #[test]
+    fn idle_time_survives_the_tick_counter_wrapping_around() {
+        // the counter wraps after about 49.7 days: the last input was 10 ms before the wrap, now is 5 ms after
+        assert_eq!(idle_since(5, u32::MAX - 9), 15);
+        assert_eq!(idle_since(1_000, u32::MAX - 999), 2_000);
+    }
+
+    #[test]
+    fn a_last_input_a_moment_ahead_of_the_reading_counts_as_no_idle_time() {
+        assert_eq!(idle_since(1_000, 1_003), 0);
+        assert_eq!(idle_since(0, 1), 0);
+    }
+
+    #[test]
+    fn the_pointer_offset_is_measured_from_the_cat_centre_in_logical_px() {
+        // pet window at physical (500, 300); cat 120 px at (10, 10), so its centre is (70, 70) inside the window
+        assert_eq!(pointer_offset(570.0, 370.0, 500.0, 300.0, 1.0, 10.0, 10.0, 120.0), (0.0, 0.0));
+        // 100 px to the right and 40 px below the centre
+        assert_eq!(pointer_offset(670.0, 410.0, 500.0, 300.0, 1.0, 10.0, 10.0, 120.0), (100.0, 40.0));
+        // left of and above the centre are negative
+        assert_eq!(pointer_offset(470.0, 350.0, 500.0, 300.0, 1.0, 10.0, 10.0, 120.0), (-100.0, -20.0));
+    }
+
+    #[test]
+    fn the_pointer_offset_is_in_logical_px_at_a_scaled_display() {
+        // at 150% the window is at physical (1500, 900); the centre is at logical (70, 70), physical (105, 105) inside
+        let (dx, dy) = pointer_offset(1500.0 + 105.0 + 150.0, 900.0 + 105.0, 1500.0, 900.0, 1.5, 10.0, 10.0, 120.0);
+        assert!((dx - 100.0).abs() < 1e-9 && dy.abs() < 1e-9, "{dx} {dy}");
     }
 
     #[test]

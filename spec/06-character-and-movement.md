@@ -26,7 +26,7 @@ Verified in `app/src-tauri/src/lib.rs`, `layout.rs`, `app/src/routes/+page.svelt
 - **Movement is one-dimensional.** `startWalk` calls the Rust command `move_by(dx)` every 66 ms at 36 logical px per second for 3 to 8 seconds (about 110 to 290 px), then stops; the direction is random and flips at the edge of the work area. The window's y never changes (it is the start position, bottom-right of the primary monitor, or wherever the user last dragged it, saved in `state.json`). So "walks a little left and right, then sits, no sense of place" is **confirmed**.
 - Idle behavior picks something new every 4 to 11 s: 50% look, 35% walk, 15% doze (`pickNext`).
 - **Rust already reads the global cursor position**: the hit-test thread (`spawn_hit_test`) calls `cursor_position()` every 150 ms (30 ms when the cursor is within 40 px of the window) and `drag_*` use it too. The JS side only sees the cursor while it is over the cat (the eyes). So the pointer is available for almost nothing.
-- **`is_busy` is only `SHQueryUserNotificationState`** (fullscreen, D3D fullscreen, presentation, session locked). There is **no** idle-time call (`GetLastInputInfo` is used nowhere) and no foreground-window call. "Idle time" in spec/03 is a timer inside the app. `windows-sys` has only the `Win32_UI_Shell` feature today; adding input features is a compile-time change, not a new dependency, and adds no network.
+- **`is_busy` is only `SHQueryUserNotificationState`** (fullscreen, D3D fullscreen, presentation, session locked). There is **no** idle-time call (`GetLastInputInfo` is used nowhere) and no foreground-window call. "Idle time" in spec/03 is a timer inside the app. `windows-sys` had only the `Win32_UI_Shell` feature (FS-2 added `Win32_UI_Input_KeyboardAndMouse` and `Win32_System_SystemInformation`); adding input features is a compile-time change, not a new dependency, and adds no network.
 - The pet window (140 x 140 logical px with a 120 px cat) is click-through except over the cat (`set_ignore_cursor_events` from the hit-test thread).
 
 Where the handoff is wrong or old:
@@ -120,7 +120,7 @@ Derived: `active = idleMs < ACTIVE_MS`; `near = pointer known and distance < NEA
 Priority: fullscreen/busy/Quiet mode/asleep rules stay as they are and win; the dragged-to spot is respected when the user is idle and faded when they type near it. A pointer over the cat always turns the ghost off at once (the user wants to touch it).
 
 ### 3.2 Platform interface (small, so a macOS port stays possible)
-- Rust: `focus_probe() -> { idle_ms: Option<u32>, dx: Option<f64>, dy: Option<f64> }`, the pointer offset from the cat's center in logical px. On non-Windows `idle_ms` is `None` and the pet behaves as today.
+- Rust (built in FS-2): `focus_probe() -> { idleMs, dx, dy, over }` (JSON, camelCase): the idle time in ms (`null` where it cannot be read), the pointer offset from the cat's center in logical px (`null` when the pet window is hidden or the pointer could not be read) and whether the pointer is on the cat (the existing hit region). On non-Windows `idle_ms` is `None` and the pet behaves as today.
 - The hit-test thread already wakes every 150 ms and already reads the cursor; it stores the latest pointer and calls `GetLastInputInfo` there into atomics, and `focus_probe` only reads them (no extra thread, no extra syscalls per call). The pet window reads the probe about once a second while visible, and immediately before starting a walk or an unprompted line. **Idle CPU must not rise** (measured, plan step 3).
 
 ## 4. Privacy

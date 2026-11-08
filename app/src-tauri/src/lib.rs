@@ -12,7 +12,7 @@ use std::{
     path::PathBuf,
     sync::{
         Mutex,
-        atomic::{AtomicBool, AtomicU64, Ordering},
+        atomic::{AtomicBool, AtomicU32, AtomicU64, Ordering},
     },
     time::{Duration, Instant, SystemTime, UNIX_EPOCH},
 };
@@ -97,6 +97,16 @@ struct AppState {
     /// Bumped whenever the bubble is shown or hidden; lets the delayed "destroy when idle"
     /// know whether the bubble was used again in the meantime.
     bubble_gen: AtomicU64,
+    /// Latest focus-safety readings (spec/06 section 3.2, ADR-0029), written by the hit-test thread (which
+    /// already wakes every 30 to 150 ms and already reads the pointer) and read by `focus_probe`.
+    /// `u32::MAX` = the idle time is unknown; the offsets are `f64` bits.
+    focus_idle_ms: AtomicU32,
+    focus_dx: AtomicU64,
+    focus_dy: AtomicU64,
+    /// The pointer reading is valid (the pet window is visible and the pointer was read).
+    focus_ptr: AtomicBool,
+    /// The pointer is on the cat (inside its hit region).
+    focus_over: AtomicBool,
 }
 
 fn now_ms() -> u64 {
@@ -183,6 +193,54 @@ fn is_busy() -> bool {
     #[cfg(not(windows))]
     {
         false
+    }
+}
+
+// ------------------------------------------------------------ focus-safety probe
+
+/// What the focus-safety logic needs (`src/lib/focus.ts`): how long ago the user last did anything, and where
+/// the pointer is relative to the cat. One number and one position; no key identity, no hook, nothing stored.
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+struct FocusProbe {
+    /// Milliseconds since the last keyboard or mouse input; None where it cannot be read (not Windows).
+    idle_ms: Option<u32>,
+    /// Pointer offset from the cat's centre in logical px (right and down are positive); None when unknown.
+    dx: Option<f64>,
+    dy: Option<f64>,
+    /// The pointer is on the cat itself.
+    over: bool,
+}
+
+/// Milliseconds since the last user input (Windows: `GetLastInputInfo`). None elsewhere or on failure.
+fn last_input_idle_ms() -> Option<u32> {
+    #[cfg(windows)]
+    {
+        use windows_sys::Win32::System::SystemInformation::GetTickCount;
+        use windows_sys::Win32::UI::Input::KeyboardAndMouse::{GetLastInputInfo, LASTINPUTINFO};
+        let mut li = LASTINPUTINFO { cbSize: std::mem::size_of::<LASTINPUTINFO>() as u32, dwTime: 0 };
+        // SAFETY: `li` is a valid LASTINPUTINFO with its size set, as the call requires.
+        if unsafe { GetLastInputInfo(&mut li) } == 0 {
+            return None;
+        }
+        Some(layout::idle_since(unsafe { GetTickCount() }, li.dwTime))
+    }
+    #[cfg(not(windows))]
+    {
+        None
+    }
+}
+
+/// The latest readings of the hit-test thread (no system call here: a few atomic loads).
+#[tauri::command]
+fn focus_probe(state: State<AppState>) -> FocusProbe {
+    let idle = state.focus_idle_ms.load(Ordering::Relaxed);
+    let ptr = state.focus_ptr.load(Ordering::Relaxed);
+    FocusProbe {
+        idle_ms: if idle == u32::MAX { None } else { Some(idle) },
+        dx: ptr.then(|| f64::from_bits(state.focus_dx.load(Ordering::Relaxed))),
+        dy: ptr.then(|| f64::from_bits(state.focus_dy.load(Ordering::Relaxed))),
+        over: ptr && state.focus_over.load(Ordering::Relaxed),
     }
 }
 
@@ -846,6 +904,10 @@ fn spawn_hit_test(app: AppHandle, win: WebviewWindow) {
         loop {
             let state = app.state::<AppState>();
             let mut delay = 150;
+            let mut ptr_ok = false;
+            state
+                .focus_idle_ms
+                .store(last_input_idle_ms().unwrap_or(u32::MAX), Ordering::Relaxed);
             if win.is_visible().unwrap_or(false) {
                 if let (Ok(cur), Ok(pos), Ok(size), Ok(scale)) = (
                     win.cursor_position(),
@@ -862,6 +924,11 @@ fn spawn_hit_test(app: AppHandle, win: WebviewWindow) {
                     }
                     let r = *state.hit.lock().unwrap();
                     let inside = lx >= r.x && lx <= r.x + r.w && ly >= r.y && ly <= r.y + r.h;
+                    let (dx, dy) = layout::pointer_offset(cur.x, cur.y, pos.x as f64, pos.y as f64, scale, PET_LEFT, PET_TOP, PET_SIZE);
+                    state.focus_dx.store(dx.to_bits(), Ordering::Relaxed);
+                    state.focus_dy.store(dy.to_bits(), Ordering::Relaxed);
+                    state.focus_over.store(inside, Ordering::Relaxed);
+                    ptr_ok = true;
                     // While dragging the window follows the cursor and must keep receiving events.
                     let want_ignore = !inside && !state.dragging.load(Ordering::Relaxed);
                     if ignoring != Some(want_ignore) {
@@ -870,6 +937,7 @@ fn spawn_hit_test(app: AppHandle, win: WebviewWindow) {
                     }
                 }
             }
+            state.focus_ptr.store(ptr_ok, Ordering::Relaxed);
             if state.dirty.load(Ordering::Relaxed) && last_flush.elapsed() > Duration::from_secs(1) {
                 write_prefs(&state);
                 last_flush = Instant::now();
@@ -966,6 +1034,11 @@ pub fn run() {
                 }),
                 dirty: AtomicBool::new(false),
                 last_self_move_ms: AtomicU64::new(now_ms()),
+                focus_idle_ms: AtomicU32::new(u32::MAX),
+                focus_dx: AtomicU64::new(0),
+                focus_dy: AtomicU64::new(0),
+                focus_ptr: AtomicBool::new(false),
+                focus_over: AtomicBool::new(false),
                 dragging: AtomicBool::new(false),
                 drag: Mutex::new(DragStart::default()),
                 bubble: Mutex::new(BubbleState::default()),
@@ -1038,6 +1111,7 @@ pub fn run() {
             brain_models,
             brain_model,
             brain_set_model,
+            focus_probe,
             open_website,
             brain_provider,
             brain_set_provider,
