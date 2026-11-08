@@ -27,7 +27,7 @@
   const reduceMotion = typeof matchMedia === "function" && matchMedia("(prefers-reduced-motion: reduce)").matches;
 
   const interactive = $derived(
-    view.kind === "chat" || view.kind === "ask" || view.kind === "consent" || view.kind === "update" || view.kind === "input"
+    view.kind === "chat" || view.kind === "ask" || view.kind === "consent" || view.kind === "update" || view.kind === "input" || view.kind === "choice"
   );
   const hasBrain = $derived(view.kind === "chat" && view.canChat);
   const chatReady = $derived(view.kind === "chat" && view.canChat && view.phase !== "thinking");
@@ -174,6 +174,12 @@
         <div class="row end">
           <button class="btn" onclick={() => fromBubble({ type: "ask-later" })}>{view.later}</button>
           <button class="btn primary" onclick={() => fromBubble({ type: "ask-yes" })}>{view.yes}</button>
+        </div>
+      {:else if view.kind === "choice"}
+        <div class="say">{view.text}</div>
+        <div class="row end">
+          <button class="btn" onclick={() => view.kind === "choice" && fromBubble({ type: "choice", id: view.id, yes: false })}>{view.later}</button>
+          <button class="btn primary" onclick={() => view.kind === "choice" && fromBubble({ type: "choice", id: view.id, yes: true })}>{view.yes}</button>
         </div>
       {:else if view.kind === "update"}
         <div class="say">{view.text}</div>

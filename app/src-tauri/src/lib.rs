@@ -128,6 +128,21 @@ fn save_pet(state: State<AppState>, json: String) -> Result<(), String> {
     fs::rename(&tmp, &state.pet_path).map_err(|e| e.to_string())
 }
 
+/// Whether the pet starts when the user logs in to Windows.
+#[tauri::command]
+fn autostart_get(app: AppHandle) -> bool {
+    use tauri_plugin_autostart::ManagerExt;
+    app.autolaunch().is_enabled().unwrap_or(false)
+}
+
+#[tauri::command]
+fn autostart_set(app: AppHandle, on: bool) -> Result<bool, String> {
+    use tauri_plugin_autostart::ManagerExt;
+    let launch = app.autolaunch();
+    if on { launch.enable() } else { launch.disable() }.map_err(|e| e.to_string())?;
+    Ok(launch.is_enabled().unwrap_or(false))
+}
+
 /// What the pet remembers about the user: its own file, also an opaque JSON string owned by the
 /// frontend, so the user (or "Forget everything") can remove it without touching the pet's state.
 #[tauri::command]
@@ -785,6 +800,8 @@ pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_updater::Builder::new().build())
+        // Starting with Windows is the user's choice (Settings, or the one-time question from the pet).
+        .plugin(tauri_plugin_autostart::init(tauri_plugin_autostart::MacosLauncher::LaunchAgent, None))
         .manage(updater::PendingUpdate::default())
         .setup(|app| {
             let dir = app.path().app_data_dir()?;
@@ -871,6 +888,8 @@ pub fn run() {
             load_pet,
             save_pet,
             load_memory,
+            autostart_get,
+            autostart_set,
             save_memory,
             is_busy,
             brain_status,

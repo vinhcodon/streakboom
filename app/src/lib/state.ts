@@ -186,6 +186,20 @@ export const snoozeUpdate = (d: PetData, version: string, now: number): PetData 
   update: { offered: version, snoozeUntil: now + UPDATE_SNOOZE_MS },
 });
 
+/** The one-time question "start with Windows?": twice at most, days apart, never on the first day. */
+export interface StartupMeta {
+  asks: number;
+  lastAsk: number;
+  done: boolean; // they answered yes, or turned it on themselves
+}
+export const MAX_STARTUP_ASKS = 2;
+export const STARTUP_ASK_GAP_MS = 3 * 24 * 3_600_000;
+export const defaultStartup = (): StartupMeta => ({ asks: 0, lastAsk: 0, done: false });
+export const shouldAskStartup = (d: PetData, now: number, daysUsed: number): boolean =>
+  !d.startup.done && d.startup.asks < MAX_STARTUP_ASKS && daysUsed >= 2 && now - d.startup.lastAsk >= STARTUP_ASK_GAP_MS;
+export const recordStartupAsk = (d: PetData, now: number): PetData => ({ ...d, startup: { ...d.startup, asks: d.startup.asks + 1, lastAsk: now } });
+export const markStartupDone = (d: PetData): PetData => ({ ...d, startup: { ...d.startup, done: true } });
+
 export const MAX_BRAIN_ASKS = 3;
 export const BRAIN_SNOOZE_MS = 2 * 24 * 3_600_000;
 export const MENU_OPENS_BEFORE_ASK = 3;
@@ -209,6 +223,7 @@ export interface PetData {
   telemetry: Telemetry;
   gestures: GestureMeta;
   update: UpdateMeta;
+  startup: StartupMeta;
 }
 
 export type InteractKind = "click" | "pet" | "snack" | "play" | "how";
@@ -246,6 +261,7 @@ export function defaultData(now: number): PetData {
     telemetry: defaultTelemetry(),
     gestures: defaultGestures(),
     update: defaultUpdate(),
+    startup: defaultStartup(),
   };
 }
 
@@ -296,6 +312,11 @@ export function parse(json: string | null | undefined, now: number): PetData {
       update: {
         offered: typeof o.update?.offered === "string" ? o.update.offered.slice(0, 40) : "",
         snoozeUntil: num(o.update?.snoozeUntil, 0),
+      },
+      startup: {
+        asks: clamp(Math.floor(num(o.startup?.asks, 0)), 0, 99),
+        lastAsk: num(o.startup?.lastAsk, 0),
+        done: o.startup?.done === true,
       },
       gestures: {
         scratches: clamp(Math.floor(num(o.gestures?.scratches, 0)), 0, 999999),

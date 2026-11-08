@@ -56,7 +56,10 @@
     interact,
     parse,
     recordAi,
+    markStartupDone,
     recordAsk,
+    recordStartupAsk,
+    shouldAskStartup,
     recordConsentAsk,
     recordEvent,
     recordBellyHint,
@@ -90,7 +93,7 @@
   const MIN = 60_000;
   const MAX_REPLY_CHARS = 240;
 
-  type Panel = null | "chat" | "ask" | "consent" | "update" | "input";
+  type Panel = null | "chat" | "ask" | "consent" | "update" | "input" | "choice";
   type Turn = { role: "user" | "model"; text: string };
 
   let pose = $state<PetState>("idle");
@@ -239,6 +242,20 @@
     scheduleSave();
   }
 
+  async function answerStartup(yes: boolean) {
+    closePanel();
+    if (!yes) return;
+    try {
+      if (await invoke<boolean>("autostart_set", { on: true })) {
+        data = markStartupDone(data);
+        scheduleSave();
+        showBubble(ui.startupOn, 6000);
+      }
+    } catch {
+      /* the setting stays off; Settings shows the real state */
+    }
+  }
+
   function answerInput(field: MemField, value: string) {
     mem = setName(mem, field, value);
     closePanel();
@@ -348,10 +365,10 @@
   /** The chat and the ask card close themselves when left alone (never while typing or waiting). */
   function resetMenuTimer() {
     clearTimeout(menuTimer);
-    if (panel !== "chat" && panel !== "ask" && panel !== "update" && panel !== "input") return;
+    if (panel !== "chat" && panel !== "ask" && panel !== "update" && panel !== "input" && panel !== "choice") return;
     // An idle chat closes by itself, as before (any click or key in the bubble starts the wait
     // again), but never while there is text in the box (see the check below).
-    const ms = panel === "input" ? 60_000 : panel === "update" ? 30_000 : panel === "chat" && chatPhase === "reply" ? 20_000 : 12_000;
+    const ms = panel === "input" ? 60_000 : panel === "update" || panel === "choice" ? 30_000 : panel === "chat" && chatPhase === "reply" ? 20_000 : 12_000;
     menuTimer = setTimeout(() => {
       if ((panel === "chat" || panel === "input") && (chatDraft || busy)) resetMenuTimer();
       else {
@@ -734,6 +751,9 @@
       case "chat-blocked":
         onChatBlocked();
         break;
+      case "choice":
+        if (panel === "choice") void answerStartup(a.yes);
+        break;
       case "alive":
         resetMenuTimer();
         break;
@@ -825,6 +845,9 @@
   function onSettingsPatch(p: SettingsPatch) {
     if (p.type === "setting") {
       setSetting(p.key, p.value as never);
+    } else if (p.type === "startup") {
+      if (p.on) data = markStartupDone(data);
+      scheduleSave();
     } else if (p.type === "mem") {
       onMemPatch(p);
     } else if (p.type === "consent") {
@@ -897,6 +920,18 @@
       }
     }
     if (shareNextMark()) return scheduleProactive();
+    if (shouldAskStartup(data, t, mem.days)) {
+      const already = await invoke<boolean>("autostart_get").catch(() => false);
+      if (already) {
+        data = markStartupDone(data);
+        scheduleSave();
+      } else {
+        data = recordStartupAsk(data, t);
+        openPanel("choice");
+        scheduleSave();
+        return scheduleProactive();
+      }
+    }
     const said = data.said;
     let trigger: Trigger = "idle";
     if ((hour >= 23 || hour < 5) && t - (said.night ?? 0) > 60 * MIN) trigger = "night";
@@ -978,6 +1013,7 @@
         skip: ui.nameSkip,
       };
     }
+    if (panel === "choice") return { kind: "choice", id: "startup", text: ui.startupAsk, yes: ui.startupYes, later: ui.startupLater };
     if (panel === "ask") return { kind: "ask", text: ui.askText, yes: ui.askYes, later: ui.askLater };
     if (panel === "update") {
       return { kind: "update", text: ui.updateText.replace("{v}", updateVersion), yes: ui.updateYes, later: ui.updateLater };

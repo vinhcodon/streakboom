@@ -42,6 +42,18 @@
   let upInfo = $state<{ version: string } | null>(null);
   let upMsg = $state("");
 
+  // Start with Windows (the real setting lives in Windows; this only reads and flips it)
+  let autostart = $state(false);
+  async function setAutostart(on: boolean) {
+    autostart = on;
+    try {
+      autostart = await invoke<boolean>("autostart_set", { on });
+      void fromSettings({ type: "startup", on: autostart });
+    } catch {
+      autostart = !on;
+    }
+  }
+
   // "Copy stats": the opted-in events as JSON on the clipboard, for the user to hand over.
   let statsCopied = $state(false);
   async function copyStats() {
@@ -278,6 +290,7 @@
     window.addEventListener("focus", onFocus);
     cleanups.push(() => window.removeEventListener("focus", onFocus));
     getVersion().then((v) => (version = v)).catch(() => {});
+    invoke<boolean>("autostart_get").then((v) => (autostart = v)).catch(() => {});
     invoke<boolean>("update_enabled").then((v) => (updatesOn = v)).catch(() => {});
     (async () => {
       const win = getCurrentWebviewWindow();
@@ -319,6 +332,11 @@
         <input type="checkbox" checked={s.gentle} onchange={(e) => patch("gentle", e.currentTarget.checked)} />
         {ui.gentle}
       </label>
+      <label class="chk">
+        <input type="checkbox" checked={autostart} onchange={(e) => setAutostart(e.currentTarget.checked)} />
+        {ui.autostart}
+      </label>
+      <p class="muted">{ui.autostartNote}</p>
       <div class="row">
         <label class="chk">
           <input type="checkbox" checked={s.qhOn} onchange={(e) => patch("qhOn", e.currentTarget.checked)} />

@@ -22,6 +22,8 @@ export type BubbleView =
   | { kind: "ask"; text: string; yes: string; later: string }
   | { kind: "consent"; text: string; note: string; yes: string; no: string }
   | { kind: "update"; text: string; yes: string; later: string }
+  // a yes/not-now question about a setting (currently only "start with Windows")
+  | { kind: "choice"; id: "startup"; text: string; yes: string; later: string }
   // a one-line question the user answers by typing (the pet's name, what to call the user)
   | { kind: "input"; field: MemField; text: string; placeholder: string; ok: string; skip: string };
 
@@ -32,6 +34,7 @@ export type BubbleAction =
   | { type: "chat-send"; text: string }
   | { type: "chat-blocked" } // the disabled text box was clicked (no brain yet)
   | { type: "typing"; nonEmpty: boolean }
+  | { type: "choice"; id: "startup"; yes: boolean }
   | { type: "alive" } // the user is still here (clicked, focused or pressed a key in the bubble)
   | { type: "close" }
   | { type: "ask-yes" }
@@ -75,6 +78,7 @@ export interface SettingsSnapshot {
 export type SettingsPatch =
   | { type: "setting"; key: keyof Settings; value: Settings[keyof Settings] }
   | { type: "consent"; yes: boolean }
+  | { type: "startup"; on: boolean } // they changed "start with Windows" in Settings
   | { type: "mem"; action: "set"; field: MemField; value: string }
   | { type: "mem"; action: "learn"; value: boolean }
   | { type: "mem"; action: "fact-set"; id: string; value: string }

@@ -83,6 +83,12 @@ export interface UiStrings {
   memForgetAll: string;
   memForgetNote: string;
   memEmpty: string;
+  autostart: string;
+  autostartNote: string;
+  startupAsk: string;
+  startupYes: string;
+  startupLater: string;
+  startupOn: string;
   memAi: string;
   memAiNote: string;
   memFacts: string;
@@ -198,6 +204,12 @@ export const UI: Record<Lang, UiStrings> = {
     memForgetAll: "Forget everything",
     memForgetNote: "Forgetting habits keeps the names. Forgetting everything also removes the names.",
     memEmpty: "Nothing yet.",
+    autostart: "Start when I log in to Windows",
+    autostartNote: "The pet appears by itself each time you turn on your computer. You can turn this off here any time.",
+    startupAsk: "Want me to wake up with your computer? Then I'm already here when you sit down.",
+    startupYes: "Yes, start with Windows",
+    startupLater: "Not now",
+    startupOn: "Done. I'll be here when you log in. Change it any time in Settings.",
     memAi: "Remember things I tell it in chats",
     memAiNote: "On by default. Every chat you start sends these notes to Google along with your message so the pet can use them, and a short extra request picks new ones out of your chat. Turn it off to stop both.",
     memFacts: "What it noted from chats",
@@ -323,6 +335,12 @@ export const UI: Record<Lang, UiStrings> = {
     memForgetAll: "Quên hết",
     memForgetNote: "Quên thói quen vẫn giữ tên. Quên hết thì xóa cả tên.",
     memEmpty: "Chưa có gì.",
+    autostart: "Tự chạy khi tôi đăng nhập Windows",
+    autostartNote: "Pet tự xuất hiện mỗi lần bạn bật máy. Bạn tắt được ở đây bất cứ lúc nào.",
+    startupAsk: "Mình tự thức dậy cùng máy tính của bạn nhé? Bạn ngồi xuống là mình đã ở đây rồi.",
+    startupYes: "Có, chạy cùng Windows",
+    startupLater: "Để sau",
+    startupOn: "Xong. Mình sẽ có mặt khi bạn đăng nhập. Đổi lại bất cứ lúc nào trong Cài đặt.",
     memAi: "Nhớ những điều tôi kể trong lúc trò chuyện",
     memAiNote: "Bật sẵn. Mỗi cuộc trò chuyện bạn bắt đầu sẽ gửi các ghi chú này cho Google cùng tin nhắn để pet dùng, và một yêu cầu nhỏ thêm sẽ rút ý mới từ cuộc trò chuyện. Tắt đi là dừng cả hai.",
     memFacts: "Những điều đã ghi từ trò chuyện",

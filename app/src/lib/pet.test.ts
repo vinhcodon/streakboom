@@ -341,3 +341,19 @@ test("the belly hint waits for the head scratch, is spaced out, limited, and sto
   assert.equal(shouldHintBelly(d, T + 200 * HOUR), false); // max 2
   assert.equal(shouldHintBelly(recordRub(recordScratch(defaultData(T))), T + 90 * HOUR), false);
 });
+
+import { markStartupDone, recordStartupAsk, shouldAskStartup } from "./state.ts";
+
+test("the 'start with Windows' question is polite: not on day one, twice at most, spaced, never after yes", () => {
+  const T = Date.UTC(2026, 10, 8);
+  let d = defaultData(T);
+  assert.equal(shouldAskStartup(d, T, 1), false); // first day of use
+  assert.equal(shouldAskStartup(d, T + 5 * HOUR, 2), true);
+  d = recordStartupAsk(d, T);
+  assert.equal(shouldAskStartup(d, T + 10 * HOUR, 3), false); // too soon
+  assert.equal(shouldAskStartup(d, T + 80 * HOUR, 3), true);
+  d = recordStartupAsk(d, T + 80 * HOUR);
+  assert.equal(shouldAskStartup(d, T + 400 * HOUR, 9), false); // twice is enough
+  assert.equal(shouldAskStartup(markStartupDone(defaultData(T)), T + 400 * HOUR, 9), false);
+  assert.deepEqual(parse(JSON.stringify({ mood: 50 }), T).startup, { asks: 0, lastAsk: 0, done: false });
+});
