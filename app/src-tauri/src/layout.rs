@@ -74,7 +74,19 @@ pub fn idle_since(now_tick: u32, last_input_tick: u32) -> u32 {
     if d > u32::MAX / 2 { 0 } else { d }
 }
 
-/// Reading of the left mouse button from `GetAsyncKeyState` (`raw`): whether it is down now (the high bit) and whether
+/// Virtual-key codes of the two physical mouse buttons (`VK_LBUTTON` and `VK_RBUTTON`).
+pub const VK_PHYSICAL_LEFT: i32 = 0x01;
+pub const VK_PHYSICAL_RIGHT: i32 = 0x02;
+
+/// The key code to read for the button the user clicks with (the *primary* button, the one that puts the caret in a
+/// field). `GetAsyncKeyState` reports the **physical** buttons, not the logical ones: with the buttons swapped in
+/// Windows (`GetSystemMetrics(SM_SWAPBUTTON)` is non-zero, usual for left-handed users) the primary button is the
+/// physical right one, so reading the physical left button would record the wrong clicks (V-22).
+pub fn primary_button_vk(swapped: bool) -> i32 {
+    if swapped { VK_PHYSICAL_RIGHT } else { VK_PHYSICAL_LEFT }
+}
+
+/// Reading of the primary mouse button from `GetAsyncKeyState` (`raw`): whether it is down now (the high bit) and whether
 /// it was pressed since the previous reading (the low bit). A button, never a key: nothing else is read (T8, ADR-0031).
 pub fn button_bits(raw: i16) -> (bool, bool) {
     (raw < 0, raw & 1 != 0)
@@ -320,6 +332,13 @@ mod tests {
         assert_eq!(clamp_to_world(&mons, 9000, 100, pet), Some((1920 + 2880 - 15 - 180, 100, true)));
         assert_eq!(clamp_to_world(&mons, 3000, 9000, pet), Some((3000, 1560 - 15 - 180, true)));
         assert_eq!(clamp_to_world(&[], 0, 0, pet), None);
+    }
+
+    #[test]
+    fn the_primary_button_is_the_physical_right_one_when_the_buttons_are_swapped() {
+        assert_eq!(primary_button_vk(false), VK_PHYSICAL_LEFT);
+        assert_eq!(primary_button_vk(true), VK_PHYSICAL_RIGHT);
+        assert_eq!((VK_PHYSICAL_LEFT, VK_PHYSICAL_RIGHT), (0x01, 0x02)); // VK_LBUTTON and VK_RBUTTON
     }
 
     #[test]

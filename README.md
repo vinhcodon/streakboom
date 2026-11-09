@@ -64,7 +64,7 @@ On a fresh install the pet shows a four-card tour (replay it in Settings, About)
 - With Google's free tier, what you send may be used and read by Google, and API users must be 18 or older (clients in the EEA, Switzerland and the UK must use paid services). For Claude and OpenAI, what you send goes to Anthropic or OpenAI to be answered; see their terms. The app says so before you connect.
 - Chats are kept in memory only. What the pet remembers is stored on your computer in `memory.json`: the names you gave, coarse habit counts (for example how many sessions began in each hour of the day), touch counts, milestones and the short facts it noted from your chats. The facts are sent to the brain you use, together with later chats you start. You can see, edit, delete or switch off all of it in Settings > Memory.
 - **Usage stats are off by default.** If you opt in, the app records funnel event names (for example "opened the chat") and timestamps with a random id, in a local queue. Nothing is sent automatically; **Settings, Privacy, Copy stats** puts it on your clipboard so you can share it by hand. Opting out deletes the id and the queue. A second switch, **Daily activity counts**, adds a few numbers per day (scratches, rubs, pokes, messages sent, lines the pet said and you reacted to, minutes the app ran, times Quiet mode was switched on): only counts, never text. Anyone who agreed to the first, narrower wording is asked again and is not counted until they say yes; turning the switch off deletes the numbers. Details: `spec/05-north-star-metrics.md`.
-- **What Peak notices around it.** To keep out of your way Peak reads only *when* you last used the keyboard or the mouse (one number, never which keys), where the pointer is, and whether the left mouse button is pressed (so it remembers where you last clicked and can guess which row you are typing on). It never reads what you type, which keys you press, what is on your screen, window titles or app names. These readings are kept only in memory, are never written to a file or sent anywhere, and are gone when Peak closes.
+- **What Peak notices around it.** To keep out of your way Peak reads only *when* you last used the keyboard or the mouse (one number, never which keys), where the pointer is, and whether the primary mouse button (the one you click with) is pressed (so it remembers where you last clicked and can guess which row you are typing on). It never reads what you type, which keys you press, what is on your screen, window titles or app names. These readings are kept only in memory, are never written to a file or sent anywhere, and are gone when Peak closes.
 - Files live in `%APPDATA%\com.streakboom.app\`: `state.json` (window position, Quiet mode, the brain in use and the chosen models), `pet.json` (everything else about the pet) and `memory.json` (what it remembers).
 
 ## Project layout 🗂️
@@ -77,7 +77,7 @@ app/                    the application (Tauri 2 + SvelteKit + Svelte 5)
                         walk easing (gait.ts), hops and falls (hop.ts), the typing lane (lane.ts)
   src/routes/           the three windows: + page (the pet), bubble/, settings/
   src-tauri/            the Rust core: window control, drag and bubble placement, monitor geometry
-                        (layout.rs), the focus probe (idle time, pointer, left button), flights of the
+                        (layout.rs), the focus probe (idle time, pointer, primary mouse button), flights of the
                         window (lib.rs), the brains and credential store (brain.rs, claude.rs, openai.rs),
                         updater (updater.rs)
 scripts/                release.ps1 (signed build and update manifest), test-update/ (configs
@@ -108,7 +108,7 @@ npm run tauri dev          # run the app with hot reload
 ```powershell
 npm test                   # Node tests for the pure logic (src/lib/*.test.ts), 157 tests
 npm run check              # svelte-check (types)
-cd src-tauri; cargo test   # Rust tests (the three brain clients against a mock server, window and monitor geometry, the focus probe), 53 tests
+cd src-tauri; cargo test   # Rust tests (the three brain clients against a mock server, window and monitor geometry, the focus probe), 54 tests
 ```
 
 ```powershell

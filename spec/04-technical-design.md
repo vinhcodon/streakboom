@@ -25,7 +25,7 @@ Three windows. The pet window owns all state and logic; the others are views (AD
             hit-test thread (click-through except over the pet), tray + right-click menu,
             credential store, brain clients (three providers), updater, autostart,
             atomic save of pet.json, memory.json and state.json,
-            focus probe (idle time, pointer, left button) in the hit-test thread,
+            focus probe (idle time, pointer, primary mouse button) in the hit-test thread,
             monitor geometry and flights of the window (hops and falls)
 ```
 
@@ -38,7 +38,7 @@ Principles:
 
 ### 2b. Attention, movement and the typing lane (0.2.4 and 0.2.5)
 All of it follows the sensory contract of ADR-0031: Peak perceives shapes and activity, never meaning; nothing here is stored or sent.
-- **The probe.** The hit-test thread in Rust, which already wakes every 30 to 150 ms to read the pointer, also reads the time since the last input (`GetLastInputInfo`, one number, no hook), the cat's centre, whether the left mouse button is down (`GetAsyncKeyState`, a button, never a key) and the last click made away from the cat (when and where, in memory only). The page reads them with `focus_probe` and is told with the event `focus-hint` only when "the user may be working near the cat" starts or ends (active within 3 s and the pointer within 250 px, or a recent click on the cat's row), so a standing cat costs nothing extra.
+- **The probe.** The hit-test thread in Rust, which already wakes every 30 to 150 ms to read the pointer, also reads the time since the last input (`GetLastInputInfo`, one number, no hook), the cat's centre, whether the primary mouse button (the one you click with) is down (`GetAsyncKeyState`, a button, never a key) and the last click made away from the cat (when and where, in memory only). The page reads them with `focus_probe` and is told with the event `focus-hint` only when "the user may be working near the cat" starts or ends (active within 3 s and the pointer within 250 px, or a recent click on the cat's row), so a standing cat costs nothing extra.
 - **Focus-safety** (`focus.ts`, ADR-0029): pure decisions from the probe: may a walk start, may it go on, may an unprompted line be shown, is the cat crowded and which way should it leave. The page acts on them (`+page.svelte`: hold walks and lines, `makeWay`, a sleeping cat that wakes).
 - **The typing lane** (`lane.ts`, spec/07 section 3.1, ADR-0030): from the last click (or the pointer when typing began) and the time spent typing it predicts where the text is heading (60 px/s, a 1.5 s lead) and says when the cat stands in the band; `escapeRow` picks the row to hop to. The cat hops from a stand or a walk; a sleeping cat is woken after 0.6 s; the lane has its own 10 s cool-down.
 - **Hops and falls** (`hop.ts`, ADR-0032): the path is planned in the page (a parabola for a hop, gravity for a fall) and sent to Rust once (`fly_path`: a position every 16 ms, each held inside the work area of the monitor under the cat by `clamp_to_world`); a Rust thread moves the window with a 1 ms system timer for the flight and can be cancelled (`fly_cancel`, or picking the cat up). The cat inside is painted at 30 frames a second in the air (`Rig.setAir`). Other Rust commands: `monitors_info`, `move_to`, `pet_place`, `edge_room`, `vertical_room`, `focus_probe`. A cargo feature `hop-test` adds three temporary items to the right-click menu for test builds.
@@ -86,7 +86,7 @@ Files in `%APPDATA%\com.streakboom.app\`:
 
 ## 6. Testing
 - **Node** (`node --test`, 157 tests): state model and decay, line selection and coverage, gestures, reveal rhythm, telemetry and per-day counter rules (bond.ts), update snoozing, start-with-Windows and tour rules, the rig (key schema, springs, continuity, poses, the redraw rates, and that its files can be copied to the website by erasing types), focus-safety decisions (`focus.ts`), the walk easing (`gait.ts`), hops and falls (`hop.ts`), the typing lane (`lane.ts`), memory rules and lines.
-- **Rust** (`cargo test`, 53 tests): the three clients against a one-shot mock HTTP server, error mapping, model ordering, mood tags, fact filtering, language rule, window and monitor geometry (clamping across monitors and scales, the room to an edge), the idle-time arithmetic, the pointer offset, the button reading and the poll triggers.
+- **Rust** (`cargo test`, 54 tests): the three clients against a one-shot mock HTTP server, error mapping, model ordering, mood tags, fact filtering, language rule, window and monitor geometry (clamping across monitors and scales, the room to an edge), the idle-time arithmetic, the pointer offset, the button reading and the poll triggers.
 - **Static:** `svelte-check`.
 - **Manual matrix still to run:** Windows 10 and 11, a second and a lower-end machine, multi-monitor, 100%, 125% and 150% DPI, fullscreen video, screen sharing, an 8-hour soak test, a reboot with start with Windows, and real Claude and OpenAI keys.
 

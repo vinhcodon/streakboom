@@ -111,7 +111,7 @@ struct AppState {
     /// `src/lib/lane.ts`, so the typing lane stays where it is while the cat walks. `f64` bits.
     focus_cat_x: AtomicU64,
     focus_cat_y: AtomicU64,
-    /// The left mouse button is down now (a button, never a key: T8, ADR-0031).
+    /// The primary mouse button is down now (a button, never a key: T8, ADR-0031).
     button_down: AtomicBool,
     /// The last click made away from the cat: when (ms since the epoch, 0 = none) and where (logical px, `f64` bits).
     /// Kept in memory only; it tells the typing lane where the caret was probably put.
@@ -226,7 +226,7 @@ struct FocusProbe {
     /// The cat's centre in logical px of the screen; None when unknown.
     cat_x: Option<f64>,
     cat_y: Option<f64>,
-    /// The left mouse button is down now.
+    /// The primary mouse button is down now.
     button_down: bool,
     /// The last click away from the cat, if any.
     click: Option<ClickInfo>,
@@ -241,13 +241,15 @@ struct ClickInfo {
     age_ms: u64,
 }
 
-/// The raw state of the left mouse button (`GetAsyncKeyState`), 0 where it cannot be read.
-fn left_button_raw() -> i16 {
+/// The raw state of the primary mouse button, the one the user clicks with (`GetAsyncKeyState`), 0 where it cannot be
+/// read. The physical right button when Windows has the buttons swapped (see `layout::primary_button_vk`).
+fn primary_button_raw() -> i16 {
     #[cfg(windows)]
     {
-        use windows_sys::Win32::UI::Input::KeyboardAndMouse::{GetAsyncKeyState, VK_LBUTTON};
-        // SAFETY: a plain query of one virtual-key code; no pointers.
-        unsafe { GetAsyncKeyState(VK_LBUTTON as i32) }
+        use windows_sys::Win32::UI::Input::KeyboardAndMouse::GetAsyncKeyState;
+        use windows_sys::Win32::UI::WindowsAndMessaging::{GetSystemMetrics, SM_SWAPBUTTON};
+        // SAFETY: plain queries of one system metric and one virtual-key code; no pointers.
+        unsafe { GetAsyncKeyState(layout::primary_button_vk(GetSystemMetrics(SM_SWAPBUTTON) != 0)) }
     }
     #[cfg(not(windows))]
     {
@@ -1142,9 +1144,9 @@ fn spawn_hit_test(app: AppHandle, win: WebviewWindow) {
                     state.focus_over.store(inside, Ordering::Relaxed);
                     state.focus_cat_x.store(((pos.x as f64 / scale) + PET_LEFT + PET_SIZE / 2.0).to_bits(), Ordering::Relaxed);
                     state.focus_cat_y.store(((pos.y as f64 / scale) + PET_TOP + PET_SIZE / 2.0).to_bits(), Ordering::Relaxed);
-                    // the left button: a press away from the cat is a click that put the caret somewhere (typing lane);
+                    // the primary button: a press away from the cat is a click that put the caret somewhere (typing lane);
                     // a press on the cat is a gesture on it, and a press while dragging is the drag
-                    let (down, pressed) = layout::button_bits(left_button_raw());
+                    let (down, pressed) = layout::button_bits(primary_button_raw());
                     state.button_down.store(down, Ordering::Relaxed);
                     if layout::is_click(was_down, down, pressed) && !inside && !state.dragging.load(Ordering::Relaxed) {
                         state.click_x.store((cur.x / scale).to_bits(), Ordering::Relaxed);
