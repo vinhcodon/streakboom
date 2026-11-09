@@ -6,7 +6,7 @@ Status: **proposed 2026-11-08, asked by Vinh to be carried out story by story.**
 1. **Size.** S = up to half a day, M = one to two days, L = more than two days (an L must be split before it starts).
 2. **After every story** (this is the standing rule): set its status here, update the progress table, compare with the roadmap phase it belongs to, and propose the next two or three stories of size S or M with the reason for the order.
 3. **A story that says "Needs Vinh"** is a decision: I put the options to Vinh as a multiple choice and write an ADR before any code. Other stories can start as soon as their dependencies are done.
-4. **Done means:** tests for the pure logic, the spec and README updated in the same commit, the engineering-log entry saying what was **not** verified, explicit-path commit (ADR-0023). Behavior the website describes also gets the website session told (README, Release and auto-update, step 1). A release is a separate step the author orders.
+4. **Done means:** tests for the pure logic, the spec and README updated in the same commit, the engineering-log entry saying what was **not** verified **and the same items added to [`verification-debt.md`](verification-debt.md)** (the one list of everything built but not yet checked; tick or remove a row when it is checked), explicit-path commit (ADR-0023). Behavior the website describes also gets the website session told (README, Release and auto-update, step 1). A release is a separate step the author orders.
 5. Statuses: `done`, `doing`, `ready` (can start), `needs Vinh` (a decision or an action only Vinh can do), `blocked` (waits for something named), `later`.
 
 ## Progress (2026-11-08, version 0.2.3; counts exclude stories merged into others)
