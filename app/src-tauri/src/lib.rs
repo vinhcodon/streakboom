@@ -255,28 +255,67 @@ fn pet_px(scale: f64) -> (i32, i32, i32) {
     )
 }
 
+/// Every monitor with its full rectangle, work area and scale factor (physical px), as the pure layout code wants them.
+fn mons_of(win: &WebviewWindow) -> Vec<layout::Mon> {
+    let area = |p: tauri::PhysicalPosition<i32>, w: u32, h: u32| Area { x: p.x, y: p.y, r: p.x + w as i32, b: p.y + h as i32 };
+    win.available_monitors()
+        .unwrap_or_default()
+        .iter()
+        .map(|m| layout::Mon {
+            full: area(*m.position(), m.size().width, m.size().height),
+            work: area(m.work_area().position, m.work_area().size.width, m.work_area().size.height),
+            scale: m.scale_factor(),
+        })
+        .collect()
+}
+
 /// Work area of the monitor containing the physical point, or of the nearest monitor.
 fn area_at(win: &WebviewWindow, px: f64, py: f64) -> Option<Area> {
-    let mons = win.available_monitors().ok()?;
-    let mut best: Option<(f64, Area)> = None;
-    for m in &mons {
-        let (p, s) = (m.position(), m.size());
-        let (x, y, r, b) = (p.x as f64, p.y as f64, p.x as f64 + s.width as f64, p.y as f64 + s.height as f64);
-        let dx = if px < x { x - px } else if px >= r { px - r } else { 0.0 };
-        let dy = if py < y { y - py } else if py >= b { py - b } else { 0.0 };
-        let dist = dx.hypot(dy);
-        let wa = m.work_area();
-        let area = Area {
-            x: wa.position.x,
-            y: wa.position.y,
-            r: wa.position.x + wa.size.width as i32,
-            b: wa.position.y + wa.size.height as i32,
-        };
-        if best.is_none_or(|(d, _)| dist < d) {
-            best = Some((dist, area));
-        }
+    layout::nearest_mon(&mons_of(win), px, py).map(|m| m.work)
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+struct MonitorInfo {
+    /// work area (physical px): left, top, width, height
+    x: i32,
+    y: i32,
+    w: i32,
+    h: i32,
+    scale: f64,
+}
+
+/// The monitors' work areas (the screen minus the taskbar) and scales, in physical px, so the page can reason
+/// about the whole world (the walk across touching monitors, places that are kept as a monitor and a fraction).
+#[tauri::command]
+fn monitors_info(window: WebviewWindow) -> Vec<MonitorInfo> {
+    mons_of(&window)
+        .iter()
+        .map(|m| MonitorInfo { x: m.work.x, y: m.work.y, w: m.work.r - m.work.x, h: m.work.b - m.work.y, scale: m.scale })
+        .collect()
+}
+
+#[derive(Serialize)]
+struct Moved {
+    x: i32,
+    y: i32,
+    /// true when the wanted position had to be pulled back inside the world
+    clamped: bool,
+}
+
+/// Put the pet window's top-left at `(x, y)` (physical px), held so the whole cat stays inside the work area of
+/// the monitor under it, on whichever monitor that is. Replaces nothing yet: `move_by` is still the horizontal walk.
+#[tauri::command]
+fn move_to(window: WebviewWindow, state: State<AppState>, x: i32, y: i32) -> Result<Moved, String> {
+    let (nx, ny, clamped) = layout::clamp_to_world(&mons_of(&window), x, y, pet_px).ok_or("no monitor")?;
+    let pos = window.outer_position().map_err(|e| e.to_string())?;
+    if nx != pos.x || ny != pos.y {
+        state.last_self_move_ms.store(now_ms(), Ordering::Relaxed);
+        window
+            .set_position(PhysicalPosition::new(nx, ny))
+            .map_err(|e| e.to_string())?;
     }
-    best.map(|(_, a)| a)
+    Ok(Moved { x: nx, y: ny, clamped })
 }
 
 /// Move the window horizontally by `dx` physical pixels, keeping the whole pet inside the
@@ -1133,6 +1172,8 @@ pub fn run() {
             brain_set_model,
             focus_probe,
             edge_room,
+            monitors_info,
+            move_to,
             open_website,
             brain_provider,
             brain_set_provider,

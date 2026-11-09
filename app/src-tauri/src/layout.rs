@@ -24,6 +24,47 @@ pub fn clamp_window(a: Area, x: i32, y: i32, left: i32, top: i32, size: i32) -> 
     (x.clamp(min_x, max_x.max(min_x)), y.clamp(min_y, max_y.max(min_y)))
 }
 
+/// One monitor: its full rectangle and its work area, with the scale factor (physical px per logical px).
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct Mon {
+    pub full: Area,
+    pub work: Area,
+    pub scale: f64,
+}
+
+/// Distance from a physical point to a rectangle (0 inside it). The right and bottom edges are exclusive, so a
+/// point exactly on the shared edge of two touching monitors is 1 px away from the first and inside the second.
+fn dist_to(a: Area, px: f64, py: f64) -> f64 {
+    let dx = if px < a.x as f64 { a.x as f64 - px } else if px >= a.r as f64 { px - a.r as f64 + 1.0 } else { 0.0 };
+    let dy = if py < a.y as f64 { a.y as f64 - py } else if py >= a.b as f64 { py - a.b as f64 + 1.0 } else { 0.0 };
+    dx.hypot(dy)
+}
+
+/// The monitor containing the physical point, or the nearest one (the first on a tie).
+pub fn nearest_mon(mons: &[Mon], px: f64, py: f64) -> Option<Mon> {
+    let mut best: Option<(f64, Mon)> = None;
+    for m in mons {
+        let d = dist_to(m.full, px, py);
+        if best.is_none_or(|(bd, _)| d < bd) {
+            best = Some((d, *m));
+        }
+    }
+    best.map(|(_, m)| m)
+}
+
+/// Where the pet window ends up when it is asked to go to `(x, y)` (its top-left, physical px): the whole
+/// cat stays inside the work area of the monitor nearest to where the cat's centre would be. `scale_of`
+/// gives the cat's offset and size in physical px for that monitor's scale, so a move onto a monitor with
+/// another scale is clamped with that monitor's numbers. Returns the position and whether it was changed.
+pub fn clamp_to_world(mons: &[Mon], x: i32, y: i32, pet_px: impl Fn(f64) -> (i32, i32, i32)) -> Option<(i32, i32, bool)> {
+    // first guess with the first monitor's sizes just to find which monitor the centre falls on
+    let (l0, t0, s0) = pet_px(mons.first()?.scale);
+    let m = nearest_mon(mons, (x + l0 + s0 / 2) as f64, (y + t0 + s0 / 2) as f64)?;
+    let (l, t, s) = pet_px(m.scale);
+    let (nx, ny) = clamp_window(m.work, x, y, l, t, s);
+    Some((nx, ny, nx != x || ny != y))
+}
+
 /// Milliseconds since the user's last keyboard or mouse input, from two readings of the 32-bit
 /// millisecond tick counter (`GetTickCount` now, and the time `GetLastInputInfo` reports). The counter
 /// wraps about every 49.7 days, so the difference is taken with wrapping; a last-input time that is a
@@ -177,6 +218,70 @@ mod tests {
         let q = place_bubble(short, 1920 - 120, 0, 120, 240, 80, 2);
         assert_eq!(q.side, Side::Left);
         assert_eq!(q.x, 1920 - 120 - 2 - 240);
+    }
+
+    fn mon(x: i32, y: i32, w: i32, h: i32, taskbar: i32, scale: f64) -> Mon {
+        Mon {
+            full: Area { x, y, r: x + w, b: y + h },
+            work: Area { x, y, r: x + w, b: y + h - taskbar },
+            scale,
+        }
+    }
+    // the cat is 120 px at offset (10, 10) at scale 1 and 1.5 times that at scale 1.5
+    fn pet(scale: f64) -> (i32, i32, i32) {
+        ((10.0 * scale) as i32, (10.0 * scale) as i32, (120.0 * scale) as i32)
+    }
+
+    #[test]
+    fn the_nearest_monitor_is_the_one_containing_the_point_or_the_closest() {
+        let mons = [mon(0, 0, 1920, 1080, 40, 1.0), mon(1920, 0, 1920, 1080, 40, 1.0)];
+        assert_eq!(nearest_mon(&mons, 100.0, 100.0), Some(mons[0]));
+        assert_eq!(nearest_mon(&mons, 2000.0, 500.0), Some(mons[1]));
+        assert_eq!(nearest_mon(&mons, 1919.0, 500.0), Some(mons[0]));
+        assert_eq!(nearest_mon(&mons, 1920.0, 500.0), Some(mons[1]));
+        // far outside: the nearest one wins
+        assert_eq!(nearest_mon(&mons, 9000.0, 500.0), Some(mons[1]));
+        assert_eq!(nearest_mon(&mons, -500.0, -500.0), Some(mons[0]));
+        assert_eq!(nearest_mon(&[], 0.0, 0.0), None);
+    }
+
+    #[test]
+    fn a_point_in_the_taskbar_strip_still_belongs_to_its_own_monitor() {
+        let mons = [mon(0, 0, 1920, 1080, 40, 1.0), mon(1920, 0, 1920, 1080, 40, 1.0)];
+        assert_eq!(nearest_mon(&mons, 1900.0, 1070.0), Some(mons[0]));
+    }
+
+    #[test]
+    fn a_move_inside_the_work_area_is_left_alone() {
+        let mons = [mon(0, 0, 1920, 1080, 40, 1.0)];
+        assert_eq!(clamp_to_world(&mons, 300, 200, pet), Some((300, 200, false)));
+    }
+
+    #[test]
+    fn a_move_into_the_taskbar_or_off_the_screen_is_pulled_back_inside() {
+        let mons = [mon(0, 0, 1920, 1080, 40, 1.0)];
+        // the cat's bottom edge may not go below the work area (1040): window y = 1040 - 10 - 120 = 910
+        assert_eq!(clamp_to_world(&mons, 300, 5000, pet), Some((300, 910, true)));
+        assert_eq!(clamp_to_world(&mons, -900, -900, pet), Some((-10, -10, true)));
+        assert_eq!(clamp_to_world(&mons, 5000, 300, pet), Some((1920 - 130, 300, true)));
+    }
+
+    #[test]
+    fn a_move_across_touching_monitors_lands_on_the_monitor_under_the_cat() {
+        let mons = [mon(0, 0, 1920, 1080, 40, 1.0), mon(1920, 0, 1920, 1080, 40, 1.0)];
+        // the centre is on the second monitor: the cat may stand there
+        assert_eq!(clamp_to_world(&mons, 2500, 300, pet), Some((2500, 300, false)));
+        // far to the right of everything: held at the right edge of the last monitor
+        assert_eq!(clamp_to_world(&mons, 9000, 300, pet), Some((3840 - 130, 300, true)));
+    }
+
+    #[test]
+    fn a_monitor_with_another_scale_is_clamped_with_its_own_cat_size() {
+        // a second monitor at 150%: the cat is 180 px at offset 15
+        let mons = [mon(0, 0, 1920, 1080, 40, 1.0), mon(1920, 0, 2880, 1620, 60, 1.5)];
+        assert_eq!(clamp_to_world(&mons, 9000, 100, pet), Some((1920 + 2880 - 15 - 180, 100, true)));
+        assert_eq!(clamp_to_world(&mons, 3000, 9000, pet), Some((3000, 1560 - 15 - 180, true)));
+        assert_eq!(clamp_to_world(&[], 0, 0, pet), None);
     }
 
     #[test]

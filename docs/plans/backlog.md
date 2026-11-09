@@ -21,7 +21,7 @@ Status: **proposed 2026-11-08, asked by Vinh to be carried out story by story.**
 | E6 | Measurement and alpha | 1 / 7 | Counters built; no baseline, no tool, no testers |
 | E7 | Verification and release | 4 / 9 | The 8-hour soak was stopped at 2 h 23 (memory flat) to diagnose CPU; real keys, devices open; the 0.2.1 to 0.2.2 update was seen working |
 | E8 | Focus-safety and places | 6 / 13 | FS-0 to FS-4 and PL-0 done; FS-5 and FS-6 left; PL-1 and PL-7 merged into E9 |
-| E9 | The desktop as terrain | 1 / 18 | Spec 07 and ADR-0030 written; vertical movement (TE-2, TE-7) is next |
+| E9 | The desktop as terrain | 2 / 18 | Spec 07 and ADR-0030 written; the Rust `monitors_info` and `move_to` exist (TE-2); the hops that use them (TE-7) are next |
 | E10 | Perception | 2 / 9 | Spec 08 and ADR-0031: four of five decisions answered; the ground map waits for L3 |
 
 Against the roadmap: Phases 0 to 2 done; **Phase 4 in progress** (E7: the soak was stopped early; PR-3 and PR-4 done; PF-3, PR-8, VE-2, VE-3 open); Phase 3 blocked on keys (VE-4, VE-5, PE-3); Phase 5 not started (E6).
@@ -134,12 +134,12 @@ Direction agreed 2026-11-09 (ADR-0030). By decision T6 the code comes after FS-4
 |---|---|---|---|---|
 | TE-0 | Spec 07, plan and ADR-0030: the cost-field thesis | S | done | |
 | TE-1 | `terrain.ts`: one world from all monitors, positions as a monitor key plus fractions of the work area, neighbors across touching edges, with tests (resolution, DPI, taskbar and monitor-set changes) | M | blocked (FS-4, PR-9) | |
-| TE-2 | Rust: `monitors_info` (work areas and scale) and `move_to(x, y)` clamped to the world, with tests (replaces PL-1's Rust part) | M | ready (brought forward: the typing lane needs it, T9) | |
+| TE-2 | Rust: `monitors_info` (work areas and scale) and `move_to(x, y)` clamped to the world, with tests (replaces PL-1's Rust part) | M | done (6 Rust tests; not yet exercised on a real window, nothing calls it until TE-7) | |
 | TE-3 | Walk across touching monitors (the walk clamps to the world, not to one monitor); manual check on two monitors | M | blocked (TE-1, TE-2) | TE-1, TE-2 |
 | TE-4 | `attention.ts`: the memory-only decayed grid per monitor, fed by the focus probe, with tests | M | blocked (TE-1, FS-3) | TE-1 |
 | TE-5 | Fixed danger zones as costs (caption buttons at the top right, the title-bar band) | S | blocked (TE-1) | TE-1 |
 | TE-6 | Cost-based choice of a place (`choosePlace`) for rest, wander, avoid and approach, with tests | M | blocked (TE-4, TE-5) | TE-4, TE-5 |
-| TE-7 | Vertical movement: hops along an arc and falls; a CPU measurement per kind; the author looks at a test build before the commit | M | blocked (TE-2); next after it (T9) | TE-2 |
+| TE-7 | Vertical movement: hops along an arc and falls; a CPU measurement per kind; the author looks at a test build before the commit | M | ready (TE-2 is done); next (T9) | TE-2 |
 | TE-8 | Wire avoidance on the cost field: the cat moves away from the user's work (at most once every 25 s); the sideways version exists since FS-4, this adds the field and vertical hops | M | blocked (TE-6, TE-7) | TE-6, TE-7 |
 | TE-9 | README, Settings text and the website note for the attention field and the typing lane (memory only; the mouse button state, never a key) | S | blocked (TE-8, TE-14) | TE-8 |
 | TE-12 | `lane.ts`: the typing lane (click anchor, typing time, predicted caret, the band, crowded inside it) as pure logic with tests (spec/07 3.1) | S | ready | |
