@@ -1,6 +1,6 @@
 # Naive Pet Design
 
-Goal: a pet with no AI that is charming enough to keep for 7 days (hypothesis H4) and that builds the attachment which makes users willing to give it a "brain" (H2b). Hypotheses: [`../docs/hypotheses/`](../docs/hypotheses/README.md). Decisions: [`../docs/decisions/`](../docs/decisions/README.md) (ADR-0011 character and gestures, ADR-0012 motion, ADR-0013 tone, ADR-0014 memory). "Built" below means it exists in the 0.2.3 code; "not built" is stated explicitly.
+Goal: a pet with no AI that is charming enough to keep for 7 days (hypothesis H4) and that builds the attachment which makes users willing to give it a "brain" (H2b). Hypotheses: [`../docs/hypotheses/`](../docs/hypotheses/README.md). Decisions: [`../docs/decisions/`](../docs/decisions/README.md) (ADR-0011 character and gestures, ADR-0012 motion, ADR-0013 tone, ADR-0014 memory). "Built" below means it exists in the 0.2.4 code; "not built" is stated explicitly.
 
 ## Decisions
 - **Character:** a round 2D "mochi cat" (ADR-0011).
