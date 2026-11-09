@@ -135,9 +135,15 @@ export function startPeak(canvas, chipBox) {
 
     // polite: the tour waits while the pointer or the keyboard is on the cat and its buttons, and the page is not in view
     const area = canvas.closest(".hero-art") || canvas;
-    area.addEventListener("pointerenter", () => tour.block("hover"));
+    // Only a mouse or a pen "hovers". A finger has no hover: on a phone a touch (or a scroll that starts on the cat) also fires
+    // pointerenter, and if the browser never sends the matching pointerleave (Safari on iPhone can skip it after the touch
+    // is taken over for scrolling) the tour would wait for ever. So touch never blocks the tour.
+    area.addEventListener("pointerenter", (e) => e.pointerType !== "touch" && tour.block("hover"));
     area.addEventListener("pointerleave", () => tour.unblock("hover", HOVER_GRACE_MS));
-    area.addEventListener("focusin", () => tour.block("focus"));
+    area.addEventListener("pointercancel", () => tour.unblock("hover", HOVER_GRACE_MS));
+    // keyboard focus only (a tap on a button must not hold the tour; some phones focus a tapped button and never blur it)
+    const keyboardFocus = (e) => { try { return e.target.matches(":focus-visible"); } catch { return true; } };
+    area.addEventListener("focusin", (e) => keyboardFocus(e) && tour.block("focus"));
     area.addEventListener("focusout", () => tour.unblock("focus", HOVER_GRACE_MS));
     document.addEventListener("visibilitychange", () => (document.hidden ? tour.block("hidden") : tour.unblock("hidden")));
   }
