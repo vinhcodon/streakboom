@@ -7,7 +7,8 @@
   import Pet from "$lib/PetRig.svelte";
   import { isDozing, moodPose, needsWakeFirst, TIMED, type PetState } from "$lib/sprites";
   import type { Trigger } from "$lib/lines";
-  import { pick, remember, resolveLang } from "$lib/selector";
+  import { bagAfter, candidates, fill, pick, remember, resolveLang } from "$lib/selector";
+  import { REPEAT_WINDOW_MS, bump, stageFor, type Repeat, type RepeatKind } from "$lib/escalation";
   import { newScratch, scratchStep } from "$lib/gestures";
   import {
     addFacts,
@@ -206,33 +207,61 @@
   }
 
   // ---------------------------------------------------------------- speech
-  function ctxNow(extra: { days?: number } = {}) {
-    const hour = new Date().getHours();
+  function ctxNow(extra: { days?: number; stage?: number; pokes?: number } = {}) {
+    const d = new Date();
+    const hour = d.getHours();
+    const locale = lang === "vi" ? "vi-VN" : lang === "ja" ? "ja-JP" : "en-US";
     return {
       lang,
       tier: tierOf(data.closeness),
       band: bandOf(data, hour, lonely),
       hour,
       gentle: data.settings.gentle,
-      ...extra,
+      days: extra.days,
+      stage: extra.stage,
+      // what a line may mention (LN-3): a value that is unknown is left out, and a line that needs it is not chosen
+      vars: {
+        name: mem.callMe || undefined,
+        time: `${String(hour).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`,
+        weekday: new Intl.DateTimeFormat(locale, { weekday: "long" }).format(d),
+        pokes: extra.pokes ? String(extra.pokes) : undefined,
+      },
     };
+  }
+
+  // Escalation (LN-2): a poke, a scratch or a belly rub repeated within a short time moves through stages (memory only).
+  const repeats: Partial<Record<RepeatKind, Repeat>> = {};
+  function repeatNow(kind: RepeatKind): { stage: number; pokes: number } {
+    const r = bump(repeats[kind], Date.now(), REPEAT_WINDOW_MS[kind]);
+    repeats[kind] = r;
+    return { stage: stageFor(r.n), pokes: r.n };
   }
 
   /** Pick a scripted line (recording it so it is not repeated soon) without showing it. */
-  function pickLine(trigger: Trigger, extra: { days?: number } = {}): string | null {
-    const line = pick(trigger, ctxNow(extra), data.recent);
+  function pickLine(trigger: Trigger, extra: { days?: number; stage?: number; pokes?: number } = {}): string | null {
+    // a shuffle bag per trigger and stage (LN-1): every line is said once before any is said again
+    const bagKey = (stage: number | undefined) => ((stage ?? 1) > 1 ? `${trigger}#${stage}` : trigger);
+    let c = ctxNow(extra);
+    let line = pick(trigger, c, data.bags[bagKey(c.stage)] ?? []);
+    if (!line && (extra.stage ?? 1) > 1) {
+      // no line at that stage (for example none that fits the tone): the ordinary pool
+      c = ctxNow({ ...extra, stage: 1 });
+      line = pick(trigger, c, data.bags[bagKey(1)] ?? []);
+    }
     if (!line) return null;
+    const key = bagKey(c.stage);
     data = {
       ...data,
       recent: remember(data.recent, line.id),
+      bags: { ...data.bags, [key]: bagAfter(data.bags[key] ?? [], line, candidates(trigger, c)) },
       said: { ...data.said, [trigger]: Date.now() },
     };
     scheduleSave();
-    return line.text;
+    return fill(line.text, c.vars);
   }
 
-  function say(trigger: Trigger, extra: { days?: number; exclaim?: boolean } = {}): boolean {
-    const text = pickLine(trigger, { days: extra.days });
+  function say(trigger: Trigger, extra: { days?: number; exclaim?: boolean; stage?: number; pokes?: number } = {}): boolean {
+    const text = pickLine(trigger, { days: extra.days, stage: extra.stage, pokes: extra.pokes });
     if (!text) return false;
     showBubble(text, 0, extra.exclaim === true);
     return true;
@@ -942,7 +971,7 @@
       data = interact(data, "click", now);
       touch("poke");
       count("poke");
-      wordsAfter("happy", WORDS_DELAY_MS.click, () => say("click"));
+      wordsAfter("happy", WORDS_DELAY_MS.click, () => say("click", repeatNow("click")));
     }
   }
 
@@ -1100,7 +1129,7 @@
     } else {
       data = interact(data, "pet", now);
       enter("purr");
-      wordsAfter("purr", WORDS_DELAY_MS.belly, () => say("belly"));
+      wordsAfter("purr", WORDS_DELAY_MS.belly, () => say("belly", repeatNow("belly")));
     }
     track("first_interaction");
     scheduleSave();
@@ -1119,7 +1148,7 @@
     engage();
     track("first_interaction");
     wordsAfter("happy", WORDS_DELAY_MS.pet, () => {
-      if (!(Math.random() < 0.25 && memSay("pet", {}, 60 * MIN))) say("pet");
+      if (!(Math.random() < 0.25 && memSay("pet", {}, 60 * MIN))) say("pet", repeatNow("pet"));
     });
     scheduleSave();
   }
@@ -1787,7 +1816,7 @@
       scheduleProactive();
       groundLoop = setInterval(groundTick, GROUND_POLL_MS);
       // Test hook (like window.__cat): lets a debugger trigger the real unprompted-line path now.
-      (window as unknown as Record<string, unknown>).__pet = { proactive: () => void fireProactive(), focus: () => ({ ...focusOut, lastLeave, pose }), trail: () => trail, sleep: () => enter("drowsy"), wake: () => enter("idle"), hop: (dx: number, dy: number) => void fly(splitHop(dx, dy), "walk"), lane: () => ({ ...laneOut, state: laneState, cat: laneCat }), ground: () => invoke("ground_under_cat"), groundLost: () => void groundLost(), fall: (d: number) => void fly([planFall(d)], "gasp") };
+      (window as unknown as Record<string, unknown>).__pet = { proactive: () => void fireProactive(), focus: () => ({ ...focusOut, lastLeave, pose }), trail: () => trail, sleep: () => enter("drowsy"), wake: () => enter("idle"), hop: (dx: number, dy: number) => void fly(splitHop(dx, dy), "walk"), lane: () => ({ ...laneOut, state: laneState, cat: laneCat }), ground: () => invoke("ground_under_cat"), groundLost: () => void groundLost(), say: (t: Trigger, kind?: RepeatKind) => (kind ? say(t, repeatNow(kind)) : say(t)), bubble: () => bubbleText, fall: (d: number) => void fly([planFall(d)], "gasp") };
       let lastTick = Date.now();
       minuteTimer = setInterval(() => {
         const now = Date.now();

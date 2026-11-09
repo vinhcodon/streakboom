@@ -136,3 +136,5 @@ The author finds the scripted lines not rich enough, repeating, not fresh. What 
 8. **A way to see the repetition (LN-8, S).** A test and a small report: for each trigger, the number of distinct lines a typical week would show; it prints the triggers under their targets, so the next batch of writing goes where it is needed.
 
 What this does not do: it does not make lines funny by itself (that is the author's and the readers' judgement), and the shuffle bag and escalation can be judged only by using the app for days. Both are in the list of what is not verified.
+
+**Built 2026-11-10 (after 0.3.0, LN-1 to LN-3):** the shuffle bag (a bag per trigger and stage, saved with the pet), escalation (`escalation.ts`, 27 stage lines per language) and tokens (`{name}`, `{time}`, `{weekday}`, `{pokes}`; 10 lines per language). Each language gained 37 lines (224 in all, up from 187). Proposals 4 to 8 (the line factory, pool targets, rare lines, top-up by the brain, a repetition report) are not built.

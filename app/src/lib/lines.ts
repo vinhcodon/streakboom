@@ -35,9 +35,12 @@ export interface Line {
   bands?: Band[];
   hours?: [number, number]; // [start, end) local hours, may wrap past midnight
   days?: number; // streak milestone
+  /** Escalation stage 2..4 of a repeated action (spec/09 section 11, LN-2); no stage means stage 1, the ordinary pool. */
+  stage?: number;
 }
+// A line may carry {name}, {time}, {weekday} or {pokes}; it is eligible only when the value is known (LN-3).
 
-type Opts = Pick<Line, "tiers" | "bands" | "hours" | "days">;
+type Opts = Pick<Line, "tiers" | "bands" | "hours" | "days" | "stage">;
 
 // `batch` keeps ids unique when a later block adds lines with the same trigger/tier/band as an
 // earlier one, and leaves the ids of the first batch unchanged (the "recent lines" memory
@@ -46,7 +49,7 @@ function mk(lang: Lang, trigger: Trigger, texts: string[], opts: Opts = {}, batc
   return texts.map((raw, i) => {
     const spicy = raw.startsWith("~");
     const text = spicy ? raw.slice(1) : raw;
-    const key = [trigger, opts.tiers?.join("") ?? "", opts.bands?.join("") ?? "", opts.days ?? "", batch]
+    const key = [trigger, opts.tiers?.join("") ?? "", opts.bands?.join("") ?? "", opts.days ?? "", opts.stage ? `s${opts.stage}` : "", batch]
       .filter(Boolean)
       .join(".");
     return { id: `${lang}.${key}.${i}`, lang, trigger, text, spicy, ...opts };
@@ -658,6 +661,60 @@ const JA3: Line[] = [
   ]),
 ];
 
+// Escalation (LN-2): the same action repeated within a short time moves through stages with their own lines. Stage 2 to 4
+// for the poke, the head scratch and the belly rub. Token lines (LN-3): {name} the name the user gave, {time}, {weekday},
+// {pokes} the pokes in a row. The three languages are translated one to one, in the same order.
+const EN4: Line[] = [
+  ...mk("en", "click", ["Okay, that's a few pokes now.", "Is there something on my forehead?", "Poke number {pokes}. I'm counting."], { stage: 2 }),
+  ...mk("en", "click", ["Fine. Poke away. I'm a button now.", "{pokes} pokes. I have stopped being surprised.", "I'll just sit here and be poked."], { stage: 3 }),
+  ...mk("en", "click", ["Okay, okay, you win. Poke champion.", "You really like this. So do I, a little.", "So many pokes. I'm not mad. I'm... flattered?"], { stage: 4 }),
+  ...mk("en", "pet", ["Mm, right there. Again.", "You found the spot.", "Don't stop. Not a word."], { stage: 2 }),
+  ...mk("en", "pet", ["I am a puddle now. A happy puddle.", "My knees have left the building.", "{name}, you are dangerous."], { stage: 3 }),
+  ...mk("en", "pet", ["Okay, that's plenty. My ears are warm.", "I'm full of head scratches. Honestly.", "Let's save some for later. I'm rationing."], { stage: 4 }),
+  ...mk("en", "belly", ["Still safe. For now.", "Careful. The belly has a mind of its own.", "This is going suspiciously well."], { stage: 2 }),
+  ...mk("en", "belly", ["I know what you are doing. I allow it.", "One more and I might bite. Lovingly.", "Belly rights are being negotiated."], { stage: 3 }),
+  ...mk("en", "belly", ["Okay, the belly is closed for today.", "That was the last one. Probably.", "I'll let you live. Thanks for the rubs."], { stage: 4 }),
+  ...mk("en", "greeting", ["Hi {name}. The desktop missed you.", "Oh, {name}. Right on time.", "{name}! Sit. Stay. Work."], { tiers: [2, 3, 4] }, "t"),
+  ...mk("en", "return", ["Welcome back, {name}. I kept the pixels warm."], {}, "t"),
+  ...mk("en", "morning", ["Happy {weekday}. Coffee first.", "{weekday} again. Be gentle with yourself."], {}, "t"),
+  ...mk("en", "night", ["It's {time}. Even I am yawning.", "{time} already. The bugs will keep."], { hours: [23, 5] }, "t"),
+  ...mk("en", "idle", ["It's {time}. Water break? I'll wait.", "{time} on the clock. Just reporting."], {}, "t"),
+];
+
+const VI4: Line[] = [
+  ...mk("vi", "click", ["Ừm, chọc mấy cái rồi đó nha.", "Trên trán mình có gì à?", "Cái thứ {pokes} rồi. Mình đang đếm đó."], { stage: 2 }),
+  ...mk("vi", "click", ["Thôi được, chọc đi. Mình thành cái nút rồi.", "{pokes} cái rồi. Mình hết ngạc nhiên luôn.", "Mình ngồi đây cho bạn chọc vậy."], { stage: 3 }),
+  ...mk("vi", "click", ["Rồi rồi, bạn thắng. Quán quân chọc mèo.", "Bạn thích vụ này thật. Mình cũng hơi thích.", "Nhiều cái thế. Mình không giận. Mình... hơi hãnh diện?"], { stage: 4 }),
+  ...mk("vi", "pet", ["Ừm, đúng chỗ đó. Thêm nữa.", "Bạn tìm ra chỗ rồi đó.", "Đừng dừng. Đừng nói gì hết."], { stage: 2 }),
+  ...mk("vi", "pet", ["Mình tan thành vũng nước rồi. Vũng nước hạnh phúc.", "Chân mình mềm nhũn luôn rồi.", "{name} nguy hiểm thật đó."], { stage: 3 }),
+  ...mk("vi", "pet", ["Được rồi, đủ rồi. Tai mình nóng hết.", "Mình no vuốt đầu rồi. Thật đó.", "Để dành chút cho lần sau. Mình đang chia khẩu phần."], { stage: 4 }),
+  ...mk("vi", "belly", ["Vẫn an toàn. Tạm thời.", "Cẩn thận. Cái bụng có suy nghĩ riêng đó.", "Êm ái đáng ngờ ghê."], { stage: 2 }),
+  ...mk("vi", "belly", ["Mình biết bạn đang làm gì. Mình cho phép.", "Thêm cái nữa là mình cắn đó. Cắn yêu.", "Quyền sở hữu cái bụng đang được đàm phán."], { stage: 3 }),
+  ...mk("vi", "belly", ["Rồi, hôm nay bụng đóng cửa.", "Đó là cái cuối cùng. Chắc vậy.", "Mình tha cho bạn. Cảm ơn vì đã xoa."], { stage: 4 }),
+  ...mk("vi", "greeting", ["Chào {name}. Màn hình nhớ bạn đó.", "Ồ, {name}. Đúng giờ ghê.", "{name}! Ngồi xuống. Làm việc đi."], { tiers: [2, 3, 4] }, "t"),
+  ...mk("vi", "return", ["Chào mừng {name} quay lại. Mình giữ ấm mấy điểm ảnh rồi."], {}, "t"),
+  ...mk("vi", "morning", ["{weekday} vui vẻ nha. Cà phê trước đã.", "Lại là {weekday}. Nhẹ tay với bản thân nhé."], {}, "t"),
+  ...mk("vi", "night", ["{time} rồi. Mình cũng ngáp đây.", "Đã {time} rồi. Lỗi để mai sửa cũng được."], { hours: [23, 5] }, "t"),
+  ...mk("vi", "idle", ["{time} rồi. Uống nước không? Mình chờ.", "Đồng hồ chỉ {time}. Mình chỉ báo cáo thôi."], {}, "t"),
+];
+
+const JA4: Line[] = [
+  ...mk("ja", "click", ["えっと、もう何回かつついたよね。", "おでこに何かついてる？", "{pokes}回目だよ。ちゃんと数えてるからね。"], { stage: 2 }),
+  ...mk("ja", "click", ["もういいよ、つついて。わたしはボタンになった。", "{pokes}回。もう驚かなくなったよ。", "ここにすわって、つつかれてるね。"], { stage: 3 }),
+  ...mk("ja", "click", ["はいはい、きみの勝ち。つつきチャンピオンだね。", "これ、ほんとに好きなんだね。わたしも、ちょっと好き。", "こんなにたくさん。怒ってないよ。むしろ、ちょっとうれしい？"], { stage: 4 }),
+  ...mk("ja", "pet", ["んー、そこそこ。もう一回。", "ツボを見つけたね。", "やめないで。何も言わないで。"], { stage: 2 }),
+  ...mk("ja", "pet", ["もうとろけて水たまりだよ。しあわせな水たまり。", "足に力が入らないよ。", "{name}って、ほんと危険だね。"], { stage: 3 }),
+  ...mk("ja", "pet", ["もう十分。耳があつくなっちゃった。", "なでられすぎてお腹いっぱいだよ。ほんと。", "あとのぶんは取っておこう。配給制にするね。"], { stage: 4 }),
+  ...mk("ja", "belly", ["まだ安全だよ。いまのところは。", "気をつけてね。お腹には意志があるから。", "うまくいきすぎてて、あやしいな。"], { stage: 2 }),
+  ...mk("ja", "belly", ["何してるか分かってるよ。許してあげる。", "もう一回で、甘がみしちゃうかも。", "お腹の権利を、いま交渉中だよ。"], { stage: 3 }),
+  ...mk("ja", "belly", ["はい、お腹は今日はもうおしまい。", "いまのが最後。たぶんね。", "見逃してあげる。なでてくれてありがとう。"], { stage: 4 }),
+  ...mk("ja", "greeting", ["やあ、{name}。デスクトップがさみしがってたよ。", "あ、{name}。ちょうどいい時間だね。", "{name}！すわって。さあ、お仕事。"], { tiers: [2, 3, 4] }, "t"),
+  ...mk("ja", "return", ["おかえり、{name}。ピクセルをあたためておいたよ。"], {}, "t"),
+  ...mk("ja", "morning", ["{weekday}だね。まずはコーヒー。", "また{weekday}か。自分にはやさしくね。"], {}, "t"),
+  ...mk("ja", "night", ["{time}だよ。わたしもあくびが出る。", "もう{time}。バグは明日でも逃げないよ。"], { hours: [23, 5] }, "t"),
+  ...mk("ja", "idle", ["{time}だよ。水、飲む？待ってるね。", "時計は{time}。報告しただけ。"], {}, "t"),
+];
+
 // The cry when the ground goes (PC-7): short, a moment of surprise, said as it gasps.
 const FALL: Line[] = [
   ...mk("en", "fall", ["Whoa!", "Oh no, the floor!", "Wait, where did it go?!", "Ack!", "Hey, that was my spot!"]),
@@ -665,6 +722,6 @@ const FALL: Line[] = [
   ...mk("ja", "fall", ["わっ！", "えっ、床がない！", "あれ、どこいったの！？", "きゃっ！", "ちょっと、わたしの場所！"]),
 ];
 
-export const LINES: Line[] = [...EN, ...EN2, ...EN3, ...VI, ...VI2, ...VI3, ...JA, ...JA2, ...JA3, ...FALL];
+export const LINES: Line[] = [...EN, ...EN2, ...EN3, ...EN4, ...VI, ...VI2, ...VI3, ...VI4, ...JA, ...JA2, ...JA3, ...JA4, ...FALL];
 
 export const MILESTONE_DAYS = [3, 7, 30];

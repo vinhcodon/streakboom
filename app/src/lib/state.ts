@@ -266,6 +266,8 @@ export interface PetData {
   gainDay: string;
   gainToday: number; // closeness gained from interactions today (capped)
   recent: string[];
+  /** The shuffle bag per trigger (and stage): the ids said in the current round (LN-1). */
+  bags: Record<string, string[]>;
   said: Record<string, number>; // trigger -> last time spoken (ms)
   milestones: number[];
   settings: Settings;
@@ -306,6 +308,7 @@ export function defaultData(now: number): PetData {
     gainDay: "",
     gainToday: 0,
     recent: [],
+    bags: {},
     said: {},
     milestones: [],
     settings: { ...DEFAULT_SETTINGS },
@@ -320,6 +323,16 @@ export function defaultData(now: number): PetData {
 }
 
 /** Parse stored JSON defensively; anything missing or invalid falls back to defaults. */
+/** The shuffle bags from a saved file: only lists of strings, each at most 200 long, at most 60 bags. */
+function parseBags(raw: unknown): Record<string, string[]> {
+  const out: Record<string, string[]> = {};
+  if (!raw || typeof raw !== "object") return out;
+  for (const [k, v] of Object.entries(raw as Record<string, unknown>).slice(0, 60)) {
+    if (Array.isArray(v)) out[k] = v.filter((x) => typeof x === "string").slice(-200) as string[];
+  }
+  return out;
+}
+
 export function parse(json: string | null | undefined, now: number): PetData {
   const base = defaultData(now);
   if (!json) return base;
@@ -339,6 +352,7 @@ export function parse(json: string | null | undefined, now: number): PetData {
       gainDay: typeof o.gainDay === "string" ? o.gainDay : "",
       gainToday: Math.max(0, num(o.gainToday, 0)),
       recent: Array.isArray(o.recent) ? o.recent.filter((x: unknown) => typeof x === "string").slice(-24) : [],
+      bags: parseBags(o.bags),
       said: o.said && typeof o.said === "object" ? { ...o.said } : {},
       milestones: Array.isArray(o.milestones) ? o.milestones.filter((x: unknown) => typeof x === "number") : [],
       settings: {

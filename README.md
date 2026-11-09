@@ -16,7 +16,7 @@ Peak is the name of the character in this project. Your own copy can be given an
 
 ## What it does ✨
 
-- 🐈 **A pet that is alive without any AI.** A mood and closeness model, 182 hand-written lines per language (sarcastic ones can be turned off with "gentle tone"), quiet hours, and no guilt: the pet never dies or starves, it only gets "a bit lonely".
+- 🐈 **A pet that is alive without any AI.** A mood and closeness model, 219 hand-written lines per language, with stages when you keep poking it (sarcastic ones can be turned off with "gentle tone"), quiet hours, and no guilt: the pet never dies or starves, it only gets "a bit lonely".
 - 👆 **Gestures instead of buttons.** Sweep the cursor over its head to scratch it, over its belly to rub it (it usually loves it; sometimes it is a trap), click to poke, drag to carry it (it hangs by the scruff and leans with your cursor). Its eyes follow your cursor when it is over the pet. It wanders on its own (walking, and since 0.2.5 hopping between rows), always stays on screen, and moves like one animal, not a set of pictures.
 - 🧠 **Bring your own brain.** Add your own key and double-click the pet to chat. Gemini and Groq have free tiers (with limits); Claude and OpenAI are paid (a Claude Pro/Team or ChatGPT Plus subscription does not include API access). The brains are offered in this order: Gemini, Groq, Claude, OpenAI. Some of its unprompted lines are then written by the model, within a daily cap (60 chat turns and 6 unprompted lines a day; when it has talked enough, Peak says so in its own words and the count resets at midnight), and each answer comes with a feeling the pet acts out. It answers in the language you write in. Your key stays on your computer.
 - 💭 **It remembers a little, and you control it.** A name for the pet, what to call you, a usual part of the day, milestones, and (with a brain, on by default, switchable) a few short facts from your chats. Settings > Memory shows all of it and can forget any part.
@@ -106,7 +106,7 @@ npm run tauri dev          # run the app with hot reload
 ```
 
 ```powershell
-npm test                   # Node tests for the pure logic (src/lib/*.test.ts), 175 tests
+npm test                   # Node tests for the pure logic (src/lib/*.test.ts), 185 tests
 npm run check              # svelte-check (types)
 cd src-tauri; cargo test   # Rust tests (the four brain clients against a mock server, window and monitor geometry, the focus probe, the ground sense), 68 tests
 ```

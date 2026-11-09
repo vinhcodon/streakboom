@@ -23,7 +23,7 @@ Status: **proposed 2026-11-08, asked by Vinh to be carried out story by story.**
 | E8 | Focus-safety and places | 6 / 13 | FS-0 to FS-4 and PL-0 done; FS-5 and FS-6 left; PL-1 and PL-7 merged into E9 |
 | E9 | The desktop as terrain | 8 / 16 | Spec 07 and ADR-0030 written; the Rust `monitors_info` and `move_to` exist (TE-2); the lane model (TE-12) and the mouse button reading (TE-13) exist; hops and falls exist (TE-7); the cat leaves the typing lane by a hop (TE-14); a hop costs about a third of what it did (TE-15) |
 | E10 | Perception | 5 / 9 | Spec 08 and ADR-0031: four of five decisions answered; the ground map waits for L3 |
-| E13 | Fresh words: more variety in the scripted lines | 1 / 9 | Proposed 2026-11-10 after the author found the lines repetitive; the pools behind poke, scratch and belly are the smallest; nothing built |
+| E13 | Fresh words: more variety in the scripted lines | 4 / 9 | Proposed 2026-11-10 after the author found the lines repetitive; the pools behind poke, scratch and belly are the smallest; nothing built |
 | E12 | Reactions: one way to express what happens | 3 / 11 | Spec 09 written and its four decisions answered (ADR-0041, 2026-11-10); the first fall (PC-7) felt flat, which showed that each reaction is a separate rule; nothing built yet |
 | E11 | Reach: languages and brains | 4 / 5 | Groq is the fourth brain and Japanese is built in full, both released in 0.3.0 (BR-1, JA-1 to JA-3, ADR-0037, ADR-0038); BR-2 needs a key |
 
@@ -204,9 +204,9 @@ Why: the author finds the scripted lines repetitive. The pools behind what users
 | ID | Story | Size | Status | Depends on |
 |---|---|---|---|---|
 | LN-0 | The analysis and the proposals (spec/09 section 11) | S | done (proposal, waiting for Vinh to choose) | |
-| LN-1 | A shuffle bag per trigger kept on disk (every line once before any repeats, a window that grows with the pool), replacing the shared last-24 memory; tests | S | ready | |
-| LN-2 | Escalation: repeated pokes, scratches and belly rubs within a short time move through stages with their own lines (playful, annoyed, resigned, forgiving); a counter in memory, not saved | M | ready | LN-1 |
-| LN-3 | Tokens in lines (name, hour, work time, streak, today's pokes, weekday, own favourite spot) with fallbacks and a test that every language fills every token | M | ready | |
+| LN-1 | A shuffle bag per trigger kept on disk (every line once before any repeats), replacing the shared last-24 memory for choosing; tests | S | done (a bag per trigger and stage in `bags`, `bagAfter` in `selector.ts`; a new round starts with the last line already used so no line comes twice in a row; saved with the pet, old files parse with empty bags; the shared `recent` list is still kept but no longer decides) | |
+| LN-2 | Escalation: repeated pokes, scratches and belly rubs within a short time move through stages with their own lines; a counter in memory, not saved | M | done (`escalation.ts`: stage 2 from the 4th, 3 from the 7th, 4 from the 10th, a run ends after 25 s (pokes) or 40 s (scratches, rubs); 27 new lines per language, also in the gentle tone; checked on the real window: 14 pokes climbed through the stages and the bags were saved; not yet judged by use) | LN-1 |
+| LN-3 | Tokens in lines ({name}, {time}, {weekday}, {pokes}; a line is eligible only when its value is known) with tests across the three languages | M | done (10 new token lines per language: greeting, return, morning, night, idle; `fill` capitalises a value at the start of a line; the streak, work time and own favourite spot are not tokens yet) | |
 | LN-4 | The line factory: an author-run script that drafts candidates with a model, filters duplicates and unwanted patterns, and leaves the choice to the author and to native readers | M | needs Vinh (a key for the script, and who reads Vietnamese and Japanese) | |
 | LN-5 | Pool targets by frequency (poke 40, scratch 30, belly 20, trap 15, hints 12, greeting 12 per tier, return 20) and the lines to reach them in three languages, with a test that fails under target | L, split by trigger | blocked (LN-4 or hand writing) | LN-4 |
 | LN-6 | Rare lines (about 1 in 100, once a week) and callbacks that remember what Peak joked about | S | blocked (LN-3) | LN-3 |
