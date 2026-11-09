@@ -9,6 +9,7 @@ import { LANGS } from "../../site/strings.mjs";
 export function pageList() {
   return [
     ...LANGS.map((l) => ({ path: PATHS[l].home, alternates: alternatesFor("home") })),
+    ...LANGS.map((l) => ({ path: PATHS[l].how, alternates: alternatesFor("how") })),
     ...LANGS.map((l) => ({ path: PATHS[l].privacy, alternates: alternatesFor("privacy") })),
     { path: PATHS.changelog, alternates: [] },
   ];
@@ -46,6 +47,7 @@ ${FACTS}
 - [Streakboom, home (English)](${ORIGIN}/): what it is, features, install steps, FAQ, latest changes
 - [Streakboom, trang chủ (Tiếng Việt)](${ORIGIN}/vi/): the same in Vietnamese
 - [Streakboom ホーム（日本語）](${ORIGIN}/ja/): the same in Japanese (the app speaks Japanese as a beta)
+- [How it works](${ORIGIN}/how-it-works/): Peak with no AI, adding your own AI key, what is stored, what is free, how updates work (also in /vi/ and /ja/)
 - [Privacy](${ORIGIN}/privacy/): what Streakboom keeps, what it sends and to whom, what Peak notices around it
 - [Changelog](${ORIGIN}/changelog/): release notes of every version
 

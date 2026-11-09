@@ -5,9 +5,9 @@ import { SCENES } from "../../site/scenes.js";
 import { AUTHOR, ORIGIN, RELEASES_URL, REPO_URL, fmtDate } from "./facts.mjs";
 
 export const PATHS = {
-  en: { home: "/", privacy: "/privacy/" },
-  vi: { home: "/vi/", privacy: "/vi/privacy/" },
-  ja: { home: "/ja/", privacy: "/ja/privacy/" },
+  en: { home: "/", privacy: "/privacy/", how: "/how-it-works/" },
+  vi: { home: "/vi/", privacy: "/vi/privacy/", how: "/vi/how-it-works/" },
+  ja: { home: "/ja/", privacy: "/ja/privacy/", how: "/ja/how-it-works/" },
   changelog: "/changelog/",
 };
 
@@ -88,6 +88,7 @@ function header({ lang, ctx, switchTo }) {
     <nav aria-label="Main">
       <a href="${home}#features">${s("nav_features")}</a>
       <a href="${home}#install">${s("nav_install")}</a>
+      <a href="${PATHS[lang].how}">${s("nav_how")}</a>
       <a href="${PATHS[lang].privacy}">${s("nav_privacy")}</a>
       <a href="${home}#faq">${s("nav_faq")}</a>
       <a href="${PATHS.changelog}">${s("nav_changelog")}</a>
@@ -100,7 +101,7 @@ function footer({ lang, ctx }) {
   const s = (k) => tx(lang, k, ctx);
   return `<footer class="footer">
     <p>${s("foot_a")}</p>
-    <p><a href="${REPO_URL}">Source</a> · <a href="${REPO_URL}/issues">${s("foot_bug")}</a> · <a href="${PATHS[lang].privacy}">${s("nav_privacy")}</a> · <a href="${PATHS.changelog}">${s("nav_changelog")}</a></p>
+    <p><a href="${REPO_URL}">Source</a> · <a href="${REPO_URL}/issues">${s("foot_bug")}</a> · <a href="${PATHS[lang].how}">${s("nav_how")}</a> · <a href="${PATHS[lang].privacy}">${s("nav_privacy")}</a> · <a href="${PATHS.changelog}">${s("nav_changelog")}</a></p>
   </footer>`;
 }
 
@@ -313,6 +314,30 @@ ${recent}
       jsonld: homeJsonLd(lang, ctx),
     },
     main,
+  });
+}
+
+/** "How it works": the same shape as the privacy page (a title, a lead, sections of paragraphs), written from the README and the app's records. */
+export function howPage(lang, ctx) {
+  const s = (k) => tx(lang, k, ctx);
+  const path = PATHS[lang].how;
+  const sections = STRINGS[lang].hw_sections
+    .map((sec) => `      <section>
+        <h2>${esc(sec.h)}</h2>
+${sec.p.map((p) => `        <p>${esc(p)}</p>`).join("\n")}
+      </section>`).join("\n");
+  const main = `
+    <article class="section prose">
+      <h1>${s("hw_title")}</h1>
+      <p class="lead">${s("hw_lead")}</p>
+${sections}
+      <p><a href="${PATHS[lang].privacy}">${s("priv_more")}</a> · <a href="${PATHS[lang].home}">${s("pv_back")}</a></p>
+    </article>
+`;
+  return htmlDoc({
+    lang, ctx, switchTo: Object.fromEntries(LANGS.map((l) => [l, PATHS[l].how])),
+    headArgs: { path, title: raw(lang, "hw_page_title", ctx), description: raw(lang, "hw_desc", ctx), alternates: alternatesFor("how") },
+    main, script: false,
   });
 }
 

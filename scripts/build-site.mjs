@@ -11,7 +11,7 @@ import { cpSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs"
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { ROOT, context } from "./site/facts.mjs";
-import { PATHS, changelogPage, homePage, notFoundPage, privacyPage } from "./site/pages.mjs";
+import { PATHS, changelogPage, homePage, howPage, notFoundPage, privacyPage } from "./site/pages.mjs";
 import { LANGS } from "../site/strings.mjs";
 import { llms, llmsFull, robots, sitemap } from "./site/files.mjs";
 import { check } from "./site/checks.mjs";
@@ -50,6 +50,7 @@ export function build({ out = OUT } = {}) {
   const fileOf = (path) => `${path.replace(/^\//, "")}index.html`;
   const pages = [
     ...LANGS.map((l) => ({ path: PATHS[l].home, file: fileOf(PATHS[l].home), lang: l, html: homePage(l, ctx) })),
+    ...LANGS.map((l) => ({ path: PATHS[l].how, file: fileOf(PATHS[l].how), lang: l, html: howPage(l, ctx) })),
     ...LANGS.map((l) => ({ path: PATHS[l].privacy, file: fileOf(PATHS[l].privacy), lang: l, html: privacyPage(l, ctx) })),
     { path: PATHS.changelog, file: "changelog/index.html", lang: "en", html: changelogPage(ctx) },
     { path: "/404.html", file: "404.html", lang: "en", html: notFoundPage(ctx) },

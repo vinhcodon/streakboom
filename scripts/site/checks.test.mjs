@@ -6,6 +6,7 @@ import { check } from "./checks.mjs";
 import { parseChangelog } from "./facts.mjs";
 import { STRINGS } from "../../site/strings.mjs";
 
+const PATHS_HOME = { en: "/", vi: "/vi/", ja: "/ja/" };
 const r = build();
 const clone = () => ({ ctx: { ...r.ctx }, pages: r.pages.map((p) => ({ ...p })), files: { ...r.files }, out: r.out });
 const page = (c, path) => c.pages.find((p) => p.path === path);
@@ -135,6 +136,27 @@ test("a language link whose accessible name does not start with its visible text
   const p = page(c, "/ja/");
   p.html = p.html.replace(/aria-label="EN \(English\)"/, 'aria-label="English"');
 }, /accessible name/));
+
+test("the How it works pages exist in three languages, are in the sitemap and link to each other", () => {
+  const c = clone();
+  for (const [path, lang] of [["/how-it-works/", "en"], ["/vi/how-it-works/", "vi"], ["/ja/how-it-works/", "ja"]]) {
+    const p = page(c, path);
+    assert.ok(p, `${path} exists`);
+    assert.equal(p.lang, lang);
+    assert.match(p.html, /hreflang="ja" href="https:\/\/streakboom\.com\/ja\/how-it-works\/"/);
+    assert.match(c.files["sitemap.xml"], new RegExp(`<loc>https://streakboom\\.com${path}</loc>`));
+    assert.match(page(c, PATHS_HOME[lang]).html, new RegExp(`href="${path}"`), "the home page links to it");
+  }
+  assert.match(c.files["llms.txt"], /how-it-works/);
+});
+test("a How it works page whose hreflang back-link is missing", () => fails((c) => {
+  const p = page(c, "/vi/how-it-works/");
+  p.html = p.html.replace(/<link rel="alternate" hreflang="en" href="[^"]*">\n?/, "");
+}, /hreflang/));
+test("an unbacked claim on the How it works page", () => fails((c) => {
+  const p = page(c, "/how-it-works/");
+  p.html = p.html.replace("</main>", "<p>A macOS version is coming soon.</p></main>");
+}, /macOS promise/));
 
 test("a feature in the structured data that is not on the page", () => fails((c) => {
   const p = page(c, "/");
