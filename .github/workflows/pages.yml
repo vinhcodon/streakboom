@@ -3,8 +3,17 @@ name: Deploy landing page
 on:
   push:
     branches: [main]
-    # the page draws Peak with the app's own rig, so a change to the rig redeploys it too
-    paths: ["site/**", "app/src/lib/rig/**", "scripts/build-site.mjs", ".github/workflows/pages.yml"]
+    # The pages are built from the site sources, the app's rig (Peak), the version (tauri.conf.json) and the release notes
+    # (CHANGELOG.md, updates/latest.json), so a release or a rig change redeploys the site by itself (ADR-0034).
+    paths:
+      - "site/**"
+      - "scripts/build-site.mjs"
+      - "scripts/site/**"
+      - "app/src/lib/rig/**"
+      - "app/src-tauri/tauri.conf.json"
+      - "CHANGELOG.md"
+      - "updates/latest.json"
+      - ".github/workflows/pages.yml"
   workflow_dispatch:
 
 permissions:
@@ -27,11 +36,13 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 24
-      - name: Build Peak for the browser (site/peak/)
+      # builds Peak for the browser, the pages and the crawler files into _site/, and runs the checks: if one fails
+      # nothing is deployed and the site stays as it was
+      - name: Build and check the site (_site/)
         run: node scripts/build-site.mjs
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:
-          path: site
+          path: _site
       - id: deployment
         uses: actions/deploy-pages@v4

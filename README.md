@@ -82,8 +82,8 @@ app/                    the application (Tauri 2 + SvelteKit + Svelte 5)
                         updater (updater.rs)
 scripts/                release.ps1 (signed build and update manifest), test-update/ (configs
                         for trying the update flow against a local server); build-site.mjs,
-                        site-dev.mjs, gen-assets.html (the website, see Website below)
-site/                   the website: plain HTML, CSS and JavaScript, served at streakboom.com
+                        site-dev.mjs, gen-assets.html and site/ (the website builder, see Website below)
+site/                   the website sources: text (strings.mjs), style, scripts, assets; the pages are built from them into _site/ (git-ignored) and served at streakboom.com
 assets/                 peak-icon-1024.png, the source of the app icon (npm run tauri icon); the README shows
                         its 256 px frame, app/src-tauri/icons/128x128@2x.png
 updates/                latest.json, the update manifest the app reads first
@@ -143,14 +143,16 @@ The app reads the manifest from that repository copy first and from the release 
 
 ## Website 🌐
 
-The site in `site/` is a single static page with no framework: hero with an interactive Peak, features, install steps, privacy, FAQ and the latest releases, in English and Vietnamese. The download button always points at the latest release page (GitHub keeps only the two newest releases, so the page never links to a version-specific file). The version and the notes of the newest versions are read from `CHANGELOG.md` in the repository when the page loads, with `updates/latest.json` as the fallback, so a new release needs no change to the site as long as it has its `CHANGELOG.md` entry (the release script requires one). On phones and non-Windows computers the download is replaced by "send the link to my PC".
+The website is a set of static pages with no framework, built by `scripts/build-site.mjs` into `_site/` and served by GitHub Pages (ADR-0034): a home page and a privacy page in English (`/`, `/privacy/`) and Vietnamese (`/vi/`, `/vi/privacy/`), a changelog (`/changelog/`, English), `404.html`, `sitemap.xml`, `robots.txt`, `llms.txt` and `llms-full.txt`. Every fact is in the HTML itself, so no script is needed to read it: the version comes from `app/src-tauri/tauri.conf.json`, the release notes from `CHANGELOG.md`, the text from `site/strings.mjs`. The download button always points at the latest release page (GitHub keeps only the two newest releases, so the site never links to a version-specific file). On phones and non-Windows computers the download is replaced by "send the link to my PC".
 
-- **Peak on the page is the app's own cat.** `scripts/build-site.mjs` turns `app/src/lib/rig/*.ts` into browser JavaScript in `site/peak/` (generated, git-ignored), so the page cannot drift from the app. Needs Node 22.13 or newer. For that the three rig files may only use TypeScript syntax that can be erased (no `enum`, `namespace` or constructor parameter properties) and may import only each other (`import type` from `../sprites.ts` is fine); a test in `app/src/lib/rig.test.ts` checks it.
-- **Preview:** `node scripts/site-dev.mjs`, then open `http://localhost:4173`.
+- **A release redeploys the site by itself.** `.github/workflows/pages.yml` also runs when `CHANGELOG.md`, `updates/latest.json` or `tauri.conf.json` change, so a new release needs no change to the site as long as `CHANGELOG.md` has its entry (`## x.y.z (date)` then `- ` lines; the release script requires one).
+- **The build checks the site and fails (nothing is deployed) when:** the `tauri.conf.json` version is not the newest `CHANGELOG.md` entry or differs from the one in the JSON-LD, `llms.txt` or the page; the FAQ in JSON-LD differs from the visible FAQ; an `hreflang` pair is not reciprocal or a canonical link is missing; a page has no single `h1`, an image has no `alt` or an internal link is broken; the facts are missing from the static HTML; the sitemap misses a page; or a retired name or an unbacked claim appears ("almost no CPU", "hand-drawn", a macOS or code-signing promise, "Peak sees what you do"). The checks are tested: `node --test scripts/site/`.
+- **Where to edit:** the text of both languages in `site/strings.mjs`; the page layouts, structured data and crawler files in `scripts/site/` (`pages.mjs`, `files.mjs`, `checks.mjs`); the style in `site/style.css`; the scripts in `site/app.js` and `site/peak.js`.
+- **Peak on the page is the app's own cat.** The build turns `app/src/lib/rig/*.ts` into browser JavaScript in `site/peak/` (generated, git-ignored), so the page cannot drift from the app. Needs Node 22.13 or newer. For that the three rig files may only use TypeScript syntax that can be erased (no `enum`, `namespace` or constructor parameter properties) and may import only each other (`import type` from `../sprites.ts` is fine); a test in `app/src/lib/rig.test.ts` checks it. The interactive Peak starts after the first paint.
+- **Preview:** `node scripts/site-dev.mjs`, then open `http://localhost:4173`. It builds like the deploy and rebuilds on every page request; a failed check is shown as text.
 - **Icons and share image:** with the preview running, open `http://localhost:4173/__gen` and press Save all. It redraws `site/assets/` (favicon, touch icon, header logo, share image) and `assets/peak-icon-1024.png` from the rig.
-- **Deploy:** pushing to `main` with changes in `site/`, `app/src/lib/rig/` or `scripts/build-site.mjs` runs `.github/workflows/pages.yml`, which builds Peak and publishes to GitHub Pages.
 - **Domain:** `streakboom.com` (registered at name.com). DNS: four `A` records (185.199.108.153, .109.153, .110.153, .111.153) and four `AAAA` records (2606:50c0:8000::153 to 8003::153) for the root, and a `CNAME` for `www` to `vinhcodon.github.io`. The custom domain and Enforce HTTPS are set in the repository's Settings, Pages. `www` and the old `vinhcodon.github.io/streakboom` address redirect to `https://streakboom.com/`.
-- **Share previews:** Facebook and Zalo cache the title and image of a link. After changing `site/assets/og-image.jpg` or the page title, press Scrape Again in the Facebook Sharing Debugger.
+- **Share previews:** Facebook and Zalo cache the title and image of a link. After changing `site/assets/og-image.jpg` or a page title, press Scrape Again in the Facebook Sharing Debugger.
 
 ## Documentation 📚
 

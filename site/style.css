@@ -24,8 +24,6 @@
 * { box-sizing: border-box; }
 html { scroll-behavior: smooth; -webkit-text-size-adjust: 100%; }
 @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
-/* for visitors whose language is saved as Vietnamese: wait for the translation instead of flashing English */
-html.i18n-pending body { visibility: hidden; }
 body {
   margin: 0;
   background: var(--bg);
@@ -35,7 +33,7 @@ body {
 }
 a { color: var(--link); }
 h1, h2, h3 { line-height: 1.2; margin: 0 0 .5em; }
-h1 { font-size: clamp(2rem, 5vw, 3.2rem); }
+h1 { font-size: clamp(1.8rem, 4.4vw, 2.9rem); }
 h2 { font-size: clamp(1.5rem, 3.5vw, 2.1rem); }
 :focus-visible { outline: 3px solid var(--link); outline-offset: 2px; }
 
@@ -93,6 +91,7 @@ main, .footer { max-width: 1100px; margin: 0 auto; padding: 0 24px; }
   border: 1.5px solid var(--gold); background: transparent; color: var(--ink);
 }
 .lang { font-weight: 700; }
+a.lang { text-decoration: none; display: inline-flex; align-items: center; }
 .chip:hover, .lang:hover { background: var(--bg-alt); }
 .chip[aria-pressed="true"] { background: var(--gold); color: #2a1d05; }
 
@@ -127,12 +126,21 @@ main, .footer { max-width: 1100px; margin: 0 auto; padding: 0 24px; }
 code { background: var(--bg-alt); padding: 1px 6px; border-radius: 6px; font-size: .9em; overflow-wrap: anywhere; }
 .section.alt code { background: var(--card); }
 
-.checks { padding-left: 1.2em; max-width: 760px; }
+.facts, .checks { padding-left: 1.2em; max-width: 760px; }
+.facts li { margin: .5em 0; }
+
+/* the privacy and changelog pages: one readable column */
+.prose { max-width: 760px; }
+.prose h1 { margin-bottom: .4em; }
+.prose h2 { margin-top: 1.6em; font-size: 1.35rem; }
+.prose .lead { margin-bottom: 1.2em; }
 .checks li { margin: .5em 0; }
 
 details { background: var(--card); border-radius: var(--radius); padding: 4px 20px; margin: 10px 0; max-width: 760px; }
 summary { cursor: pointer; font-weight: 600; padding: 10px 0; }
 details p { margin: 0 0 12px; color: var(--muted); }
+/* the question is a heading (for crawlers and assistants) but looks like the summary line */
+summary h3 { display: inline; font-size: inherit; font-weight: 600; margin: 0; }
 
 .releases { list-style: none; padding: 0; display: grid; gap: 14px; max-width: 760px; }
 .releases > li { background: var(--card); border-radius: var(--radius); padding: 16px 20px; }

@@ -1,7 +1,7 @@
 // An interactive Peak for the hero, drawn by the app's own rig (built into ./peak/ by scripts/build-site.mjs).
 import { Rig } from "./peak/engine.js";
 import { drawFrame } from "./peak/draw.js";
-import { t } from "./i18n.js";
+import { t } from "./ui.js";
 
 const POSES = ["idle", "happy", "purr", "sleep", "wake", "walk", "gasp", "sad", "curious"];
 const TIMED = { happy: 1400, purr: 2600, gasp: 900, curious: 1800, wake: 1500 }; // then back to idle
@@ -66,7 +66,6 @@ export function startPeak(canvas, chipBox) {
   }
   const label = () => chips.forEach((b, p) => (b.textContent = t("pose_" + p)));
   label();
-  document.addEventListener("langchange", label);
 
   // the eyes follow the pointer, like the app; a click is a poke
   addEventListener("pointermove", (e) => {

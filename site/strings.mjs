@@ -1,10 +1,11 @@
-// English and Vietnamese strings. The English text also lives in index.html as the no-JavaScript
-// default. These strings are our own (never user or network content), so data-i18n-html may use them.
+// The text of the site in English and Vietnamese: the single source the page builder (scripts/build-site.mjs)
+// fills the templates from. These strings are our own (never user or network content), so the keys listed in
+// HTML_KEYS (and only those) may carry HTML. Placeholders: {version}, {date}, {exe}.
 export const STRINGS = {
   en: {
-    title: "Streakboom: meet Peak, a desktop pet cat",
+    title: "Streakboom: meet Peak, a desktop pet cat for Windows",
     nav_features: "Features", nav_install: "Install", nav_privacy: "Privacy", nav_faq: "FAQ", nav_updates: "Updates",
-    hero_title: "A little cat that lives on your screen.",
+    hero_title: "Streakboom: meet Peak, a little cat that lives on your screen",
     hero_lead: "Meet <strong>Peak</strong>, a cheerful golden chibi cat. It reacts when you stroke, poke or carry it, says short lines in Vietnamese or English, and keeps you company. The app is free and open source, for Windows.",
     download: "Download for Windows", latest_release: "latest release", see_more: "See what it does",
     share_btn: "Send link to my PC", link_copied: "Link copied",
@@ -29,7 +30,7 @@ export const STRINGS = {
     g5_a: "Double-click", g5_b: "Open the chat bubble",
     g6_a: "Right-click it, or the tray icon", g6_b: "Settings, Quiet mode, Quit",
     inst_title: "Install in three steps",
-    s1: "Download <code id=\"exe-name\">Streakboom_&lt;version&gt;_x64-setup.exe</code> with the button above, or from the <a href=\"https://github.com/vinhcodon/streakboom/releases/latest\">latest release</a>.",
+    s1: "Download <code>{exe}</code> with the button above, or from the <a href=\"https://github.com/vinhcodon/streakboom/releases/latest\">latest release</a>.",
     s2: "Run it. If Windows says \"Windows protected your PC\", choose <strong>More info</strong>, then <strong>Run anyway</strong>. It installs for the current user only, with no administrator rights.",
     s3: "Peak appears on your screen and shows a short tour. To remove it, use Windows Settings, Apps.",
     inst_note: "Windows needs the WebView2 runtime; the installer downloads it if it is missing.",
@@ -45,9 +46,8 @@ export const STRINGS = {
     q4: "Does it work on Mac or Linux?", a4: "Not yet. It is Windows 10/11 only for now. A macOS version is an open idea with no date.",
     q5: "How do I get updates?", a5: "Peak can update itself: install automatically when you are idle, ask first (the default), or never check. Updates are signed and only installed if the signature checks out. If you have an old development build (0.1.x) that does not update itself, install the latest release once by hand; after that it updates normally.",
     upd_title: "Latest updates",
-    upd_sub: "From the <a href=\"https://github.com/vinhcodon/streakboom/blob/main/CHANGELOG.md\">changelog</a> in the repository, newest first. Notes are in English. GitHub Releases keeps only the two newest versions; the changelog keeps them all.",
-    loading: "Loading releases…", rss: "Subscribe to releases (RSS)", load_fail: "Could not load the changelog. Open it on GitHub.",
-    foot_a: "MIT License. Made by Vinh Codon. Peak is an original character: the author chose the \"mochi cat\" direction from three concept sketches proposed by Claude, an AI assistant made by Anthropic, and the animation rig was written with Claude's help. The app has no image files for the cat: it is drawn entirely as vector shapes in code, under the same MIT license. The icons and the share image on this site are generated from that same code.",
+    upd_sub: "The newest entries of the <a href=\"/changelog/\">changelog</a>, in English. GitHub Releases keeps only the two newest versions; the changelog keeps them all.",
+    rss: "Subscribe to releases (RSS)", foot_a: "MIT License. Made by Vinh Codon. Peak is an original character: the author chose the \"mochi cat\" direction from three concept sketches proposed by Claude, an AI assistant made by Anthropic, and the animation rig was written with Claude's help. The app has no image files for the cat: it is drawn entirely as vector shapes in code, under the same MIT license. The icons and the share image on this site are generated from that same code.",
     foot_bug: "Report a bug",
     f7_h: "🔄 Updates your way",
     f7_p: "It can install updates automatically when you are idle, ask first (the default), or never check. It can also start with Windows (off by default; it asks once, politely).",
@@ -68,11 +68,34 @@ export const STRINGS = {
     q8: "Does Peak read what I type or what is on my screen?",
     a8: "No. To stay out of your way Peak notices only when you last used the keyboard or the mouse, where the pointer is, and whether the left mouse button is pressed. It does not read what you type or which keys you press, and it does not look at your screen, window titles or app names. Where it thinks your text is heading is a guess from where you last clicked and how long you have typed, and the guess can be wrong.",
     pose_wake: "Wake up",
+    description: "Streakboom is a free, open-source desktop pet for Windows 10 and 11. Meet Peak, a golden chibi cat who keeps you company. No AI or account needed.",
+    nav_changelog: "Changelog",
+    lang_switch: "VI",
+    lang_switch_label: "Tiếng Việt",
+    glance_title: "At a glance",
+    glance: ["Streakboom is an open-source desktop pet for Windows 10 and 11 (64-bit). The pet is Peak, a golden chibi cat.", "The app is free and the code is under the MIT license. An optional AI “brain” uses your own key (Gemini, Claude or OpenAI) and is billed by the provider you choose; Gemini has a free tier.", "Latest version: {version}, released {date}.", "It installs for the current user without administrator rights. Memory use is about 100 to 120 MB (measured on one computer).", "There is no account. Your API keys stay in the Windows Credential Manager.", "The installer is not code-signed yet, so Windows SmartScreen warns on the first run.", "Made by Vinh Codon. The source is on GitHub: github.com/vinhcodon/streakboom."],
+    not_title: "What Streakboom is not",
+    not_items: ["Not an assistant: Peak is a companion that is lovable with no AI at all.", "It does not read what you type, which keys you press, your screen, window titles or app names.", "Not available for macOS or Linux. A macOS version is an idea with no date.", "Not code-signed yet.", "The Claude and OpenAI brains have not yet been tried with real keys (Gemini has)."],
+    priv_more: "Read the full privacy page",
+    peak_alt: "Peak, a golden chibi cat. Move the mouse over it or click it.",
+    poses_label: "Poses",
+    pv_page_title: "Streakboom privacy: what it does with your data",
+    pv_desc: "What Streakboom keeps, what it sends and to whom: API keys, memory, usage stats and what Peak notices around it.",
+    pv_title: "Privacy: what Streakboom does with your data",
+    pv_lead: "Short version: Streakboom has no account and no server of its own. Your keys and your pet's memory stay on your computer. The only thing that leaves it is what you send to the AI provider you chose, and only if you add a key.",
+    pv_sections: [{"h": "API keys", "p": ["Your API keys are stored in the Windows Credential Manager (one entry per brain: gemini-api-key, claude-api-key and openai-api-key, service streakboom) and are sent only to the provider you chose, in a request header. They are never written to a file or sent to any other window of the app."]}, {"h": "What the AI provider receives", "p": ["With Google's free tier, what you send may be used and read by Google, and API users must be 18 or older (clients in the EEA, Switzerland and the UK must use paid services). For Claude and OpenAI, what you send goes to Anthropic or OpenAI to be answered; see their terms. The app says so before you connect.", "Without a key the pet does not call any AI provider."]}, {"h": "What Peak remembers", "p": ["Chats are kept in memory only. What the pet remembers is stored on your computer in memory.json: the names you gave, coarse habit counts (for example how many sessions began in each hour of the day), touch counts, milestones and the short facts it noted from your chats. The facts are sent to the brain you use, together with later chats you start.", "You can see, edit, delete or switch off all of it in Settings, Memory."]}, {"h": "Usage stats (off by default)", "p": ["If you opt in, the app records funnel event names (for example “opened the chat”) and timestamps with a random id, in a local queue. Nothing is sent automatically: Settings, Privacy, Copy stats puts it on your clipboard so you can share it by hand. Opting out deletes the id and the queue.", "A second switch, Daily activity counts, adds a few numbers per day (scratches, rubs, pokes, messages sent, lines the pet said and you reacted to, minutes the app ran, times Quiet mode was switched on): only counts, never text. Turning the switch off deletes the numbers."]}, {"h": "What Peak notices around it", "p": ["To keep out of your way, Peak reads only when you last used the keyboard or the mouse (one number, never which keys), where the pointer is, and whether the left mouse button is pressed (so it remembers where you last clicked and can guess which row you are typing on).", "It never reads what you type, which keys you press, what is on your screen, window titles or app names. These readings are kept only in memory, are never written to a file or sent anywhere, and are gone when Peak closes."]}, {"h": "Files on your computer", "p": ["Files live in %APPDATA%\\com.streakboom.app\\: state.json (window position, Quiet mode, the brain in use and the chosen models), pet.json (everything else about the pet) and memory.json (what it remembers)."]}, {"h": "Updates", "p": ["Unless you choose “never check”, the app reads a small update manifest from the project's GitHub repository (and the installer from GitHub). An update is only installed if its signature verifies."]}],
+    pv_back: "Back to the home page",
+    cl_page_title: "Streakboom changelog: release notes of every version",
+    cl_desc: "The release notes of every version of Streakboom, newest first.",
+    cl_title: "Streakboom changelog",
+    cl_intro: "Release notes of every version of Streakboom, newest first. The notes are written in English. GitHub keeps only the two newest releases; the notes of every version stay here.",
+    nf_title: "Page not found",
+    nf_text: "This page does not exist. Go to the home page or the changelog.",
   },
   vi: {
-    title: "Streakboom: gặp Peak, chú mèo thú cưng trên màn hình",
+    title: "Streakboom: gặp Peak, chú mèo thú cưng cho màn hình Windows",
     nav_features: "Tính năng", nav_install: "Cài đặt", nav_privacy: "Riêng tư", nav_faq: "Hỏi đáp", nav_updates: "Cập nhật",
-    hero_title: "Một chú mèo nhỏ sống trên màn hình của bạn.",
+    hero_title: "Streakboom: gặp Peak, chú mèo nhỏ sống trên màn hình của bạn",
     hero_lead: "Gặp <strong>Peak</strong>, chú mèo chibi màu vàng vui vẻ. Peak phản ứng khi bạn vuốt ve, chọc hay bế nó, nói vài câu ngắn bằng tiếng Việt hoặc tiếng Anh và ở bên bạn lúc làm việc. Ứng dụng miễn phí và mã nguồn mở, dành cho Windows.",
     download: "Tải về cho Windows", latest_release: "bản mới nhất", see_more: "Xem Peak làm được gì",
     share_btn: "Gửi liên kết sang máy tính", link_copied: "Đã sao chép liên kết",
@@ -97,7 +120,7 @@ export const STRINGS = {
     g5_a: "Bấm đúp", g5_b: "Mở khung trò chuyện",
     g6_a: "Bấm chuột phải vào nó, hoặc vào biểu tượng khay", g6_b: "Cài đặt, chế độ Yên tĩnh, Thoát",
     inst_title: "Cài đặt trong ba bước",
-    s1: "Tải <code id=\"exe-name\">Streakboom_&lt;phiên bản&gt;_x64-setup.exe</code> bằng nút ở trên, hoặc từ <a href=\"https://github.com/vinhcodon/streakboom/releases/latest\">bản phát hành mới nhất</a>.",
+    s1: "Tải <code>{exe}</code> bằng nút ở trên, hoặc từ <a href=\"https://github.com/vinhcodon/streakboom/releases/latest\">bản phát hành mới nhất</a>.",
     s2: "Chạy file. Nếu Windows báo \"Windows protected your PC\", hãy chọn <strong>More info</strong>, rồi <strong>Run anyway</strong>. Bộ cài chỉ cài cho người dùng hiện tại, không cần quyền quản trị.",
     s3: "Peak xuất hiện trên màn hình và có một buổi giới thiệu ngắn. Muốn gỡ, vào Cài đặt Windows, Ứng dụng.",
     inst_note: "Windows cần WebView2 runtime; bộ cài sẽ tự tải nếu máy chưa có.",
@@ -113,9 +136,8 @@ export const STRINGS = {
     q4: "Có chạy trên Mac hoặc Linux không?", a4: "Chưa. Hiện chỉ có Windows 10/11. Bản macOS mới chỉ là ý tưởng, chưa có thời gian cụ thể.",
     q5: "Làm sao để nhận bản cập nhật?", a5: "Peak có thể tự cập nhật: tự cài khi bạn rảnh, hỏi trước (mặc định), hoặc không kiểm tra. Bản cập nhật được ký số và chỉ cài khi chữ ký hợp lệ. Nếu bạn đang dùng bản phát triển cũ (0.1.x) không tự cập nhật được, hãy cài bản mới nhất thủ công một lần; sau đó nó cập nhật bình thường.",
     upd_title: "Cập nhật mới nhất",
-    upd_sub: "Lấy từ <a href=\"https://github.com/vinhcodon/streakboom/blob/main/CHANGELOG.md\">changelog</a> trong kho mã, mới nhất ở trên. Ghi chú bằng tiếng Anh. GitHub Releases chỉ giữ hai phiên bản mới nhất; changelog giữ tất cả.",
-    loading: "Đang tải các bản phát hành…", rss: "Đăng ký theo dõi bản phát hành (RSS)", load_fail: "Không tải được changelog. Mở nó trên GitHub.",
-    foot_a: "Giấy phép MIT. Tác giả Vinh Codon. Peak là nhân vật gốc: tác giả chọn hướng \"mèo mochi\" từ ba bản phác thảo do Claude, một trợ lý AI của Anthropic, đề xuất, và bộ khung hoạt họa được viết với sự hỗ trợ của Claude. Ứng dụng không có file ảnh nào cho chú mèo: nó được vẽ hoàn toàn bằng các hình vector trong mã, cùng giấy phép MIT. Biểu tượng và ảnh chia sẻ trên trang này được tạo ra từ chính đoạn mã đó.",
+    upd_sub: "Các mục mới nhất của <a href=\"/changelog/\">changelog</a>, bằng tiếng Anh. GitHub Releases chỉ giữ hai phiên bản mới nhất; changelog giữ tất cả.",
+    rss: "Đăng ký theo dõi bản phát hành (RSS)", foot_a: "Giấy phép MIT. Tác giả Vinh Codon. Peak là nhân vật gốc: tác giả chọn hướng \"mèo mochi\" từ ba bản phác thảo do Claude, một trợ lý AI của Anthropic, đề xuất, và bộ khung hoạt họa được viết với sự hỗ trợ của Claude. Ứng dụng không có file ảnh nào cho chú mèo: nó được vẽ hoàn toàn bằng các hình vector trong mã, cùng giấy phép MIT. Biểu tượng và ảnh chia sẻ trên trang này được tạo ra từ chính đoạn mã đó.",
     foot_bug: "Báo lỗi",
     f7_h: "🔄 Cập nhật theo ý bạn",
     f7_p: "Peak có thể tự cài bản cập nhật khi bạn rảnh, hỏi trước (mặc định), hoặc không kiểm tra. Nó cũng có thể khởi động cùng Windows (mặc định tắt; nó chỉ hỏi một lần, lịch sự).",
@@ -136,29 +158,35 @@ export const STRINGS = {
     q8: "Peak có đọc những gì tôi gõ hoặc màn hình của tôi không?",
     a8: "Không. Để không cản đường bạn, Peak chỉ biết lần cuối bạn dùng bàn phím hoặc chuột là khi nào, con trỏ đang ở đâu, và nút trái chuột có đang được nhấn hay không. Nó không đọc bạn gõ gì hay nhấn phím nào, và không nhìn màn hình, tiêu đề cửa sổ hay tên ứng dụng. Chỗ nó nghĩ chữ của bạn đang chạy tới chỉ là một phỏng đoán từ chỗ bạn bấm gần nhất và thời gian bạn đã gõ, và phỏng đoán đó có thể sai.",
     pose_wake: "Thức dậy",
+    description: "Streakboom là thú cưng trên màn hình miễn phí, mã nguồn mở cho Windows 10 và 11. Gặp Peak, chú mèo chibi màu vàng ở bên bạn. Không cần AI hay tài khoản.",
+    nav_changelog: "Changelog",
+    lang_switch: "EN",
+    lang_switch_label: "English",
+    glance_title: "Tóm tắt nhanh",
+    glance: ["Streakboom là thú cưng mã nguồn mở trên màn hình cho Windows 10 và 11 (64-bit). Thú cưng là Peak, một chú mèo chibi màu vàng.", "Ứng dụng miễn phí và mã nguồn theo giấy phép MIT. “Bộ não” AI là tùy chọn, dùng khóa của riêng bạn (Gemini, Claude hoặc OpenAI) và do nhà cung cấp bạn chọn tính phí; Gemini có gói miễn phí.", "Phiên bản mới nhất: {version}, phát hành {date}.", "Cài cho người dùng hiện tại, không cần quyền quản trị. Bộ nhớ dùng khoảng 100 đến 120 MB (đo trên một máy).", "Không có tài khoản. Khóa API của bạn nằm trong Windows Credential Manager.", "Bộ cài chưa được ký số, nên Windows SmartScreen cảnh báo ở lần chạy đầu.", "Tác giả Vinh Codon. Mã nguồn trên GitHub: github.com/vinhcodon/streakboom."],
+    not_title: "Streakboom không phải là gì",
+    not_items: ["Không phải trợ lý: Peak là người bạn đồng hành, đáng yêu mà không cần AI.", "Nó không đọc bạn gõ gì, nhấn phím nào, màn hình, tiêu đề cửa sổ hay tên ứng dụng của bạn.", "Không có cho macOS hay Linux. Bản macOS mới chỉ là ý tưởng, chưa có thời gian cụ thể.", "Chưa được ký số.", "Bộ não Claude và OpenAI chưa được thử với khóa thật (Gemini thì đã thử)."],
+    priv_more: "Đọc trang quyền riêng tư đầy đủ",
+    peak_alt: "Peak, một chú mèo chibi màu vàng. Rê chuột lên nó hoặc bấm vào nó.",
+    poses_label: "Tư thế",
+    pv_page_title: "Quyền riêng tư của Streakboom: nó làm gì với dữ liệu của bạn",
+    pv_desc: "Streakboom giữ gì, gửi gì và gửi cho ai: khóa API, bộ nhớ, thống kê sử dụng và những gì Peak nhận biết xung quanh.",
+    pv_title: "Quyền riêng tư: Streakboom làm gì với dữ liệu của bạn",
+    pv_lead: "Nói ngắn gọn: Streakboom không có tài khoản và không có máy chủ riêng. Khóa của bạn và bộ nhớ của thú cưng nằm trên máy bạn. Thứ duy nhất rời khỏi máy là nội dung bạn gửi đến nhà cung cấp AI bạn chọn, và chỉ khi bạn thêm khóa.",
+    pv_sections: [{"h": "Khóa API", "p": ["Khóa API của bạn được lưu trong Windows Credential Manager (mỗi bộ não một mục: gemini-api-key, claude-api-key và openai-api-key, dịch vụ streakboom) và chỉ được gửi đến nhà cung cấp bạn chọn, trong một header của yêu cầu. Chúng không bao giờ được ghi ra file hay gửi sang cửa sổ nào khác của ứng dụng."]}, {"h": "Nhà cung cấp AI nhận được gì", "p": ["Với gói miễn phí của Google, nội dung bạn gửi có thể được Google sử dụng và đọc, và người dùng API phải từ 18 tuổi (khách hàng ở EEA, Thụy Sĩ và Anh phải dùng dịch vụ trả phí). Với Claude và OpenAI, nội dung bạn gửi đi đến Anthropic hoặc OpenAI để được trả lời; hãy xem điều khoản của họ. Ứng dụng sẽ báo trước khi bạn kết nối.", "Khi chưa có khóa, thú cưng không gọi đến nhà cung cấp AI nào."]}, {"h": "Peak nhớ những gì", "p": ["Các cuộc trò chuyện chỉ được giữ trong bộ nhớ. Những gì thú cưng nhớ được lưu trên máy bạn trong memory.json: tên bạn đã đặt, số đếm thói quen thô (ví dụ có bao nhiêu phiên bắt đầu vào mỗi giờ trong ngày), số lần chạm, các cột mốc và vài sự thật ngắn nó ghi lại từ các cuộc trò chuyện. Những sự thật đó được gửi đến bộ não bạn đang dùng, cùng với các cuộc trò chuyện sau đó.", "Bạn có thể xem, sửa, xóa hoặc tắt tất cả trong Cài đặt, Bộ nhớ."]}, {"h": "Thống kê sử dụng (mặc định tắt)", "p": ["Nếu bạn bật, ứng dụng ghi tên các sự kiện của phễu (ví dụ “mở khung trò chuyện”) và thời điểm, kèm một mã ngẫu nhiên, trong một hàng đợi trên máy. Không có gì được tự động gửi đi: Cài đặt, Riêng tư, Copy stats chép chúng vào clipboard để bạn tự chia sẻ. Khi tắt, mã và hàng đợi bị xóa.", "Một công tắc thứ hai, Daily activity counts, thêm vài con số mỗi ngày (lần gãi, lần xoa, lần chọc, số tin nhắn đã gửi, số câu thú cưng nói và bạn đã phản ứng, số phút ứng dụng chạy, số lần bật chế độ Yên tĩnh): chỉ là con số, không bao giờ có nội dung chữ. Tắt công tắc thì các con số bị xóa."]}, {"h": "Peak nhận biết gì xung quanh", "p": ["Để không cản đường bạn, Peak chỉ biết lần cuối bạn dùng bàn phím hoặc chuột là khi nào (một con số, không bao giờ biết phím nào), con trỏ đang ở đâu, và nút trái chuột có đang được nhấn hay không (để nhớ chỗ bạn bấm gần nhất và đoán bạn đang gõ ở hàng nào).", "Nó không bao giờ đọc bạn gõ gì, bạn nhấn phím nào, màn hình của bạn có gì, tiêu đề cửa sổ hay tên ứng dụng. Những số đọc này chỉ nằm trong bộ nhớ, không bao giờ được ghi ra file hay gửi đi đâu, và mất khi Peak đóng."]}, {"h": "Các file trên máy bạn", "p": ["Các file nằm trong %APPDATA%\\com.streakboom.app\\: state.json (vị trí cửa sổ, chế độ Yên tĩnh, bộ não đang dùng và các mô hình đã chọn), pet.json (mọi thứ khác về thú cưng) và memory.json (những gì nó nhớ)."]}, {"h": "Cập nhật", "p": ["Trừ khi bạn chọn “không kiểm tra”, ứng dụng đọc một tệp mô tả cập nhật nhỏ từ kho GitHub của dự án (và bộ cài từ GitHub). Một bản cập nhật chỉ được cài khi chữ ký của nó hợp lệ."]}],
+    pv_back: "Về trang chủ",
+    cl_page_title: "",
+    cl_desc: "",
+    cl_title: "",
+    cl_intro: "",
+    nf_title: "",
+    nf_text: "",
   },
 };
 
-const pick = () => {
-  try {
-    const saved = localStorage.getItem("lang");
-    if (saved === "en" || saved === "vi") return saved;
-  } catch {}
-  return (navigator.language || "en").toLowerCase().startsWith("vi") ? "vi" : "en";
-};
-
-export let lang = pick();
-export const t = (key) => STRINGS[lang][key] ?? STRINGS.en[key] ?? key;
-
-export function applyLang(next = lang) {
-  lang = next;
-  try { localStorage.setItem("lang", lang); } catch {}
-  document.documentElement.lang = lang;
-  document.title = t("title");
-  document.documentElement.classList.remove("i18n-pending");
-  for (const el of document.querySelectorAll("[data-i18n]")) el.textContent = t(el.dataset.i18n);
-  for (const el of document.querySelectorAll("[data-i18n-html]")) el.innerHTML = t(el.dataset.i18nHtml);
-  const btn = document.getElementById("lang-btn");
-  if (btn) btn.textContent = lang === "vi" ? "EN" : "VI";
-  document.dispatchEvent(new CustomEvent("langchange"));
-}
+/** Keys whose value is HTML written by us (everything else is plain text and is escaped). */
+export const HTML_KEYS = new Set(["hero_lead", "alpha_note", "s1", "s2", "s3", "upd_sub"]);
+/** Keys that exist in English only: the changelog and the 404 page are not translated. */
+export const EN_ONLY = new Set(["cl_page_title", "cl_desc", "cl_title", "cl_intro", "nf_title", "nf_text"]);
+/** The keys the page scripts need (share button, copy note, pose labels); the build puts them in each page. */
+export const UI_KEYS = ["share_btn", "link_copied", "pose_idle", "pose_happy", "pose_purr", "pose_sleep", "pose_wake", "pose_walk", "pose_gasp", "pose_sad", "pose_curious"];
