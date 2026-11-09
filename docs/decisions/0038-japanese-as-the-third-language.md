@@ -1,6 +1,6 @@
 # ADR-0038: Japanese is the third language, in full, in a warm casual voice, labelled beta
 
-- **Status:** accepted (decisions 2026-11-09; built 2026-11-09, not released; not read by a native speaker)
+- **Status:** accepted (decisions 2026-11-09; built and released in 0.3.0 as a beta; not read by a native speaker)
 - **Date:** 2026-11-09
 - **Decided by:** Vinh (author), with Claude
 
