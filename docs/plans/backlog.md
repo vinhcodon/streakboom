@@ -23,8 +23,8 @@ Status: **proposed 2026-11-08, asked by Vinh to be carried out story by story.**
 | E8 | Focus-safety and places | 6 / 13 | FS-0 to FS-4 and PL-0 done; FS-5 and FS-6 left; PL-1 and PL-7 merged into E9 |
 | E9 | The desktop as terrain | 8 / 16 | Spec 07 and ADR-0030 written; the Rust `monitors_info` and `move_to` exist (TE-2); the lane model (TE-12) and the mouse button reading (TE-13) exist; hops and falls exist (TE-7); the cat leaves the typing lane by a hop (TE-14); a hop costs about a third of what it did (TE-15) |
 | E10 | Perception | 5 / 9 | Spec 08 and ADR-0031: four of five decisions answered; the ground map waits for L3 |
-| E13 | Fresh words: more variety in the scripted lines | 4 / 9 | Proposed 2026-11-10 after the author found the lines repetitive; the pools behind poke, scratch and belly are the smallest; nothing built |
-| E12 | Reactions: one way to express what happens | 4 / 11 | Spec 09 written and its four decisions answered (ADR-0041, 2026-11-10); the first fall (PC-7) felt flat, which showed that each reaction is a separate rule; nothing built yet |
+| E13 | Fresh words: more variety in the scripted lines | 5 / 9 | Proposed 2026-11-10 after the author found the lines repetitive; the pools behind poke, scratch and belly are the smallest; nothing built |
+| E12 | Reactions: one way to express what happens | 5 / 11 | Spec 09 written and its four decisions answered (ADR-0041, 2026-11-10); the first fall (PC-7) felt flat, which showed that each reaction is a separate rule; nothing built yet |
 | E11 | Reach: languages and brains | 4 / 5 | Groq is the fourth brain and Japanese is built in full, both released in 0.3.0 (BR-1, JA-1 to JA-3, ADR-0037, ADR-0038); BR-2 needs a key |
 
 Against the roadmap: Phases 0 to 2 done; **Phase 4 in progress** (E7: the soak was stopped early; PR-3 and PR-4 done; PF-3, PR-8, VE-2, VE-3 open; all the unchecked items are in [`verification-debt.md`](verification-debt.md)); Phase 3 blocked on keys (VE-4, VE-5, PE-3); Phase 5 not started (E6).
@@ -194,7 +194,7 @@ Why: reactions reach the screen by three separate paths (scripted line pools, po
 | RX-3 | Move the other existing reactions into beats when each is next touched: the notice beat (PC-2), huff, purr, happy, gasp, the mood reactions of ADR-0016 as appraisal presets (both ways work side by side until then); optionally an ears-up beat before an unprompted line | M | blocked (RX-2) | RX-2 |
 | RX-4 | Line slots: group the pools as `event.slot` without changing any line id, add the lines for the new events in three languages, extend the parity test | S | blocked (RX-2) | RX-2 |
 | RX-5 | The persona into layers (a locked core, the voice, modifiers) as short files, assembled by Rust to the same string as today for the same settings (a test proves it) | S | done (eight files in `app/src-tauri/persona/` with a README; `persona_layers` returns the layers with a locked flag for the page of RX-6; a fingerprint over every language, tier and tone proved the words are unchanged; a stray run of spaces in the Japanese-voice sentence and the mood rule is gone; 2 Rust tests; not yet in an installed build, which behaves the same) | RX-0 |
-| RX-6 | "What Peak is told": a read-only Settings page (Brain) showing the assembled prompt for the current settings, in three languages | S | ready (RX-5 is done) | RX-5 |
+| RX-6 | "What Peak is told": a read-only Settings page (Brain) showing the assembled prompt for the current settings, in three languages | S | done (a section at the end of the Brain page with a show/hide button, the layers with readable names and a lock mark; `persona_preview` in Rust; checked on the real Settings window in Vietnamese; the known facts are not shown here, they are on the Memory page) | RX-5 |
 | RX-7 | Reaction cards and the model's remark after a reflex: the card format, loading only the matching cards, the prompt assembly, the caps and a Settings switch (R3 decided: event name and appraisal only, ADR-0041) | M | blocked (RX-2, RX-5) | RX-2, RX-5 |
 | RX-8 | The reaction budget and priorities across all beats (spec/09 section 3) as one small module with tests | S | blocked (RX-1) | RX-1 |
 | RX-9 | Editable voice with presets and the locked core untouched; later: loadable character packs (its own decision) | M | later (R2, R4) | RX-6 |
@@ -211,7 +211,7 @@ Why: the author finds the scripted lines repetitive. The pools behind what users
 | LN-5 | Pool targets by frequency (poke 40, scratch 30, belly 20, trap 15, hints 12, greeting 12 per tier, return 20) and the lines to reach them in three languages, with a test that fails under target | L, split by trigger | blocked (LN-4 or hand writing) | LN-4 |
 | LN-6 | Rare lines (about 1 in 100, once a week) and callbacks that remember what Peak joked about | S | blocked (LN-3) | LN-3 |
 | LN-7 | Top-up by the connected brain: once a day, a few new lines for the least varied triggers from the trigger name, the tone and the persona only, kept on the machine and marked as generated | M | needs Vinh (spends the user's key; machine-written lines without review) | LN-1, RX-7 |
-| LN-8 | A repetition report: distinct lines a typical week would show per trigger, and the triggers under target | S | ready | |
+| LN-8 | A repetition report: distinct lines a typical week would show per trigger, and the triggers under target | S | done (`linereport.ts`, `scripts/line-report.mjs`, 4 tests; the weekly uses are guesses; first run: 6 of 15 triggers under the limit, about 31 lines per language to add, idle and poke first) | |
 
 ## E11. Reach: languages and brains (ADR-0037, ADR-0038)
 | ID | Story | Size | Status | Depends on |

@@ -74,6 +74,35 @@
   );
   const companyNow = $derived(ui.providers[snap?.provider ?? "gemini"].company);
 
+  // "What Peak is told" (RX-6): the persona prompt for the current language, closeness and tone, read-only
+  interface PersonaLayerView {
+    name: string;
+    locked: boolean;
+    text: string;
+  }
+  let personaOpen = $state(false);
+  let personaLayers = $state<PersonaLayerView[]>([]);
+  $effect(() => {
+    if (!personaOpen || !snap) return;
+    const { lang, tier } = snap;
+    const gentle = snap.settings.gentle;
+    invoke<PersonaLayerView[]>("persona_preview", { lang, tier, gentle })
+      .then((v) => (personaLayers = v))
+      .catch(() => (personaLayers = []));
+  });
+  const personaName = (n: string): string =>
+    (
+      {
+        voice: ui.personaVoice,
+        language: ui.personaLanguage,
+        core: ui.personaCore,
+        "voice-ja": ui.personaVoiceJa,
+        tone: ui.personaTone,
+        mood: ui.personaMood,
+        closeness: ui.personaCloseness,
+      } as Record<string, string>
+    )[n] ?? n;
+
   // brain
   let models = $state<string[]>([]);
   let modelPick = $state(""); // "" = automatic
@@ -531,6 +560,22 @@
         {/if}
         <p class="muted">{pv.keyNote}</p>
       {/if}
+      <h3 class="persona-h">{ui.personaTitle}</h3>
+      <p class="muted">{ui.personaLead}</p>
+      <div class="row">
+        <button class="seg" onclick={() => (personaOpen = !personaOpen)}>{personaOpen ? ui.personaHide : ui.personaShow} {personaOpen ? "▾" : "▸"}</button>
+      </div>
+      {#if personaOpen}
+        <div class="persona">
+          {#each personaLayers as l (l.name)}
+            <div class="layer">
+              <div class="layer-name">{personaName(l.name)}{#if l.locked} <span class="lock">🔒 {ui.personaLocked}</span>{/if}</div>
+              <div class="layer-text sel">{l.text}</div>
+            </div>
+          {/each}
+        </div>
+        <p class="muted">{ui.personaNote}</p>
+      {/if}
     </section>
     {/if}
 
@@ -756,6 +801,35 @@
   }
   .detail {
     word-break: break-all;
+  }
+  .persona-h {
+    margin: 10px 0 0;
+    font-size: 14px;
+  }
+  .persona {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .layer {
+    border: 1px solid #e3e3e3;
+    border-radius: 8px;
+    padding: 8px 10px;
+  }
+  .layer-name {
+    font-size: 12px;
+    font-weight: 600;
+    color: #555;
+    margin-bottom: 3px;
+  }
+  .lock {
+    font-weight: 400;
+    color: #888;
+  }
+  .layer-text {
+    font-size: 12.5px;
+    line-height: 1.45;
+    color: #333;
   }
   .steps {
     margin: 0;

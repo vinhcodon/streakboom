@@ -521,6 +521,13 @@ fn ground_under_cat(window: WebviewWindow) -> Result<GroundUnder, String> {
     Ok(GroundUnder { under: ground::standing_on(&points), points, id, foot: feet[1] })
 }
 
+/// What Peak is told when a brain is connected, layer by layer, for a language, a closeness tier and a tone: the page
+/// "What Peak is told" in Settings shows it (RX-6). Read-only; the text is compiled into the app.
+#[tauri::command]
+fn persona_preview(lang: String, tier: u8, gentle: bool) -> Vec<brain::PersonaLayer> {
+    brain::persona_layers(&lang, tier, gentle)
+}
+
 /// Is the window with that opaque number still there and still under that point (closed, minimized or dragged away: no).
 #[tauri::command]
 fn window_holds(id: u64, x: i32, y: i32) -> bool {
@@ -1412,7 +1419,7 @@ pub fn run() {
             edge_room,
             vertical_room,
             ground_at,
-            ground_under_cat, window_holds,
+            ground_under_cat, window_holds, persona_preview,
             monitors_info,
             move_to,
             pet_place,

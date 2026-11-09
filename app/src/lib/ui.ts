@@ -93,6 +93,19 @@ export interface UiStrings {
   activateNow: string;
   activeLine: string;
   usageToday: string;
+  personaTitle: string;
+  personaLead: string;
+  personaNote: string;
+  personaShow: string;
+  personaHide: string;
+  personaLocked: string;
+  personaVoice: string;
+  personaLanguage: string;
+  personaCore: string;
+  personaVoiceJa: string;
+  personaTone: string;
+  personaMood: string;
+  personaCloseness: string;
   pgGeneral: string;
   pgPersonality: string;
   pgBrain: string;
@@ -304,6 +317,19 @@ export const UI: Record<Lang, UiStrings> = {
     activateNow: "Use this brain right after connecting",
     activeLine: "Answering with: {name} · {model}",
     usageToday: "Today: {chat} / {chatCap} chats, {proactive} / {proactiveCap} unprompted lines",
+    personaTitle: "What Peak is told",
+    personaLead: "When a brain is connected, every answer starts from these notes about who Peak is. This is the text for your current settings, word for word. It is in English whatever language you use; the language line decides which language Peak answers in.",
+    personaNote: "What you told Peak is on the Memory page and is added after this text in chats you start. The locked parts keep Peak safe and let the app act out its feelings.",
+    personaShow: "Show the text",
+    personaHide: "Hide the text",
+    personaLocked: "locked",
+    personaVoice: "Character",
+    personaLanguage: "Language",
+    personaCore: "Safety",
+    personaVoiceJa: "Japanese voice",
+    personaTone: "Tone",
+    personaMood: "Feeling tag",
+    personaCloseness: "How close you are",
     pgGeneral: "General",
     pgPersonality: "Personality",
     pgBrain: "Brain",
@@ -531,6 +557,19 @@ export const UI: Record<Lang, UiStrings> = {
     activateNow: "Dùng bộ não này ngay sau khi kết nối",
     activeLine: "Đang trả lời bằng: {name} · {model}",
     usageToday: "Hôm nay: {chat} / {chatCap} lượt chat, {proactive} / {proactiveCap} câu tự nói",
+    personaTitle: "Peak được dặn gì",
+    personaLead: "Khi có bộ não, mỗi câu trả lời bắt đầu từ những lời dặn này về việc Peak là ai. Đây là nguyên văn theo cài đặt hiện tại của bạn. Văn bản viết bằng tiếng Anh dù bạn dùng ngôn ngữ nào; dòng ngôn ngữ quyết định Peak trả lời bằng tiếng gì.",
+    personaNote: "Những điều bạn đã kể cho Peak nằm ở trang Trí nhớ và được thêm vào sau đoạn này trong các cuộc trò chuyện bạn bắt đầu. Phần bị khóa giữ cho Peak an toàn và để ứng dụng diễn được cảm xúc.",
+    personaShow: "Xem nội dung",
+    personaHide: "Ẩn nội dung",
+    personaLocked: "khóa",
+    personaVoice: "Tính cách",
+    personaLanguage: "Ngôn ngữ",
+    personaCore: "An toàn",
+    personaVoiceJa: "Giọng tiếng Nhật",
+    personaTone: "Tông giọng",
+    personaMood: "Thẻ cảm xúc",
+    personaCloseness: "Độ thân thiết",
     pgGeneral: "Chung",
     pgPersonality: "Tính cách",
     pgBrain: "Bộ não",
@@ -758,6 +797,19 @@ export const UI: Record<Lang, UiStrings> = {
     activateNow: "つないだらすぐこの脳みそを使う",
     activeLine: "返事に使っているもの：{name} · {model}",
     usageToday: "今日：チャット {chat} / {chatCap} 回、自分から話した {proactive} / {proactiveCap} 回",
+    personaTitle: "Peakに伝えていること",
+    personaLead: "脳みそをつないでいると、返事のたびに、Peakがどんな子かを伝えるこのメモから始まります。いまの設定に合わせた、そのままの文章です。使う言葉に関係なく英語で書かれていて、返事の言葉は「言語」の行で決まります。",
+    personaNote: "あなたがPeakに話したことは「記憶」のページにあり、自分から始めたチャットでは、この文章のあとに付け足されます。ロックされた部分は、Peakを安全に保ち、アプリが気持ちを表せるようにします。",
+    personaShow: "内容を見る",
+    personaHide: "内容をかくす",
+    personaLocked: "ロック",
+    personaVoice: "性格",
+    personaLanguage: "言語",
+    personaCore: "安全",
+    personaVoiceJa: "日本語の話し方",
+    personaTone: "口調",
+    personaMood: "気持ちのタグ",
+    personaCloseness: "なかよし度",
     pgGeneral: "一般",
     pgPersonality: "性格",
     pgBrain: "脳みそ",

@@ -194,7 +194,7 @@ pub fn language_name(lang: &str) -> &'static str {
 }
 
 /// One layer of the persona prompt (spec/09 section 6, RX-5). The texts live in `app/src-tauri/persona/*.md`.
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Serialize, Debug, Clone, PartialEq, Eq)]
 pub struct PersonaLayer {
     /// A short name for the layer, as the "What Peak is told" page shows it.
     pub name: &'static str,
