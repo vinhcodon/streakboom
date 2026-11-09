@@ -215,3 +215,25 @@ Transfer: 39 to 41 KB and 12 requests for a home page, 15 KB and 4 requests for 
 
 ## 11. Size budget and what was built (2026-11-10)
 The build now fails when the scripts together exceed 30 KB gzipped or a home page exceeds 60 KB of HTML (`sizeProblems` in `scripts/site/checks.mjs`, with a test). Measured at the time: scripts 17.5 KB gzipped; home pages 29.5 KB (EN), 33.9 KB (VI), 35.9 KB (JA). N4 (structured data, llms facts, the safe-to-install question) and N2 (the How it works pages) are built; N3 waits for a Japanese reader. Lighthouse stays manual. Not verified: the budget numbers are the ADR's round figures, not derived from a user-speed target.
+
+## 12. Baseline of the assistants' answers (2026-11-10, asked by the website session)
+Asked on 2026-11-10, **after** the N4 and N2 changes were live (so this is a baseline of how the world sees the site right now, not a before-and-after of those changes; the site was only a day or two old). Each question was asked once, in a fresh chat.
+
+**Where:** ChatGPT, logged out, temporary chat, search suggested in the link, the basic model (11 answers: all 6 English, 3 Vietnamese, 2 of the 3 Japanese: "Streakboomとは？" and the open-source pet question, and the screen-reading one). Perplexity, logged out: only the first question, then it asked for a sign-in. **Not asked:** Claude, Gemini and Copilot (they need a sign-in; the session may not enter passwords) and the rest of Perplexity.
+
+| Question | Answer in short | Streakboom (the pet) found? |
+|---|---|---|
+| What is Streakboom? (ChatGPT) | Suggested the user meant StreakBloom, an Android habit tracker | No |
+| What is Streakboom? (Perplexity) | A small GitHub repo `joeszz/streakBoom` ("Push your streak"), a different project; its page could not be read | No (a different project) |
+| Is there a free open-source desktop pet for Windows? (EN, JA, VI) | OpenPets, DeskCat, BongoCat, PixelPaw(s), Desktop Pets, VPet-Simulator, Shimeji-ee | No, in all three languages |
+| Does Streakboom work on Mac? | Could not find a product by that name; asked for a link | No |
+| Does Streakboom read my screen or what I type? | No policy found; asked for a link | No |
+| Why does Windows warn me when I install Streakboom? | Generic SmartScreen and unsigned-installer reasons; advised against Run anyway until checked | No, but the generic reasons are right |
+| Who made Streakboom? | Could not find a reliable source | No |
+| Streakboom là gì? (VI) | StreakBloom again | No |
+| Peak có đọc những gì tôi gõ không? (VI) and the Japanese version | Another app called Peak (an AI coach) | No |
+| Streakboomとは？ (JA) | Not known; offered StreakBloom | No |
+
+**Reading:** in 0 of 12 answers was the desktop pet found. The name is confused with StreakBloom, and a different GitHub repo `streakBoom` exists. The pet competes with many better-known desktop pets for the generic questions, and "Peak" alone is the name of other apps. Nothing here shows the site is wrong; it shows it is not yet in what these assistants retrieve. Things worth doing once the site is older: ask again in a few weeks and compare; make sure the description and the first line name the product with its kind ("desktop pet for Windows") next to the name; Search Console and Bing Webmaster indexing (the author's part, D7).
+
+**Not verified:** one run per question; ChatGPT answers vary between runs, and a logged-in or paid model with live search may do better; the logged-out basic model may not have searched at all; Claude, Gemini, Copilot and most of Perplexity were not asked; no score beyond found / not found.
