@@ -2,6 +2,12 @@
 
 Release notes of every version of Streakboom, newest first. **GitHub keeps the latest release and the one right before it** (installer and update manifest; the previous one is a way back if the newest is bad); when a new version is published, anything older is deleted together with its tag and its notes stay here (ADR-0028). The git history keeps every commit.
 
+## 0.2.5 (2026-11-09)
+- Peak keeps out of the way of what you type: from where you last clicked and how long you have been typing it guesses where the text is heading, and before the text reaches it Peak hops up or down to another row (a sleeping Peak wakes first, and curls up if there is no room to hop). The guess can be wrong, so Peak sometimes hops when it was not needed; it waits at least 10 seconds between two hops.
+- Peak now changes rows by hopping along an arc, so it moves up and down as well as sideways.
+- To make that guess Peak remembers, in memory only, where you last clicked with the left mouse button and when (never which keys you press, nothing on your screen), and it is forgotten when Peak closes. The README says so under Privacy.
+- A hop is light: it costs about 0.34 seconds of one processor core, and over a few minutes of normal use the median processor use is about 9% of one core, about the same as 0.2.4 (about 8%), measured on one computer.
+
 ## 0.2.4 (2026-11-09)
 - Peak keeps still and quiet while you work: it does not start a walk and does not speak on its own while you are typing or using the mouse, and a walk that is going on ends gently if you work near it.
 - When you work right next to Peak it makes way: it gets up and walks away from your pointer, or yawns and curls up where it is if there is no room. A sleeping Peak wakes with a stretch and makes way if you type right by it for a few seconds.
