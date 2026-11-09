@@ -22,7 +22,7 @@ Status: **proposed 2026-11-08, asked by Vinh to be carried out story by story.**
 | E7 | Verification and release | 4 / 9 | The 8-hour soak was stopped at 2 h 23 (memory flat) to diagnose CPU; real keys, devices open; the 0.2.1 to 0.2.2 update was seen working |
 | E8 | Focus-safety and places | 6 / 13 | FS-0 to FS-4 and PL-0 done; FS-5 and FS-6 left; PL-1 and PL-7 merged into E9 |
 | E9 | The desktop as terrain | 7 / 15 | Spec 07 and ADR-0030 written; the Rust `monitors_info` and `move_to` exist (TE-2); the lane model (TE-12) and the mouse button reading (TE-13) exist; hops and falls exist (TE-7); the cat leaves the typing lane by a hop (TE-14); a hop costs about a third of what it did (TE-15) |
-| E10 | Perception | 2 / 9 | Spec 08 and ADR-0031: four of five decisions answered; the ground map waits for L3 |
+| E10 | Perception | 3 / 9 | Spec 08 and ADR-0031: four of five decisions answered; the ground map waits for L3 |
 
 Against the roadmap: Phases 0 to 2 done; **Phase 4 in progress** (E7: the soak was stopped early; PR-3 and PR-4 done; PF-3, PR-8, VE-2, VE-3 open; all the unchecked items are in [`verification-debt.md`](verification-debt.md)); Phase 3 blocked on keys (VE-4, VE-5, PE-3); Phase 5 not started (E6).
 
@@ -157,7 +157,7 @@ Direction agreed 2026-11-09 (ADR-0030). By decision T6 the code comes after FS-4
 |---|---|---|---|---|
 | PC-0 | Spec 08: the senses, belief and reaction model, the ground ("below") sensing, the notice beat, the gaps found | S | done (draft) | |
 | PC-1 | `perception.ts`: the Percept and Belief types, confidence and hysteresis; move the crowded decision and the typing lane into it, with tests | M | ready (the contract is decided, ADR-0031) | |
-| PC-2 | The notice beat before making way (look toward the pointer or the predicted caret, ears up, about 0.4 s) and looking toward the user's attention while they type near the cat | S | ready (decided, ADR-0031); the author looks at a test build before the commit | |
+| PC-2 | The notice beat before making way (look toward the pointer or the predicted caret, ears up, about 0.4 s) and looking toward the user's attention while they type near the cat | S | done (a `notice` pose: ears up and forward, eyes a little wider, a bigger turn of the eyes and head toward the work, 0.4 s before the cat hops or walks away, skipped when it is already walking; the cat also looks toward the pointer or the predicted caret while the user works near it; the lane lead went from 1.5 to 1.9 s to pay for the beat; the author looked at a test build and said to commit) | |
 | PC-3 | An event stream from Rust (typing started and stopped, a click, the monitor set changed), generalizing `focus-hint` | M | proposed | TE-13 |
 | PC-4 | A sleeping cat wakes with its stretch and makes way when the user types right by it for several seconds (gap G5); the stretch was redrawn as a real play bow | S | done (checked in the real app and by the author) | |
 | PC-5 | Rust `ground_at(points)`: the kind of thing at points under and around the cat (desktop, taskbar, app window, foreground), classification only, with a test | M | ready (decided, ADR-0031) | |

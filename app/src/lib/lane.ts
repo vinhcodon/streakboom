@@ -24,8 +24,12 @@ export const TAU_CAP_S = 120;
  * only costs an earlier hop.
  */
 export const CARET_PX_PER_S = 60;
-/** The cat needs a moment to start (a probe every 0.25 s, a decision, the hop itself): the lane looks this far ahead. */
-export const LANE_LEAD_S = 1.5;
+/**
+ * The cat needs a moment to start (a probe every 0.25 s, a decision, the hop itself) and, since PC-2, a notice beat of
+ * 0.4 s before it hops (it looks toward the text, ears up): the lane looks this far ahead. The beat is paid for here so
+ * the hop starts as early as it did before, which the author had found right.
+ */
+export const LANE_LEAD_S = 1.9;
 /** Half the height of the band around the anchor row: half the cat plus a margin. */
 export const LANE_HALF_H = 100;
 /** The band reaches this far to the left of the anchor (what is typed already) and this far past the caret. */

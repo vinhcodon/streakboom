@@ -389,6 +389,7 @@
       laneState = initialLane();
       laneOut = NO_LANE;
     }
+    refreshAttentionGaze();
     noteCrowded(focusOut);
     return focusOut;
   }
@@ -401,10 +402,41 @@
   // The typing lane is urgent (the text is coming), so it has its own, shorter cool-down, and a sleeping cat that the
   // lane reaches wakes after a moment instead of after the 4 s of the pointer rule. The author found the first
   // version moved only after the text had reached the cat (2026-11-09).
+  const NOTICE_MS = 400; // the beat before it makes way: it looks toward the user's work, ears up (PC-2, ADR-0031)
   const LANE_COOLDOWN_MS = 10_000; // 6 s gave 15 hops in two minutes in the author's test (TE-15); the author chose 10 s
   const SLEEP_LANE_MS = 600;
   let lastLaneHop = 0;
   let laneNoted = false; // one trail line per crowded episode (the debugger)
+  // Where the user's work is, as a look (x and y in -1..1 from the cat): the pointer when it is near, else the predicted
+  // caret of the typing lane. The cat looks that way while the user works near it and it stands calm (PC-2); null = nowhere.
+  let attentionGaze = $state<{ x: number; y: number } | null>(null);
+  const toGaze = (dx: number, dy: number) => ({ x: Math.max(-1, Math.min(1, dx / 150)), y: Math.max(-1, Math.min(1, dy / 150)) });
+
+  function refreshAttentionGaze() {
+    let want: { x: number; y: number } | null = null;
+    if (focusOut.active && !panel && (pose === "idle" || pose === "look")) {
+      const l = laneOut.lane;
+      const cx = laneOut.caretX;
+      if (l && cx !== null && Math.abs(cx - laneCat.x) < 500 && Math.abs((l.y0 + l.y1) / 2 - laneCat.y) < 250) want = toGaze(cx - laneCat.x, (l.y0 + l.y1) / 2 - laneCat.y);
+      else if (lastPointer && Math.hypot(lastPointer.dx, lastPointer.dy) < 300) want = toGaze(lastPointer.dx, lastPointer.dy);
+    }
+    const a = attentionGaze;
+    // only a real change is passed on: every change of the look is a few painted frames
+    if (want === null ? a !== null : a === null || Math.abs(a.x - want.x) > 0.25 || Math.abs(a.y - want.y) > 0.25) attentionGaze = want;
+  }
+
+  /**
+   * The beat before the cat makes way (PC-2): it stops, looks toward the work (`dx`, `dy` from the cat) with its ears up
+   * for NOTICE_MS, and only then acts. Returns false when something else took over meanwhile. A cat that is not standing
+   * calm (walking, held, busy) skips the beat.
+   */
+  async function noticeBeat(dx: number, dy: number): Promise<boolean> {
+    if (pose !== "idle" && pose !== "look") return true;
+    attentionGaze = toGaze(dx, dy);
+    enter("notice");
+    await new Promise((r) => setTimeout(r, NOTICE_MS));
+    return (pose as PetState) === "notice"; // read again: it may have changed while waiting
+  }
   let focusEngaged = false;
   let focusLoop: ReturnType<typeof setInterval> | undefined;
   let lastLeave = 0;
@@ -453,7 +485,16 @@
         }
         return;
       }
-      if (pose === "idle" || pose === "look" || pose === "walk") {
+      if (pose === "idle" || pose === "look") {
+        lastLaneHop = now;
+        lastLeave = now;
+        const l = laneOut.lane;
+        if (!l) return;
+        // looks toward where the text is heading first, then hops
+        if (!(await noticeBeat((laneOut.caretX ?? laneCat.x) - laneCat.x, (l.y0 + l.y1) / 2 - laneCat.y))) return;
+        return void (await hopOutOfLane());
+      }
+      if (pose === "walk") {
         lastLaneHop = now;
         lastLeave = now;
         return void (await hopOutOfLane());
@@ -488,6 +529,7 @@
     }
     note(`make way ${away > 0 ? "right" : "left"}: room ${room}, pose ${pose}`);
     if (pose !== "idle" && pose !== "look") return; // something else happened while asking
+    if (lastPointer && !(await noticeBeat(lastPointer.dx, lastPointer.dy))) return; // it notices first, then acts
     if (room >= LEAVE_MIN_ROOM_PX) {
       walkPlan = { dir: away };
       enter("walk");
@@ -510,7 +552,7 @@
     }
     const esc = escapeRow(lane, laneCat.y, room.up, room.down);
     note(`lane hop: ${esc ? `${esc.dir < 0 ? "up" : "down"} ${Math.round(esc.dist)}` : "no room"}, room ${room.up}/${room.down}, caret ${Math.round(laneOut.caretX ?? 0)}`);
-    if (pose !== "idle" && pose !== "look" && pose !== "walk") return; // something else happened while asking
+    if (pose !== "idle" && pose !== "look" && pose !== "walk" && pose !== "notice") return; // something else happened while asking
     if (esc) await fly(splitHop(0, esc.dir * esc.dist), "walk");
     else enter("drowsy"); // nowhere to go: it yawns and curls up where it is
   }
@@ -1687,7 +1729,7 @@
     ondblclick={onDblClick}
     oncontextmenu={onPetMenu}
   >
-    <Pet {pose} {dir} {tilt} {gaze} tick={poseTick} air={airborne} />
+    <Pet {pose} {dir} {tilt} gaze={gaze ?? attentionGaze} tick={poseTick} air={airborne} />
   </div>
 </main>
 

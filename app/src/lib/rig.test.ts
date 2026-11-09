@@ -2,7 +2,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { POSE_KEYS, POSE_NAMES, type Key } from "./rig/keys.ts";
 import { Rig, Spring, blendKeys, LOOKS, gaitLeg } from "./rig/engine.ts";
-import type { PetState } from "./sprites.ts";
+import { TIMED, type PetState } from "./sprites.ts";
 import { stripTypeScriptTypes } from "node:module";
 import { readFileSync } from "node:fs";
 
@@ -237,6 +237,39 @@ test("a hop costs far fewer frames in the air than at full speed", () => {
     return framesDuring(r, 0.57);
   };
   assert.ok(painted(true) < painted(false) * 0.7, `${painted(true)} frames in the air against ${painted(false)} at full speed`);
+});
+
+test("noticing: ears up, eyes a little wider, and a bigger turn of the eyes toward what it noticed", () => {
+  const settle = (r: Rig, sec: number) => { for (let i = 0; i < sec * 120; i++) r.step(1 / 120); };
+  const tip = (r: Rig) => { const e = r.frame().key.earL; const bx = (e.a[0] + e.c[0]) / 2; const by = (e.a[1] + e.c[1]) / 2; return Math.hypot(e.b[0] - bx, e.b[1] - by); };
+  const calm = new Rig();
+  calm.setPose("idle", 1, 0, true);
+  settle(calm, 10);
+  const n = new Rig();
+  n.setPose("notice", 1, 0, true);
+  settle(n, 0.6);
+  assert.ok(tip(n) > tip(calm) * 1.12, `the ear tip is ${tip(n).toFixed(1)} px from its base against ${tip(calm).toFixed(1)} at rest`);
+  assert.ok(n.frame().wide > calm.frame().wide + 0.3, "the eyes are wider");
+  // looking toward something: the eyes turn further than a calm cat's follow
+  const looking = new Rig();
+  looking.setPose("idle", 1, 0, true);
+  looking.lookAt({ x: 1, y: 0 });
+  settle(looking, 1);
+  const noticing = new Rig();
+  noticing.setPose("notice", 1, 0, true);
+  noticing.lookAt({ x: 1, y: 0 });
+  settle(noticing, 1);
+  assert.ok(noticing.frame().gx > looking.frame().gx * 1.3, `${noticing.frame().gx.toFixed(1)} against ${looking.frame().gx.toFixed(1)}`);
+});
+
+test("the notice beat is a short pose that ends on its own, and the ears come back down", () => {
+  assert.ok(TIMED.notice && TIMED.notice.ms >= 500 && TIMED.notice.ms <= 1500, "a safety net longer than the page's 0.4 s beat");
+  const r = new Rig();
+  r.setPose("notice", 1, 0, true);
+  for (let i = 0; i < 120; i++) r.step(1 / 120);
+  r.setPose("idle", 1, 0);
+  for (let i = 0; i < 600; i++) r.step(1 / 120);
+  assert.equal(r.mode, "idle", "it settles: no endless redrawing");
 });
 
 test("a blink or a tail flick while walking keeps the walk pace (no change of rhythm)", () => {

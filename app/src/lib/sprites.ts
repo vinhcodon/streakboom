@@ -17,6 +17,7 @@ export type PetState =
   | "nod" // a small nod: nothing special
   | "smirk" // playful teasing
   | "gasp" // surprise
+  | "notice" // looks toward the user's work, ears up, a moment before it makes way (PC-2)
   | "curious" // head tilted, eyes up
   | "sad" // ears down, eyes low: sympathy
   | "wake"; // stretches and opens its eyes, on the way out of sleep
@@ -40,6 +41,7 @@ export const TIMED: Partial<Record<PetState, TimedPose>> = {
   nod: { ms: 550 },
   smirk: { ms: 1900 },
   gasp: { ms: 1400 },
+  notice: { ms: 900 }, // a safety net: the page normally moves on after about 0.4 s (NOTICE_MS in +page.svelte)
   curious: { ms: 2100 },
   sad: { ms: 2800 },
 };
