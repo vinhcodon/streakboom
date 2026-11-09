@@ -299,6 +299,18 @@ fn move_by(window: WebviewWindow, state: State<AppState>, dx: i32) -> Result<boo
     Ok(nx != wanted)
 }
 
+/// How far the cat can walk in direction `dir` (+1 right, -1 left) before the edge of the work area of the monitor
+/// it is on, in logical px (0 against the edge). Lets the page decide whether walking away is possible before it
+/// turns the cat round.
+#[tauri::command]
+fn edge_room(window: WebviewWindow, dir: i32) -> Result<i32, String> {
+    let pos = window.outer_position().map_err(|e| e.to_string())?;
+    let scale = window.scale_factor().map_err(|e| e.to_string())?;
+    let (l, t, s) = pet_px(scale);
+    let area = area_at(&window, (pos.x + l + s / 2) as f64, (pos.y + t + s / 2) as f64).ok_or("no monitor")?;
+    Ok(layout::room_to_edge(area, pos.x, l, s, dir, scale))
+}
+
 // ------------------------------------------------------------------- dragging
 
 /// Start dragging the pet. We do the drag ourselves (instead of the OS drag) so the pet can be
@@ -900,14 +912,15 @@ fn place_window(win: &WebviewWindow, prefs: &Prefs) {
 fn spawn_hit_test(app: AppHandle, win: WebviewWindow) {
     std::thread::spawn(move || {
         let mut ignoring: Option<bool> = None;
+        let mut last_hint = false;
         let mut last_flush = Instant::now();
         loop {
             let state = app.state::<AppState>();
             let mut delay = 150;
             let mut ptr_ok = false;
-            state
-                .focus_idle_ms
-                .store(last_input_idle_ms().unwrap_or(u32::MAX), Ordering::Relaxed);
+            let mut offset: Option<(f64, f64)> = None;
+            let idle = last_input_idle_ms();
+            state.focus_idle_ms.store(idle.unwrap_or(u32::MAX), Ordering::Relaxed);
             if win.is_visible().unwrap_or(false) {
                 if let (Ok(cur), Ok(pos), Ok(size), Ok(scale)) = (
                     win.cursor_position(),
@@ -929,6 +942,7 @@ fn spawn_hit_test(app: AppHandle, win: WebviewWindow) {
                     state.focus_dy.store(dy.to_bits(), Ordering::Relaxed);
                     state.focus_over.store(inside, Ordering::Relaxed);
                     ptr_ok = true;
+                    offset = Some((dx, dy));
                     // While dragging the window follows the cursor and must keep receiving events.
                     let want_ignore = !inside && !state.dragging.load(Ordering::Relaxed);
                     if ignoring != Some(want_ignore) {
@@ -938,6 +952,12 @@ fn spawn_hit_test(app: AppHandle, win: WebviewWindow) {
                 }
             }
             state.focus_ptr.store(ptr_ok, Ordering::Relaxed);
+            // tell the page only when "the user may be working near the cat" changes (no polling while it is false)
+            let hint = offset.is_some_and(|(dx, dy)| layout::engaged_near(idle, dx, dy));
+            if hint != last_hint {
+                last_hint = hint;
+                let _ = app.emit("focus-hint", hint);
+            }
             if state.dirty.load(Ordering::Relaxed) && last_flush.elapsed() > Duration::from_secs(1) {
                 write_prefs(&state);
                 last_flush = Instant::now();
@@ -1112,6 +1132,7 @@ pub fn run() {
             brain_model,
             brain_set_model,
             focus_probe,
+            edge_room,
             open_website,
             brain_provider,
             brain_set_provider,

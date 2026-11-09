@@ -11,9 +11,12 @@ Vinh proposed that Peak should treat the desktop as terrain: a map made of paths
 | T1 | Peak lives anywhere on the screen, inside maximized windows too. Edges are special places, not the only ones. |
 | T2 | "Empty space" means **where the user's attention is not**, found from how the user uses the pointer and keyboard, never from reading the screen. |
 | T3 | The attention field is a coarse grid kept **in memory only** (not written to disk, not sent, gone when the app closes), described in the README and on the website. |
-| T4 | Once the field exists (level L2), Peak **moves away** from where the user is working. Before that, and as the fallback, it fades (spec/06 D6, FS-4). |
+| T4 | Once the field exists (level L2), Peak **moves away** from where the user is working. Before that it makes way sideways (spec/06 D6, FS-4: it walks away, or curls up if there is no room). A fade was tried first and removed: the author found a see-through cat unnatural. |
 | T5 | When a window is dragged away under the cat, it **falls to the surface below**; it does not follow the window (level L3). |
 | T6 | Order: the spec first, the code after FS-4 and the CPU target (PR-9). Levels: L1 then L2; reading window geometry is a separate, later permission (L3), not needed for L1 and L2. |
+| T7 | **The typing lane** (section 3.1): the cat also avoids a band along the row where the user is typing, found from the last click and the time spent typing (a predicted caret), not from the real caret. |
+| T8 | **Mouse button state may be read** (only whether a button is down, never a key), in memory only, to know where the user last clicked into a field. |
+| T9 | **Order (2026-11-09):** FS-4 (making way sideways, built) is committed first; vertical movement (TE-2, TE-7) comes next because escaping a lane needs it. |
 
 ## 1. Thesis: a cost field, not a map of paths
 
@@ -40,7 +43,7 @@ Peak chooses where to go by cost, plus its own preferences (its mood, closeness 
 ### 2.2 Layer B in detail
 - **Update.** At each probe (see spec/06 3.2): if the user is active, add weight at the pointer's cell and, with a smaller weight, its neighbors; then decay all cells by `0.5^(dt / 20 s)`. If the user is idle, only decay. The pointer is only read while active, so a parked pointer does not keep a hill alive forever.
 - **Reading it.** `attention(place)` is the cell weight (0 to 1). A place counts as "where the user is working" above 0.25.
-- **What it cannot know.** It knows where the pointer is, not where the caret is: a user who types with the pointer parked in a corner is invisible to it. That is why the FS-1 rule stays as the safety net: while the user is active, the cat stays still (and fades if the pointer is near), wherever it is. The field decides where the cat **goes** when it moves; focus-safety decides whether it moves at all.
+- **What it cannot know.** It knows where the pointer is, not where the caret is: a user who types with the pointer parked in a corner is invisible to it. That is why the FS-1 rule stays as the safety net: while the user is active, the cat stays still (and makes way if the pointer is near), wherever it is. The field decides where the cat **goes** when it moves; focus-safety decides whether it moves at all.
 - **Keyboard-only use** is therefore the weak case. It is a known limit, not a bug to hide: see the open questions.
 
 ### 2.3 Movement kinds the field needs
@@ -56,10 +59,22 @@ Moving away from attention is a walk, then (if needed) a hop or two: never a lon
 |---|---|---|
 | Rest | no attention near, nothing to do | stands, blinks, dozes, naps at a low-cost place (edges and corners preferred; the middle of a maximized window is allowed when it is quiet) |
 | Wander | the user has been idle for a while (the CALM limit of spec/06) | walks and hops between low-cost places, weighted by its preferences |
-| Avoid | the user is active and the attention reaches the cat (cost above the limit at its place) | moves to the nearest lower-cost place **away from the user's hill** (T4); at most once every 20 seconds, so it never runs around; if it cannot, it fades (FS-4) |
+| Avoid | the user is active and the attention reaches the cat (cost above the limit at its place) | moves to the nearest lower-cost place **away from the user's hill** (T4); at most once every 20 seconds, so it never runs around; if it cannot, it curls up where it is |
 | Approach | the user has been idle for a long time and the cat is close or lonely | may come closer to the last known place of the user (tier-dependent), never into a hill |
 
 Nothing in this makes the cat louder: it moves less than today while the user works and more while the user rests. Lines (spec/03) keep their own rules.
+
+### 3.1 The typing lane (agreed 2026-11-09, not built)
+**The gap it closes.** Pointer proximity makes the cat leave when the user starts typing near it. It does not notice when the **text** then runs toward the cat, because the pointer stays where it was. The real caret is not available: the system caret (`GetGUIThreadInfo`) is not reported by Chromium and Electron apps, which is most modern software (tested on 2026-11-09 on the author's machine, foreground class `Chrome_WidgetWin_1`: no caret). UI Automation can give it but is heavy, needs the browser's accessibility mode and looks like surveillance (ADR-0029); reading pixels near the cat is reading the screen. So the caret is **predicted**.
+**The model (pure logic in `lane.ts`, proposals to tune):**
+- **Anchor A:** where the user last clicked (the caret was put there), taken from the mouse button state; if there was no click since typing began, the pointer position when typing began. A new click replaces it. It expires after 60 s without any input.
+- **Typing time tau:** seconds of continuous activity (`idleMs < 1.5 s`) since the anchor was set, capped at 120 s. Only the time is counted, never keys.
+- **Predicted caret:** `x = A.x + 45 px/s * tau` along the row `y = A.y` (a typist makes about 5 characters a second at about 9 px each).
+- **The lane:** the band `|y - A.y| <= 100 px` (half the cat plus a margin) from `A.x - 100` to `predicted x + 200` px: what is typed so far and what is about to be.
+- **Crowded** when the user is active and the cat's centre is inside the lane (this adds to the circular "near" rule, it does not replace it).
+**Escaping.** Walking sideways cannot work: the cat walks at 36 px/s and a typist's caret advances at about 45 px/s, so the text would catch it. The cat must leave the band **vertically**: a hop to a row at least 160 px above or below (the side with more room first). That is why vertical movement (TE-2, TE-7) comes first (T9). Until it exists the cat keeps today's sideways making way.
+**Limits, said plainly.** Line wraps, multi-line fields, text that was already there, right-to-left text and typing in a title bar make the prediction wrong. The prediction is used only to make way early; it can make the cat leave when it was not needed. Only use will say whether that is acceptable (H9).
+**Privacy.** The only new signal is whether a mouse button is down (a button, not a key), read in the thread that already reads the pointer, kept in memory (the anchor and the typing time), never stored or sent; stated in the README and on the website with the attention field.
 
 ## 4. Window relief (L3, later)
 Only when Vinh gives the permission (a Settings switch, default to be decided then): a Rust command returns the visible, non-minimized, non-cloaked, non-own top-level windows as rectangles (from the extended frame bounds, so invisible borders do not count), in z-order, with the maximized flag. The terrain then adds: top edges as **perches** where there is headroom for the cat and the edge is not covered by a higher window (the visible part only); side edges as **walls**; the cat hops up to a perch, sits, naps and watches. **Surfaces must be stable for half a second before they are used** (window animations make the geometry jump). When the surface under the cat disappears or moves (a window dragged, minimized or closed), the cat **falls to the surface below** with a `gasp` (T5). A maximized window offers nothing but its interior, which is plain field: this is the common case, and the cat lives there by layers A and B alone.

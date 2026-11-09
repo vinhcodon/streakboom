@@ -11,12 +11,16 @@ Peak walks along one line and has no sense of place (spec/06 0.1). Vinh proposed
 - **A cost field, not a map of walkable cells** (spec/07 section 1): every place has a cost made of fixed relief (monitors, edges, corners, danger zones such as the caption buttons) and the user's attention; Peak crosses any place but does not rest where the cost is high. Window relief (perches, walls) is a later, separate layer.
 - **"Empty space" = where the user's attention is not**, found from the pointer and the user's activity, never from the screen.
 - **The attention field** is a coarse grid in memory only, decaying in about 20 seconds; not written to disk, not sent, gone when Peak closes; stated in the README and on the website.
-- **Once the field exists (L2), Peak moves away from the user's work** (amends spec/06 D6, which has the cat only fade): it walks or hops to the nearest lower-cost place, at most once every 20 seconds, and fades if it cannot. Before L2, and as the net, it fades (FS-4, ADR-0029).
+- **Once the field exists (L2), Peak moves away from the user's work using the field** (amends spec/06 D6): it walks or hops to the nearest lower-cost place, at most once every 25 seconds, and curls up where it is if it cannot. Before L2 it makes way sideways (FS-4, ADR-0029); a fade was tried first and removed.
 - **Window geometry** (visible windows' position, size and maximized state; no titles, names or contents) is **not** part of L1 and L2. It needs Vinh's separate permission and a Settings switch (L3). When a window is dragged away under the cat, the cat falls to the surface below; it does not follow the window.
 - **Order:** the code comes after FS-4 and the CPU target (PR-9). Levels: L1 (one world from all monitors), then L2 (the field, avoidance, hops); L3 (windows) and L4 (learned places) later.
 
+## Amendment 2026-11-09 (later): the typing lane, and the fade is gone
+- FS-4 was built as making way sideways (walk away, or curl up with no room); the fade it first had was removed (a see-through cat looked unnatural to the author).
+- **The typing lane** (spec/07 section 3.1, T7 to T9): because the real caret is not available in Chromium and Electron apps (tested), the caret is predicted from the last click (the mouse button state may be read, in memory only) and the time spent typing; the cat leaves the band along the typing row, which needs vertical movement, so TE-2 and TE-7 come next.
+
 ## Alternatives considered
-Edge-only terrain (rejected: windows are maximized); reading blank areas of the screen (rejected: screen content); UI Automation or the caret (rejected in ADR-0029); the cat following a dragged window (rejected: CPU, errors); fading only (kept as the fallback, not the end state).
+Edge-only terrain (rejected: windows are maximized); reading blank areas of the screen (rejected: screen content); UI Automation or the caret (rejected in ADR-0029); the cat following a dragged window (rejected: CPU, errors); fading (built first in FS-4, removed the same day: a see-through cat looked unnatural).
 
 ## Consequences
 - ADR-0029 stays valid for FS-1 to FS-4 and its rung 3 (window geometry) stays deferred, now as L3 behind a switch; D6 is amended for L2 onward.

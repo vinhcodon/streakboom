@@ -8,13 +8,13 @@ Product line: **"Một chú mèo nhỏ sống trên màn hình của bạn"** (a
 
 | # | Question | Answer | Where it lands |
 |---|---|---|---|
-| D1 | How far up the focus-safety ladder (section 3)? | **Rungs 1 and 2, plus fading the cat when the user types near it.** Rung 3 (geometry of the foreground window) is out for now; rung 4 (caret rectangle) is rejected. | section 3, ADR to write |
+| D1 | How far up the focus-safety ladder (section 3)? | **Rungs 1 and 2, plus the cat reacting when the user works near it** (first a fade; replaced on 2026-11-09 by making way, see D6). Rung 3 (geometry of the foreground window) is out for now. Rung 4 (caret rectangle): the system caret is not reported by Chromium and Electron apps (tested 2026-11-09 on the author's machine), so the typing lane of spec/07 section 3.1 predicts it instead. | section 3, ADR to write |
 | D2 | Order: CPU or new movement first? | **Fix the baseline CPU first** (PR-3, PR-4), then focus-safety, then places and new movement. | plan, backlog |
 | D3 | "Too big for me" refusal | **Vague, in the cat's voice, never mentioning an assistant** ("Cái đó khó quá với một con mèo."). | section 1.4 |
 | D4 | Sarcasm level | **Keep about 14%** (the Gentle switch stays). Revisit with alpha feedback. | section 1.5 |
-| D5 | No per-day counter for how often the cat fades | **Agreed:** no new counter (it would need consent version 3). | section 4, ADR-0029 |
-| D6 | Response when the user types near the cat | **Fade and click-through only** in the first version (FS-4). **Amended 2026-11-09 (ADR-0030, spec/07 T4): once the attention field exists (L2) the cat moves away from where the user is working; fading stays as the fallback.** | section 3.1 |
-| D7 | The constants of sections 3.1 and 2.3 (thresholds 3, 5 and 6 s, near radius 200 px, fade to 35%, a 3 x 3 grid, three drags to teach a spot) | **Agreed as starting values**, tuned in the manual checks. | sections 2.3, 3.1 |
+| D5 | No per-day counter for how often the cat makes way | **Agreed:** no new counter (it would need consent version 3). | section 4, ADR-0029 |
+| D6 | Response when the user works near the cat | **First version: fade and click-through (the author tried it on 2026-11-09 and found a see-through cat unnatural). Now (FS-4, ADR-0030): the cat makes way.** After the user has worked near it for 1.2 s it gets up and walks away from the pointer along its row until the pointer is 260 px away, at most once every 25 s; if there is less than 120 px of room that way it yawns and curls up where it is. It never makes way while the pointer is moving (the user is reaching for something, maybe the cat). A cat that is asleep or walking does it as soon as it stands. | section 3.1 |
+| D7 | The constants of sections 3.1 and 2.3 (thresholds 3, 5 and 6 s, near radius 200 px, a 1.2 s hold before making way, walking away until 260 px, a 25 s cool-down, a 3 x 3 grid, three drags to teach a spot) | **Agreed as starting values**, tuned in the manual checks. | sections 2.3, 3.1 |
 | D8 | CPU target | **Under 1% of a core standing, 7 to 15% at most walking**; PR-4 measures against it and reports honestly if software drawing cannot reach it. | section 2.1 |
 | Q2 | Default cat name | **Already decided in ADR-0024:** "Peak" is the project's character; each user's pet starts unnamed and is named after a day or two; if testers dislike the naming card, offer "Peak" as the suggested name there. | nothing to do |
 
@@ -105,22 +105,26 @@ Most of the time the cat is still; movement comes in short bursts. **Target (agr
 4. Caret rectangle: **rejected** (unreliable in browsers and Electron, UI Automation is heavy and looks like surveillance).
 Hard rules: no global keyboard hook, no reading window contents or titles, no new network calls. `GetLastInputInfo` returns a single tick count: it cannot tell which keys, only that the user did something. It also counts mouse movement, which the decision logic accounts for below.
 
-### 3.1 Inputs, outputs and the decision (pure logic, `app/src/lib/focus.ts`; built in FS-1: `decideFocus(prevState, input, now)` returns the new state and `{ walkAllowed, speakAllowed, ghost, alpha, active }`; the module and its 14 tests exist, nothing calls it yet)
-Inputs per probe: `idleMs` (ms since the last input; unknown means no restriction), `pointer` (distance in logical px from the cat's center, and whether the pointer is over the cat, or unknown), `busy` (existing `is_busy`), the current `pose`, `quiet`, and the previous output (for hysteresis).
-Constants (proposals, tunable after manual checks): `ACTIVE_MS = 3000`, `NEAR_PX = 200`, `CALM_MS = 5000`, `LINE_MS = 6000`, `GHOST_ON_MS = 300`, `GHOST_OFF_MS = 1500`, `GHOST_ALPHA = 0.35`.
+### 3.1 Inputs, outputs and the decision (pure logic, `app/src/lib/focus.ts`: `decideFocus(prevState, input, now)` returns the new state and `{ walkAllowed, keepWalking, speakAllowed, crowded, leaveDir, dist, active }`; 18 tests)
+Inputs per probe: `idleMs` (ms since the last input; unknown means no restriction), `pointer` (distance in logical px from the cat's center, whether it is over the cat, whether it is moving, and its offset to the right of the cat's center; or unknown), `busy` (existing `is_busy`), `quiet`, and the previous state (for hysteresis).
+Constants (starting values, tunable after manual checks): `ACTIVE_MS = 3000`, `NEAR_PX = 200`, `CALM_MS = 5000`, `LINE_MS = 6000`, `CROWD_MS = 1200`, `CROWD_OFF_MS = 1500`, `LEAVE_PX = 260`; in the page: a 25 s cool-down between times of making way and a minimum of 120 px of room.
 Derived: `active = idleMs < ACTIVE_MS`; `near = pointer known and distance < NEAR_PX and the pointer is not over the cat`.
 
 | Output | Rule |
 |---|---|
 | `walkAllowed` | `idleMs >= CALM_MS`: a walk may **start**. A walk **in progress** (`keepWalking`) goes on unless the user is active **and the pointer is near the cat or unknown**; working far from the cat is no reason to stop it mid-step. The check runs about twice a second and only after the first 1.5 s of a walk. When it stops, whether for this or at the natural end, the cat **coasts to a stop**: the legs begin to settle at once and the window keeps moving for 0.6 s at a falling speed; a walk also eases in over 0.5 s (found on 2026-11-09: stopping a step at once looked like a jolt, and stopping before the cat had finished turning looked like turning and sitting back down). |
 | `speakAllowed` | `idleMs >= LINE_MS`. An unprompted line waits and is retried after 45 seconds (2 minutes for the other blocks); it is never forced while the user is active. The memory notice and the milestone line wait for a pause the same way (every 20 s, up to about 4 minutes). The launch greeting, the welcome-back line and every reply to a touch or a chat are not held. |
-| `ghost` | on when the user did something within `GHOST_OFF_MS` (1.5 s) and the pointer is near, for `GHOST_ON_MS`; off when `idleMs >= GHOST_OFF_MS` or the pointer is over the cat, far away or unknown (the fade-on limit is the come-back limit, so it cannot fade again in the gap before "active" expires: found while writing the tests). `active` (3 s) is also returned, for the walk and for later hops; it no longer gates the fade. A user who pauses typing for more than 1.5 s sees the cat return and fade again when they resume: tune `GHOST_OFF_MS` in the manual checks (FS-5). While ghosted the cat is faded to `GHOST_ALPHA` **and click-through** (the hit region is emptied), and fades back over 400 ms. |
-| `yield` | no step aside or hop in the first version: fading is the whole response (less motion, less CPU). A sideways step may be added later, rate-limited. |
+| `crowded` | on when the user did something within `CROWD_OFF_MS` (1.5 s) and the pointer is near, **still** (a moving pointer is the user reaching for something) and not on the cat, for `CROWD_MS` (1.2 s); off at once when the pointer is on the cat, far or unknown, or when `idleMs >= CROWD_OFF_MS` (the start limit is the end limit, so it cannot start again in the gap before "active" expires: found while writing the tests). |
+| `leaveDir` | away from the pointer: the pointer to the right means walk left. |
+| `dist` | the pointer's distance, so the page can walk until it is `LEAVE_PX` away. |
+| `active` | the user did something within `ACTIVE_MS`. |
 
-Priority: fullscreen/busy/Quiet mode/asleep rules stay as they are and win; the dragged-to spot is respected when the user is idle and faded when they type near it. A pointer over the cat always turns the ghost off at once (the user wants to touch it).
+**Making way** (in the page, `makeWay`): asked on every probe while `crowded`; acts only when the cat is standing (idle or looking), not in Quiet mode, with no panel open, and at most once every 25 s. It asks Rust for the room to the edge (`edge_room`): with at least 120 px it walks away (`leaveDir`) until `dist >= LEAVE_PX`, the edge, or 10 s; otherwise it yawns and curls up where it is (`drowsy`, then sleep). After a walk away, if the user is still right by the cat, it curls up where it stopped. The probe is read four times a second only while "the user may be working near the cat" (the Rust hint below); a standing cat with nobody near costs nothing extra.
+
+Priority: fullscreen/busy/Quiet mode/asleep rules stay as they are and win; a sleeping cat does not make way until it wakes (20 to 60 s). A pointer over the cat ends the feeling of being crowded at once (the user wants to touch it).
 
 ### 3.2 Platform interface (small, so a macOS port stays possible)
-- Rust (built in FS-2): `focus_probe() -> { idleMs, dx, dy, over }` (JSON, camelCase): the idle time in ms (`null` where it cannot be read), the pointer offset from the cat's center in logical px (`null` when the pet window is hidden or the pointer could not be read) and whether the pointer is on the cat (the existing hit region). On non-Windows `idle_ms` is `None` and the pet behaves as today.
+- Rust (built in FS-2, FS-4): `edge_room(dir) -> logical px` (how far the cat can walk that way before the edge of its monitor's work area) and the event `focus-hint` (a boolean, sent only when "the user was active in the last 3 s and the pointer is within 250 px of the cat" changes; the page polls only while it is true). `focus_probe() -> { idleMs, dx, dy, over }` (JSON, camelCase): the idle time in ms (`null` where it cannot be read), the pointer offset from the cat's center in logical px (`null` when the pet window is hidden or the pointer could not be read) and whether the pointer is on the cat (the existing hit region). On non-Windows `idle_ms` is `None` and the pet behaves as today.
 - The hit-test thread already wakes every 150 ms and already reads the cursor; it stores the latest pointer and calls `GetLastInputInfo` there into atomics, and `focus_probe` only reads them (no extra thread, no extra syscalls per call). The pet window reads the probe about once a second while visible, and immediately before starting a walk or an unprompted line. **Idle CPU must not rise** (measured, plan step 3).
 
 ## 4. Privacy
@@ -128,7 +132,7 @@ Priority: fullscreen/busy/Quiet mode/asleep rules stay as they are and win; the 
 - The pointer position is read only to compute a distance and is not stored; no pointer trail exists.
 - Places store counts per grid cell (and the cells the user taught), locally in `memory.json`; Settings shows and can delete them; a switch turns learning off.
 - No new network calls. Nothing leaves the machine except through the existing "Copy stats" flow.
-- A per-day count of how often the cat faded ("yield") would be a new kind of count; the consent wording of version 2 lists the counts it covers, so adding it means a new consent version and asking people again. **Decision: no new counter in this work.** The effect is judged by observation in the alpha and by the existing guardrails (Quiet mode use; the hide rate once the Rust event exists, PF-5).
+- A per-day count of how often the cat made way ("yield") would be a new kind of count; the consent wording of version 2 lists the counts it covers, so adding it means a new consent version and asking people again. **Decision: no new counter in this work** ("fades" in the earlier wording means "makes way" now). The effect is judged by observation in the alpha and by the existing guardrails (Quiet mode use; the hide rate once the Rust event exists, PF-5).
 
 ## 5. Constraints
 - Idle cat at about 0% CPU; walking measured before and after (engineering-log recipe and `scripts/cpu-breakdown.ps1`).
@@ -140,7 +144,7 @@ Priority: fullscreen/busy/Quiet mode/asleep rules stay as they are and win; the 
 ## 6. What could not be verified
 - The pet's behavior over several minutes in the real window against a real text box (nothing is built yet).
 - That `GetLastInputInfo` works while the screen is shared, locked, or in a remote session; its behavior with several monitors is not expected to differ.
-- The constants in section 3.1 are starting points; the CPU effect of the one-second probe and the ghost fade is a prediction until measured.
+- The constants in section 3.1 are starting points; the CPU effect of the probe while the user works near the cat, and of the walk away, is not measured.
 - How `idleMs` behaves for touch or pen input on a tablet.
 - Multi-monitor and mixed-DPI behavior of places (the data model is a proposal).
-- Whether people like the cat fading; the alpha has to say.
+- Whether people like the cat getting up and leaving (it replaced a fade the author found unnatural); the alpha has to say. The case where the text itself runs toward the cat is not solved by pointer proximity: see spec/07 section 3.1 (the typing lane).

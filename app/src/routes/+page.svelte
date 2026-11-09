@@ -91,7 +91,7 @@
   } from "$lib/state";
   import type { FunnelEvent } from "$lib/telemetry";
   import { UI, type ErrKind } from "$lib/ui";
-  import { decideFocus, initialFocus, type FocusOut } from "$lib/focus";
+  import { LEAVE_PX, decideFocus, initialFocus, type FocusOut } from "$lib/focus";
   import { glideOut, rampIn, takeSteps } from "$lib/gait";
   import { engage as engagePure, markShown as markShownPure, minuteIncrement, noShown, type DayCounter, type DayStat } from "$lib/bond";
 
@@ -342,21 +342,93 @@
   // `focus.ts` decides. The probe is read when a decision is needed (before a walk, twice a second during one,
   // before an unprompted line), not on a timer, so a standing cat costs nothing extra.
   const FOCUS_RETRY_MS = 45_000; // an unprompted line held back for the user's work is tried again after this long
-  const FOCUS_ALLOW: FocusOut = { walkAllowed: true, keepWalking: true, speakAllowed: true, ghost: false, alpha: 1, active: false };
+  const FOCUS_ALLOW: FocusOut = { walkAllowed: true, keepWalking: true, speakAllowed: true, crowded: false, leaveDir: 1, dist: null, active: false };
   let focusState = initialFocus();
+  let lastPointer: { dx: number; dy: number; t: number } | null = null;
   let focusOut: FocusOut = FOCUS_ALLOW;
   async function probeFocus(): Promise<FocusOut> {
     try {
       const p = await invoke<{ idleMs: number | null; dx: number | null; dy: number | null; over: boolean }>("focus_probe");
-      const pointer = p.dx !== null && p.dy !== null ? { dist: Math.hypot(p.dx, p.dy), over: p.over } : null;
-      const r = decideFocus(focusState, { idleMs: p.idleMs, pointer, busy: false, quiet }, Date.now());
+      const now = Date.now();
+      // "moving" = the pointer travelled more than a few px since the last reading a moment ago
+      const moving =
+        p.dx !== null && p.dy !== null && lastPointer !== null && now - lastPointer.t < 1000 && Math.hypot(p.dx - lastPointer.dx, p.dy - lastPointer.dy) > 6;
+      lastPointer = p.dx !== null && p.dy !== null ? { dx: p.dx, dy: p.dy, t: now } : null;
+      const pointer = p.dx !== null && p.dy !== null ? { dist: Math.hypot(p.dx, p.dy), over: p.over, moving, dx: p.dx } : null;
+      const r = decideFocus(focusState, { idleMs: p.idleMs, pointer, busy: false, quiet }, now);
       focusState = r.state;
       focusOut = r.out;
     } catch {
       focusState = initialFocus();
       focusOut = FOCUS_ALLOW; // unknown: no restriction, as before
     }
+    noteCrowded(focusOut);
     return focusOut;
+  }
+
+  // When the user works near the cat (FS-4, ADR-0030) it makes way: it gets up and walks away from the pointer, and
+  // curls up where it is if it cannot. (A first version made the cat fade; a see-through cat looked wrong.)
+  // The hit-test thread in Rust tells the page only when "the user may be working near the cat" starts or ends
+  // (event "focus-hint"); until then nothing is polled. While it holds, the probe is read four times a second.
+  const LEAVE_COOLDOWN_MS = 25_000; // never make way more than once in this time
+  const LEAVE_MIN_ROOM_PX = 120; // room to walk the chosen way; less than this and the cat curls up instead
+  let focusEngaged = false;
+  let focusLoop: ReturnType<typeof setInterval> | undefined;
+  let lastLeave = 0;
+  let walkPlan: { dir: 1 | -1 } | null = null; // set just before `enter("walk")` to walk a given way (making way)
+
+  // Asked on every probe while the cat feels crowded: `makeWay` acts only when the cat is standing, so if the crowding
+  // began while it was busy (walking, being held) it makes way as soon as it stands, and the cool-down keeps it calm.
+  function noteCrowded(fo: FocusOut) {
+    if (fo.crowded) void makeWay(fo.leaveDir);
+  }
+
+  const trail: string[] = []; // the last few decisions, for the debugger (window.__pet.trail)
+  const note = (m: string) => {
+    trail.push(`${new Date().toISOString().slice(11, 23)} ${m}`);
+    if (trail.length > 40) trail.shift();
+  };
+
+  async function makeWay(away: 1 | -1) {
+    const now = Date.now();
+    if (quiet || panel !== null || (pose !== "idle" && pose !== "look") || now - lastLeave < LEAVE_COOLDOWN_MS) return;
+    lastLeave = now;
+    let room = 0;
+    try {
+      room = await invoke<number>("edge_room", { dir: away });
+    } catch {
+      /* unknown: curl up */
+    }
+    note(`make way ${away > 0 ? "right" : "left"}: room ${room}, pose ${pose}`);
+    if (pose !== "idle" && pose !== "look") return; // something else happened while asking
+    if (room >= LEAVE_MIN_ROOM_PX) {
+      walkPlan = { dir: away };
+      enter("walk");
+    } else enter("drowsy"); // nowhere to go: it yawns and curls up where it is
+  }
+
+  /** After a walk that was making way: if the user is still working right by the cat, it curls up where it stopped. */
+  function settleAfterLeaving() {
+    setTimeout(async () => {
+      const fo = await probeFocus();
+      note(`after leaving: crowded ${fo.crowded}, pose ${pose}`);
+      if (fo.crowded && pose === "idle") enter("drowsy");
+    }, 1000);
+  }
+
+  async function focusTick() {
+    await probeFocus();
+    if (!focusEngaged && !focusOut.crowded) {
+      clearInterval(focusLoop);
+      focusLoop = undefined;
+    }
+  }
+  function onFocusHint(engaged: boolean) {
+    focusEngaged = engaged;
+    if ((engaged || focusOut.crowded) && !focusLoop) {
+      void focusTick();
+      focusLoop = setInterval(focusTick, 250);
+    }
   }
 
   /** Show something unprompted, but wait for a pause in the user's work (about 4 minutes at most, then give up). */
@@ -397,6 +469,7 @@
     clearInterval(walkTimer);
     clearTimeout(walkEndTimer);
     clearInterval(glideTimer); // any other change of state ends the coasting at once
+    clearTimeout(nextTimer); // a pending "what next" from an earlier standing must not wake a cat that has curled up
     clearTimeout(sleepTimer);
     clearTimeout(oneShotTimer);
     pose = next;
@@ -443,7 +516,10 @@
   }
 
   function startWalk() {
-    dir = Math.random() < 0.5 ? -1 : 1;
+    const plan = walkPlan;
+    walkPlan = null;
+    const leaving = plan !== null; // walking away from the user's work
+    dir = plan ? plan.dir : Math.random() < 0.5 ? -1 : 1;
     const scale = window.devicePixelRatio || 1;
     // pixels per tick at full speed; fractional, the remainder is carried (see gait.ts)
     const fullStep = (WALK_SPEED * scale * WALK_TICK_MS) / 1000;
@@ -452,9 +528,19 @@
     walkTimer = setInterval(async () => {
       try {
         ticks++;
-        // about twice a second, and only after the first second and a half: has the user started working near
-        // the cat? Then the walk eases to a stop. (Stopping a step at once looked like a jolt.)
-        if (ticks % 8 === 0 && ticks * WALK_TICK_MS >= 1500) {
+        if (leaving) {
+          // going on until the pointer is far enough (checked four times a second); then it eases to a stop
+          if (ticks % 4 === 0) {
+            const fo = await probeFocus();
+            if (pose !== "walk") return;
+            if (fo.dist === null || fo.dist >= LEAVE_PX) {
+              settleAfterLeaving();
+              return stopWalking();
+            }
+          }
+        } else if (ticks % 8 === 0 && ticks * WALK_TICK_MS >= 1500) {
+          // about twice a second, and only after the first second and a half: has the user started working near
+          // the cat? Then the walk eases to a stop. (Stopping a step at once looked like a jolt.)
           const fo = await probeFocus();
           if (pose !== "walk") return;
           if (!fo.keepWalking) return stopWalking();
@@ -465,12 +551,18 @@
         carry = s.carry;
         if (s.move === 0) return;
         const hitEdge = await invoke<boolean>("move_by", { dx: dir * s.move });
-        if (hitEdge) dir = dir === 1 ? -1 : 1;
+        if (hitEdge) {
+          if (leaving) {
+            settleAfterLeaving(); // no more room: it stops here, and curls up if the user is still right there
+            return stopWalking();
+          }
+          dir = dir === 1 ? -1 : 1;
+        }
       } catch {
         enter("idle");
       }
     }, WALK_TICK_MS);
-    walkEndTimer = setTimeout(() => stopWalking(), rand(3_000, 8_000));
+    walkEndTimer = setTimeout(() => stopWalking(), leaving ? 10_000 : rand(3_000, 8_000));
   }
 
   /**
@@ -1304,6 +1396,7 @@
         })
       );
       cleanups.push(await win.listen<BubbleAction>("bubble-action", (e) => onBubbleAction(e.payload)));
+      cleanups.push(await win.listen<boolean>("focus-hint", (e) => onFocusHint(e.payload)));
       cleanups.push(await win.listen("bubble-ready", resendView));
       cleanups.push(await win.listen("settings-ready", pushSettings));
       cleanups.push(await win.listen<SettingsPatch>("settings-patch", (e) => onSettingsPatch(e.payload)));
@@ -1383,7 +1476,7 @@
       }
       scheduleProactive();
       // Test hook (like window.__cat): lets a debugger trigger the real unprompted-line path now.
-      (window as unknown as Record<string, unknown>).__pet = { proactive: () => void fireProactive() };
+      (window as unknown as Record<string, unknown>).__pet = { proactive: () => void fireProactive(), focus: () => ({ ...focusOut, lastLeave, pose }), trail: () => trail };
       let lastTick = Date.now();
       minuteTimer = setInterval(() => {
         const now = Date.now();
@@ -1411,6 +1504,7 @@
         clearTimeout(t)
       );
       clearInterval(minuteTimer);
+      clearInterval(focusLoop);
       clearTimeout(updateFirst);
       clearInterval(updateEvery);
       clearTimeout(updateRetry);

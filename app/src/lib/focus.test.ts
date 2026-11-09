@@ -4,9 +4,8 @@ import assert from "node:assert/strict";
 import {
   ACTIVE_MS,
   CALM_MS,
-  GHOST_ALPHA,
-  GHOST_OFF_MS,
-  GHOST_ON_MS,
+  CROWD_MS,
+  CROWD_OFF_MS,
   LINE_MS,
   NEAR_PX,
   decideFocus,
@@ -15,7 +14,7 @@ import {
   type FocusState,
 } from "./focus.ts";
 
-const near = { dist: 80, over: false };
+const near = { dist: 80, over: false, dx: 60 };
 const input = (o: Partial<FocusInput> = {}): FocusInput => ({ idleMs: 0, pointer: near, busy: false, quiet: false, ...o });
 
 /** Feed a list of [time, input] probes and return the answers. */
@@ -31,7 +30,11 @@ function run(steps: [number, Partial<FocusInput>][], start: FocusState = initial
 test("unknown idle time means no restriction at all (a platform without the probe behaves as before)", () => {
   for (const idleMs of [null, NaN, -5, Infinity]) {
     const r = decideFocus(initialFocus(), input({ idleMs: idleMs as number | null }), 1000);
-    assert.deepEqual(r.out, { walkAllowed: true, keepWalking: true, speakAllowed: true, ghost: false, alpha: 1, active: false }, String(idleMs));
+    assert.equal(r.out.walkAllowed, true, String(idleMs));
+    assert.equal(r.out.keepWalking, true);
+    assert.equal(r.out.speakAllowed, true);
+    assert.equal(r.out.crowded, false);
+    assert.equal(r.out.active, false);
     assert.deepEqual(r.state, initialFocus());
   }
 });
@@ -48,104 +51,148 @@ test("walking and speaking need a pause: both limits are exact", () => {
   assert.equal(w(ACTIVE_MS).active, false);
 });
 
-test("the cat fades only after the user has been active near it for the hold time", () => {
+test("the cat feels crowded only after the user has worked near it for the hold time", () => {
   const out = run([
     [0, { idleMs: 100 }],
-    [GHOST_ON_MS - 1, { idleMs: 200 }],
-    [GHOST_ON_MS, { idleMs: 300 }],
+    [CROWD_MS - 1, { idleMs: 200 }],
+    [CROWD_MS, { idleMs: 300 }],
   ]);
-  assert.deepEqual(out.map((o) => o.ghost), [false, false, true]);
-  assert.equal(out[2].alpha, GHOST_ALPHA);
-  assert.equal(out[0].alpha, 1);
+  assert.deepEqual(out.map((o) => o.crowded), [false, false, true]);
 });
 
-test('"near" is strictly under the radius; far, unknown or over the cat never fades it', () => {
-  const faded = (pointer: FocusInput["pointer"]) => run([[0, { idleMs: 0, pointer }], [GHOST_ON_MS, { idleMs: 0, pointer }]])[1].ghost;
-  assert.equal(faded({ dist: NEAR_PX - 1, over: false }), true);
-  assert.equal(faded({ dist: NEAR_PX, over: false }), false);
-  assert.equal(faded({ dist: 5000, over: false }), false);
-  assert.equal(faded(null), false);
-  assert.equal(faded({ dist: 10, over: true }), false); // the user is touching the cat
-  assert.equal(faded({ dist: NaN, over: false }), false);
+test('"near" is strictly under the radius; far, unknown or over the cat never crowds it', () => {
+  const crowded = (pointer: FocusInput["pointer"]) => run([[0, { idleMs: 0, pointer }], [CROWD_MS, { idleMs: 0, pointer }]])[1].crowded;
+  assert.equal(crowded({ dist: NEAR_PX - 1, over: false }), true);
+  assert.equal(crowded({ dist: NEAR_PX, over: false }), false);
+  assert.equal(crowded({ dist: 5000, over: false }), false);
+  assert.equal(crowded(null), false);
+  assert.equal(crowded({ dist: 10, over: true }), false); // the user is touching the cat
+  assert.equal(crowded({ dist: NaN, over: false }), false);
 });
 
-test("the pointer going onto the cat brings it back at once, even in the middle of typing", () => {
+test("the pointer going onto the cat ends it at once, even in the middle of typing", () => {
   const out = run([
     [0, { idleMs: 0 }],
-    [GHOST_ON_MS, { idleMs: 0 }],
-    [GHOST_ON_MS + 1000, { idleMs: 0, pointer: { dist: 20, over: true } }],
+    [CROWD_MS, { idleMs: 0 }],
+    [CROWD_MS + 1000, { idleMs: 0, pointer: { dist: 20, over: true } }],
   ]);
-  assert.deepEqual(out.map((o) => o.ghost), [false, true, false]);
+  assert.deepEqual(out.map((o) => o.crowded), [false, true, false]);
 });
 
-test("it comes back when the user stops, at the exact limit, and does not fade again until they type again", () => {
+test("it ends when the user stops, at the exact limit, and does not start again until they type again", () => {
   const out = run([
     [0, { idleMs: 0 }],
-    [GHOST_ON_MS, { idleMs: 0 }], // faded
-    [GHOST_ON_MS + 1000, { idleMs: GHOST_OFF_MS - 1 }], // a pause, still faded
-    [GHOST_ON_MS + 2000, { idleMs: GHOST_OFF_MS }], // back
-    [GHOST_ON_MS + 3000, { idleMs: GHOST_OFF_MS + 100 }], // still active by the 3 s rule, but no flicker
-    [GHOST_ON_MS + 4000, { idleMs: GHOST_OFF_MS + 1100 }],
+    [CROWD_MS, { idleMs: 0 }], // crowded
+    [CROWD_MS + 1000, { idleMs: CROWD_OFF_MS - 1 }], // a pause, still crowded
+    [CROWD_MS + 2000, { idleMs: CROWD_OFF_MS }], // over
+    [CROWD_MS + 3000, { idleMs: CROWD_OFF_MS + 100 }], // still active by the 3 s rule, but no flicker
+    [CROWD_MS + 4000, { idleMs: CROWD_OFF_MS + 1100 }],
   ]);
-  assert.deepEqual(out.map((o) => o.ghost), [false, true, true, false, false, false]);
+  assert.deepEqual(out.map((o) => o.crowded), [false, true, true, false, false, false]);
 });
 
-test("typing again after coming back fades it again only after the hold time", () => {
+test("typing again after it ended starts the hold again", () => {
   const out = run([
     [0, { idleMs: 0 }],
-    [GHOST_ON_MS, { idleMs: 0 }], // faded
-    [2000, { idleMs: 2000 }], // back
-    [2100, { idleMs: 50 }], // typing again: the hold starts
-    [2100 + GHOST_ON_MS - 1, { idleMs: 60 }],
-    [2100 + GHOST_ON_MS, { idleMs: 70 }],
+    [CROWD_MS, { idleMs: 0 }], // crowded
+    [3000, { idleMs: 2000 }], // over
+    [3100, { idleMs: 50 }], // typing again: the hold starts
+    [3100 + CROWD_MS - 1, { idleMs: 60 }],
+    [3100 + CROWD_MS, { idleMs: 70 }],
   ]);
-  assert.deepEqual(out.map((o) => o.ghost), [false, true, false, false, false, true]);
+  assert.deepEqual(out.map((o) => o.crowded), [false, true, false, false, false, true]);
 });
 
-test("a break in 'active and near' restarts the hold (no fading from scattered moments)", () => {
+test("a moving pointer is the user reaching for something: it never crowds the cat and restarts the hold", () => {
+  const still = { dist: 100, over: false };
+  const moving = { dist: 100, over: false, moving: true };
+  const out = run([
+    [0, { idleMs: 0, pointer: moving }],
+    [CROWD_MS * 2, { idleMs: 0, pointer: moving }], // moving for a long time: still not crowded
+    [CROWD_MS * 2 + 100, { idleMs: 0, pointer: still }], // stops: the hold starts now
+    [CROWD_MS * 2 + 100 + CROWD_MS - 1, { idleMs: 0, pointer: still }],
+    [CROWD_MS * 2 + 100 + CROWD_MS, { idleMs: 0, pointer: still }],
+  ]);
+  assert.deepEqual(out.map((o) => o.crowded), [false, false, false, false, true]);
+  // already crowded: a jittering pointer does not end it
+  const kept = run([
+    [0, { idleMs: 0, pointer: still }],
+    [CROWD_MS, { idleMs: 0, pointer: still }],
+    [CROWD_MS + 200, { idleMs: 0, pointer: moving }],
+  ]);
+  assert.deepEqual(kept.map((o) => o.crowded), [false, true, true]);
+});
+
+test("a break in 'active and near' restarts the hold (no crowding from scattered moments)", () => {
   const out = run([
     [0, { idleMs: 0 }], // starts holding
     [200, { idleMs: 0, pointer: { dist: 500, over: false } }], // pointer away: reset
     [400, { idleMs: 0 }], // starts again
-    [400 + GHOST_ON_MS - 1, { idleMs: 0 }],
-    [400 + GHOST_ON_MS, { idleMs: 0 }],
+    [400 + CROWD_MS - 1, { idleMs: 0 }],
+    [400 + CROWD_MS, { idleMs: 0 }],
   ]);
-  assert.deepEqual(out.map((o) => o.ghost), [false, false, false, false, true]);
+  assert.deepEqual(out.map((o) => o.crowded), [false, false, false, false, true]);
 });
 
 test("a pause before the hold is over cancels it", () => {
   const out = run([
     [0, { idleMs: 0 }],
-    [250, { idleMs: GHOST_OFF_MS }], // stopped typing
+    [250, { idleMs: CROWD_OFF_MS }], // stopped typing
     [300, { idleMs: 0 }], // typing again: a new hold, not the old one
     [320, { idleMs: 10 }],
   ]);
-  assert.deepEqual(out.map((o) => o.ghost), [false, false, false, false]);
+  assert.deepEqual(out.map((o) => o.crowded), [false, false, false, false]);
 });
 
-test("fullscreen, presentation, a locked session and Quiet mode keep it from fading", () => {
+test("fullscreen, presentation, a locked session and Quiet mode keep the cat from reacting", () => {
   for (const flag of ["busy", "quiet"] as const) {
     const out = run([
       [0, { idleMs: 0, [flag]: true }],
-      [GHOST_ON_MS, { idleMs: 0, [flag]: true }],
+      [CROWD_MS, { idleMs: 0, [flag]: true }],
     ]);
-    assert.deepEqual(out.map((o) => o.ghost), [false, false], flag);
+    assert.deepEqual(out.map((o) => o.crowded), [false, false], flag);
   }
-  // a fade in progress ends when the cat is hidden anyway
-  const out = run([[0, { idleMs: 0 }], [GHOST_ON_MS, { idleMs: 0 }], [GHOST_ON_MS + 10, { idleMs: 0, busy: true }]]);
-  assert.deepEqual(out.map((o) => o.ghost), [false, true, false]);
+  const out = run([[0, { idleMs: 0 }], [CROWD_MS, { idleMs: 0 }], [CROWD_MS + 10, { idleMs: 0, busy: true }]]);
+  assert.deepEqual(out.map((o) => o.crowded), [false, true, false]);
 });
 
-test("the walk and line permissions do not depend on the pointer or on fading", () => {
+test("the cat leaves away from the pointer: the pointer on its right means walk left", () => {
+  const dir = (dx?: number) => decideFocus(initialFocus(), input({ pointer: { dist: Math.abs(dx ?? 50), over: false, dx } }), 0).out.leaveDir;
+  assert.equal(dir(60), -1);
+  assert.equal(dir(1), -1);
+  assert.equal(dir(-60), 1);
+  assert.equal(dir(0), 1);
+  assert.equal(dir(undefined), 1);
+  assert.equal(decideFocus(initialFocus(), input({ pointer: null }), 0).out.leaveDir, 1);
+});
+
+test("the distance is passed on (the page walks until it is far enough)", () => {
+  assert.equal(decideFocus(initialFocus(), input({ pointer: { dist: 123, over: false } }), 0).out.dist, 123);
+  assert.equal(decideFocus(initialFocus(), input({ pointer: null }), 0).out.dist, null);
+  assert.equal(decideFocus(initialFocus(), input({ pointer: { dist: NaN, over: false } }), 0).out.dist, null);
+});
+
+test("the walk permissions do not depend on the pointer or on feeling crowded", () => {
   const a = decideFocus(initialFocus(), input({ idleMs: 10_000, pointer: near }), 0).out;
   const b = decideFocus(initialFocus(), input({ idleMs: 10_000, pointer: null }), 0).out;
   assert.equal(a.walkAllowed, true);
   assert.equal(a.speakAllowed, true);
-  assert.deepEqual(a, b);
+  assert.equal(a.walkAllowed, b.walkAllowed);
+  assert.equal(a.speakAllowed, b.speakAllowed);
+});
+
+test("a walk in progress goes on unless the user is active near the cat (no stopping in mid-step for work far away)", () => {
+  const keep = (idleMs: number, pointer: FocusInput["pointer"]) => decideFocus(initialFocus(), input({ idleMs, pointer }), 0).out.keepWalking;
+  assert.equal(keep(100, { dist: 600, over: false }), true); // active, but far from the cat
+  assert.equal(keep(100, { dist: NEAR_PX - 1, over: false }), false); // active and near
+  assert.equal(keep(100, { dist: 10, over: true }), false); // active, on the cat
+  assert.equal(keep(100, null), false); // active, pointer unknown: be careful
+  assert.equal(keep(ACTIVE_MS, { dist: 10, over: false }), true); // not active any more
+  assert.equal(keep(60_000, null), true);
 });
 
 test("the previous state is never modified", () => {
-  const prev: FocusState = { ghost: true, nearSince: 5 };
+  const prev: FocusState = { crowded: true, nearSince: 5 };
   const copy = { ...prev };
   decideFocus(prev, input({ idleMs: 0 }), 100);
   decideFocus(prev, input({ idleMs: 9999 }), 100);
@@ -157,50 +204,39 @@ test("invariants over thousands of random probes", () => {
   const rnd = () => ((seed = (seed * 1103515245 + 12345) & 0x7fffffff) / 0x7fffffff);
   let state = initialFocus();
   let now = 0;
-  let sawGhost = false;
-  let sawNoGhostNear = false;
+  let sawCrowded = false;
+  let sawHeld = false;
   for (let n = 0; n < 5000; n++) {
     now += Math.floor(rnd() * 1500);
     const i: FocusInput = {
       idleMs: rnd() < 0.05 ? null : Math.floor(rnd() * (rnd() < 0.5 ? 3000 : 12000)),
-      pointer: rnd() < 0.1 ? null : { dist: rnd() * 600, over: rnd() < 0.15 },
+      pointer: rnd() < 0.1 ? null : { dist: rnd() * 600, over: rnd() < 0.15, moving: rnd() < 0.2, dx: rnd() * 600 - 300 },
       busy: rnd() < 0.05,
       quiet: rnd() < 0.05,
     };
     const r = decideFocus(state, i, now);
     state = r.state;
     const o = r.out;
-    if (o.ghost) {
-      sawGhost = true;
-      // fading implies: known recent input, the pointer near and not on the cat, the cat shown
-      assert.ok(i.idleMs !== null && i.idleMs < GHOST_OFF_MS, "ghost needs recent input");
-      assert.ok(i.pointer && !i.pointer.over && i.pointer.dist < NEAR_PX, "ghost needs the pointer near and off the cat");
-      assert.ok(!i.busy && !i.quiet, "ghost not while hidden");
-    } else if (i.pointer && !i.pointer.over && i.pointer.dist < NEAR_PX && i.idleMs !== null && i.idleMs < GHOST_OFF_MS) sawNoGhostNear = true;
-    assert.equal(o.alpha, o.ghost ? GHOST_ALPHA : 1);
+    if (o.crowded) {
+      sawCrowded = true;
+      assert.ok(i.idleMs !== null && i.idleMs < CROWD_OFF_MS, "crowded needs recent input");
+      assert.ok(i.pointer && !i.pointer.over && i.pointer.dist < NEAR_PX, "crowded needs the pointer near and off the cat");
+      assert.ok(!i.busy && !i.quiet, "not while hidden");
+    } else if (i.pointer && !i.pointer.over && i.pointer.dist < NEAR_PX && i.idleMs !== null && i.idleMs < CROWD_OFF_MS && !i.busy && !i.quiet) sawHeld = true;
     if (i.idleMs !== null) {
       assert.equal(o.walkAllowed, i.idleMs >= CALM_MS);
       assert.equal(o.speakAllowed, i.idleMs >= LINE_MS);
-    } else assert.ok(o.walkAllowed && o.speakAllowed && !o.ghost);
+    } else assert.ok(o.walkAllowed && o.speakAllowed && !o.crowded);
     if (o.speakAllowed) assert.ok(o.walkAllowed, "a line waits longer than a walk");
+    assert.ok(o.leaveDir === 1 || o.leaveDir === -1);
   }
-  assert.ok(sawGhost, "the random run did fade the cat at least once");
-  assert.ok(sawNoGhostNear, "and sometimes held it back during the hold time");
+  assert.ok(sawCrowded, "the random run did crowd the cat at least once");
+  assert.ok(sawHeld, "and sometimes held it back during the hold time");
 });
 
-test("the limits are ordered: hold < come back < active < walk < line", () => {
-  assert.ok(GHOST_ON_MS < GHOST_OFF_MS);
-  assert.ok(GHOST_OFF_MS < ACTIVE_MS);
+test("the limits are ordered: hold < active < walk < line, and it ends before the user counts as idle", () => {
+  assert.ok(CROWD_MS < ACTIVE_MS);
+  assert.ok(CROWD_OFF_MS < ACTIVE_MS);
   assert.ok(ACTIVE_MS < CALM_MS);
   assert.ok(CALM_MS < LINE_MS);
-});
-
-test("a walk in progress goes on unless the user is active near the cat (no stopping in mid-step for work far away)", () => {
-  const keep = (idleMs: number, pointer: FocusInput["pointer"]) => decideFocus(initialFocus(), input({ idleMs, pointer }), 0).out.keepWalking;
-  assert.equal(keep(100, { dist: 600, over: false }), true); // active, but far from the cat
-  assert.equal(keep(100, { dist: NEAR_PX - 1, over: false }), false); // active and near
-  assert.equal(keep(100, { dist: 10, over: true }), false); // active, on the cat
-  assert.equal(keep(100, null), false); // active, pointer unknown: be careful
-  assert.equal(keep(ACTIVE_MS, { dist: 10, over: false }), true); // not active any more
-  assert.equal(keep(60_000, null), true);
 });

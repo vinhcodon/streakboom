@@ -33,6 +33,24 @@ pub fn idle_since(now_tick: u32, last_input_tick: u32) -> u32 {
     if d > u32::MAX / 2 { 0 } else { d }
 }
 
+/// The pointer must be within this many logical px of the cat's centre, and the user active within the last
+/// `ENGAGE_IDLE_MS`, for the hit-test thread to tell the page "the user may be working near the cat". It is a coarse
+/// trigger a little wider than the exact limits of `src/lib/focus.ts` (NEAR_PX 200, ACTIVE_MS 3000), which make the
+/// real decision; keep them in step. While it is false the page does no focus polling at all.
+pub const ENGAGE_RADIUS_PX: f64 = 250.0;
+pub const ENGAGE_IDLE_MS: u32 = 3000;
+
+pub fn engaged_near(idle_ms: Option<u32>, dx: f64, dy: f64) -> bool {
+    idle_ms.is_some_and(|i| i < ENGAGE_IDLE_MS) && dx.hypot(dy) < ENGAGE_RADIUS_PX
+}
+
+/// How far the cat can walk before the work-area edge in direction `dir` (+1 right, -1 left), in logical px.
+/// `win_x` is the pet window's left edge (physical px); the cat is a `size` square at `left` inside it.
+pub fn room_to_edge(a: Area, win_x: i32, left: i32, size: i32, dir: i32, scale: f64) -> i32 {
+    let room = if dir > 0 { a.r - (win_x + left + size) } else { (win_x + left) - a.x };
+    (room.max(0) as f64 / scale).round() as i32
+}
+
 /// Where the pointer is, in logical px, measured from the centre of the cat. `cur` and `win` are physical
 /// px (the pointer and the pet window's top-left); the cat is a `pet_size` square at `(pet_left, pet_top)`
 /// inside the window (logical px). Positive x is to the right, positive y is down.
@@ -196,6 +214,29 @@ mod tests {
         // at 150% the window is at physical (1500, 900); the centre is at logical (70, 70), physical (105, 105) inside
         let (dx, dy) = pointer_offset(1500.0 + 105.0 + 150.0, 900.0 + 105.0, 1500.0, 900.0, 1.5, 10.0, 10.0, 120.0);
         assert!((dx - 100.0).abs() < 1e-9 && dy.abs() < 1e-9, "{dx} {dy}");
+    }
+
+    #[test]
+    fn room_to_the_edge_is_measured_from_the_cat_not_the_window() {
+        // pet window at x=500 with the cat (120 px) at offset 10: the cat spans 510..630; work area 0..1920
+        assert_eq!(room_to_edge(A, 500, 10, 120, 1, 1.0), 1920 - 630);
+        assert_eq!(room_to_edge(A, 500, 10, 120, -1, 1.0), 510);
+        // at 150% the physical room is divided into logical px
+        assert_eq!(room_to_edge(A, 600, 15, 180, 1, 1.5), ((1920 - 795) as f64 / 1.5).round() as i32);
+        // against the edge, or past it, there is no room
+        assert_eq!(room_to_edge(A, -10, 10, 120, -1, 1.0), 0);
+        assert_eq!(room_to_edge(A, 1920 - 130, 10, 120, 1, 1.0), 0);
+        assert_eq!(room_to_edge(A, 5000, 10, 120, 1, 1.0), 0);
+    }
+
+    #[test]
+    fn the_page_is_told_only_when_the_user_is_active_near_the_cat() {
+        assert!(engaged_near(Some(0), 100.0, 0.0));
+        assert!(engaged_near(Some(ENGAGE_IDLE_MS - 1), 0.0, 249.0));
+        assert!(!engaged_near(Some(ENGAGE_IDLE_MS), 10.0, 10.0)); // not active any more
+        assert!(!engaged_near(Some(0), 250.0, 0.0)); // not near
+        assert!(!engaged_near(Some(0), 200.0, 200.0)); // diagonal distance counts (283)
+        assert!(!engaged_near(None, 0.0, 0.0)); // idle time unknown: no trigger
     }
 
     #[test]
