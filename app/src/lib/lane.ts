@@ -10,8 +10,6 @@
 //
 // The constants are proposals from the spec, to be tuned with real use (hypothesis H9).
 
-import { ACTIVE_MS } from "./focus.ts";
-
 /** A click or a pointer anchor expires after this long without any input. */
 export const ANCHOR_TTL_MS = 60_000;
 /** Typing counts as continuous while input is more recent than this. */
@@ -51,6 +49,11 @@ export interface LaneInput {
   pointer: { dx: number; dy: number } | null;
   /** The last click away from the cat, in the common frame, and how long ago it happened; null = none. */
   click: { x: number; y: number; ageMs: number } | null;
+  /**
+   * The pointer has just been moving. Moving the mouse also resets the idle time, but it is not typing: only activity with a
+   * still pointer counts as typing (a scroll wheel still does, which cannot be told apart without reading keys).
+   */
+  pointerMoving?: boolean;
 }
 
 export interface LaneState {
@@ -118,7 +121,8 @@ export function stepLane(prev: LaneState, input: LaneInput, now: number): { stat
     }
   }
 
-  const typing = idle < TYPING_GAP_MS;
+  // typing now: input within the gap and the pointer still (the author saw Peak hop while he only moved the mouse and clicked far from it)
+  const typing = idle < TYPING_GAP_MS && !input.pointerMoving;
   if (typing) {
     // typing with no click on record: the pointer's place when typing began is the best guess
     if (s.anchor === null && input.pointer) {
@@ -135,13 +139,16 @@ export function stepLane(prev: LaneState, input: LaneInput, now: number): { stat
   if (s.anchor === null) return { state: s, out: { lane: null, caretX: null, crowded: false } };
   const lane = laneFor(s.anchor, s.tauMs);
   const caretX = s.anchor.x + CARET_PX_PER_S * Math.min(s.tauMs / 1000, TAU_CAP_S);
-  const crowded = idle < ACTIVE_MS && inLane(lane, input.cat.x, input.cat.y);
+  // crowded only while the user is typing now: a lane left by an earlier burst of typing, or a click and some mouse moving,
+  // must not make the cat hop
+  const crowded = typing && inLane(lane, input.cat.x, input.cat.y);
   return { state: s, out: { lane, caretX, crowded } };
 }
 
 /**
- * Where the cat should hop to leave the band: a row at least ESCAPE_PX above or below the anchor row, on the side
- * with more room (`roomUp` and `roomDown` are how far the cat's centre can move that way before the screen edge).
+ * Where the cat should hop to leave the band: a row at least ESCAPE_PX above or below the anchor row, **up if it can**, down
+ * only when there is no room above (the author found a hop down looked like a fall, 2026-11-09). `roomUp` and `roomDown` are
+ * how far the cat's centre can move that way before the screen edge.
  * Returns the direction (-1 up, 1 down) and how far to move, or null when neither side has the room.
  */
 export function escapeRow(lane: Lane, catY: number, roomUp: number, roomDown: number): { dir: -1 | 1; dist: number } | null {
@@ -150,7 +157,6 @@ export function escapeRow(lane: Lane, catY: number, roomUp: number, roomDown: nu
   const down = anchorY + ESCAPE_PX - catY;
   const canUp = up >= 0 && roomUp >= up;
   const canDown = down >= 0 && roomDown >= down;
-  if (canUp && canDown) return roomUp > roomDown ? { dir: -1, dist: up } : { dir: 1, dist: down };
   if (canUp) return { dir: -1, dist: up };
   if (canDown) return { dir: 1, dist: down };
   return null;

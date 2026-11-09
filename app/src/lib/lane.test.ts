@@ -157,10 +157,13 @@ test("an old click on record is not re-applied after the lane expired", () => {
   assert.equal(r.state.anchor, null);
 });
 
-test("escaping: the side with more room is taken, a row ESCAPE_PX from the anchor row", () => {
+test("escaping: up if it can, down only when there is no room above, a row ESCAPE_PX from the anchor row", () => {
   const lane = laneFor({ x: 800, y: 500 }, 0);
   const up = escapeRow(lane, 520, 600, 200);
   assert.deepEqual(up, { dir: -1, dist: 520 - (500 - ESCAPE_PX) });
+  // even with far more room below, up is preferred when it fits
+  assert.equal(escapeRow(lane, 520, 200, 900)?.dir, -1);
+  // no room above: down
   const down = escapeRow(lane, 520, 100, 400);
   assert.deepEqual(down, { dir: 1, dist: 500 + ESCAPE_PX - 520 });
 });
@@ -170,4 +173,27 @@ test("escaping: only the side that has the room, and none when neither does", ()
   assert.equal(escapeRow(lane, 500, 10, 400)?.dir, 1);
   assert.equal(escapeRow(lane, 500, 400, 10)?.dir, -1);
   assert.equal(escapeRow(lane, 500, 10, 10), null);
+});
+
+test("moving the mouse is not typing: no typing time, no anchor from the pointer, no crowding", () => {
+  // the cat is inside the band after a click and some typing...
+  let r = run([[0, {}], [250, { idleMs: 100 }], [500, { idleMs: 100 }]]);
+  assert.equal(r.out.crowded, true);
+  // ...then the user only moves the mouse (idle resets, the pointer is moving): nothing grows and the cat is not crowded
+  const tau = r.state.tauMs;
+  r = run([[750, { idleMs: 0, pointerMoving: true }], [1000, { idleMs: 0, pointerMoving: true }]], r.state);
+  assert.equal(r.out.crowded, false);
+  assert.equal(r.state.tauMs, tau);
+  // a click and then mouse moving alone never anchors a lane that crowds the cat
+  const s0 = run([[0, { idleMs: 0, pointerMoving: true, click: { x: 800, y: 500, ageMs: 10 } }], [250, { idleMs: 0, pointerMoving: true }]]);
+  assert.equal(s0.out.crowded, false);
+});
+
+test("a lane left by earlier typing does not crowd the cat when the user is merely active a moment later", () => {
+  const typed = run([[0, {}], [250, { idleMs: 100 }], [500, { idleMs: 100 }]]);
+  assert.equal(typed.out.crowded, true);
+  // 2 s after the last key: active within the old 3 s limit, but no longer typing
+  const later = run([[2500, { idleMs: 2000 }]], typed.state);
+  assert.ok(later.out.lane !== null);
+  assert.equal(later.out.crowded, false);
 });

@@ -370,19 +370,23 @@
         click: { x: number; y: number; ageMs: number } | null;
       }>("focus_probe");
       const now = Date.now();
+      // "moving" = the pointer travelled more than a few px since the last reading a moment ago
+      const moving =
+        p.dx !== null && p.dy !== null && lastPointer !== null && now - lastPointer.t < 1000 && Math.hypot(p.dx - lastPointer.dx, p.dy - lastPointer.dy) > 6;
+      lastPointer = p.dx !== null && p.dy !== null ? { dx: p.dx, dy: p.dy, t: now } : null;
       if (p.catX !== null && p.catY !== null) {
         laneCat = { x: p.catX, y: p.catY };
-        const lr = stepLane(laneState, { idleMs: p.idleMs, cat: laneCat, pointer: p.dx !== null && p.dy !== null ? { dx: p.dx, dy: p.dy } : null, click: p.click }, now);
+        const lr = stepLane(
+          laneState,
+          { idleMs: p.idleMs, cat: laneCat, pointer: p.dx !== null && p.dy !== null ? { dx: p.dx, dy: p.dy } : null, click: p.click, pointerMoving: moving },
+          now,
+        );
         laneState = lr.state;
         laneOut = lr.out;
       } else {
         laneState = initialLane();
         laneOut = NO_LANE;
       }
-      // "moving" = the pointer travelled more than a few px since the last reading a moment ago
-      const moving =
-        p.dx !== null && p.dy !== null && lastPointer !== null && now - lastPointer.t < 1000 && Math.hypot(p.dx - lastPointer.dx, p.dy - lastPointer.dy) > 6;
-      lastPointer = p.dx !== null && p.dy !== null ? { dx: p.dx, dy: p.dy, t: now } : null;
       const pointer = p.dx !== null && p.dy !== null ? { dist: Math.hypot(p.dx, p.dy), over: p.over, moving, dx: p.dx } : null;
       const r = decideFocus(focusState, { idleMs: p.idleMs, pointer, busy: false, quiet }, now);
       focusState = r.state;
@@ -752,6 +756,7 @@
   // ------------------------------------------------- hops and falls (spec/07 2.3, ADR-0032)
   let flying = false;
   let airborne = $state(false); // the cat is in a hop or a fall: it is painted at the walking rate
+  const CROUCH_MS = 140; // the squat before a hop takes off
   const FLIGHT_TICK_MS = 16; // about 60 moves a second while it lasts: a hop is full-speed motion
 
   /**
@@ -766,6 +771,13 @@
     try {
       const start = await invoke<{ x: number; y: number; scale: number }>("pet_place");
       if (flights[0].dx !== 0) dir = flights[0].dx > 0 ? 1 : -1;
+      if (flights[0].kind === "hop") {
+        // a short crouch before the takeoff (the `land` squash) so a hop, down as well as up, reads as a decision and not as a fall
+        pose = "land";
+        poseTick++;
+        await new Promise((r) => setTimeout(r, CROUCH_MS));
+        if ((pose as PetState) !== "land") return; // picked up or told to do something else meanwhile
+      }
       pose = air;
       poseTick++;
       airborne = true;
