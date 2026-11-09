@@ -219,7 +219,7 @@ The build now fails when the scripts together exceed 30 KB gzipped or a home pag
 ## 12. Baseline of the assistants' answers (2026-11-10, asked by the website session)
 Asked on 2026-11-10, **after** the N4 and N2 changes were live (so this is a baseline of how the world sees the site right now, not a before-and-after of those changes; the site was only a day or two old). Each question was asked once, in a fresh chat.
 
-**Where:** ChatGPT, logged out, temporary chat, search suggested in the link, the basic model (11 answers: all 6 English, 3 Vietnamese, 2 of the 3 Japanese: "Streakboomとは？" and the open-source pet question, and the screen-reading one). Perplexity, logged out: only the first question, then it asked for a sign-in. **Not asked:** Claude, Gemini and Copilot (they need a sign-in; the session may not enter passwords) and the rest of Perplexity.
+**Where:** ChatGPT, logged out, temporary chat, search suggested in the link, the basic model (12 answers: all 6 English, 3 Vietnamese and 3 Japanese; the Japanese questions are my own wording of the English ones). Perplexity, logged out: only the first question, then it asked for a sign-in. **Not asked:** Claude, Gemini and Copilot (they need a sign-in; the session may not enter passwords) and the rest of Perplexity.
 
 | Question | Answer in short | Streakboom (the pet) found? |
 |---|---|---|
@@ -234,6 +234,6 @@ Asked on 2026-11-10, **after** the N4 and N2 changes were live (so this is a bas
 | Peak có đọc những gì tôi gõ không? (VI) and the Japanese version | Another app called Peak (an AI coach) | No |
 | Streakboomとは？ (JA) | Not known; offered StreakBloom | No |
 
-**Reading:** in 0 of 12 answers was the desktop pet found. The name is confused with StreakBloom, and a different GitHub repo `streakBoom` exists. The pet competes with many better-known desktop pets for the generic questions, and "Peak" alone is the name of other apps. Nothing here shows the site is wrong; it shows it is not yet in what these assistants retrieve. Things worth doing once the site is older: ask again in a few weeks and compare; make sure the description and the first line name the product with its kind ("desktop pet for Windows") next to the name; Search Console and Bing Webmaster indexing (the author's part, D7).
+**Reading:** in 0 of 13 answers was the desktop pet found. The name is confused with StreakBloom, and a different GitHub repo `streakBoom` exists. The pet competes with many better-known desktop pets for the generic questions, and "Peak" alone is the name of other apps. Nothing here shows the site is wrong; it shows it is not yet in what these assistants retrieve. Things worth doing once the site is older: ask again in a few weeks and compare; make sure the description and the first line name the product with its kind ("desktop pet for Windows") next to the name; Search Console and Bing Webmaster indexing (the author's part, D7).
 
 **Not verified:** one run per question; ChatGPT answers vary between runs, and a logged-in or paid model with live search may do better; the logged-out basic model may not have searched at all; Claude, Gemini, Copilot and most of Perplexity were not asked; no score beyond found / not found.
