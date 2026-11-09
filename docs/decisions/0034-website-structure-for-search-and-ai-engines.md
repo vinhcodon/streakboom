@@ -1,6 +1,6 @@
 # ADR-0034: The website gets static pages per language, built by a small script, with structured data, `llms.txt` files and no visitor tracking
 
-- **Status:** accepted (decisions only; nothing is built yet)
+- **Status:** accepted (decisions); **built and deployed on 2026-11-09** (commit `76a851b`), see the plan for what is still open
 - **Date:** 2026-11-09
 - **Decided by:** Vinh (author), with Claude (the website session)
 
@@ -25,7 +25,8 @@ Keeping one page switched by script (Vietnamese stays invisible to crawlers); Vi
 - Work order: baseline first (Lighthouse numbers and the assistants' answers, before any change), then data and templates, the English home, the Vietnamese home, the changelog and privacy pages, structured data and the crawler files, verification. See the plan, section 6.
 - The author adds the DNS TXT records for the search tools' verification (and GitHub's domain verification); the agent cannot reach name.com.
 - `llms.txt` support by search and assistant vendors is unproven; the pages themselves carry the weight.
-- Not verified: everything in the plan's section 7 (crawler behaviour, rich-result status, Lighthouse numbers, the current ranking); nothing described here is built.
+- The language is now chosen by the address, not by a script: a Vietnamese visitor who opens `/` sees English with a link to `/vi/`. The old script used the browser language and a saved choice; that was dropped on purpose (redirecting by browser language hides one language from crawlers). If it turns out to cost Vietnamese visitors, a small banner "Xem bằng tiếng Việt" can be added without redirecting.
+- Built 2026-11-09: `scripts/build-site.mjs` and `scripts/site/` (facts, pages, files, checks, tests), `site/strings.mjs`, the workflow uploading `_site/` and triggering on `CHANGELOG.md`, `updates/latest.json` and `tauri.conf.json`. Not verified: the plan's section 7 (crawler behaviour, rich-result status, Lighthouse numbers, the current ranking), a redeploy caused by a real release, and the rule "a failed check means nothing is deployed" in the real workflow (the checks are unit-tested, the workflow behaviour is not).
 
 ## Sources
 [`../plans/website-seo-geo.md`](../plans/website-seo-geo.md), `../handoff/website-release-prompt.md`, ADR-0028 (the changelog contract), ADR-0031 (what may be said about what Peak notices), ADR-0033 (the release routine).

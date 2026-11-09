@@ -111,14 +111,14 @@ The build fails (and the deploy does not happen) when:
 5. a retired name (the author's old display name, see ADR-0033) or a forbidden claim ("almost no CPU", "sees what you type", "100% free", a macOS promise) appears.
 A no-JavaScript test (`curl` the page, check that the at-a-glance facts, the version, the install file name and the first changelog entries are in the HTML) runs in the same script. `pages.yml` also triggers on `CHANGELOG.md`, `updates/latest.json` and `app/src-tauri/tauri.conf.json`.
 
-## 6. Order of work once the author has chosen (sizes: S small, M medium)
-0. **Baseline (S):** record today's answers from the assistants and today's Lighthouse numbers, before any change.
-1. **Data and templates (M):** one data module (version, date, notes, strings), the templates, the build script and the checks; `pages.yml` triggers.
-2. **English home, static (M);** then **Vietnamese (S)**, `hreflang`, language links instead of the script toggle.
-3. **Changelog and privacy pages (S each).**
-4. **JSON-LD, sitemap, `robots.txt`, `llms.txt`, `404.html` (S).**
-5. **Verification and measuring (S):** Lighthouse, the no-JavaScript test, Search Console and Bing verification at name.com, the assistant question log.
-Each step is a small commit on explicit paths (ADR-0023); the interactive Peak, the favicon and the share image stay as they are.
+## 6. Order of work, and where it stands (2026-11-09)
+0. **Baseline (S): not done.** No Lighthouse numbers and no assistant answers were recorded before the change; the only "before" is the evidence in section 1. Lighthouse can still be run on the new site, and the assistants asked (the question set is in section 7), but they now measure the new site only.
+1. **Data and templates (M): done.** `scripts/site/facts.mjs` (version, notes), `site/strings.mjs` (both languages), `scripts/site/pages.mjs`, `scripts/build-site.mjs`, the checks of section 5 in `scripts/site/checks.mjs` with a test for each rule (`node --test scripts/site/`), and `pages.yml` uploading `_site/` and triggering on `CHANGELOG.md`, `updates/latest.json` and `tauri.conf.json`.
+2. **English home, static (M) and Vietnamese (S): done.** `/` and `/vi/`, `hreflang` with `x-default`, the language switch is a plain link, the "At a glance" and "What Streakboom is not" blocks, the FAQ questions as headings. The interactive Peak starts after the first paint.
+3. **Changelog and privacy pages (S each): done.** `/changelog/`, `/privacy/`, `/vi/privacy/`; the home keeps a four-item privacy summary.
+4. **JSON-LD, sitemap, `robots.txt`, `llms.txt`, `llms-full.txt`, `404.html` (S): done.**
+5. **Verification and measuring (S): partly.** Done: unit tests, a build in a clean checkout, the deployed URLs and redirects probed with `curl`, structure and layout looked at in the built-in browser. Open: Lighthouse, an external validator for the JSON-LD, Search Console and Bing (DNS TXT at name.com), the assistant question log (`verification-debt.md` V-46, V-47, V-50 to V-53).
+Each step was committed on explicit paths (ADR-0023); the interactive Peak, the favicon and the share image stayed as they were.
 
 ## 7. Measuring success, and what I could not verify
 **Fixed question set** (ask in a new chat, with search on where the assistant has it; log the date, the assistant, the full answer and a score):

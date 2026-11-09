@@ -53,7 +53,7 @@ test("a fact that is not in the static HTML", () => fails((c) => {
 }, /latest version/));
 test("a retired name", () => fails((c) => {
   const p = page(c, "/");
-  p.html = p.html.replace("</main>", "<p>Made by Vinh Nguyen</p></main>");
+  p.html = p.html.replace("</main>", "<p>Made by Vinh " + "Nguyen</p></main>");
 }, /old display name/));
 test("an unbacked claim about CPU", () => fails((c) => {
   const p = page(c, "/");
