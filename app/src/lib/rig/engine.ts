@@ -109,7 +109,7 @@ export const LOOKS: Record<PetState, Look> = {
   held: { ...REST, base: "hang", wide: 1, mouth: "o" },
   sleep: { ...REST, base: "loaf", lid: 0.06, mouth: "flat" },
   drowsy: { ...REST, base: "sit", roll: -3, dy: 4, lid: 0.45, mouth: "yawn" },
-  wake: { ...REST, base: "stretch", theta: 0.7, lid: 0.6 },
+  wake: { ...REST, base: "stretch", theta: 1, lid: 0.08, mouth: "yawn" }, // the play-bow stretch, side-on, eyes shut, yawning
   purr: { ...REST, happy: 1, roll: -5, dy: 2, cheek: 0.95, mouth: "smile" },
   nod: { ...REST, dy: 3 },
   smirk: { ...REST, lid: 0.62, roll: 4, gx: 2, mouth: "smile", cheek: 0.8 },
@@ -118,6 +118,15 @@ export const LOOKS: Record<PetState, Look> = {
   sad: { ...REST, roll: -6, dy: 5, gy: 2, lid: 0.7, mouth: "flat", cheek: 0.2, droop: 1 },
   huff: { ...REST, roll: 7, dy: -1, lid: 0.55, mouth: "flat", cheek: 0.3 },
 };
+
+/**
+ * How quickly the turn between the front and the side view happens. Waking turns the cat side-on for its stretch and
+ * back to face front afterwards; at the usual speed (0.25 s) that read as turning and snapping back, so both ways
+ * are slow (spec/08, author's report 2026-11-09).
+ */
+const THETA_K_DEFAULT = 230;
+const THETA_K_WAKE = 140; // into the stretch (a slow blend of the front and side drawings shows both at once and looks wrong)
+const THETA_K_AFTER_WAKE = 110; // out of it
 
 /** How quickly the body arrives, by the pose it is heading to. */
 const BODY_K: Partial<Record<PetState, number>> = { held: 320, wake: 70, land: 60, happy: 60, sleep: 26, drowsy: 30 };
@@ -164,6 +173,10 @@ export class Rig {
   private sq = new Spring(0, 320, 0.32);
   private tilt = new Spring(0, 130, 0.8);
   private mouths = Object.fromEntries(MOUTHS.map((m) => [m, new Spring(m === "smile" ? 1 : 0, 170)])) as Record<Mouth, Spring>;
+  private poseT = 0; // seconds since the pose last changed
+  private afterWake = false; // just out of the stretch and still turning back to face front: the eyes stay shut
+  private stretchDeep = 0; // 0..1: the stretch reaches a little further the longer it is held
+  private easeUntil = 0; // until this time the rise out of the stretch is painted at the walking rate, not every frame
   private lookT = -1; // seconds into the "look around" gesture, -1 = not playing
   private blinkT = -1;
 
@@ -190,6 +203,12 @@ export class Rig {
       this.pw[n].t = n === look.base ? 1 : 0;
       this.pw[n].k = k;
     }
+    this.theta.k = pose === "wake" ? THETA_K_WAKE : this.pose === "wake" ? THETA_K_AFTER_WAKE : THETA_K_DEFAULT;
+    // Out of the stretch and turning back to face front: a face half-way between the side and the front drawing has two
+    // eyes in the wrong places and looks dazed, so the eyes stay shut (a closed arc is tidy at any angle) until it faces front.
+    this.afterWake = this.pose === "wake" && pose !== "wake" && look.theta < 0.3;
+    if (this.pose === "wake" && pose !== "wake") this.easeUntil = this.time + 1.5;
+    if (changed) this.poseT = 0;
     this.pose = pose;
     this.dir = dir;
     this.theta.t = look.theta * dir;
@@ -252,6 +271,11 @@ export class Rig {
 
   step(dt: number) {
     this.time += dt;
+    this.poseT += dt;
+    // the stretch reaches a little further the longer it is held, and lets go when it ends
+    this.stretchDeep += ((this.pose === "wake" ? Math.min(1, this.poseT / 1.0) : 0) - this.stretchDeep) * Math.min(1, dt * 4);
+    // the yawn ends before the turn back, so no open mouth is caught half-way between the two drawings
+    if (this.pose === "wake" && this.poseT > 1.25) for (const m of MOUTHS) this.mouths[m].t = m === "smile" ? 1 : 0;
     this.walk.x > 0.02 && (this.phase += dt * GAIT_RATE * this.walk.x);
     // blink: the lid closes for 130 ms, then follows the pose again
     let lidTarget = LOOKS[this.pose].lid;
@@ -259,6 +283,10 @@ export class Rig {
       this.blinkT += dt;
       if (this.blinkT < 0.13) lidTarget = Math.min(lidTarget, 0.08);
       else this.blinkT = -1;
+    }
+    if (this.afterWake) {
+      if (Math.abs(this.theta.x) < 0.06 || this.poseT > 0.7) this.afterWake = false;
+      else lidTarget = Math.min(lidTarget, 0.08);
     }
     this.lid.t = lidTarget;
     // "look around": the eyes drift left, right, then back
@@ -287,6 +315,10 @@ export class Rig {
    * change the pace of the steps.
    */
   get mode(): "idle" | "light" | "walk" | "soft" | "full" {
+    // Waking is slow, smooth motion (a stretch held and then a rise): 30 frames a second read fine and a full-speed
+    // wake cost about 150 frames; the held part, which only breathes and sways, is painted at the soft rate.
+    if (this.pose === "wake") return this.poseT > 0.5 ? "soft" : "walk";
+    if (this.time < this.easeUntil) return "walk";
     if (this.major().some((s) => !s.settled)) return "full";
     if (this.walk.x > 0.01) return "walk";
     if (this.all().some((s) => !s.settled) || this.lookT >= 0 || this.blinkT >= 0) return "soft";
@@ -327,7 +359,16 @@ export class Rig {
       nod = 2 * swing * wk;
     }
     // the tail sways a little all the time it is moving, and more in a twitch or a walk
-    const wag = 0.22 * this.tail.x + 0.18 * wk;
+    // a held stretch is alive: a slow breath, a gentle sway of the raised tail, and it reaches a little further
+    const sw = Math.max(0, Math.min(1, this.pw.stretch.x));
+    if (sw > 0.01) {
+      const breath = Math.sin(this.time * 2.4);
+      key.body.ry += 0.8 * sw * breath;
+      key.belly.ry += 0.5 * sw * breath;
+      key.body.rot += 3 * sw * this.stretchDeep;
+      key.belly.rot += 3 * sw * this.stretchDeep;
+    }
+    const wag = 0.22 * this.tail.x + 0.18 * wk + 0.12 * sw;
     if (wag > 0.002) {
       const ang = wag * Math.sin(this.time * 9);
       const c = Math.cos(ang);
@@ -363,7 +404,7 @@ export class Rig {
       key,
       flip: th < 0,
       roll: this.roll.x + nod,
-      headDy: this.headDy.x,
+      headDy: this.headDy.x + 2 * sw * this.stretchDeep,
       gx: this.gx.x,
       gy: this.gy.x,
       lid: Math.min(1, Math.max(0.05, this.lid.x)),

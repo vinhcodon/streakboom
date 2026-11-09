@@ -76,7 +76,7 @@ Files in `%APPDATA%\com.streakboom.app\`:
 - Logs: none that contain keys or message content.
 
 ## 6. Testing
-- **Node** (`node --test`, 121 tests; Rust 42): state model and decay, line selection and coverage, gestures, reveal rhythm, telemetry and per-day counter rules (bond.ts), update snoozing, start-with-Windows and tour rules, the rig (key schema, springs, continuity, poses, and that its files can be copied to the website by erasing types), memory rules and lines.
+- **Node** (`node --test`, 127 tests; Rust 42): state model and decay, line selection and coverage, gestures, reveal rhythm, telemetry and per-day counter rules (bond.ts), update snoozing, start-with-Windows and tour rules, the rig (key schema, springs, continuity, poses, and that its files can be copied to the website by erasing types), memory rules and lines.
 - **Rust** (`cargo test`, 33 tests): the three clients against a one-shot mock HTTP server, error mapping, model ordering, mood tags, fact filtering, language rule, window geometry.
 - **Static:** `svelte-check`.
 - **Manual matrix still to run:** Windows 10 and 11, a second and a lower-end machine, multi-monitor, 100%, 125% and 150% DPI, fullscreen video, screen sharing, an 8-hour soak test, a reboot with start with Windows, and real Claude and OpenAI keys.

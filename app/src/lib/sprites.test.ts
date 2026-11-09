@@ -25,7 +25,7 @@ test("timed poses chain sensibly: drowsy falls asleep, everything else returns t
   for (const p of ["idle", "walk", "sleep", "held"] as PetState[]) assert.equal(TIMED[p], undefined, `${p} is not timed`);
   // a yawn is short enough not to feel stuck, a wake-up long enough to read
   assert.ok(TIMED.drowsy!.ms >= 600 && TIMED.drowsy!.ms <= 1500);
-  assert.ok(TIMED.wake!.ms >= 400 && TIMED.wake!.ms <= 1000);
+  assert.ok(TIMED.wake!.ms >= 1200 && TIMED.wake!.ms <= 2400); // a cat's stretch takes a while; short, it looks like a glitch
 });
 
 import { moodPose, MOODS } from "./sprites.ts";

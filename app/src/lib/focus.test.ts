@@ -6,12 +6,15 @@ import {
   CALM_MS,
   CROWD_MS,
   CROWD_OFF_MS,
+  LEAVE_MIN_ROOM_PX,
   LINE_MS,
   NEAR_PX,
+  SLEEP_CROWD_MS,
   decideFocus,
   initialFocus,
   type FocusInput,
   type FocusState,
+  wakesToMakeWay,
 } from "./focus.ts";
 
 const near = { dist: 80, over: false, dx: 60 };
@@ -239,4 +242,14 @@ test("the limits are ordered: hold < active < walk < line, and it ends before th
   assert.ok(CROWD_OFF_MS < ACTIVE_MS);
   assert.ok(ACTIVE_MS < CALM_MS);
   assert.ok(CALM_MS < LINE_MS);
+});
+
+test("a sleeping cat wakes to make way only after being crowded for several seconds and only if it can leave", () => {
+  const room = LEAVE_MIN_ROOM_PX;
+  assert.equal(wakesToMakeWay(true, SLEEP_CROWD_MS, room), true);
+  assert.equal(wakesToMakeWay(true, SLEEP_CROWD_MS - 1, room), false); // not yet: a passing pointer does not wake it
+  assert.equal(wakesToMakeWay(true, null, room), false); // not crowded
+  assert.equal(wakesToMakeWay(true, SLEEP_CROWD_MS * 5, room - 1), false); // nowhere to go: it stays curled up
+  assert.equal(wakesToMakeWay(false, SLEEP_CROWD_MS * 5, room * 5), false); // an awake cat is handled by making way
+  assert.ok(SLEEP_CROWD_MS > CROWD_MS, "waking needs more than the hold that makes it crowded");
 });

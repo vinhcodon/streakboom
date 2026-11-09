@@ -70,7 +70,7 @@ A reaction without a cause the user can see looks like a glitch; the same reacti
 | G2 | **Below** is missing: spec/07 knows the terrain only through window rectangles (L3) and has no notion of what the cat stands over now, nor of ground that changes under it except as a side effect of L3 | spec/07 | section 4; spec/07 gets the point-sampling alternative to the window list |
 | G3 | The eyes follow the pointer only while it is over the cat; there is no looking toward the user's attention | spec/03 | proposed in section 6 |
 | G4 | The make-way behavior has **no anticipation**: after the hold it simply walks | spec/06 3.1 | proposed in section 6 (a "notice" beat) |
-| G5 | A **sleeping cat never makes way** (found while writing this spec): it stays over the user's work for 20 to 60 s | spec/06 3.1 | a note in spec/06 and a story (PC-4) |
+| G5 | A **sleeping cat never makes way** (found while writing this spec): it stays over the user's work for 20 to 60 s | spec/06 3.1 | **closed by PC-4 (built 2026-11-09)** |
 | G6 | The privacy rules are spread over ADR-0029, ADR-0030 and spec/06 section 4 and 07 section 6 | docs | the sensory contract (section 1); the README and website text get written once when it ships |
 | G7 | No confidence: the lane (a guess) and the pointer (a fact) are treated alike; the response should depend on how sure the cat is | spec/07 3.1 | section 3 |
 | G8 | Percepts come from polling plus one event (`focus-hint`); a general set of events (typing started, typing stopped, a click, the monitor set changed, the ground changed) is not defined | spec/06 3.2 | section 8 |

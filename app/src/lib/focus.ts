@@ -17,6 +17,17 @@ export const NEAR_PX = 200; // logical px from the cat's centre: "near"
 export const CROWD_MS = 1200; // active and near, pointer still, for this long before the cat feels crowded
 export const CROWD_OFF_MS = 1500; // no input for this long and it no longer feels crowded
 export const LEAVE_PX = 260; // the cat walks away until the pointer is at least this far (logical px)
+export const SLEEP_CROWD_MS = 4000; // a sleeping cat's senses are dull: it wakes only after being crowded this long
+export const LEAVE_MIN_ROOM_PX = 120; // room to walk the chosen way; less than this and the cat curls up instead
+
+/**
+ * Should a sleeping (or dozing) cat wake up and make way? Only if it has been crowded for several seconds (a distant
+ * or passing pointer does not wake it) **and** it could actually leave: with no room to walk away it stays curled up,
+ * because waking would only put it in the same place awake (spec/08, ADR-0031).
+ */
+export function wakesToMakeWay(asleep: boolean, crowdedForMs: number | null, roomPx: number): boolean {
+  return asleep && crowdedForMs !== null && crowdedForMs >= SLEEP_CROWD_MS && roomPx >= LEAVE_MIN_ROOM_PX;
+}
 
 export interface FocusInput {
   /** Milliseconds since the last keyboard or mouse input; null or not a number = unknown (no restriction). */

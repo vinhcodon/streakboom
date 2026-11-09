@@ -162,23 +162,18 @@ export const HANG_F: Key = {
 };
 
 // ------------------------------------------------------------------------------- stretching
+// A cat's stretch is the "play bow": the front end goes down with the front legs reaching far forward and the chin on
+// the ground, the rump stays high over straight hind legs, the tail goes up, the eyes shut and the mouth opens in a yawn.
+// (The first drawing was a flat tilted blob with the head sunk into it and read as a weird shape.)
+const STRETCH_HEAD = shiftHead(STAND_S, -6, 22);
 export const STRETCH_S: Key = {
-  ...shiftHead(STAND_S, 0, 0),
-  shadow: { x: 58, y: 115, rx: 36, ry: 4.5 },
-  tail: { p0: [24, 84], p1: [6, 76], p2: [10, 52], w: 9 },
-  body: { x: 56, y: 88, rx: 34, ry: 21, rot: 14 },
-  belly: { x: 60, y: 97, rx: 20, ry: 8, rot: 14 },
-  legs: [leg(42, 94, 40, 110, 11, 0, 0, 1, 1), leg(70, 98, 92, 112, 11, 0, 0, 1, 1), leg(36, 92, 32, 110, 11, 0, 0, 1, 0), leg(76, 98, 98, 112, 11, 0, 0, 1, 0)],
-  head: { x: 92, y: 86, rx: 24, ry: 22 },
-  earL: { a: [72, 76], b: [74, 52], c: [86, 70], ia: [75, 72], ib: [76, 58], ic: [83, 70], alpha: 0 },
-  earR: { a: [80, 72], b: [84, 46], c: [102, 64], ia: [85, 68], ib: [88, 54], ic: [97, 64], alpha: 1 },
-  stripes: [stripe(87, 66, 72), stripe(93, 65, 73), stripe(90, 65, 70, 0)],
-  eyeL: eye(84, 86, 0, 8, 0),
-  eyeR: eye(101, 86, 6, 8),
-  cheekL: eye(80, 98, 0, 3.8, 0),
-  cheekR: eye(96, 98, 6.5, 3.8),
-  nose: { a: [113.5, 85], b: [116.5, 85], c: [115, 88] },
-  mouth: { l0: [112, 92], l1: [109, 96], l2: [105, 93.5], r0: [112, 92], r1: [109, 96], r2: [105, 93.5], ra: 0, s: 0.55 },
+  ...STRETCH_HEAD,
+  shadow: { x: 58, y: 115, rx: 44, ry: 4.5 },
+  tail: { p0: [16, 76], p1: [4, 62], p2: [10, 32], w: 9 },
+  body: { x: 46, y: 86, rx: 34, ry: 20, rot: 22 },
+  belly: { x: 56, y: 96, rx: 20, ry: 8, rot: 22 },
+  legs: [leg(24, 84, 22, 110, 11, 0, 0, 1, 1), leg(72, 98, 106, 111, 10, 5, 3.5, 1, 1), leg(30, 86, 28, 111, 11, 0, 0, 1, 0), leg(66, 99, 98, 112, 10, 6, 4, 1, 0)],
+  mouth: { ...STRETCH_HEAD.mouth, l0: [106, 96], r0: [106, 96], s: 0.85 }, // the yawn opens inside the face, under the nose
 };
 
 /** The front view of the stretch is derived from standing: lower front, higher tail. */

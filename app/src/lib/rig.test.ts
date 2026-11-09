@@ -239,3 +239,102 @@ test("the gait: a lateral sequence, two or more feet always down, continuous, an
   // one cycle later is the same
   assert.deepEqual(gaitLeg(0.37), gaitLeg(1.37));
 });
+
+const thetaOf = (r: Rig) => Math.abs((r as unknown as { theta: { x: number } }).theta.x);
+const asleep = () => {
+  const r = new Rig();
+  r.setPose("sleep", 1, 0, true);
+  for (let i = 0; i < 1200; i++) r.step(1 / 120);
+  return r;
+};
+
+test("waking is a stretch you can read: a full side-on play bow for over a second, eyes shut and yawning, mouth closed before the turn back", () => {
+  const r = asleep();
+  r.setPose("wake", 1, 0, true);
+  let turned = -1;
+  let sideOn = 0;
+  let yawnAtOne = 0;
+  for (let t = 0; t < 1.7; t += 1 / 120) {
+    r.step(1 / 120);
+    if (turned < 0 && thetaOf(r) > 0.9) turned = t;
+    if (thetaOf(r) > 0.9) sideOn += 1 / 120;
+    if (Math.abs(t - 1.0) < 1 / 240) yawnAtOne = r.frame().mouth.yawn;
+  }
+  // it turns fully side-on quickly (a slow blend of the front and side drawings shows both at once and looks wrong) ...
+  assert.ok(turned >= 0 && turned < 0.5, `fully side-on after ${turned.toFixed(2)} s`);
+  // ... and stays there: the stretch itself lasts more than a second
+  assert.ok(sideOn > 1.1, `side-on for ${sideOn.toFixed(2)} s, a stretch needs more than a second`);
+  const f = r.frame();
+  assert.ok(f.lid < 0.2, "eyes shut");
+  assert.ok(yawnAtOne > 0.8, `yawning in the middle of the stretch (${yawnAtOne.toFixed(2)})`);
+  assert.ok(f.mouth.yawn < 0.25, `the yawn is over before the turn back (${f.mouth.yawn.toFixed(2)})`);
+});
+
+test("out of the stretch the eyes stay shut while it turns back (no dazed half-turned face) and open when it faces front", () => {
+  const r = asleep();
+  r.setPose("wake", 1, 0, true);
+  for (let t = 0; t < 1.7; t += 1 / 120) r.step(1 / 120);
+  r.setPose("idle", 1, 0, true);
+  let hybridOpen = 0;
+  let back = -1;
+  for (let t = 0; t < 2; t += 1 / 120) {
+    r.step(1 / 120);
+    const th = thetaOf(r);
+    // while the face is anywhere between the two drawings the eyes are (nearly) shut
+    if (th > 0.1 && th < 0.9 && r.frame().lid > 0.3) hybridOpen += 1 / 120;
+    if (back < 0 && th < 0.05) back = t;
+  }
+  assert.ok(hybridOpen < 0.05, `eyes open for ${hybridOpen.toFixed(2)} s while half-turned`);
+  assert.ok(back >= 0 && back < 1, `facing front after ${back.toFixed(2)} s`);
+  for (let t = 0; t < 1; t += 1 / 120) r.step(1 / 120);
+  assert.ok(r.frame().lid > 0.9, "eyes open again once it faces front");
+});
+
+test("waking to walk keeps the eyes open (it stays side-on, there is no turn to hide)", () => {
+  const r = asleep();
+  r.setPose("wake", 1, 0, true);
+  for (let t = 0; t < 1.7; t += 1 / 120) r.step(1 / 120);
+  r.setPose("walk", 1, 0, true);
+  for (let t = 0; t < 0.8; t += 1 / 120) r.step(1 / 120);
+  assert.ok(r.frame().lid > 0.9, `eyes open while walking off (${r.frame().lid.toFixed(2)})`);
+});
+
+test("a held stretch is alive: it breathes and reaches a little further, and it is redrawn at the soft rate, not at full speed", () => {
+  const r = asleep();
+  r.setPose("wake", 1, 0, true);
+  for (let t = 0; t < 0.6; t += 1 / 120) r.step(1 / 120);
+  const early = r.frame();
+  for (let t = 0; t < 0.8; t += 1 / 120) r.step(1 / 120);
+  assert.equal(r.mode, "soft");
+  const late = r.frame();
+  assert.ok(late.key.body.rot > early.key.body.rot + 0.5, "the body tilts further the longer it is held");
+  const rys = new Set<number>();
+  for (let t = 0; t < 1; t += 0.1) {
+    for (let i = 0; i < 12; i++) r.step(1 / 120);
+    rys.add(Math.round(r.frame().key.body.ry * 100));
+  }
+  assert.ok(rys.size > 3, "the body breathes");
+});
+
+test("a wake is painted at the walking and soft rates, never at full speed (it costs about 90 frames, not 150)", () => {
+  const r = asleep();
+  r.setPose("wake", 1, 0, true);
+  let frames = 0;
+  let owed = 0;
+  const gap: Record<string, number> = { full: 1 / 60, soft: 0.041, walk: 0.033, light: 0.09, idle: Infinity };
+  let sawFull = false;
+  let t = 0;
+  for (; t < 4; t += 1 / 120) {
+    if (Math.abs(t - 1.7) < 1 / 240) r.setPose("idle", 1, 0, true);
+    r.step(1 / 120);
+    if (r.mode === "full") sawFull = true;
+    owed += 1 / 120;
+    if (owed >= gap[r.mode]) {
+      frames++;
+      owed = 0;
+    }
+  }
+  assert.equal(sawFull, false, "no full-speed frames");
+  assert.ok(frames < 110, `${frames} frames for a wake and the rise after it`);
+  assert.equal(r.mode, "idle", "and it ends still");
+});

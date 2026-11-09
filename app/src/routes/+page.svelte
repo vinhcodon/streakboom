@@ -91,7 +91,7 @@
   } from "$lib/state";
   import type { FunnelEvent } from "$lib/telemetry";
   import { UI, type ErrKind } from "$lib/ui";
-  import { LEAVE_PX, decideFocus, initialFocus, type FocusOut } from "$lib/focus";
+  import { LEAVE_MIN_ROOM_PX, LEAVE_PX, SLEEP_CROWD_MS, decideFocus, initialFocus, wakesToMakeWay, type FocusOut } from "$lib/focus";
   import { glideOut, rampIn, takeSteps } from "$lib/gait";
   import { engage as engagePure, markShown as markShownPure, minuteIncrement, noShown, type DayCounter, type DayStat } from "$lib/bond";
 
@@ -371,16 +371,19 @@
   // The hit-test thread in Rust tells the page only when "the user may be working near the cat" starts or ends
   // (event "focus-hint"); until then nothing is polled. While it holds, the probe is read four times a second.
   const LEAVE_COOLDOWN_MS = 25_000; // never make way more than once in this time
-  const LEAVE_MIN_ROOM_PX = 120; // room to walk the chosen way; less than this and the cat curls up instead
   let focusEngaged = false;
   let focusLoop: ReturnType<typeof setInterval> | undefined;
   let lastLeave = 0;
+  let crowdedSince: number | null = null; // since when the cat has been crowded without a break
   let walkPlan: { dir: 1 | -1 } | null = null; // set just before `enter("walk")` to walk a given way (making way)
 
   // Asked on every probe while the cat feels crowded: `makeWay` acts only when the cat is standing, so if the crowding
   // began while it was busy (walking, being held) it makes way as soon as it stands, and the cool-down keeps it calm.
   function noteCrowded(fo: FocusOut) {
-    if (fo.crowded) void makeWay(fo.leaveDir);
+    if (fo.crowded) {
+      crowdedSince ??= Date.now();
+      void makeWay(fo.leaveDir);
+    } else crowdedSince = null;
   }
 
   const trail: string[] = []; // the last few decisions, for the debugger (window.__pet.trail)
@@ -391,7 +394,25 @@
 
   async function makeWay(away: 1 | -1) {
     const now = Date.now();
-    if (quiet || panel !== null || (pose !== "idle" && pose !== "look") || now - lastLeave < LEAVE_COOLDOWN_MS) return;
+    if (quiet || panel !== null || now - lastLeave < LEAVE_COOLDOWN_MS) return;
+    if (pose === "sleep" || pose === "drowsy") {
+      // Asleep its senses are dull: it wakes only after several seconds of the user working right by it, and only
+      // if it could then leave (otherwise waking would change nothing). It wakes with its usual stretch and the
+      // next probe makes way as for an awake cat.
+      if (crowdedSince === null || now - crowdedSince < SLEEP_CROWD_MS) return;
+      let r = 0;
+      try {
+        r = await invoke<number>("edge_room", { dir: away });
+      } catch {
+        /* unknown: stay asleep */
+      }
+      if ((pose === "sleep" || pose === "drowsy") && wakesToMakeWay(true, crowdedSince === null ? null : Date.now() - crowdedSince, r)) {
+        note(`wakes to make way ${away > 0 ? "right" : "left"}: room ${r}`);
+        enter("idle");
+      }
+      return;
+    }
+    if (pose !== "idle" && pose !== "look") return;
     lastLeave = now;
     let room = 0;
     try {
@@ -1476,7 +1497,7 @@
       }
       scheduleProactive();
       // Test hook (like window.__cat): lets a debugger trigger the real unprompted-line path now.
-      (window as unknown as Record<string, unknown>).__pet = { proactive: () => void fireProactive(), focus: () => ({ ...focusOut, lastLeave, pose }), trail: () => trail };
+      (window as unknown as Record<string, unknown>).__pet = { proactive: () => void fireProactive(), focus: () => ({ ...focusOut, lastLeave, pose }), trail: () => trail, sleep: () => enter("drowsy"), wake: () => enter("idle") };
       let lastTick = Date.now();
       minuteTimer = setInterval(() => {
         const now = Date.now();

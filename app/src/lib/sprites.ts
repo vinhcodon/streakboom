@@ -34,7 +34,7 @@ export const TIMED: Partial<Record<PetState, TimedPose>> = {
   land: { ms: 400 },
   think: { ms: 60_000 }, // a safety net: thinking normally ends when the answer arrives
   drowsy: { ms: 900, next: "sleep" },
-  wake: { ms: 650 },
+  wake: { ms: 1700 }, // a real stretch: 650 ms read as a turn to the side and a snap back to standing
   purr: { ms: 2400 },
   huff: { ms: 1500 },
   nod: { ms: 550 },
