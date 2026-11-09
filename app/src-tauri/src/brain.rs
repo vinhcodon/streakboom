@@ -19,6 +19,7 @@ pub const API_BASE: &str = "https://generativelanguage.googleapis.com/v1beta";
 pub const DEFAULT_MODEL: &str = "gemini-3.1-flash-lite";
 const KEY_SERVICE: &str = "streakboom";
 const KEY_USER_GEMINI: &str = "gemini-api-key";
+const KEY_USER_GROQ: &str = "groq-api-key";
 const KEY_USER_CLAUDE: &str = "claude-api-key";
 const KEY_USER_OPENAI: &str = "openai-api-key";
 const MAX_OUTPUT_TOKENS: u32 = 512;
@@ -48,15 +49,18 @@ pub enum Kind {
 pub enum Provider {
     #[default]
     Gemini,
+    Groq,
     Claude,
     OpenAI,
 }
 
 impl Provider {
-    pub const ALL: [Provider; 3] = [Provider::Gemini, Provider::Claude, Provider::OpenAI];
+    /// In the order they are offered, and the order a brain is picked when the one in use is forgotten (ADR-0034).
+    pub const ALL: [Provider; 4] = [Provider::Gemini, Provider::Groq, Provider::Claude, Provider::OpenAI];
     pub fn parse(s: &str) -> Option<Provider> {
         match s {
             "gemini" => Some(Provider::Gemini),
+            "groq" => Some(Provider::Groq),
             "claude" => Some(Provider::Claude),
             "openai" => Some(Provider::OpenAI),
             _ => None,
@@ -65,6 +69,7 @@ impl Provider {
     pub fn id(self) -> &'static str {
         match self {
             Provider::Gemini => "gemini",
+            Provider::Groq => "groq",
             Provider::Claude => "claude",
             Provider::OpenAI => "openai",
         }
@@ -72,6 +77,7 @@ impl Provider {
     pub fn default_model(self) -> &'static str {
         match self {
             Provider::Gemini => DEFAULT_MODEL,
+            Provider::Groq => crate::groq::DEFAULT_MODEL,
             Provider::Claude => crate::claude::DEFAULT_MODEL,
             Provider::OpenAI => crate::openai::DEFAULT_MODEL,
         }
@@ -79,6 +85,7 @@ impl Provider {
     fn key_user(self) -> &'static str {
         match self {
             Provider::Gemini => KEY_USER_GEMINI,
+            Provider::Groq => KEY_USER_GROQ,
             Provider::Claude => KEY_USER_CLAUDE,
             Provider::OpenAI => KEY_USER_OPENAI,
         }
@@ -87,6 +94,7 @@ impl Provider {
     pub fn key_page(self) -> &'static str {
         match self {
             Provider::Gemini => "https://aistudio.google.com/apikey",
+            Provider::Groq => "https://console.groq.com/keys",
             Provider::Claude => "https://console.anthropic.com/settings/keys",
             Provider::OpenAI => "https://platform.openai.com/api-keys",
         }
@@ -97,6 +105,7 @@ impl Provider {
 pub fn generate_for(p: Provider, key: &str, model: &str, system: &str, turns: &[Turn]) -> Result<String, AiError> {
     match p {
         Provider::Gemini => generate(API_BASE, key, model, system, turns),
+        Provider::Groq => crate::groq::generate(crate::groq::API_BASE, key, model, system, turns),
         Provider::Claude => crate::claude::generate(crate::claude::API_BASE, key, model, system, turns),
         Provider::OpenAI => crate::openai::generate(crate::openai::API_BASE, key, model, system, turns),
     }
@@ -106,6 +115,7 @@ pub fn generate_for(p: Provider, key: &str, model: &str, system: &str, turns: &[
 pub fn models_for(p: Provider, key: &str) -> Result<Vec<String>, AiError> {
     match p {
         Provider::Gemini => Ok(chat_models(&list_models(API_BASE, key)?)),
+        Provider::Groq => Ok(crate::groq::chat_models(&crate::groq::list_models(crate::groq::API_BASE, key)?)),
         Provider::Claude => Ok(crate::claude::chat_models(&crate::claude::list_models(crate::claude::API_BASE, key)?)),
         Provider::OpenAI => Ok(crate::openai::chat_models(&crate::openai::list_models(crate::openai::API_BASE, key)?)),
     }
@@ -430,6 +440,21 @@ pub fn model_ok(name: &str) -> bool {
     (1..=80).contains(&name.len()) && name.chars().all(|c| c.is_ascii_alphanumeric() || matches!(c, '-' | '.' | '_'))
 }
 
+/// The same check for the model of a given provider. Groq's model names carry the maker in front ("openai/gpt-oss-20b"),
+/// so a single '/' between two plain parts is fine there; it is never a way to build a path (no empty or dotted parts).
+pub fn model_ok_for(p: Provider, name: &str) -> bool {
+    if p != Provider::Groq {
+        return model_ok(name);
+    }
+    let mut parts = name.split('/');
+    let (a, b, rest) = (parts.next(), parts.next(), parts.next());
+    match (a, b, rest) {
+        (Some(a), None, None) => model_ok(a),
+        (Some(a), Some(b), None) => model_ok(a) && model_ok(b) && !a.contains("..") && !b.contains(".."),
+        _ => false,
+    }
+}
+
 /// Every text-capable Flash model in a `models.list` response, best first
 /// (lite before full Flash, newest version first within each group).
 pub fn chat_models(list: &Value) -> Vec<String> {
@@ -739,6 +764,18 @@ mod tests {
         assert!(parse_facts("NONE", &[]).is_empty());
         assert!(parse_facts(&"x".repeat(200), &[]).is_empty());
     }
+    #[test]
+    fn model_names_may_have_a_slash_only_for_groq_and_never_build_a_path() {
+        assert!(model_ok_for(Provider::Gemini, "gemini-3.1-flash-lite"));
+        assert!(!model_ok_for(Provider::Gemini, "a/b"));
+        assert!(!model_ok_for(Provider::OpenAI, "openai/gpt-oss-20b"));
+        assert!(model_ok_for(Provider::Groq, "openai/gpt-oss-20b"));
+        assert!(model_ok_for(Provider::Groq, "llama-3.3-70b-versatile"));
+        for bad in ["../secret", "a//b", "/leading", "trailing/", "a/b/c", "sp ace", "", "x?key=1", "a/.."] {
+            assert!(!model_ok_for(Provider::Groq, bad), "{bad}");
+        }
+    }
+
     #[test]
     fn key_sanity_and_persona() {
         assert!(key_ok("  AIzaSyExampleExampleExample1234567  "));

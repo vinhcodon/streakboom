@@ -34,4 +34,4 @@ Moved out of this document:
 See [`04-technical-design.md`](04-technical-design.md). The system prompt archetype for the brain is in `app/src-tauri/src/brain.rs` (`persona`): witty, slightly sarcastic, loyal, under two sentences, in the language the user writes in, with one mood tag in front of each answer (removed before display).
 
 ## 6. Delivery
-The original three alpha phases (UI shell, BYOK settings, bubble chat) are done, together with the naive pet, memory, three brains, signed updates and the gestures. What is next, in order, is in [`../docs/plans/roadmap.md`](../docs/plans/roadmap.md).
+The original three alpha phases (UI shell, BYOK settings, bubble chat) are done, together with the naive pet, memory, four brains, signed updates and the gestures. What is next, in order, is in [`../docs/plans/roadmap.md`](../docs/plans/roadmap.md).

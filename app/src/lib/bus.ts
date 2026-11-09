@@ -7,7 +7,7 @@ import type { DayStat } from "./bond.ts";
 import type { Consent, Settings } from "./state.ts";
 
 /** The brains the pet can use. */
-export type ProviderId = "gemini" | "claude" | "openai";
+export type ProviderId = "gemini" | "groq" | "claude" | "openai";
 
 /** What the bubble window should show. The pet window resolves all text (language included). */
 export type BubbleView =

@@ -23,7 +23,7 @@ Three windows. The pet window owns all state and logic; the others are views (AD
 
  Rust core: drag + clamp to the work area, bubble placement (above/below/right/left, always on screen),
             hit-test thread (click-through except over the pet), tray + right-click menu,
-            credential store, brain clients (three providers), updater, autostart,
+            credential store, brain clients (four providers), updater, autostart,
             atomic save of pet.json, memory.json and state.json,
             focus probe (idle time, pointer, primary mouse button) in the hit-test thread,
             monitor geometry and flights of the window (hops and falls)
@@ -56,16 +56,18 @@ All of it follows the sensory contract of ADR-0031: Peak perceives shapes and ac
 ## 4. Brain providers
 One brain is in use at a time; keys of several can be stored (ADR-0008). All calls are made from Rust, are stateless, and use short prompts: the system prompt asks for under two sentences, a max output limit applies, and the context is the last 8 turns kept in memory only.
 
-| | Gemini (Google) | Claude (Anthropic) | OpenAI |
-|---|---|---|---|
-| API | `generateContent`, v1beta | Messages API, `anthropic-version` 2023-06-01 | Chat Completions |
-| Key header | `x-goog-api-key` | `x-api-key` | `Authorization: Bearer` |
-| Default model | `gemini-3.1-flash-lite` | `claude-haiku-5-5` | `gpt-4.1-mini` |
-| Automatic model order | lite Flash models first, newest first | Haiku, then Sonnet, then others, Opus last | "mini", then "nano", then full size; audio, image, search, embedding and code-agent models excluded |
-| Cost | free tier available; free data may be used and reviewed by Google; clients serving the EEA, Switzerland and the UK need paid services | paid; a Claude Pro or Team subscription does not include the API | paid; a ChatGPT Plus subscription does not include the API |
-| Verified with a real key | yes | **no** | **no** |
+The brains are offered in this order: Gemini, Groq, Claude, OpenAI (ADR-0034).
 
-- A key never appears in a URL or a log. A model name is only plain name characters.
+| | Gemini (Google) | Groq | Claude (Anthropic) | OpenAI |
+|---|---|---|---|---|
+| API | `generateContent`, v1beta | Chat Completions, OpenAI-compatible, `https://api.groq.com/openai/v1` | Messages API, `anthropic-version` 2023-06-01 | Chat Completions |
+| Key header | `x-goog-api-key` | `Authorization: Bearer` | `x-api-key` | `Authorization: Bearer` |
+| Default model | `gemini-3.1-flash-lite` | `llama-3.3-70b-versatile` | `claude-haiku-5-5` | `gpt-4.1-mini` |
+| Automatic model order | lite Flash models first, newest first | the default, then `llama-3.1-8b-instant`, then `gpt-oss-20b` and `-120b`, then by name; speech, safety, embedding and compound models excluded; a low reasoning effort for `gpt-oss` | Haiku, then Sonnet, then others, Opus last | "mini", then "nano", then full size; audio, image, search, embedding and code-agent models excluded |
+| Cost | free tier available; free data may be used and reviewed by Google; clients serving the EEA, Switzerland and the UK need paid services | free tier with per-minute and per-day limits; terms for data and age not read | paid; a Claude Pro or Team subscription does not include the API | paid; a ChatGPT Plus subscription does not include the API |
+| Verified with a real key | yes | **no** | **no** | **no** |
+
+- A key never appears in a URL or a log. A model name is only plain name characters (Groq's may have one `/`, never as a path: `model_ok_for`).
 - On a timeout, a 5xx or an unknown model the client lists the key's models and fails over to the next best one, remembering it if it works. A bad key or a rate limit is never failed over.
 - Caps (per local day): 60 typed chat turns, 6 proactive AI lines and 20 background fact-noting requests (each counted separately, ADR-0027), and a 2-minute cooldown after a rate limit. When a cap is reached the pet declines in character, with a randomly picked line and no numbers; Settings > Brain shows today's use. (0.2.0 still counted the fact-noting requests in the 60; 0.2.1 does not.)
 - Errors map to kinds (invalid key, rate limit, network, region, blocked, empty, server, model, storage, billing) and then to pet-voice messages (spec/02); a connect error shows the technical detail behind a toggle and a copy button.
@@ -79,14 +81,14 @@ Files in `%APPDATA%\com.streakboom.app\`:
 - `state.json`: window position, Quiet mode, the active provider and the chosen model per provider.
 - `pet.json`: mood, closeness, streak, settings (including the update mode), recent lines, AI usage, gesture, startup, tour and update bookkeeping, telemetry consent and queue. Written atomically (temp file, then rename).
 - `memory.json`: the pet's name and what to call the user, coarse habit counts, touch counts, shared milestones, noted facts, and the memory settings. Written atomically; the user can see, edit and delete all of it in Settings > Memory.
-- API keys: Windows Credential Manager, one entry per provider (`gemini-api-key`, `claude-api-key`, `openai-api-key`, service `streakboom`).
+- API keys: Windows Credential Manager, one entry per provider (`gemini-api-key`, `groq-api-key`, `claude-api-key`, `openai-api-key`, service `streakboom`).
 - Chat history: in memory only, never persisted. The facts noted from chats are persisted (see above) and are sent to the active provider with later chats the user starts.
 - Telemetry: opt-in, off by default, a random install id created only on consent and deleted on opt-out, funnel event names and timestamps, each once per install, plus per-day counters (`telemetry.days`, 60 days, counts only) recorded only at consent version 2 (`telemetry.consentV`); the queue and the counters stay on the machine and nothing is sent automatically (ADR-0009, spec/05). Pure rules for the counters are in `src/lib/bond.ts`.
 - Logs: none that contain keys or message content.
 
 ## 6. Testing
 - **Node** (`node --test`, 157 tests): state model and decay, line selection and coverage, gestures, reveal rhythm, telemetry and per-day counter rules (bond.ts), update snoozing, start-with-Windows and tour rules, the rig (key schema, springs, continuity, poses, the redraw rates, and that its files can be copied to the website by erasing types), focus-safety decisions (`focus.ts`), the walk easing (`gait.ts`), hops and falls (`hop.ts`), the typing lane (`lane.ts`), memory rules and lines.
-- **Rust** (`cargo test`, 54 tests): the three clients against a one-shot mock HTTP server, error mapping, model ordering, mood tags, fact filtering, language rule, window and monitor geometry (clamping across monitors and scales, the room to an edge), the idle-time arithmetic, the pointer offset, the button reading and the poll triggers.
+- **Rust** (`cargo test`, 61 tests): the four clients against a one-shot mock HTTP server, error mapping, model ordering, mood tags, fact filtering, language rule, window and monitor geometry (clamping across monitors and scales, the room to an edge), the idle-time arithmetic, the pointer offset, the button reading and the poll triggers.
 - **Static:** `svelte-check`.
 - **Manual matrix still to run:** Windows 10 and 11, a second and a lower-end machine, multi-monitor, 100%, 125% and 150% DPI, fullscreen video, screen sharing, an 8-hour soak test, a reboot with start with Windows, and real Claude and OpenAI keys.
 
@@ -101,7 +103,7 @@ The decisions are recorded one by one, with reasons and alternatives, in [`../do
 - Code signing, and crash reporting that excludes content.
 - macOS port.
 - Multi-monitor, mixed-DPI and second-machine checks; fullscreen detection with real games and videos.
-- Real-key tests of the Claude and OpenAI clients.
+- Real-key tests of the Groq, Claude and OpenAI clients.
 - A cheaper walking draw; more key poses for the in-between frames.
 - Emotions for scripted lines.
 - Streaming replies are not built and not planned while answers stay under two sentences (ADR-0020).

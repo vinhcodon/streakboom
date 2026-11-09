@@ -50,8 +50,8 @@
   });
   async function useThisBrain() {
     try {
-      const info = await invoke<{ active: ProviderId; gemini: boolean; claude: boolean; openai: boolean }>("brain_set_provider", { provider: editing });
-      if (snap) snap = { ...snap, provider: info.active, keys: { gemini: info.gemini, claude: info.claude, openai: info.openai }, hasKey: info[info.active], brainBad: false };
+      const info = await invoke<{ active: ProviderId; gemini: boolean; groq: boolean; claude: boolean; openai: boolean }>("brain_set_provider", { provider: editing });
+      if (snap) snap = { ...snap, provider: info.active, keys: { gemini: info.gemini, groq: info.groq, claude: info.claude, openai: info.openai }, hasKey: info[info.active], brainBad: false };
       void brainChanged({ type: "switched" });
     } catch (e) {
       err = ui.err[errKind(e)];
@@ -328,11 +328,11 @@
       return;
     }
     try {
-      const info = await invoke<{ active: ProviderId; gemini: boolean; claude: boolean; openai: boolean }>("brain_forget", { provider: editing });
+      const info = await invoke<{ active: ProviderId; gemini: boolean; groq: boolean; claude: boolean; openai: boolean }>("brain_forget", { provider: editing });
       confirmForget = false;
       modelName = "";
       models = [];
-      if (snap) snap = { ...snap, hasKey: info[info.active], brainBad: false, provider: info.active, keys: { gemini: info.gemini, claude: info.claude, openai: info.openai } };
+      if (snap) snap = { ...snap, hasKey: info[info.active], brainBad: false, provider: info.active, keys: { gemini: info.gemini, groq: info.groq, claude: info.claude, openai: info.openai } };
       void brainChanged({ type: "removed" });
     } catch (e) {
       confirmForget = false;
@@ -463,9 +463,9 @@
       {/if}
       <div class="row">
         <span class="lbl">{ui.brainPick}</span>
-        {#each ["gemini", "claude", "openai"] as p (p)}
+        {#each ["gemini", "groq", "claude", "openai"] as p (p)}
           <button class="seg" class:on={editing === p} onclick={() => pickProvider(p as ProviderId)}>
-            {ui.providers[p as ProviderId].name}{snap.provider === p && snap.keys[p as ProviderId] ? " ✓" : ""}
+            {ui.providers[p as ProviderId].name} <small class="tag">· {ui.providers[p as ProviderId].tag}</small>{snap.provider === p && snap.keys[p as ProviderId] ? " ✓" : ""}
           </button>
         {/each}
       </div>
@@ -847,5 +847,9 @@
     to {
       transform: rotate(360deg);
     }
+  }
+  .tag {
+    opacity: 0.65;
+    font-size: 0.8em;
   }
 </style>

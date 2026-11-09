@@ -41,7 +41,7 @@ These are relied upon and need checking before a wider release.
 | A3 | Multi-monitor and mixed-DPI behavior (clamping, bubble placement, click-through) is correct. | Manual matrix in `../../spec/04-technical-design.md` section 6 |
 | A4 | Fullscreen and presentation detection (`SHQueryUserNotificationState`) works with real games, videos and screen sharing. | Manual tests with real apps |
 | A5 | An 8-hour session does not grow memory. | Soak test |
-| A6 | The Claude and OpenAI clients work with real keys: model names, the credit and quota error texts, regions, reasoning models returning empty answers. | A tester with a paid key from each provider; copy the error details |
+| A6 | The Groq, Claude and OpenAI clients work with real keys: model names, the credit and quota error texts, regions, reasoning models returning empty answers. | A tester with a paid key from each provider; copy the error details |
 | A7 | Start with Windows survives a real reboot and an update. | Reboot test on the installed build |
 | A8 | Testers will accept the SmartScreen warning of the unsigned installer. | Observe the first alpha users; note drop-off at the install step |
 | A9 | The first-run tour, the belly-rub trap rate, the mood tags and the new Settings pages feel right to a person seeing them for the first time. | Observe 5 to 10 first-time users (also a goal in spec/02) |

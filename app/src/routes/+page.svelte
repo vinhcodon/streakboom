@@ -128,7 +128,7 @@
   // brain (BYOK). The key itself never reaches this window: it lives in the settings window's
   // input box and the OS credential store.
   let hasKey = $state(false);
-  let providerInfo = $state<{ active: ProviderId; gemini: boolean; claude: boolean; openai: boolean }>({ active: "gemini", gemini: false, claude: false, openai: false });
+  let providerInfo = $state<{ active: ProviderId; gemini: boolean; groq: boolean; claude: boolean; openai: boolean }>({ active: "gemini", gemini: false, groq: false, claude: false, openai: false });
   /** Re-reads which brain is in use and whether it has a key (the keys themselves never come here). */
   async function refreshBrain() {
     try {
@@ -1309,7 +1309,7 @@
       brainBad,
       tier: tierOf(data.closeness),
       provider: providerInfo.active,
-      keys: { gemini: providerInfo.gemini, claude: providerInfo.claude, openai: providerInfo.openai },
+      keys: { gemini: providerInfo.gemini, groq: providerInfo.groq, claude: providerInfo.claude, openai: providerInfo.openai },
       usage: {
         chat: data.ai.day === dayKey(Date.now()) ? data.ai.chat : 0,
         chatCap: AI_CHAT_DAILY_CAP,

@@ -85,7 +85,7 @@ export interface UiStrings {
   memForgetAll: string;
   memForgetNote: string;
   memEmpty: string;
-  providers: Record<ProviderId, { name: string; company: string; step1: string; step2: string; step3: string; open: string; age: string; cost: string; dataNote: string; keyNote: string }>;
+  providers: Record<ProviderId, { name: string; company: string; tag: string; step1: string; step2: string; step3: string; open: string; age: string; cost: string; dataNote: string; keyNote: string }>;
   brainSaved: string;
   brainInUse: string;
   useBrain: string;
@@ -247,6 +247,7 @@ export const UI: Record<Lang, UiStrings> = {
       gemini: {
         name: "Gemini (Google)",
         company: "Google",
+        tag: "free tier",
         step1: "Open Google AI Studio and sign in.",
         step2: "Click “Create API key”.",
         step3: "Copy the key and paste it below.",
@@ -256,9 +257,23 @@ export const UI: Record<Lang, UiStrings> = {
         dataNote: "Free keys: Google may use what you send me, and have people read it, to improve its products. Don't tell me anything sensitive. I also jot down a few lasting facts from our chats; they stay on this computer and go to Google with each chat (you can see, edit or turn this off in Memory).",
         keyNote: "Your key stays on this computer and is only sent to Google. Tip: make a key just for me so it's easy to revoke.",
       },
+      groq: {
+        name: "Groq",
+        company: "Groq",
+        tag: "free tier",
+        step1: "Open the Groq Console and sign in.",
+        step2: "Open “API Keys” and click “Create API Key”.",
+        step3: "Copy the key and paste it below.",
+        open: "Open Groq Console",
+        age: "I am 18 or older",
+        cost: "Free tier available, with limits on how much you can ask each minute and each day; Groq's console shows the limits of your account.",
+        dataNote: "What you send me goes to Groq, which runs the model, to be answered; see Groq's terms for how it handles API data. Don't tell me anything sensitive. I also jot down a few lasting facts from our chats; they stay on this computer and go to Groq with each chat (you can see, edit or turn this off in Memory).",
+        keyNote: "Your key stays on this computer and is only sent to Groq. Tip: make a key just for me so it's easy to revoke.",
+      },
       claude: {
         name: "Claude (Anthropic)",
         company: "Anthropic",
+        tag: "paid",
         step1: "Open the Anthropic Console and sign in.",
         step2: "Add some credit to the account, then create an API key.",
         step3: "Copy the key and paste it below.",
@@ -271,6 +286,7 @@ export const UI: Record<Lang, UiStrings> = {
       openai: {
         name: "OpenAI (ChatGPT API)",
         company: "OpenAI",
+        tag: "paid",
         step1: "Open the OpenAI Platform and sign in.",
         step2: "Add some credit or a payment method, then create an API key.",
         step3: "Copy the key and paste it below.",
@@ -458,6 +474,7 @@ export const UI: Record<Lang, UiStrings> = {
       gemini: {
         name: "Gemini (Google)",
         company: "Google",
+        tag: "có bậc miễn phí",
         step1: "Mở Google AI Studio và đăng nhập.",
         step2: "Bấm “Create API key”.",
         step3: "Sao chép key rồi dán vào ô bên dưới.",
@@ -467,9 +484,23 @@ export const UI: Record<Lang, UiStrings> = {
         dataNote: "Key miễn phí: Google có thể dùng những gì bạn gửi cho mình, và cho người đọc, để cải thiện sản phẩm. Đừng kể điều nhạy cảm nhé. Mình cũng ghi lại vài điều lâu dài từ các cuộc trò chuyện; chúng nằm trên máy này và được gửi cho Google cùng mỗi lần chat (bạn xem, sửa hoặc tắt trong mục Trí nhớ).",
         keyNote: "Key chỉ nằm trên máy này và chỉ được gửi cho Google. Mẹo: tạo một key riêng cho mình để dễ thu hồi.",
       },
+      groq: {
+        name: "Groq",
+        company: "Groq",
+        tag: "có bậc miễn phí",
+        step1: "Mở Groq Console và đăng nhập.",
+        step2: "Vào mục “API Keys” rồi bấm “Create API Key”.",
+        step3: "Sao chép key rồi dán vào ô bên dưới.",
+        open: "Mở Groq Console",
+        age: "Mình từ 18 tuổi trở lên",
+        cost: "Có bậc miễn phí, giới hạn số lượt hỏi mỗi phút và mỗi ngày; Console của Groq cho biết giới hạn của tài khoản bạn.",
+        dataNote: "Những gì bạn gửi cho mình sẽ đến Groq, nơi chạy mô hình, để được trả lời; xem điều khoản của Groq về cách họ xử lý dữ liệu API. Đừng kể điều nhạy cảm nhé. Mình cũng ghi lại vài điều lâu dài từ các cuộc trò chuyện; chúng nằm trên máy này và được gửi cho Groq cùng mỗi lần chat (bạn xem, sửa hoặc tắt trong mục Trí nhớ).",
+        keyNote: "Key chỉ nằm trên máy này và chỉ được gửi cho Groq. Mẹo: tạo một key riêng cho mình để dễ thu hồi.",
+      },
       claude: {
         name: "Claude (Anthropic)",
         company: "Anthropic",
+        tag: "trả phí",
         step1: "Mở Anthropic Console và đăng nhập.",
         step2: "Nạp một ít tiền vào tài khoản, rồi tạo API key.",
         step3: "Sao chép key rồi dán vào ô bên dưới.",
@@ -482,6 +513,7 @@ export const UI: Record<Lang, UiStrings> = {
       openai: {
         name: "OpenAI (ChatGPT API)",
         company: "OpenAI",
+        tag: "trả phí",
         step1: "Mở OpenAI Platform và đăng nhập.",
         step2: "Nạp một ít tiền hoặc thêm phương thức thanh toán, rồi tạo API key.",
         step3: "Sao chép key rồi dán vào ô bên dưới.",

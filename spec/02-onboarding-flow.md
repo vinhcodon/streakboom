@@ -1,6 +1,6 @@
 # Onboarding Flow: Naive Pet to Brained Pet
 
-How a new user goes from a pet that only says scripted lines to one that talks with the user's own key (Gemini, Claude or OpenAI). Everything here is implemented unless marked otherwise. Decisions behind it: ADR-0002, ADR-0007, ADR-0008, ADR-0009, ADR-0018, ADR-0019 in [`../docs/decisions/`](../docs/decisions/README.md).
+How a new user goes from a pet that only says scripted lines to one that talks with the user's own key (Gemini, Groq, Claude or OpenAI). Everything here is implemented unless marked otherwise. Decisions behind it: ADR-0002, ADR-0007, ADR-0008, ADR-0009, ADR-0018, ADR-0019 in [`../docs/decisions/`](../docs/decisions/README.md).
 
 ## Principles
 1. The pet is alive and charming before any key is requested.
@@ -30,9 +30,9 @@ How a new user goes from a pet that only says scripted lines to one that talks w
 - "Later" snoozes the request for 2 days, after which a single gentle re-ask is allowed; at most 3 asks in total. The card also closes itself after a few seconds if ignored.
 
 ### S3. Brain page of the settings window
-- A choice of brain at the top: **Gemini (Google)**, **Claude (Anthropic)**, **OpenAI (ChatGPT API)**. A tick marks the one in use, and a fixed line shows "Answering with: brain, model" and today's use against the daily caps.
+- A choice of brain at the top: **Gemini (Google)**, **Groq**, **Claude (Anthropic)**, **OpenAI (ChatGPT API)**, each with a small tag (free tier or paid). A tick marks the one in use, and a fixed line shows "Answering with: brain, model" and today's use against the daily caps.
 - For the chosen brain, three steps: open the provider's console in the browser (a button), create an API key (Claude and OpenAI first need credit or a payment method), paste it below.
-- A cost note (Gemini: a free tier, no card to start; Claude and OpenAI: billed per use, with a tip to set a low monthly spend limit), an "I am 18 or older" checkbox, and a data note that names the right company, sit above the key field. If another brain is already in use, a checkbox "Use this brain right after connecting" decides whether the new key takes over.
+- A cost note (Gemini and Groq: a free tier, Gemini with no card to start; Claude and OpenAI: billed per use, with a tip to set a low monthly spend limit), an "I am 18 or older" checkbox, and a data note that names the right company, sit above the key field. If another brain is already in use, a checkbox "Use this brain right after connecting" decides whether the new key takes over.
 - Privacy note: "Your key stays on this computer and is only sent to [the provider]." Tip: create a key just for the pet, so it is easy to revoke.
 - Optional: choose a model from the list the key can use (once a plausible key is typed); "Automatic" is the default and prefers small, fast models.
 - A stored but unused brain shows "Use this brain" and can be removed on its own.
@@ -66,4 +66,4 @@ Each is recorded once per install, only after consent, as a name and a timestamp
 - Exact trigger thresholds and snooze durations: tune in the alpha.
 - Observe 5 to 10 first-time users to complement telemetry (and to see the tour, the trap rate and the new Settings pages for the first time).
 - Whether to add a short "what can I say?" prompt right after the key is connected.
-- Claude and OpenAI connection flows have not been run with real keys.
+- Groq, Claude and OpenAI connection flows have not been run with real keys.
