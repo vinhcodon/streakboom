@@ -208,6 +208,37 @@ test("redraw budget: a standing cat that blinks every 4.5 s and flicks its tail 
   assert.ok(fs / 60 > 8, "the z's keep a smooth pace (a slower rate looked choppy)");
 });
 
+test("in a hop or a fall the cat is painted at the walking rate, and for a moment after the landing", () => {
+  const r = new Rig();
+  r.setPose("idle", 1, 0, true);
+  for (let i = 0; i < 1200; i++) r.step(1 / 120);
+  r.setAir(true);
+  r.setPose("walk", 1, 0); // the turn to the side view is a big motion, which would be painted every frame
+  r.step(1 / 120);
+  assert.equal(r.mode, "walk");
+  r.setPose("gasp", 1, 0);
+  r.step(1 / 120);
+  assert.equal(r.mode, "walk");
+  r.setAir(false);
+  r.setPose("land", 1, 0);
+  r.step(1 / 120);
+  assert.equal(r.mode, "walk", "the landing squash is painted at the same rate");
+  for (let i = 0; i < 120; i++) r.step(1 / 120); // 1 s later
+  assert.notEqual(r.mode, "walk", "after the landing the usual rules apply again");
+});
+
+test("a hop costs far fewer frames in the air than at full speed", () => {
+  const painted = (air: boolean) => {
+    const r = new Rig();
+    r.setPose("idle", 1, 0, true);
+    for (let i = 0; i < 1200; i++) r.step(1 / 120);
+    r.setAir(air);
+    r.setPose("walk", 1, 0);
+    return framesDuring(r, 0.57);
+  };
+  assert.ok(painted(true) < painted(false) * 0.7, `${painted(true)} frames in the air against ${painted(false)} at full speed`);
+});
+
 test("a blink or a tail flick while walking keeps the walk pace (no change of rhythm)", () => {
   const r = new Rig();
   r.setPose("walk", 1, 0, true);

@@ -401,7 +401,7 @@
   // The typing lane is urgent (the text is coming), so it has its own, shorter cool-down, and a sleeping cat that the
   // lane reaches wakes after a moment instead of after the 4 s of the pointer rule. The author found the first
   // version moved only after the text had reached the cat (2026-11-09).
-  const LANE_COOLDOWN_MS = 6_000;
+  const LANE_COOLDOWN_MS = 10_000; // 6 s gave 15 hops in two minutes in the author's test (TE-15); the author chose 10 s
   const SLEEP_LANE_MS = 600;
   let lastLaneHop = 0;
   let laneNoted = false; // one trail line per crowded episode (the debugger)
@@ -566,6 +566,7 @@
   let wakeThen: PetState | null = null; // what to do once the pet has finished waking up
 
   function enter(requested: PetState) {
+    if (flying) void invoke("fly_cancel"); // picked up or told to do something else in mid-air: the flight ends
     let next = requested;
     // A sleeping pet wakes up first (stretch, eyes open), then carries on.
     if (needsWakeFirst(pose, next)) {
@@ -703,8 +704,8 @@
   }
 
   // ------------------------------------------------- hops and falls (spec/07 2.3, ADR-0032)
-  let flightTimer: ReturnType<typeof setInterval> | undefined;
   let flying = false;
+  let airborne = $state(false); // the cat is in a hop or a fall: it is painted at the walking rate
   const FLIGHT_TICK_MS = 16; // about 60 moves a second while it lasts: a hop is full-speed motion
 
   /**
@@ -721,36 +722,22 @@
       if (flights[0].dx !== 0) dir = flights[0].dx > 0 ? 1 : -1;
       pose = air;
       poseTick++;
-      const t0 = performance.now();
-      await new Promise<void>((resolve) => {
-        let pending = false;
-        flightTimer = setInterval(async () => {
-          if (pending) return;
-          if (pose !== air) {
-            clearInterval(flightTimer);
-            return resolve(); // picked up or told to do something else
-          }
-          const p = chainAt(flights, performance.now() - t0);
-          pending = true;
-          try {
-            await invoke("move_to", { x: Math.round(start.x + p.x * start.scale), y: Math.round(start.y + p.y * start.scale) });
-          } catch {
-            clearInterval(flightTimer);
-            return resolve();
-          } finally {
-            pending = false;
-          }
-          if (p.done) {
-            clearInterval(flightTimer);
-            resolve();
-          }
-        }, FLIGHT_TICK_MS);
-      });
+      airborne = true;
+      // the whole path, one position per frame, as offsets from here; Rust plays it (no round trip per frame)
+      const points: [number, number][] = [];
+      const total = totalMs(flights);
+      for (let ms = 0; ms < total; ms += FLIGHT_TICK_MS) {
+        const p = chainAt(flights, ms);
+        points.push([Math.round(p.x * start.scale), Math.round(p.y * start.scale)]);
+      }
+      const end = chainAt(flights, total);
+      points.push([Math.round(end.x * start.scale), Math.round(end.y * start.scale)]);
+      await invoke<boolean>("fly_path", { points, frameMs: FLIGHT_TICK_MS });
     } catch {
       /* the window could not be moved: stop where it is */
     } finally {
-      clearInterval(flightTimer);
       flying = false;
+      airborne = false;
     }
     if (pose === air) enter("land");
   }
@@ -1700,7 +1687,7 @@
     ondblclick={onDblClick}
     oncontextmenu={onPetMenu}
   >
-    <Pet {pose} {dir} {tilt} {gaze} tick={poseTick} />
+    <Pet {pose} {dir} {tilt} {gaze} tick={poseTick} air={airborne} />
   </div>
 </main>
 

@@ -118,6 +118,8 @@ struct AppState {
     click_at: AtomicU64,
     click_x: AtomicU64,
     click_y: AtomicU64,
+    /// Asks a flight in progress (`fly_path`) to stop (the cat was picked up, or something else took over).
+    fly_cancel: AtomicBool,
 }
 
 fn now_ms() -> u64 {
@@ -363,6 +365,70 @@ fn pet_place(window: WebviewWindow) -> Result<Place, String> {
     Ok(Place { x: pos.x, y: pos.y, scale })
 }
 
+/// A hop or a fall, played entirely here (TE-15): the page sends the whole path at once (offsets from where the window
+/// is now, physical px, one per `frame_ms`) and this thread moves the window along it. Doing it from the page cost an
+/// IPC round trip per frame (60 a second), about 0.4 core-seconds a hop. Each position is held inside the work area of
+/// the monitor under the cat. Returns false when the flight was cancelled. The system timer is set to 1 ms for the
+/// flight so the frames are even (the default step is about 15 ms).
+#[tauri::command]
+async fn fly_path(app: AppHandle, window: WebviewWindow, points: Vec<(i32, i32)>, frame_ms: u64) -> Result<bool, String> {
+    let start = window.outer_position().map_err(|e| e.to_string())?;
+    let mons = mons_of(&window);
+    tauri::async_runtime::spawn_blocking(move || -> Result<bool, String> {
+        let state = app.state::<AppState>();
+        state.fly_cancel.store(false, Ordering::Relaxed);
+        timer_period(true);
+        let t0 = Instant::now();
+        let mut finished = true;
+        for (i, (dx, dy)) in points.iter().enumerate() {
+            let due = t0 + Duration::from_millis(i as u64 * frame_ms);
+            let now = Instant::now();
+            if due > now {
+                std::thread::sleep(due - now);
+            }
+            if state.fly_cancel.load(Ordering::Relaxed) {
+                finished = false;
+                break;
+            }
+            let Some((x, y, _)) = layout::clamp_to_world(&mons, start.x + dx, start.y + dy, pet_px) else {
+                break;
+            };
+            state.last_self_move_ms.store(now_ms(), Ordering::Relaxed);
+            if window.set_position(PhysicalPosition::new(x, y)).is_err() {
+                break;
+            }
+        }
+        timer_period(false);
+        Ok(finished)
+    })
+    .await
+    .map_err(|e| e.to_string())?
+}
+
+/// Stop a flight in progress.
+#[tauri::command]
+fn fly_cancel(state: State<AppState>) {
+    state.fly_cancel.store(true, Ordering::Relaxed);
+}
+
+/// Ask Windows for a 1 ms system timer while a flight runs (`begin`), and give it back after.
+fn timer_period(begin: bool) {
+    #[cfg(windows)]
+    {
+        use windows_sys::Win32::Media::{timeBeginPeriod, timeEndPeriod};
+        // SAFETY: plain calls with a period in ms; every begin is paired with an end.
+        unsafe {
+            if begin {
+                timeBeginPeriod(1);
+            } else {
+                timeEndPeriod(1);
+            }
+        }
+    }
+    #[cfg(not(windows))]
+    let _ = begin;
+}
+
 #[derive(Serialize)]
 struct Moved {
     x: i32,
@@ -446,6 +512,7 @@ fn drag_start(window: WebviewWindow, state: State<AppState>) -> Result<(), Strin
     let pos = window.outer_position().map_err(|e| e.to_string())?;
     *state.drag.lock().unwrap() = DragStart { win_x: pos.x, win_y: pos.y, cur_x: cur.x, cur_y: cur.y };
     state.dragging.store(true, Ordering::Relaxed);
+    state.fly_cancel.store(true, Ordering::Relaxed); // picked up in mid-air: the flight ends
     let _ = window.set_ignore_cursor_events(false);
     Ok(())
 }
@@ -1217,6 +1284,7 @@ pub fn run() {
                 click_at: AtomicU64::new(0),
                 click_x: AtomicU64::new(0),
                 click_y: AtomicU64::new(0),
+                fly_cancel: AtomicBool::new(false),
                 dragging: AtomicBool::new(false),
                 drag: Mutex::new(DragStart::default()),
                 bubble: Mutex::new(BubbleState::default()),
@@ -1299,6 +1367,8 @@ pub fn run() {
             monitors_info,
             move_to,
             pet_place,
+            fly_path,
+            fly_cancel,
             open_website,
             brain_provider,
             brain_set_provider,

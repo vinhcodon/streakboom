@@ -31,11 +31,12 @@ How the agent checks on the real machine: run from the author's Terminal panel (
 | V-25 | The focus probe with the screen locked, shared or in a remote session, and with touch or pen input | needs those setups; a lock-screen check is possible | either | 0.2.4 |
 | V-26 | Hit-testing the cat after the window moves between monitors of different scale | with V-2 | Vinh | 0.2.4 |
 | V-27 | Old items from the 0.2.0 build: `shown` and `engaged` with a real unprompted line, `quiet`, the midnight rollover, the minute counter after a real sleep, the export JSON on the clipboard | the debug hooks and a changed clock | Claude | 0.2.0 |
-| V-28 | The cost of hops and falls (TE-15) and the CPU of a walk away and of the probe loop | `scripts/cpu-breakdown.ps1` and `hop_cpu`-style windows | Claude | 2026-11-09 |
+| V-28 | The CPU of a walk away and of the probe loop (the cost of hops and falls was measured and cut in TE-15: about 0.34 core-seconds a hop; a whole typing session at four probes a second is not measured) | `scripts/cpu-breakdown.ps1` during a typing session | Claude | 2026-11-09 |
 | V-29 | `cargo clippy` is not installed on this machine, so no lint run has been done | `rustup component add clippy` | Claude | 0.2.1 |
 
 | V-30 | The typing lane with real, varied typing: a sleeping cat in the way (it was seen in the log once, waking after 0.6 s, but not by eye), the cat walking into the band, a text field near the top or bottom edge (the side with room), lines that wrap, text that was already there, typing in a title bar or a browser | use it for a week | Vinh | 2026-11-09 |
-| V-31 | How often the cat hops: the author's test session logged 15 lane hops in about 2 minutes (a 6 s cool-down); is that too busy, and what does it cost (TE-15)? | read `window.__pet.trail()` after a day's use; consider 10 to 12 s | either | 2026-11-09 |
+| V-31 | How often the cat hops in real use now that the cool-down is 10 s (a 6 s one gave 15 hops in two minutes in the author's test) | after a day of use read `window.__pet.trail()` (needs the debug port) or ask the author | either | 2026-11-09 |
+| V-32 | The system timer set to 1 ms during a flight (`timeBeginPeriod`): that the even frames hold on other machines and that nothing else is slowed or kept awake | the second machine (V-1) | Vinh | 2026-11-09 |
 
 ## C. Things that are written but not done (not verification, kept here so they are not lost)
 - The privacy text on the **website** for the mouse button reading (the README has it since TE-14); the attention field and the ground type when TE-9 ships. The website session reads `CHANGELOG.md` and must be told when the lane is released.

@@ -13,7 +13,8 @@
     tilt = 0,
     tick = 0,
     gaze = null,
-  }: { pose: PetState; dir: 1 | -1; tilt?: number; tick?: number; gaze?: { x: number; y: number } | null } = $props();
+    air = false,
+  }: { pose: PetState; dir: 1 | -1; tilt?: number; tick?: number; gaze?: { x: number; y: number } | null; air?: boolean } = $props();
 
   const reduceMotion = typeof matchMedia === "function" && matchMedia("(prefers-reduced-motion: reduce)").matches;
   const rig = new Rig();
@@ -92,6 +93,12 @@
   // the eyes follow the cursor while it is over the cat
   $effect(() => {
     rig.lookAt(gaze ? { x: gaze.x, y: gaze.y } : null);
+    if (!reduceMotion) wake();
+  });
+
+  // in a hop or a fall the cat is painted at the walking rate (see Rig.setAir)
+  $effect(() => {
+    rig.setAir(air);
     if (!reduceMotion) wake();
   });
 

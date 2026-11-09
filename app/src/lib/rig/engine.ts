@@ -177,6 +177,7 @@ export class Rig {
   private afterWake = false; // just out of the stretch and still turning back to face front: the eyes stay shut
   private stretchDeep = 0; // 0..1: the stretch reaches a little further the longer it is held
   private easeUntil = 0; // until this time the rise out of the stretch is painted at the walking rate, not every frame
+  private air = false; // the window is flying (a hop or a fall): painted at the walking rate, not every frame
   private lookT = -1; // seconds into the "look around" gesture, -1 = not playing
   private blinkT = -1;
 
@@ -190,6 +191,16 @@ export class Rig {
       ...Object.values(this.pw), this.theta, this.walk, this.roll, this.headDy, this.gx, this.gy, this.lid, this.happy,
       this.wide, this.cheek, this.dots, this.tail, this.droop, this.hop, this.sq, this.tilt, ...Object.values(this.mouths),
     ];
+  }
+
+  /**
+   * The window is in a hop or a fall. The window itself moves 60 times a second, but the cat inside it needs only the
+   * walking rate (30 a second) to read as smooth, and every painted frame costs real CPU (TE-15: a flight cost about
+   * 0.9 core-seconds at full speed). The landing is painted at the same rate for a moment after.
+   */
+  setAir(air: boolean) {
+    if (this.air && !air) this.easeUntil = this.time + 0.7;
+    this.air = air;
   }
 
   /** Aim the cat at a pose. `replay` re-triggers the one-shot moves even if the pose did not change. */
@@ -318,7 +329,7 @@ export class Rig {
     // Waking is slow, smooth motion (a stretch held and then a rise): 30 frames a second read fine and a full-speed
     // wake cost about 150 frames; the held part, which only breathes and sways, is painted at the soft rate.
     if (this.pose === "wake") return this.poseT > 0.5 ? "soft" : "walk";
-    if (this.time < this.easeUntil) return "walk";
+    if (this.air || this.time < this.easeUntil) return "walk";
     if (this.major().some((s) => !s.settled)) return "full";
     if (this.walk.x > 0.01) return "walk";
     if (this.all().some((s) => !s.settled) || this.lookT >= 0 || this.blinkT >= 0) return "soft";
