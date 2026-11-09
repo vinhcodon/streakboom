@@ -56,7 +56,7 @@ All of it follows the sensory contract of ADR-0031: Peak perceives shapes and ac
 ## 4. Brain providers
 One brain is in use at a time; keys of several can be stored (ADR-0008). All calls are made from Rust, are stateless, and use short prompts: the system prompt asks for under two sentences, a max output limit applies, and the context is the last 8 turns kept in memory only.
 
-The brains are offered in this order: Gemini, Groq, Claude, OpenAI (ADR-0034).
+The brains are offered in this order: Gemini, Groq, Claude, OpenAI (ADR-0037).
 
 | | Gemini (Google) | Groq | Claude (Anthropic) | OpenAI |
 |---|---|---|---|---|
@@ -72,7 +72,7 @@ The brains are offered in this order: Gemini, Groq, Claude, OpenAI (ADR-0034).
 - Caps (per local day): 60 typed chat turns, 6 proactive AI lines and 20 background fact-noting requests (each counted separately, ADR-0027), and a 2-minute cooldown after a rate limit. When a cap is reached the pet declines in character, with a randomly picked line and no numbers; Settings > Brain shows today's use. (0.2.0 still counted the fact-noting requests in the 60; 0.2.1 does not.)
 - Errors map to kinds (invalid key, rate limit, network, region, blocked, empty, server, model, storage, billing) and then to pet-voice messages (spec/02); a connect error shows the technical detail behind a toggle and a copy button.
 - **Mood tags:** every chat answer starts with one bracketed feeling tag chosen by the model; Rust removes it before display and returns the text and the mood separately (ADR-0016).
-- **Language:** in chats the user starts the brain answers in the language of the latest message (ADR-0015). The app language (`vi`, `en`, `ja`) decides the interface (`ui.ts`), the scripted lines (`lines.ts`), the memory lines (`memlines.ts`), the short notes sent to the brain (`knownFor`) and the prompts (`brain.rs`: `language_name`, the greeting, the persona, which always carries the rule for a warm casual Japanese voice, ADR-0035); a new language needs all five and the tests (`ui.test.ts` checks that every language has every string with its placeholders). The document language (`<html lang>`) follows the language so the web view picks Japanese font variants. The tray menu items are still English in every language.
+- **Language:** in chats the user starts the brain answers in the language of the latest message (ADR-0015). The app language (`vi`, `en`, `ja`) decides the interface (`ui.ts`), the scripted lines (`lines.ts`), the memory lines (`memlines.ts`), the short notes sent to the brain (`knownFor`) and the prompts (`brain.rs`: `language_name`, the greeting, the persona, which always carries the rule for a warm casual Japanese voice, ADR-0038); a new language needs all five and the tests (`ui.test.ts` checks that every language has every string with its placeholders). The document language (`<html lang>`) follows the language so the web view picks Japanese font variants. The tray menu items are still English in every language.
 - **Facts:** a second small request every 4 messages picks up to 3 short facts; Rust filters them (length, secrets, links, digits, repeats) (ADR-0014).
 - Gemini was chosen over the stateful Interactions API because it is stateless. The default Gemini model was changed after the newest full Flash models timed out or returned 503 while the lite model answered in about a second.
 

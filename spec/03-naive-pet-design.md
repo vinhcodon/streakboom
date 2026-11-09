@@ -5,7 +5,7 @@ Goal: a pet with no AI that is charming enough to keep for 7 days (hypothesis H4
 ## Decisions
 - **Character:** a round 2D "mochi cat" (ADR-0011).
 - **Personality:** playful, mischievous, mildly sarcastic. Teasing never targets the user's worth or work quality; it targets the situation (the clock, the coffee, the pile of tabs). A Gentle tone setting drops the sarcastic lines (ADR-0013).
-- **Languages:** Vietnamese, English and Japanese line pools (Japanese is a beta, ADR-0035: warm casual voice, no cat-speak), chosen by system language (`vi`, `ja`; anything else English), switchable in Settings.
+- **Languages:** Vietnamese, English and Japanese line pools (Japanese is a beta, ADR-0038: warm casual voice, no cat-speak), chosen by system language (`vi`, `ja`; anything else English), switchable in Settings.
 - **No guilt:** the pet never dies, starves or gets sick. Neglect only makes it "a bit lonely", and it is delighted when the user returns.
 - **Naive is not dumb:** it does not pretend to understand free text. Free-text input is disabled with an in-character hint until a brain is connected.
 

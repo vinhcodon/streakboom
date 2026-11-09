@@ -23,7 +23,7 @@ Status: **proposed 2026-11-08, asked by Vinh to be carried out story by story.**
 | E8 | Focus-safety and places | 6 / 13 | FS-0 to FS-4 and PL-0 done; FS-5 and FS-6 left; PL-1 and PL-7 merged into E9 |
 | E9 | The desktop as terrain | 7 / 15 | Spec 07 and ADR-0030 written; the Rust `monitors_info` and `move_to` exist (TE-2); the lane model (TE-12) and the mouse button reading (TE-13) exist; hops and falls exist (TE-7); the cat leaves the typing lane by a hop (TE-14); a hop costs about a third of what it did (TE-15) |
 | E10 | Perception | 3 / 9 | Spec 08 and ADR-0031: four of five decisions answered; the ground map waits for L3 |
-| E11 | Reach: languages and brains | 4 / 5 | Groq is the fourth brain (BR-1, ADR-0034); Japanese is built in full (JA-1 to JA-3, ADR-0035); BR-2 needs a key |
+| E11 | Reach: languages and brains | 4 / 5 | Groq is the fourth brain (BR-1, ADR-0037); Japanese is built in full (JA-1 to JA-3, ADR-0038); BR-2 needs a key |
 
 Against the roadmap: Phases 0 to 2 done; **Phase 4 in progress** (E7: the soak was stopped early; PR-3 and PR-4 done; PF-3, PR-8, VE-2, VE-3 open; all the unchecked items are in [`verification-debt.md`](verification-debt.md)); Phase 3 blocked on keys (VE-4, VE-5, PE-3); Phase 5 not started (E6).
 
@@ -177,7 +177,7 @@ Direction agreed 2026-11-09 (ADR-0030). By decision T6 the code comes after FS-4
 ## What was not verified
 The sizes are estimates, not measured. Which stories matter most for retention is a hypothesis (H5, H6); the alpha is what can test it.
 
-## E11. Reach: languages and brains (ADR-0034, ADR-0035)
+## E11. Reach: languages and brains (ADR-0037, ADR-0038)
 | ID | Story | Size | Status | Depends on |
 |---|---|---|---|---|
 | BR-1 | Groq as the fourth brain, offered right after Gemini, with a free-tier tag: the Rust client over the OpenAI client (`groq.rs`), the provider list and keys, the model-name rule, the strings in two languages, 7 tests | M | done (built 2026-11-09, not released; not tried with a real key: verification-debt) | |

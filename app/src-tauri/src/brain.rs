@@ -55,7 +55,7 @@ pub enum Provider {
 }
 
 impl Provider {
-    /// In the order they are offered, and the order a brain is picked when the one in use is forgotten (ADR-0034).
+    /// In the order they are offered, and the order a brain is picked when the one in use is forgotten (ADR-0037).
     pub const ALL: [Provider; 4] = [Provider::Gemini, Provider::Groq, Provider::Claude, Provider::OpenAI];
     pub fn parse(s: &str) -> Option<Provider> {
         match s {
@@ -204,7 +204,7 @@ pub fn persona(lang: &str, tier: u8, gentle: bool) -> String {
         " Reply in {language}. Stay in character as a small desktop pet and never claim to be human. \
          Never ask for or repeat passwords, API keys or other secrets. Do not give medical, legal or financial advice."
     ));
-    // The voice in Japanese (ADR-0035) applies whenever the reply is Japanese, also in a chat where the user chose the language.
+    // The voice in Japanese (ADR-0038) applies whenever the reply is Japanese, also in a chat where the user chose the language.
     s.push_str(
         " If you reply in Japanese, speak in a warm, casual, friendly voice (plain form with endings like だよ and ね),          never the formal です/ます form and never cat-speak like にゃ.",
     );

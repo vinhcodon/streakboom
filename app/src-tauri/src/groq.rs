@@ -1,4 +1,4 @@
-//! Groq as a brain: the fourth one, placed right after Gemini (ADR-0034). Groq's API is OpenAI-compatible (the same chat
+//! Groq as a brain: the fourth one, placed right after Gemini (ADR-0037). Groq's API is OpenAI-compatible (the same chat
 //! completions request and response), so this is a thin layer over `openai.rs`: its own address, default model, error
 //! reading, a rule for reasoning models and the choice of chat models.
 //!

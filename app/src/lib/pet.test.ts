@@ -443,7 +443,7 @@ test("Japanese lines: written in Japanese, with the same triggers, tiers, bands 
   assert.deepEqual(ja.map((l) => l.spicy), en.map((l) => l.spicy));
   // no Vietnamese diacritics and no plain English sentence left behind
   for (const l of ja) assert.ok(!/[ăâêôơưđạảấầẩẫậắằẳẵặẹẻẽếềểễệỉịọỏốồổỗộớờởỡợụủứừửữự]/i.test(l.text), l.text);
-  // the voice (ADR-0035): casual, warm; no polite です/ます endings and no cat-speak にゃ in the scripted lines
+  // the voice (ADR-0038): casual, warm; no polite です/ます endings and no cat-speak にゃ in the scripted lines
   for (const l of ja) {
     assert.ok(!/です[。！？…」）]|ます[。！？…」）]|にゃ/.test(l.text), `${l.id} is not in the casual voice: ${l.text}`);
   }

@@ -1,7 +1,7 @@
 // Hand-written line pools for the naive pet. A leading "~" marks a "spicy" (sarcastic) line;
 // it is dropped when the user turns on the gentle tone. See spec/03-naive-pet-design.md.
 
-/** The languages of the interface and of the scripted lines (ADR-0035: Japanese is the third). */
+/** The languages of the interface and of the scripted lines (ADR-0038: Japanese is the third). */
 export type Lang = "vi" | "en" | "ja";
 export const LANGS: Lang[] = ["vi", "en", "ja"];
 export type Band = "sleepy" | "content" | "playful" | "bored" | "lonely";

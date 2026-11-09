@@ -1,4 +1,4 @@
-# ADR-0034: Groq is the fourth brain, offered right after Google and presented as a second free choice
+# ADR-0037: Groq is the fourth brain, offered right after Google and presented as a second free choice
 
 - **Status:** accepted (built 2026-11-09, not released; not tried with a real key)
 - **Date:** 2026-11-09
