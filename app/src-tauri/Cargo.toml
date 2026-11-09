@@ -31,3 +31,8 @@ lto = true
 opt-level = 3
 panic = "abort"
 strip = true
+
+[features]
+# A test build with extra items in the pet's right-click menu to try the hops and the fall (spec/07, TE-7);
+# not part of a release.
+hop-test = []

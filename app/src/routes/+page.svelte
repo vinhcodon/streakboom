@@ -93,6 +93,7 @@
   import { UI, type ErrKind } from "$lib/ui";
   import { LEAVE_MIN_ROOM_PX, LEAVE_PX, SLEEP_CROWD_MS, decideFocus, initialFocus, wakesToMakeWay, type FocusOut } from "$lib/focus";
   import { glideOut, rampIn, takeSteps } from "$lib/gait";
+  import { chainAt, planFall, splitHop, totalMs, type Flight } from "$lib/hop";
   import { engage as engagePure, markShown as markShownPure, minuteIncrement, noShown, type DayCounter, type DayStat } from "$lib/bond";
 
   // Pet window layout (logical px) - keep in sync with src-tauri/src/lib.rs.
@@ -520,6 +521,7 @@
   }
 
   function pickNext() {
+    if (flying) return scheduleNext();
     if (quiet) return pose === "sleep" || pose === "drowsy" ? undefined : enter("drowsy");
     if (panel) return scheduleNext();
     const r = Math.random();
@@ -530,6 +532,7 @@
 
   /** A walk starts only if the user has paused; otherwise the cat stays where it is and tries again later. */
   async function tryWalk() {
+    if (flying) return;
     const fo = await probeFocus();
     if (pose !== "idle") return; // something else took over while the probe was read
     if (fo.walkAllowed) enter("walk");
@@ -611,6 +614,59 @@
         clearInterval(glideTimer);
       }
     }, WALK_TICK_MS);
+  }
+
+  // ------------------------------------------------- hops and falls (spec/07 2.3, ADR-0032)
+  let flightTimer: ReturnType<typeof setInterval> | undefined;
+  let flying = false;
+  const FLIGHT_TICK_MS = 16; // about 60 moves a second while it lasts: a hop is full-speed motion
+
+  /**
+   * Move the window along a chain of hops or a fall (positions come from `hop.ts`, each one is a `move_to`), with the
+   * cat in the pose `air` meanwhile, then land. Anything that takes the pose away (being picked up) ends it.
+   */
+  async function fly(flights: Flight[], air: PetState) {
+    if (flying || flights.length === 0) return;
+    flying = true;
+    stopTimers();
+    clearTimeout(oneShotTimer);
+    try {
+      const start = await invoke<{ x: number; y: number; scale: number }>("pet_place");
+      if (flights[0].dx !== 0) dir = flights[0].dx > 0 ? 1 : -1;
+      pose = air;
+      poseTick++;
+      const t0 = performance.now();
+      await new Promise<void>((resolve) => {
+        let pending = false;
+        flightTimer = setInterval(async () => {
+          if (pending) return;
+          if (pose !== air) {
+            clearInterval(flightTimer);
+            return resolve(); // picked up or told to do something else
+          }
+          const p = chainAt(flights, performance.now() - t0);
+          pending = true;
+          try {
+            await invoke("move_to", { x: Math.round(start.x + p.x * start.scale), y: Math.round(start.y + p.y * start.scale) });
+          } catch {
+            clearInterval(flightTimer);
+            return resolve();
+          } finally {
+            pending = false;
+          }
+          if (p.done) {
+            clearInterval(flightTimer);
+            resolve();
+          }
+        }, FLIGHT_TICK_MS);
+      });
+    } catch {
+      /* the window could not be moved: stop where it is */
+    } finally {
+      clearInterval(flightTimer);
+      flying = false;
+    }
+    if (pose === air) enter("land");
   }
 
   // ---------------------------------------------------------------- panels
@@ -1420,6 +1476,14 @@
       cleanups.push(await win.listen<boolean>("focus-hint", (e) => onFocusHint(e.payload)));
       cleanups.push(await win.listen("bubble-ready", resendView));
       cleanups.push(await win.listen("settings-ready", pushSettings));
+      // test builds only (cargo feature `hop-test`): the right-click menu items that try the hops and the fall
+      cleanups.push(
+        await win.listen<string>("dev-hop", (e) => {
+          if (e.payload === "pm_hop_up") void fly(splitHop(0, -160), "walk");
+          else if (e.payload === "pm_hop_down") void fly(splitHop(0, 160), "walk");
+          else if (e.payload === "pm_fall") void fly([planFall(400)], "gasp");
+        }),
+      );
       cleanups.push(await win.listen<SettingsPatch>("settings-patch", (e) => onSettingsPatch(e.payload)));
       cleanups.push(await win.listen<BrainChange>("brain-changed", (e) => onBrainChanged(e.payload)));
 
@@ -1497,7 +1561,7 @@
       }
       scheduleProactive();
       // Test hook (like window.__cat): lets a debugger trigger the real unprompted-line path now.
-      (window as unknown as Record<string, unknown>).__pet = { proactive: () => void fireProactive(), focus: () => ({ ...focusOut, lastLeave, pose }), trail: () => trail, sleep: () => enter("drowsy"), wake: () => enter("idle") };
+      (window as unknown as Record<string, unknown>).__pet = { proactive: () => void fireProactive(), focus: () => ({ ...focusOut, lastLeave, pose }), trail: () => trail, sleep: () => enter("drowsy"), wake: () => enter("idle"), hop: (dx: number, dy: number) => void fly(splitHop(dx, dy), "walk"), fall: (d: number) => void fly([planFall(d)], "gasp") };
       let lastTick = Date.now();
       minuteTimer = setInterval(() => {
         const now = Date.now();

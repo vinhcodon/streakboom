@@ -348,6 +348,22 @@ fn monitors_info(window: WebviewWindow) -> Vec<MonitorInfo> {
 }
 
 #[derive(Serialize)]
+struct Place {
+    x: i32,
+    y: i32,
+    scale: f64,
+}
+
+/// Where the pet window is (its top-left, physical px) and its scale, so the page can plan a hop or a fall as
+/// positions relative to here and ask for each one with `move_to`.
+#[tauri::command]
+fn pet_place(window: WebviewWindow) -> Result<Place, String> {
+    let pos = window.outer_position().map_err(|e| e.to_string())?;
+    let scale = window.scale_factor().map_err(|e| e.to_string())?;
+    Ok(Place { x: pos.x, y: pos.y, scale })
+}
+
+#[derive(Serialize)]
 struct Moved {
     x: i32,
     y: i32,
@@ -606,6 +622,12 @@ fn show_pet_menu(app: AppHandle, window: WebviewWindow, state: State<AppState>, 
     let quiet_item = CheckMenuItem::with_id(&app, "pm_quiet", label(1, "Quiet mode"), true, quiet, None::<&str>).map_err(|e| e.to_string())?;
     let quit = MenuItem::with_id(&app, "pm_quit", label(2, "Quit"), true, None::<&str>).map_err(|e| e.to_string())?;
     let menu = Menu::with_items(&app, &[&settings, &quiet_item, &quit]).map_err(|e| e.to_string())?;
+    // test builds only (cargo feature `hop-test`): items to try the hops and the fall
+    #[cfg(feature = "hop-test")]
+    for (id, text) in [("pm_hop_up", "Test: hop up"), ("pm_hop_down", "Test: hop down"), ("pm_fall", "Test: fall")] {
+        let item = MenuItem::with_id(&app, id, text, true, None::<&str>).map_err(|e| e.to_string())?;
+        menu.append(&item).map_err(|e| e.to_string())?;
+    }
     window.popup_menu(&menu).map_err(|e| e.to_string())
 }
 
@@ -1195,6 +1217,10 @@ pub fn run() {
                 set_quiet(app, !q);
             }
             "pm_quit" => quit_app(app),
+            #[cfg(feature = "hop-test")]
+            id @ ("pm_hop_up" | "pm_hop_down" | "pm_fall") => {
+                let _ = app.emit("dev-hop", id);
+            }
             _ => {}
         })
         .on_window_event(|window, event| {
@@ -1245,6 +1271,7 @@ pub fn run() {
             edge_room,
             monitors_info,
             move_to,
+            pet_place,
             open_website,
             brain_provider,
             brain_set_provider,
