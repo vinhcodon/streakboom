@@ -144,7 +144,6 @@ pub struct Turn {
 /// The pet shows an emotion with its body while it speaks. The model names it in a leading tag,
 /// which `split_mood` removes before anything is displayed.
 pub const MOODS: [&str; 7] = ["neutral", "happy", "warm", "sassy", "surprised", "curious", "sad"];
-const MOOD_RULE: &str = " Start every reply with exactly one tag in square brackets saying how you feel, chosen from     [neutral] [happy] [warm] [sassy] [surprised] [curious] [sad]. Use [neutral] most of the time.     Use [sad] only when the user is sad or something sad happened, and then stay gentle: no jokes.     Use [sassy] only for playful teasing, never when the user is upset. The tag is never part of what you say aloud.";
 
 /// Splits a leading (or trailing) mood tag off a reply: returns (text, mood). Anything that is not
 /// in the list becomes "neutral", and a bracketed word of the right shape is removed anyway so a
@@ -194,30 +193,44 @@ pub fn language_name(lang: &str) -> &'static str {
     }
 }
 
-pub fn persona(lang: &str, tier: u8, gentle: bool) -> String {
+/// One layer of the persona prompt (spec/09 section 6, RX-5). The texts live in `app/src-tauri/persona/*.md`.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct PersonaLayer {
+    /// A short name for the layer, as the "What Peak is told" page shows it.
+    pub name: &'static str,
+    /// A locked layer holds the safety rules and the format the app needs; a future editable voice never changes it.
+    pub locked: bool,
+    pub text: String,
+}
+
+fn layer(name: &'static str, locked: bool, text: &str) -> PersonaLayer {
+    PersonaLayer { name, locked, text: text.trim().to_string() }
+}
+
+/// The layers of the persona prompt for a language, a closeness tier and a tone, in the order they are joined.
+pub fn persona_layers(lang: &str, tier: u8, gentle: bool) -> Vec<PersonaLayer> {
     let language = language_name(lang);
-    let mut s = String::from(
-        "You are a witty, slightly sarcastic, loyal, and tech-savvy digital pet living on the user's desktop. \
-         Keep your responses extremely concise (under 2 sentences), playful, and attentive to the user's well-being and productivity.",
-    );
-    s.push_str(&format!(
-        " Reply in {language}. Stay in character as a small desktop pet and never claim to be human. \
-         Never ask for or repeat passwords, API keys or other secrets. Do not give medical, legal or financial advice."
-    ));
-    // The voice in Japanese (ADR-0038) applies whenever the reply is Japanese, also in a chat where the user chose the language.
-    s.push_str(
-        " If you reply in Japanese, speak in a warm, casual, friendly voice (plain form with endings like だよ and ね),          never the formal です/ます form and never cat-speak like にゃ.",
-    );
+    let mut v = vec![
+        layer("voice", false, include_str!("../persona/voice.md")),
+        layer("language", true, &include_str!("../persona/language.md").replace("{language}", language)),
+        layer("core", true, include_str!("../persona/core.md")),
+        // The voice in Japanese (ADR-0038) applies whenever the reply is Japanese, also in a chat where the user chose the language.
+        layer("voice-ja", false, include_str!("../persona/voice-ja.md")),
+    ];
     if gentle {
-        s.push_str(" Be warm and kind; no sarcasm.");
+        v.push(layer("tone", false, include_str!("../persona/gentle.md")));
     }
-    s.push_str(MOOD_RULE);
+    v.push(layer("mood", true, include_str!("../persona/mood.md")));
     match tier {
-        0 | 1 => s.push_str(" You barely know the user yet, so be a little shy."),
-        3 | 4 => s.push_str(" You are close friends with the user."),
+        0 | 1 => v.push(layer("closeness", false, include_str!("../persona/closeness-shy.md"))),
+        3 | 4 => v.push(layer("closeness", false, include_str!("../persona/closeness-close.md"))),
         _ => {}
     }
-    s
+    v
+}
+
+pub fn persona(lang: &str, tier: u8, gentle: bool) -> String {
+    persona_layers(lang, tier, gentle).into_iter().map(|l| l.text).collect::<Vec<_>>().join(" ")
 }
 
 pub fn hello_prompt(lang: &str) -> String {
@@ -577,6 +590,49 @@ pub fn delete_key(p: Provider) -> Result<(), AiError> {
 
 #[cfg(test)]
 mod tests {
+    /// A fingerprint of the persona for every language, tier and tone, ignoring runs of spaces (so a stray double space is
+    /// not a change): FNV-1a over the words. RX-5 splits the persona into files and must not change a word of it.
+    fn persona_fingerprint() -> u64 {
+        let mut h: u64 = 0xcbf29ce484222325;
+        for lang in ["vi", "en", "ja", "xx"] {
+            for tier in 0..=4u8 {
+                for gentle in [false, true] {
+                    for w in persona(lang, tier, gentle).split_whitespace().chain(["|"]) {
+                        for b in w.bytes().chain([b' ']) {
+                            h ^= b as u64;
+                            h = h.wrapping_mul(0x100000001b3);
+                        }
+                    }
+                }
+            }
+        }
+        h
+    }
+
+    #[test]
+    fn the_persona_is_made_of_layer_files_and_its_words_did_not_change() {
+        // RX-5 moved the persona into persona/*.md; this fingerprint is the persona as it was before (every language, tier
+        // and tone). Changing a persona file is a decision: change this number with it.
+        assert_eq!(persona_fingerprint(), 17175291708226297689);
+    }
+
+    #[test]
+    fn the_layers_join_into_the_persona_and_the_safety_and_format_layers_are_locked() {
+        for (lang, tier, gentle) in [("en", 2u8, false), ("vi", 3, true), ("ja", 0, false)] {
+            let layers = persona_layers(lang, tier, gentle);
+            let joined = layers.iter().map(|l| l.text.as_str()).collect::<Vec<_>>().join(" ");
+            assert_eq!(joined, persona(lang, tier, gentle));
+            let locked: Vec<&str> = layers.iter().filter(|l| l.locked).map(|l| l.name).collect();
+            assert_eq!(locked, ["language", "core", "mood"]);
+            assert!(layers.iter().all(|l| !l.text.is_empty() && !l.text.contains("{language}")));
+            assert_eq!(layers.iter().any(|l| l.name == "tone"), gentle);
+        }
+        let core = persona_layers("en", 2, false).into_iter().find(|l| l.name == "core").unwrap();
+        assert!(core.text.contains("never claim to be human") && core.text.contains("passwords, API keys"));
+        let mood = persona_layers("en", 2, false).into_iter().find(|l| l.name == "mood").unwrap();
+        assert!(MOODS.iter().all(|m| mood.text.contains(&format!("[{m}]"))));
+    }
+
     use super::*;
     use std::io::{Read, Write};
     use std::net::TcpListener;

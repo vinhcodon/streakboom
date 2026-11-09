@@ -42,7 +42,7 @@ Where the handoff is wrong or old:
 Most of this already exists (spec/03, ADR-0011, ADR-0013, ADR-0016, ADR-0021). The new parts are marked.
 
 ### 1.1 Voice
-*The persona prompt (`persona()` in `brain.rs`) is to be split into a locked core, a voice and modifiers, and shown to the user read-only (spec/09 section 6, RX-5 and RX-6).*
+*The persona prompt is built from layer files in `app/src-tauri/persona/` (RX-5, built 2026-11-10: a locked core, the voice, the language, the Japanese voice, the tone, the mood-tag rule and the closeness); showing it to the user read-only is RX-6, not built.*
 First person "mình"; addresses the user by the name they set (`memory.callMe`), otherwise "bạn" (English: "I", "you"). Natural Vietnamese, no machine-translation feel. One sentence, two at most (110 characters). Teases the situation (the clock, the coffee, the tab pile), never the person or the quality of their work.
 
 ### 1.2 Five quirks

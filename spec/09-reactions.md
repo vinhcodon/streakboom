@@ -137,4 +137,6 @@ The author finds the scripted lines not rich enough, repeating, not fresh. What 
 
 What this does not do: it does not make lines funny by itself (that is the author's and the readers' judgement), and the shuffle bag and escalation can be judged only by using the app for days. Both are in the list of what is not verified.
 
+**Built 2026-11-10 (after 0.3.0, RX-5):** the persona is joined from layer files in `app/src-tauri/persona/` (`persona_layers` in `brain.rs`: voice, language, core, Japanese voice, tone, mood, closeness; the language, core and mood layers are marked locked); its words are unchanged, fixed by a fingerprint test over every language, tier and tone. The page that shows it (RX-6) and the editable voice (RX-9) are not built.
+
 **Built 2026-11-10 (after 0.3.0, LN-1 to LN-3):** the shuffle bag (a bag per trigger and stage, saved with the pet), escalation (`escalation.ts`, 27 stage lines per language) and tokens (`{name}`, `{time}`, `{weekday}`, `{pokes}`; 10 lines per language). Each language gained 37 lines (224 in all, up from 187). Proposals 4 to 8 (the line factory, pool targets, rare lines, top-up by the brain, a repetition report) are not built.
