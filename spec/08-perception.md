@@ -1,6 +1,6 @@
 # 08. Peak's senses: perceiving the space around it and below it
 
-Status: **brainstorm draft, 2026-11-09. Not agreed; nothing is built; the decisions in section 9 are Vinh's.** It came from Vinh's suggestion that, besides the signals around Peak (spec/06, spec/07), Peak needs a theory of **seeing the space around and below it**: when it can see, it knows how to react. It cross-checks the existing specs (section 7) and lists the gaps it found. Related: [`06-character-and-movement.md`](06-character-and-movement.md), [`07-terrain-and-attention.md`](07-terrain-and-attention.md), [`03-naive-pet-design.md`](03-naive-pet-design.md) ("reactive to the system"), ADR-0029 and ADR-0030.
+Status: **brainstorm draft, 2026-11-09. Nothing is built. Decisions 1, 2, 4 and 5 of section 9 were answered by Vinh the same day (ADR-0031); decision 3 (the ground map) stays open.** It came from Vinh's suggestion that, besides the signals around Peak (spec/06, spec/07), Peak needs a theory of **seeing the space around and below it**: when it can see, it knows how to react. It cross-checks the existing specs (section 7) and lists the gaps it found. Related: [`06-character-and-movement.md`](06-character-and-movement.md), [`07-terrain-and-attention.md`](07-terrain-and-attention.md), [`03-naive-pet-design.md`](03-naive-pet-design.md) ("reactive to the system"), ADR-0029 and ADR-0030.
 
 ## 1. The idea
 Until now Peak's reactions came from a few signals read one at a time (idle time, pointer distance, room to the edge). There is no single picture of **what Peak can perceive and what it believes about the space it is in**. This spec proposes one: a small set of **senses** with a cat's character (whiskers, ears, paws, eyes, a sense of time), each giving a **percept**; percepts are merged into a **belief** about the surroundings with some confidence; the cat's **reflexes** (cheap, visible, immediate) and **intents** (walk away, hop, curl up) react to the belief. A cat that can be seen noticing things behaves more naturally than one that suddenly acts.
@@ -83,12 +83,12 @@ A reaction without a cause the user can see looks like a glitch; the same reacti
 - **Privacy.** Nothing here reads titles, contents, keys or app names. The ground map and the click anchor live in memory, are never written or sent. The same README and website paragraph as the attention field covers them when built (TE-9). Window-layout senses (paws and eyes beyond the cat's own position) wait for Vinh's permission (section 9).
 - **Platform.** The senses sit behind a small Rust interface (`focus_probe`, `edge_room`, later `ground_at(points)`), so a macOS port can provide its own.
 
-## 9. Decisions for Vinh (open)
-1. Is the **sensory contract** of section 1 the rule: shapes and activity, never meaning?
-2. May Peak sense **what is under it** (ground type at a few points around the cat: desktop / taskbar / app window / foreground)? This reveals only which kind of thing is there, not what it is.
-3. May Peak take a **coarse ground map** (a 16 x 9 grid of the same classification, only when about to move)? It reveals the layout of your windows. It would replace the window-list plan of spec/07 section 4 with something simpler.
-4. Add the **notice beat** (look and perk the ears before acting) and **looking toward the attention** to the character (spec/03)?
-5. Should a **sleeping cat wake and make way** when the user types right by it for several seconds (G5)?
+## 9. Decisions for Vinh (answered 2026-11-09, ADR-0031)
+1. **The sensory contract** of section 1 (shapes and activity, never meaning) is the rule for every sense. **Yes.**
+2. Peak may sense **what is under it** (the kind of thing at a few points under and around the cat: desktop / taskbar / app window / foreground). **Yes**, classification only, nothing kept or sent.
+3. A **coarse ground map** (a 16 x 9 grid of the same classification, only when about to move; it reveals the layout of the user's windows and would replace the window-list plan of spec/07 section 4). **Open**: decided with the window layer (L3); on a maximized screen it adds almost nothing.
+4. The **notice beat** (look and perk the ears before acting) and **looking toward the attention**. **Yes**; the author reviews a test build before the commit.
+5. A **sleeping cat wakes and makes way** when the user types right by it for several seconds. **Yes** (fixes gap G5).
 
 ## 10. What could not be verified
 Everything except section 2.1: the 144-point probe on one machine in a fully covered state. Not tested: bare-desktop cases, the taskbar band, several monitors and scales, UWP and cloaked windows, remote sessions; that point sampling is accepted by security software as harmlessly as `GetLastInputInfo`; how the notice beat looks; whether the confidence idea makes the lane less annoying in practice (only use can say).
