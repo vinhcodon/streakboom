@@ -150,7 +150,7 @@ Answered by Vinh on 2026-11-09; recorded in [ADR-0034](../decisions/0034-website
 | D6 crawler policy | **A**: allow everything, name the sitemap | 2026-11-09 |
 | D7 measuring | **A**: Search Console, Bing Webmaster, an assistant answer log; no analytics script | 2026-11-09 |
 
-## 9. Next improvements after 0.3.0 (proposal, 2026-11-09; the author chooses, nothing below is built)
+## 9. Next improvements after 0.3.0 (proposal 2026-11-09; **the author chose the recommended option of N1 to N5 the same day, ADR-0040; nothing is built yet**)
 
 What the site does today, measured on the build of 2026-11-09: three languages (`/`, `/vi/`, `/ja/`), eight pages, every fact in the static HTML, JSON-LD (SoftwareApplication, Person, WebSite, FAQPage) with the version checked against `tauri.conf.json`, titles of 27 to 59 characters and descriptions of 62 to 152, `llms.txt` (1.6 KB) and `llms-full.txt` (13.6 KB). The scripts of a page are about 16 KB gzipped in total, the rig included; the home page is about 27 to 33 KB of HTML. The structured data has no `featureList`, no requirements and no link to the release notes; the Japanese pages use the English questions translated, not the questions Japanese readers ask; no Lighthouse run and no assistant answers have ever been recorded (W-7, W-8).
 
@@ -185,3 +185,13 @@ In every option: the fixed question set of section 7 gets three Japanese questio
 
 ### What I would not do, and why
 Pages for competitors or "best desktop pets" lists (unverifiable claims, they go stale, and they read as marketing); translating the changelog (the notes are written in English by the app session and would drift); generating a page for every question (thin pages dilute the site); structured data for anything not visible on the page, ratings, reviews or download counts (untrue or unprovable); different text for crawlers; keyword lists in titles or hidden text; more pages than a one-app site needs; analytics scripts (ADR-0034, D7).
+
+### Answers (2026-11-09, [ADR-0040](../decisions/0040-website-next-improvements-for-search-and-ai-engines.md))
+| | Choice |
+|---|---|
+| N1 the notice beat in the tour | **A**: keep the scene, the caption says it |
+| N2 a "How it works" page | **B**: one page per language |
+| N3 Japanese search wording | **B**: title, description, headings and three or four Japanese questions (a Japanese reader to confirm) |
+| N4 structured data and `llms` files | **B**: `featureList`, requirements, release notes, screenshot; languages and brains in the `llms` files; a "safe to install" question |
+| N5 speed and measuring | **B**: a Lighthouse baseline and a size budget in the build |
+Order of work: the baseline first (before N2 to N4), then N4, N2, N3, N5's budget.
