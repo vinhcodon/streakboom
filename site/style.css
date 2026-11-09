@@ -47,7 +47,7 @@ h2 { font-size: clamp(1.5rem, 3.5vw, 2.1rem); }
 .nav nav { display: flex; gap: 4px; margin-left: auto; order: 1; }
 .nav nav a { text-decoration: none; color: var(--ink); padding: 8px 10px; border-radius: 10px; }
 .nav nav a:hover { background: var(--bg-alt); }
-.nav .lang { order: 2; }
+.langs { display: flex; gap: 6px; order: 2; }
 
 /* the Windows download is replaced by "send the link to your PC" on other devices (see app.js) */
 body:not(.not-windows) .only-other { display: none; }
@@ -154,19 +154,25 @@ summary h3 { display: inline; font-size: inherit; font-weight: 600; margin: 0; }
   color: var(--muted); font-size: .9rem; text-align: center;
 }
 
-/* ---- phones and narrow windows ---- */
-@media (max-width: 760px) {
-  body { font-size: 16px; }
-  .nav { flex-wrap: wrap; padding: 8px 16px; }
-  .nav .lang { margin-left: auto; }
-  /* the link row scrolls sideways instead of wrapping; the fade hints that there is more */
+/* The header: below 1000px the link row moves under the brand and the language links and scrolls sideways instead of
+   squeezing (the Japanese labels are long); the fade hints that there is more. */
+.nav nav a { white-space: nowrap; }
+@media (max-width: 1000px) {
+  .nav { flex-wrap: wrap; }
+  .langs { margin-left: auto; }
   .nav nav {
-    order: 3; flex-basis: 100%; margin-left: -10px; overflow-x: auto; white-space: nowrap;
+    order: 3; flex-basis: 100%; margin-left: -10px; overflow-x: auto;
     scrollbar-width: none; -webkit-overflow-scrolling: touch;
     -webkit-mask-image: linear-gradient(to right, #000 88%, transparent);
     mask-image: linear-gradient(to right, #000 88%, transparent);
   }
   .nav nav::-webkit-scrollbar { display: none; }
+}
+
+/* ---- phones and narrow windows ---- */
+@media (max-width: 760px) {
+  body { font-size: 16px; }
+  .nav { padding: 8px 16px; }
   .nav .nav-extra { display: none; }   /* GitHub is in the footer */
   main, .footer { padding-left: 16px; padding-right: 16px; }
   .section, .section.alt { padding-top: 40px; padding-bottom: 40px; }
@@ -184,3 +190,8 @@ summary h3 { display: inline; font-size: inherit; font-weight: 600; margin: 0; }
 
   details { padding: 2px 16px; }
 }
+
+/* Japanese: a Japanese-capable font first, looser lines, and line breaks that keep phrases together */
+:lang(ja) body, body:lang(ja) { font-family: "Yu Gothic UI", "Hiragino Sans", "Meiryo", system-ui, -apple-system, "Segoe UI", sans-serif; }
+:lang(ja) { line-height: 1.8; line-break: strict; }
+:lang(ja) h1, :lang(ja) h2, :lang(ja) h3 { line-height: 1.35; }

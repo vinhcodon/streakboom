@@ -136,6 +136,8 @@ Assistants: ChatGPT, Claude, Gemini, Perplexity, Copilot.
 - Whether the facts in the "At a glance" block are all still true at the next release; the build check covers the version, the rest depends on reading (ADR-0033, release housekeeping).
 
 ## 8. Decisions and result
+Added later: a Japanese version (`/ja/`, `/ja/privacy/`) on 2026-11-09, [ADR-0035](../decisions/0035-website-in-japanese.md); the structure of D1 to D7 is unchanged, `hreflang` now covers three languages.
+
 Answered by Vinh on 2026-11-09; recorded in [ADR-0034](../decisions/0034-website-structure-for-search-and-ai-engines.md).
 
 | | Choice | Date |

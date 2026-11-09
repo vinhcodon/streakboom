@@ -2,15 +2,14 @@
 // llms.txt files are plain Markdown summaries of the same facts as the pages, never a different story.
 import { STRINGS } from "../../site/strings.mjs";
 import { ORIGIN, RELEASES_URL, REPO_URL, fmtDate } from "./facts.mjs";
-import { PATHS, faqPairs, fill } from "./pages.mjs";
+import { PATHS, alternatesFor, faqPairs, fill } from "./pages.mjs";
+import { LANGS } from "../../site/strings.mjs";
 
 /** Every indexable page: path, and the languages it exists in (for hreflang). */
 export function pageList() {
   return [
-    { path: PATHS.en.home, alternates: [{ hreflang: "en", path: PATHS.en.home }, { hreflang: "vi", path: PATHS.vi.home }, { hreflang: "x-default", path: PATHS.en.home }] },
-    { path: PATHS.vi.home, alternates: [{ hreflang: "en", path: PATHS.en.home }, { hreflang: "vi", path: PATHS.vi.home }, { hreflang: "x-default", path: PATHS.en.home }] },
-    { path: PATHS.en.privacy, alternates: [{ hreflang: "en", path: PATHS.en.privacy }, { hreflang: "vi", path: PATHS.vi.privacy }, { hreflang: "x-default", path: PATHS.en.privacy }] },
-    { path: PATHS.vi.privacy, alternates: [{ hreflang: "en", path: PATHS.en.privacy }, { hreflang: "vi", path: PATHS.vi.privacy }, { hreflang: "x-default", path: PATHS.en.privacy }] },
+    ...LANGS.map((l) => ({ path: PATHS[l].home, alternates: alternatesFor("home") })),
+    ...LANGS.map((l) => ({ path: PATHS[l].privacy, alternates: alternatesFor("privacy") })),
     { path: PATHS.changelog, alternates: [] },
   ];
 }
@@ -38,6 +37,7 @@ export function llms(ctx) {
 ## Pages
 - [Streakboom, home (English)](${ORIGIN}/): what it is, features, install steps, FAQ, latest changes
 - [Streakboom, trang chủ (Tiếng Việt)](${ORIGIN}/vi/): the same in Vietnamese
+- [Streakboom ホーム（日本語）](${ORIGIN}/ja/): the same in Japanese (the app itself is in English and Vietnamese)
 - [Privacy](${ORIGIN}/privacy/): what Streakboom keeps, what it sends and to whom, what Peak notices around it
 - [Changelog](${ORIGIN}/changelog/): release notes of every version
 

@@ -43,12 +43,14 @@ const MONTHS = {
   en: ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"],
 };
 
-/** 2026-11-09 -> "Nov 9, 2026" (English) or "9 tháng 11, 2026" (Vietnamese). Fixed tables, so the output does not depend on the Node build's locale data. */
+/** 2026-11-09 -> "Nov 9, 2026" (English), "9 tháng 11, 2026" (Vietnamese) or "2026年11月9日" (Japanese). Fixed formats, so the output does not depend on the Node build's locale data. */
 export function fmtDate(iso, lang) {
   const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(iso || "");
   if (!m) return iso || "";
   const [y, mo, d] = [Number(m[1]), Number(m[2]), Number(m[3])];
-  return lang === "vi" ? `${d} tháng ${mo}, ${y}` : `${MONTHS.en[mo - 1]} ${d}, ${y}`;
+  if (lang === "vi") return `${d} tháng ${mo}, ${y}`;
+  if (lang === "ja") return `${y}年${mo}月${d}日`;
+  return `${MONTHS.en[mo - 1]} ${d}, ${y}`;
 }
 
 /** Everything a page needs to know about the current release. */

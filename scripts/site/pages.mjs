@@ -1,13 +1,26 @@
 // The pages of the website as functions of (language, release facts). Output is plain static HTML that GitHub Pages
 // serves as it is; nothing here runs in the visitor's browser. Text comes from site/strings.mjs, facts from facts.mjs.
-import { STRINGS, HTML_KEYS, UI_KEYS } from "../../site/strings.mjs";
+import { STRINGS, HTML_KEYS, UI_KEYS, LANGS } from "../../site/strings.mjs";
 import { AUTHOR, ORIGIN, RELEASES_URL, REPO_URL, fmtDate } from "./facts.mjs";
 
 export const PATHS = {
   en: { home: "/", privacy: "/privacy/" },
   vi: { home: "/vi/", privacy: "/vi/privacy/" },
+  ja: { home: "/ja/", privacy: "/ja/privacy/" },
   changelog: "/changelog/",
 };
+
+/** How each language is named (the language links), and its Open Graph locale. */
+export const LANG_INFO = {
+  en: { short: "EN", name: "English", locale: "en_US" },
+  vi: { short: "VI", name: "Tiếng Việt", locale: "vi_VN" },
+  ja: { short: "JA", name: "日本語", locale: "ja_JP" },
+};
+
+/** The hreflang set of a page that exists in every language: one link per language and x-default (English). */
+export function alternatesFor(kind) {
+  return [...LANGS.map((l) => ({ hreflang: l, path: PATHS[l][kind] })), { hreflang: "x-default", path: PATHS.en[kind] }];
+}
 
 export const esc = (s) => String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 
@@ -24,10 +37,10 @@ const json = (o) => JSON.stringify(o).replace(/</g, "\\u003c");
 
 function head({ lang, ctx, path, title, description, alternates, jsonld = [], noindex = false }) {
   const url = ORIGIN + path;
-  const locale = lang === "vi" ? "vi_VN" : "en_US";
+  const locale = LANG_INFO[lang].locale;
   const alt = (alternates || []).map((a) => `  <link rel="alternate" hreflang="${a.hreflang}" href="${ORIGIN}${a.path}">`).join("\n");
   const ogAlt = (alternates || []).filter((a) => a.hreflang !== "x-default" && a.hreflang !== lang)
-    .map((a) => `  <meta property="og:locale:alternate" content="${a.hreflang === "vi" ? "vi_VN" : "en_US"}">`).join("\n");
+    .map((a) => `  <meta property="og:locale:alternate" content="${LANG_INFO[a.hreflang].locale}">`).join("\n");
   const ui = Object.fromEntries(UI_KEYS.map((k) => [k, STRINGS[lang][k] ?? STRINGS.en[k]]));
   return `<head>
   <meta charset="utf-8">
@@ -59,13 +72,17 @@ ${jsonld.map((o) => `  <script type="application/ld+json">${json(o)}</script>`).
 </head>`;
 }
 
+/** `switchTo` maps a language to the page that is the same page in that language (or its home page). */
 function header({ lang, ctx, switchTo }) {
   const s = (k) => tx(lang, k, ctx);
   const home = PATHS[lang].home;
-  const other = lang === "vi" ? "en" : "vi";
+  const links = LANGS.filter((l) => l !== lang)
+    .map((l) => `<a class="lang" href="${switchTo[l]}" hreflang="${l}" lang="${l}" title="${esc(LANG_INFO[l].name)}" aria-label="${esc(LANG_INFO[l].name)}">${LANG_INFO[l].short}</a>`).join("\n      ");
   return `<header class="nav">
     <a class="brand" href="${home}"><img src="/assets/peak-logo.png" width="32" height="32" alt="">Streakboom</a>
-    <a class="lang" href="${switchTo}" hreflang="${other}" lang="${other}" title="${esc(STRINGS[lang].lang_switch_label)}" aria-label="${esc(STRINGS[lang].lang_switch_label)}">${esc(STRINGS[lang].lang_switch)}</a>
+    <span class="langs">
+      ${links}
+    </span>
     <nav aria-label="Main">
       <a href="${home}#features">${s("nav_features")}</a>
       <a href="${home}#install">${s("nav_install")}</a>
@@ -137,13 +154,13 @@ export function homeJsonLd(lang, ctx) {
         offers: { "@type": "Offer", price: "0", priceCurrency: "USD" },
         isAccessibleForFree: true,
         license: `${REPO_URL}/blob/main/LICENSE`,
-        inLanguage: ["en", "vi"],
+        inLanguage: LANGS,
         image: `${ORIGIN}/assets/og-image.jpg`,
         sameAs: [REPO_URL],
         author: { "@id": `${ORIGIN}/#author` },
       },
       { "@type": "Person", "@id": `${ORIGIN}/#author`, name: AUTHOR.name, sameAs: [AUTHOR.github] },
-      { "@type": "WebSite", "@id": `${ORIGIN}/#site`, url: `${ORIGIN}/`, name: "Streakboom", inLanguage: ["en", "vi"], publisher: { "@id": `${ORIGIN}/#author` } },
+      { "@type": "WebSite", "@id": `${ORIGIN}/#site`, url: `${ORIGIN}/`, name: "Streakboom", inLanguage: LANGS, publisher: { "@id": `${ORIGIN}/#author` } },
       {
         "@type": "FAQPage",
         "@id": `${ORIGIN}${path}#faq`,
@@ -158,7 +175,6 @@ export function homePage(lang, ctx) {
   const s = (k) => tx(lang, k, ctx);
   const S = STRINGS[lang];
   const path = PATHS[lang].home;
-  const other = lang === "vi" ? "en" : "vi";
   const features = [1, 2, 3, 4, 5, 6, 7, 8, 9]
     .map((i) => `        <article class="card"><h3>${s(`f${i}_h`)}</h3><p>${s(`f${i}_p`)}</p></article>`).join("\n");
   const gestures = [1, 2, 3, 4, 5, 7, 6]
@@ -190,6 +206,7 @@ export function homePage(lang, ctx) {
           <a id="direct-dl" href="${RELEASES_URL}">${s("direct_dl")}</a>
         </p>
         <p class="note win-note">${s("alpha_note")}</p>
+        <p class="note">${s("lang_note")}</p>
       </div>
 
       <div class="hero-art">
@@ -271,10 +288,10 @@ ${recent}
     </section>
 `;
   return htmlDoc({
-    lang, ctx, switchTo: PATHS[other].home,
+    lang, ctx, switchTo: Object.fromEntries(LANGS.map((l) => [l, PATHS[l].home])),
     headArgs: {
       path, title: raw(lang, "title", ctx), description: raw(lang, "description", ctx),
-      alternates: [{ hreflang: "en", path: PATHS.en.home }, { hreflang: "vi", path: PATHS.vi.home }, { hreflang: "x-default", path: PATHS.en.home }],
+      alternates: alternatesFor("home"),
       jsonld: homeJsonLd(lang, ctx),
     },
     main,
@@ -285,7 +302,6 @@ export function privacyPage(lang, ctx) {
   const s = (k) => tx(lang, k, ctx);
   const S = STRINGS[lang];
   const path = PATHS[lang].privacy;
-  const other = lang === "vi" ? "en" : "vi";
   const sections = S.pv_sections
     .map((sec) => `      <section>\n        <h2>${esc(sec.h)}</h2>\n${sec.p.map((p) => `        <p>${esc(p)}</p>`).join("\n")}\n      </section>`).join("\n");
   const main = `
@@ -297,10 +313,10 @@ ${sections}
     </article>
 `;
   return htmlDoc({
-    lang, ctx, switchTo: PATHS[other].privacy,
+    lang, ctx, switchTo: Object.fromEntries(LANGS.map((l) => [l, PATHS[l].privacy])),
     headArgs: {
       path, title: raw(lang, "pv_page_title", ctx), description: raw(lang, "pv_desc", ctx),
-      alternates: [{ hreflang: "en", path: PATHS.en.privacy }, { hreflang: "vi", path: PATHS.vi.privacy }, { hreflang: "x-default", path: PATHS.en.privacy }],
+      alternates: alternatesFor("privacy"),
     },
     main, script: false,
   });
@@ -321,7 +337,7 @@ ${all}
     </article>
 `;
   return htmlDoc({
-    lang, ctx, switchTo: PATHS.vi.home,
+    lang, ctx, switchTo: { vi: PATHS.vi.home, ja: PATHS.ja.home },
     headArgs: { path: PATHS.changelog, title: raw(lang, "cl_page_title", ctx), description: raw(lang, "cl_desc", ctx) },
     main, script: false,
   });
@@ -338,7 +354,7 @@ export function notFoundPage(ctx) {
     </article>
 `;
   return htmlDoc({
-    lang, ctx, switchTo: PATHS.vi.home,
+    lang, ctx, switchTo: { vi: PATHS.vi.home, ja: PATHS.ja.home },
     headArgs: { path: "/404.html", title: `${raw(lang, "nf_title", ctx)} | Streakboom`, description: raw(lang, "nf_text", ctx), noindex: true },
     main, script: false,
   });

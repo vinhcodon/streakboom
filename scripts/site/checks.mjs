@@ -5,7 +5,7 @@ import { join } from "node:path";
 import { ORIGIN, fmtDate } from "./facts.mjs";
 import { pageList } from "./files.mjs";
 import { PATHS, esc } from "./pages.mjs";
-import { STRINGS, EN_ONLY } from "../../site/strings.mjs";
+import { STRINGS, EN_ONLY, LANGS } from "../../site/strings.mjs";
 
 const unesc = (s) => s.replace(/&quot;/g, '"').replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&amp;/g, "&");
 const count = (s, re) => (s.match(re) || []).length;
@@ -21,6 +21,10 @@ const BANNED = [
   [/reads what you type(?!, which keys)/i, "'reads what you type' without a negation"],
   [/macOS (version|port)? ?(is coming|will|soon)|sắp có (bản )?macOS/i, "a macOS promise"],
   [/will be code-signed|sẽ được ký số/i, "a code-signing promise"],
+  [/100%\s*無料|完全無料/, "'100% free' in Japanese"],
+  [/手描き|手書きの(?!セリフ)/, "'hand-drawn' in Japanese"],
+  [/macOS版は(まもなく|近日|対応予定)|macOS.{0,6}対応予定/, "a macOS promise in Japanese"],
+  [/コード署名(される|を行う|します)予定/, "a code-signing promise in Japanese"],
 ];
 
 export function check({ ctx, pages, files, out }) {
@@ -44,7 +48,7 @@ export function check({ ctx, pages, files, out }) {
   }
 
   // 2. the FAQ in JSON-LD is exactly the visible FAQ
-  for (const lang of ["en", "vi"]) {
+  for (const lang of LANGS) {
     const p = byPath.get(PATHS[lang].home);
     const visible = [...p.html.matchAll(/<summary><h3>(.*?)<\/h3><\/summary><p>(.*?)<\/p>/gs)].map((m) => [unesc(m[1]), unesc(m[2])]);
     const ld = [...p.html.matchAll(/<script type="application\/ld\+json">(.*?)<\/script>/gs)].map((m) => JSON.parse(m[1].replace(/\\u003c/g, "<")));
@@ -100,7 +104,7 @@ export function check({ ctx, pages, files, out }) {
   }
 
   // 6. the facts are in the HTML itself (no JavaScript needed), in both languages
-  for (const lang of ["en", "vi"]) {
+  for (const lang of LANGS) {
     const p = byPath.get(PATHS[lang].home);
     const h = p.html;
     const need = [
@@ -124,9 +128,19 @@ export function check({ ctx, pages, files, out }) {
     for (const [re, why] of BANNED) if (re.test(text)) bad(`${where}: ${why}`);
   }
 
-  // 8. the strings: Vietnamese has every key English has (except the English-only ones)
-  for (const k of Object.keys(STRINGS.en)) if (!EN_ONLY.has(k) && STRINGS.vi[k] === undefined) bad(`strings: Vietnamese is missing ${k}`);
-  for (const k of Object.keys(STRINGS.vi)) if (STRINGS.en[k] === undefined) bad(`strings: ${k} exists only in Vietnamese`);
+  // 8. the strings: every language has every key English has (except the English-only ones), and nothing else
+  for (const lang of LANGS.filter((l) => l !== "en")) {
+    for (const k of Object.keys(STRINGS.en)) if (!EN_ONLY.has(k) && STRINGS[lang][k] === undefined) bad(`strings: ${lang} is missing ${k}`);
+    for (const k of Object.keys(STRINGS[lang])) if (STRINGS.en[k] === undefined) bad(`strings: ${k} exists only in ${lang}`);
+    for (const k of Object.keys(STRINGS.en)) {
+      const a = STRINGS.en[k], b = STRINGS[lang][k];
+      if (EN_ONLY.has(k) || b === undefined) continue;
+      if (Array.isArray(a) && Array.isArray(b) && a.length !== b.length) bad(`strings: ${k} has ${a.length} items in English and ${b.length} in ${lang}`);
+      // placeholders must survive translation
+      const ph = (x) => (JSON.stringify(x).match(/\{(version|date|exe)\}/g) || []).sort().join();
+      if (ph(a) !== ph(b)) bad(`strings: ${k} has different placeholders in English and ${lang}`);
+    }
+  }
 
   // 9. the files exist and are not empty
   for (const f of ["sitemap.xml", "robots.txt", "llms.txt", "llms-full.txt"]) if (!files[f] || files[f].length < 50) bad(`${f} is missing or empty`);
