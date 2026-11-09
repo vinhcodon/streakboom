@@ -15,7 +15,6 @@ How the agent checks on the real machine: run from the author's Terminal panel (
 | V-5 | A full 8-hour soak on the current build, and a long CPU run with nobody at the PC (VE-8; PR-9 decides the CPU target) | leave the PC awake; `scripts/soak-log.ps1` | Vinh | 0.2.2 |
 | V-6 | The restored data shows in Settings, Memory (name, call-me name, 5 facts) | open Settings, Memory | Vinh | 2026-11-09 |
 | V-7 | The installer window itself (icon, wording) and the Apps list entry (only silent installs were done) | run `Streakboom_x.y.z_x64-setup.exe` by hand | Vinh | 0.2.0 |
-| V-33 | The in-app update 0.2.4 to 0.2.5 on the author's machine (the installed copy is still 0.2.4 and should offer it; mode "ask") | click the offer; check the version on disk | Vinh | 2026-11-09 |
 | V-8 | The update click-through: the offer, the accept, the restart, and which manifest address served it (the app does not log it); the mode "automatic when idle" (only "ask" was used) | wait for the next release | Vinh | 0.2.1 |
 | V-9 | The first-run consent card with the new wording on a fresh install | install on a clean user | Vinh | 0.2.0 |
 | V-10 | Whether the focus-safety constants feel right with a real person typing (including long pauses between bursts, keyboard-only use) and whether the typing lane's guess (H9) is good enough | use it for a week | Vinh | 0.2.4 |
