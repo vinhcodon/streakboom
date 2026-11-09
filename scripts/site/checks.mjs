@@ -5,7 +5,8 @@ import { join } from "node:path";
 import { ORIGIN, fmtDate } from "./facts.mjs";
 import { pageList } from "./files.mjs";
 import { PATHS, esc } from "./pages.mjs";
-import { STRINGS, EN_ONLY, LANGS } from "../../site/strings.mjs";
+import { STRINGS, EN_ONLY, LANGS, UI_KEYS } from "../../site/strings.mjs";
+import { SCENES } from "../../site/scenes.js";
 
 const unesc = (s) => s.replace(/&quot;/g, '"').replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&amp;/g, "&");
 const count = (s, re) => (s.match(re) || []).length;
@@ -140,6 +141,19 @@ export function check({ ctx, pages, files, out }) {
       const ph = (x) => (JSON.stringify(x).match(/\{(version|date|exe)\}/g) || []).sort().join();
       if (ph(a) !== ph(b)) bad(`strings: ${k} has different placeholders in English and ${lang}`);
     }
+  }
+
+  // 8b. the hero tour: every scene has its chip label and caption in every language; captions fit the fixed-height box
+  for (const lang of LANGS) {
+    for (const k of UI_KEYS) if (typeof STRINGS[lang][k] !== "string" || !STRINGS[lang][k]) bad(`strings: ${lang} has no text for the page-script key ${k}`);
+    for (const sc of SCENES) {
+      const cap = STRINGS[lang]["cap_" + sc.id] || "";
+      const limit = lang === "ja" ? 60 : 110;
+      if (cap.length > limit) bad(`strings: caption cap_${sc.id} in ${lang} is ${cap.length} characters (the caption box fits ${limit})`);
+    }
+    const home = byPath.get(PATHS[lang].home);
+    if (home && !home.html.includes(`id="peak-caption"`)) bad(`${home.path}: the caption element of the hero is missing`);
+    if (home && !home.html.includes(STRINGS[lang].cap_idle)) bad(`${home.path}: the first caption is not in the static HTML`);
   }
 
   // 9. the files exist and are not empty

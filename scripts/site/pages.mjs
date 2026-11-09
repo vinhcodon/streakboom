@@ -211,8 +211,10 @@ export function homePage(lang, ctx) {
 
       <div class="hero-art">
         <canvas id="peak" width="360" height="360" role="img" aria-label="${s("peak_alt")}"></canvas>
-        <p class="demo-hint">${s("demo_hint")}</p>
+        <p id="peak-caption" class="peak-caption">${s("cap_idle")}</p>
+        <p id="peak-status" class="visually-hidden" role="status"></p>
         <div id="poses" class="chips" role="group" aria-label="${s("poses_label")}"></div>
+        <p class="demo-hint">${s("demo_hint")}</p>
       </div>
     </section>
 

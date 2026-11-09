@@ -1,21 +1,28 @@
-// An interactive Peak for the hero, drawn by the app's own rig (built into ./peak/ by scripts/build-site.mjs).
+// The interactive Peak of the hero, drawn by the app's own rig (built into ./peak/ by scripts/build-site.mjs).
+// It plays "a day of Peak" by itself (site/scenes.js, sequenced by site/tour.js) with a caption for each scene, and settles into
+// standing still after two rounds. Like the real Peak it is polite: it stops when the visitor takes control, when the pointer
+// is over it, when the page is hidden or scrolled away, and it does not move by itself at all when the system asks for less motion.
 import { Rig } from "./peak/engine.js";
 import { drawFrame } from "./peak/draw.js";
+import { HOVER_GRACE_MS, LOOPS, RESUME_LOOPS, RESUME_MS, SCENES } from "./scenes.js";
+import { createTour } from "./tour.js";
 import { t } from "./ui.js";
 
-const POSES = ["idle", "happy", "purr", "sleep", "wake", "walk", "gasp", "sad", "curious"];
-const TIMED = { happy: 1400, purr: 2600, gasp: 900, curious: 1800, wake: 1500 }; // then back to idle
 const reduceMotion = matchMedia("(prefers-reduced-motion: reduce)").matches;
+const HAPPY = SCENES.findIndex((s) => s.id === "happy"); // a click is a poke: in the app it makes Peak happy
 
 export function startPeak(canvas, chipBox) {
   const rig = new Rig();
   const ctx = canvas.getContext("2d");
   const scale = canvas.width / 120;
-  const chips = new Map();
-  let back = 0;
+  const caption = document.getElementById("peak-caption");
+  const status = document.getElementById("peak-status");
+  const chips = [];
   let raf = 0;
   let last = 0;
   let visible = true;
+  let holdTimer = 0;
+  let captionTimer = 0;
 
   // Peak is drawn a little smaller than the canvas so the round backdrop never cuts off its paws or tail
   const FIT = 0.84;
@@ -47,25 +54,98 @@ export function startPeak(canvas, chipBox) {
     }
   };
 
-  function setPose(pose, tilt = 0) {
-    clearTimeout(back);
-    rig.setPose(pose, 1, tilt, true);
-    for (const [p, b] of chips) b.setAttribute("aria-pressed", String(p === pose));
-    if (TIMED[pose]) back = setTimeout(() => setPose("idle"), TIMED[pose]);
+  const stand = () => {
+    rig.setPose("idle", 1, 0, false);
     wake();
+  };
+
+  /** The caption fades out, changes and fades in; the box has a fixed height, so nothing moves. */
+  function setCaption(text, announce) {
+    if (!caption || caption.textContent === text) return;
+    clearTimeout(captionTimer);
+    if (reduceMotion) caption.textContent = text;
+    else {
+      caption.classList.add("swap");
+      captionTimer = setTimeout(() => {
+        caption.textContent = text;
+        caption.classList.remove("swap");
+      }, 180);
+    }
+    // the automatic captions are not read out; what the visitor chooses is
+    if (announce && status) status.textContent = text;
   }
 
-  // pose chips
-  for (const pose of POSES) {
+  function showScene(i, { user }) {
+    const sc = SCENES[i];
+    clearTimeout(holdTimer);
+    rig.setPose(sc.pose, sc.dir, 0, true);
+    chips.forEach((b, k) => b.setAttribute("aria-pressed", String(k === i)));
+    setCaption(t("cap_" + sc.id), user);
+    // a scene chosen by hand also returns to standing after its hold (a tour scene does it through onHold)
+    if (user && sc.hold) holdTimer = setTimeout(stand, sc.hold);
+    wake();
+    if (!user && !userPaused) refreshToggle();
+  }
+
+  // ---- the tour
+  let userPaused = false;
+  let toggle = null;
+  const tour = reduceMotion
+    ? null
+    : createTour({
+        scenes: SCENES, loops: LOOPS, resumeMs: RESUME_MS, resumeLoops: RESUME_LOOPS,
+        onScene: showScene,
+        onHold: stand,
+        onSettle: () => {
+          stand();
+          chips.forEach((b) => b.setAttribute("aria-pressed", "false"));
+          refreshToggle();
+        },
+      });
+
+  function refreshToggle() {
+    if (!toggle || !tour) return;
+    toggle.textContent = userPaused || tour.settled ? t("tour_play") : t("tour_pause");
+  }
+
+  // ---- chips (one per scene), and the Pause / Play button
+  SCENES.forEach((sc, i) => {
     const b = document.createElement("button");
     b.type = "button";
     b.className = "chip";
-    b.addEventListener("click", () => setPose(pose));
-    chips.set(pose, b);
+    b.textContent = t("pose_" + sc.id);
+    b.addEventListener("click", () => (tour ? tour.select(i) : showScene(i, { user: true })));
+    chips.push(b);
     chipBox.append(b);
+  });
+  chips[0].setAttribute("aria-pressed", "true");
+
+  if (tour) {
+    toggle = document.createElement("button");
+    toggle.type = "button";
+    toggle.className = "chip tour-toggle";
+    toggle.addEventListener("click", () => {
+      if (userPaused || tour.settled) {
+        userPaused = false;
+        tour.unblock("paused");
+        if (tour.settled) tour.start();
+      } else {
+        userPaused = true;
+        tour.block("paused");
+      }
+      refreshToggle();
+    });
+    chipBox.append(toggle);
+    refreshToggle();
+
+    // polite: the tour waits while the pointer or the keyboard is on the cat and its buttons, and the page is not in view
+    const area = canvas.closest(".hero-art") || canvas;
+    area.addEventListener("pointerenter", () => tour.block("hover"));
+    area.addEventListener("pointerleave", () => tour.unblock("hover", HOVER_GRACE_MS));
+    area.addEventListener("focusin", () => tour.block("focus"));
+    area.addEventListener("focusout", () => tour.unblock("focus", HOVER_GRACE_MS));
+    document.addEventListener("visibilitychange", () => (document.hidden ? tour.block("hidden") : tour.unblock("hidden")));
   }
-  const label = () => chips.forEach((b, p) => (b.textContent = t("pose_" + p)));
-  label();
 
   // the eyes follow the pointer, like the app; a click is a poke
   addEventListener("pointermove", (e) => {
@@ -76,7 +156,7 @@ export function startPeak(canvas, chipBox) {
     rig.lookAt(near ? { x: Math.max(-1, Math.min(1, dx)), y: Math.max(-1, Math.min(1, dy)) } : null);
     if (!reduceMotion && !raf) wake();
   });
-  canvas.addEventListener("click", () => setPose("gasp"));
+  canvas.addEventListener("click", () => (tour ? tour.select(HAPPY) : showScene(HAPPY, { user: true })));
   canvas.style.cursor = "pointer";
 
   // blink now and then, only while standing around
@@ -93,10 +173,12 @@ export function startPeak(canvas, chipBox) {
   // do not animate while off screen or in a background tab
   new IntersectionObserver(([e]) => {
     visible = e.isIntersecting;
+    if (tour) (visible ? tour.unblock("offscreen") : tour.block("offscreen"));
     if (visible) wake();
   }).observe(canvas);
   document.addEventListener("visibilitychange", () => !document.hidden && wake());
 
-  setPose("idle");
+  rig.setPose("idle", 1, 0, true);
   paint();
+  if (tour) tour.start();
 }

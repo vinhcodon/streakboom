@@ -42,7 +42,7 @@ export function build({ out = OUT } = {}) {
   rmSync(out, { recursive: true, force: true });
   mkdirSync(out, { recursive: true });
   // what the browser loads
-  for (const f of ["style.css", "app.js", "peak.js", "ui.js"]) cpSync(join(SITE, f), join(out, f));
+  for (const f of ["style.css", "app.js", "peak.js", "ui.js", "scenes.js", "tour.js"]) cpSync(join(SITE, f), join(out, f));
   cpSync(join(SITE, "assets"), join(out, "assets"), { recursive: true });
   cpSync(join(SITE, "peak"), join(out, "peak"), { recursive: true });
 

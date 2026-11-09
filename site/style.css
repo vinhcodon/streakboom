@@ -84,6 +84,12 @@ main, .footer { max-width: 1100px; margin: 0 auto; padding: 0 24px; }
   background: radial-gradient(circle at 40% 35%, #ffe9b8, var(--gold));
 }
 .demo-hint { font-size: .85rem; color: var(--muted); margin: 12px 0 8px; }
+/* the caption of the scene being played: a fixed height (three lines in any language) so nothing moves when it changes */
+.peak-caption { min-height: 5.6em; max-width: 340px; margin: 14px auto 10px; font-size: .95rem; line-height: 1.5; text-align: center; color: var(--ink); transition: opacity .18s; }
+.peak-caption.swap { opacity: 0; }
+@media (prefers-reduced-motion: reduce) { .peak-caption { transition: none; } }
+.visually-hidden { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+.tour-toggle { border-style: dashed; }
 .chips { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; }
 .chip, .lang {
   font: inherit; font-size: .9rem; cursor: pointer; min-height: 40px;

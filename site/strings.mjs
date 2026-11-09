@@ -1,6 +1,8 @@
 // The text of the site in English and Vietnamese: the single source the page builder (scripts/build-site.mjs)
 // fills the templates from. These strings are our own (never user or network content), so the keys listed in
 // HTML_KEYS (and only those) may carry HTML. Placeholders: {version}, {date}, {exe}.
+import { SCENES } from "./scenes.js";
+
 export const STRINGS = {
   en: {
     title: "Streakboom: meet Peak, a desktop pet cat for Windows",
@@ -92,6 +94,19 @@ export const STRINGS = {
     lang_note: "The app's screens and Peak's own lines are in English and Vietnamese.",
     q9: "Is the app available in Japanese?",
     a9: "Not yet. The app's screens and Peak's built-in lines are in English and Vietnamese. If you add an AI brain, Peak answers in the language you write in; that has not been tried in Japanese.",
+    pose_makeway: "Makes way",
+    cap_idle: "Peak lives on top of your screen and looks around.",
+    cap_walk: "It wanders on its own and always stays on screen.",
+    cap_makeway: "Work right next to it and it makes way: it walks off, or hops to another row.",
+    cap_happy: "Click it or sweep the cursor over its head: it is happy.",
+    cap_purr: "Rub its belly: bliss, or sometimes a playful trap.",
+    cap_gasp: "With an AI brain, each answer comes with a feeling it acts out. Here: surprise.",
+    cap_curious: "Another feeling an answer can bring: curiosity.",
+    cap_sad: "And sympathy: ears down, eyes low.",
+    cap_sleep: "It dozes off now and then, and sleeps in Quiet mode and during quiet hours.",
+    cap_wake: "Waking up, it stretches.",
+    tour_pause: "Pause",
+    tour_play: "Play",
   },
   vi: {
     title: "Streakboom: gặp Peak, chú mèo thú cưng cho màn hình Windows",
@@ -183,6 +198,19 @@ export const STRINGS = {
     lang_note: "Màn hình của ứng dụng và lời của Peak bằng tiếng Anh và tiếng Việt.",
     q9: "Ứng dụng có bản tiếng Nhật không?",
     a9: "Chưa. Màn hình của ứng dụng và lời có sẵn của Peak bằng tiếng Anh và tiếng Việt. Nếu bạn thêm bộ não AI, Peak trả lời bằng ngôn ngữ bạn viết; điều này chưa được thử với tiếng Nhật.",
+    pose_makeway: "Nhường chỗ",
+    cap_idle: "Peak sống trên đầu màn hình của bạn và hay nhìn quanh.",
+    cap_walk: "Nó tự đi dạo và luôn ở trong màn hình.",
+    cap_makeway: "Làm việc ngay cạnh nó thì nó nhường chỗ: đi chỗ khác, hoặc nhảy sang một hàng khác.",
+    cap_happy: "Bấm vào nó hoặc lướt con trỏ qua đầu: nó vui.",
+    cap_purr: "Xoa bụng: sung sướng, hoặc đôi khi là một cái bẫy tinh nghịch.",
+    cap_gasp: "Khi có bộ não AI, mỗi câu trả lời đi kèm một cảm xúc nó diễn ra. Đây là: ngạc nhiên.",
+    cap_curious: "Một cảm xúc khác của câu trả lời: tò mò.",
+    cap_sad: "Và đồng cảm: tai cụp xuống, mắt nhìn thấp.",
+    cap_sleep: "Thỉnh thoảng nó gà gật, và ngủ khi ở chế độ Yên tĩnh hoặc trong giờ yên tĩnh.",
+    cap_wake: "Thức dậy, nó vươn vai.",
+    tour_pause: "Dừng",
+    tour_play: "Chạy",
   },
   ja: {
     title: "Streakboom: Windows用デスクトップペット、ネコのPeakと出会おう",
@@ -300,6 +328,19 @@ export const STRINGS = {
     pv_lead: "要点：Streakboomにはアカウントも専用サーバーもありません。キーとペットの記憶はあなたのコンピューターの中にあります。外へ出るのは、あなたが選んだAI提供元に送る内容だけで、それもキーを追加した場合に限ります。",
     pv_sections: [{"h": "APIキー", "p": ["APIキーはWindowsの資格情報マネージャー（Credential Manager）に保存されます（「頭脳」ごとに1つ：gemini-api-key、claude-api-key、openai-api-key、サービス名はstreakboom）。送られる先は選んだ提供元だけで、リクエストヘッダーに入れて送られます。ファイルに書き込まれることも、アプリの他のウィンドウに送られることもありません。"]}, {"h": "AI提供元が受け取るもの", "p": ["Googleの無料枠では、送った内容がGoogleに使われたり読まれたりすることがあり、APIの利用者は18歳以上である必要があります（EEA、スイス、英国の利用者は有料サービスを使う必要があります）。ClaudeとOpenAIでは、送った内容は返答のためにAnthropicまたはOpenAIに送られます。それぞれの規約をご覧ください。接続する前に、アプリがその旨を表示します。", "キーがない場合、ペットはどのAI提供元も呼び出しません。"]}, {"h": "Peakが覚えていること", "p": ["チャットはメモリ内にだけ保持されます。ペットが覚えていることは、あなたのコンピューター上のmemory.jsonに保存されます：あなたがつけた名前、おおまかな習慣の回数（たとえば1日の各時刻に始まったセッション数）、触れた回数、節目の出来事、そしてチャットから拾った短い事実です。事実は、あなたが使っている「頭脳」に、その後に始めるチャットと一緒に送られます。", "設定の「Memory」で、すべて見たり、直したり、削除したり、オフにしたりできます。"]}, {"h": "利用統計（既定はオフ）", "p": ["オンにすると、アプリは、ファネルのイベント名（たとえば「チャットを開いた」）とタイムスタンプを、ランダムなIDとともにローカルのキューに記録します。自動では何も送られません。「Settings、Privacy、Copy stats」でクリップボードにコピーし、自分で共有します。オフにすると、IDとキューは削除されます。", "2つ目のスイッチ「Daily activity counts」は、1日あたり少しの数値（なでた回数、おなかをなでた回数、つついた回数、送ったメッセージ数、ペットが言ってあなたが反応したセリフ数、アプリが動いていた分数、おやすみモードをオンにした回数）を追加します。数値だけで、文章は一切含みません。スイッチをオフにすると、その数値は削除されます。"]}, {"h": "Peakが周囲について把握すること", "p": ["じゃまにならないよう、Peakが読むのは、最後にキーボードやマウスを使った時刻（1つの数値で、どのキーかは決してわかりません）、ポインターの位置、マウスの左ボタンが押されているかどうかだけです（最後にクリックした位置を覚え、どの段に入力しているかを推測するため）。", "入力した内容、押したキー、画面の内容、ウィンドウのタイトル、アプリ名は決して読みません。これらの値はメモリ内にだけ保持され、ファイルに書き込まれることも、どこかへ送られることもなく、Peakを閉じると消えます。"]}, {"h": "コンピューター上のファイル", "p": ["ファイルは%APPDATA%\\com.streakboom.app\\にあります：state.json（ウィンドウの位置、おやすみモード、使用中の「頭脳」と選んだモデル）、pet.json（ペットに関するそれ以外のすべて）、memory.json（覚えていること）。"]}, {"h": "更新", "p": ["「確認しない」を選ばない限り、アプリはプロジェクトのGitHubリポジトリから小さな更新マニフェストを読み込みます（インストーラーはGitHubから取得します）。更新は、署名が確認できたときだけインストールされます。"]}],
     pv_back: "ホームに戻る",
+    pose_makeway: "道をあける",
+    cap_idle: "Peakは画面の上で暮らし、あたりを見回します。",
+    cap_walk: "ひとりで歩き回り、いつも画面の中にいます。",
+    cap_makeway: "すぐ隣で作業すると道をあけます：歩いて離れるか、別の段へ跳びます。",
+    cap_happy: "クリックしたり、頭の上でカーソルを動かすと、喜びます。",
+    cap_purr: "おなかをなでると、うっとり。ときどきいたずらなワナ。",
+    cap_gasp: "AIの「頭脳」があると、答えごとに感情が付きます。これは「驚き」。",
+    cap_curious: "答えが運ぶもうひとつの感情：好奇心。",
+    cap_sad: "そして思いやり：耳を下げて、目を伏せます。",
+    cap_sleep: "ときどきうとうとし、おやすみモードや静かな時間帯には眠ります。",
+    cap_wake: "目覚めると、のびをします。",
+    tour_pause: "とめる",
+    tour_play: "再生",
   },
 };
 
@@ -311,4 +352,4 @@ export const HTML_KEYS = new Set(["hero_lead", "alpha_note", "s1", "s2", "s3", "
 /** Keys that exist in English only: the changelog and the 404 page are not translated. */
 export const EN_ONLY = new Set(["cl_page_title", "cl_desc", "cl_title", "cl_intro", "nf_title", "nf_text"]);
 /** The keys the page scripts need (share button, copy note, pose labels); the build puts them in each page. */
-export const UI_KEYS = ["share_btn", "link_copied", "pose_idle", "pose_happy", "pose_purr", "pose_sleep", "pose_wake", "pose_walk", "pose_gasp", "pose_sad", "pose_curious"];
+export const UI_KEYS = ["share_btn", "link_copied", "tour_pause", "tour_play", ...SCENES.flatMap((s) => [`pose_${s.id}`, `cap_${s.id}`])];
