@@ -85,23 +85,17 @@ pub fn standing_on(points: &[Ground]) -> Ground {
     }
 }
 
-/// The kind of thing at a physical point of the screen (Windows: the topmost visible, enabled, non-click-through window
-/// there, found by the system, so the order of the windows is not worked out here; a window hidden by the system
-/// ("cloaked", as a suspended Store app) is skipped).
+/// The topmost visible, enabled, non-click-through window at a physical point, as the system's handle (0: the desktop
+/// window itself or none). Windows the system hides ("cloaked", as a suspended Store app) are skipped.
 #[cfg(windows)]
-pub fn ground_of_point(x: i32, y: i32) -> Ground {
+fn hit_window(x: i32, y: i32) -> isize {
     use windows_sys::Win32::Foundation::{HWND, POINT};
     use windows_sys::Win32::Graphics::Dwm::{DWMWA_CLOAKED, DwmGetWindowAttribute};
-    use windows_sys::Win32::System::Threading::GetCurrentProcessId;
-    use windows_sys::Win32::UI::WindowsAndMessaging::{
-        CWP_SKIPDISABLED, CWP_SKIPINVISIBLE, CWP_SKIPTRANSPARENT, ChildWindowFromPointEx, GA_ROOT, GW_HWNDNEXT, GetAncestor, GetClassNameW, GetDesktopWindow,
-        GetForegroundWindow, GetWindow, GetWindowThreadProcessId,
-    };
-    // SAFETY: plain queries with handles the system gave us; the buffers are valid for the sizes passed.
+    use windows_sys::Win32::UI::WindowsAndMessaging::{CWP_SKIPDISABLED, CWP_SKIPINVISIBLE, CWP_SKIPTRANSPARENT, ChildWindowFromPointEx, GW_HWNDNEXT, GetDesktopWindow, GetWindow};
+    // SAFETY: plain queries with handles the system gave us.
     unsafe {
         let desktop = GetDesktopWindow();
         let mut hwnd: HWND = ChildWindowFromPointEx(desktop, POINT { x, y }, CWP_SKIPINVISIBLE | CWP_SKIPDISABLED | CWP_SKIPTRANSPARENT);
-        // skip windows the system hides (cloaked): look at the windows below it in the stacking order that hold the point
         let mut guard = 0;
         while !hwnd.is_null() && hwnd != desktop {
             let mut cloaked: u32 = 0;
@@ -112,12 +106,26 @@ pub fn ground_of_point(x: i32, y: i32) -> Ground {
             guard += 1;
             hwnd = GetWindow(hwnd, GW_HWNDNEXT);
             if guard > 32 || hwnd.is_null() {
-                return Ground::Unknown;
+                return 0;
             }
         }
-        if hwnd.is_null() || hwnd == desktop {
-            return Ground::Desktop; // the desktop window itself: nothing in front of the wallpaper
-        }
+        if hwnd == desktop { 0 } else { hwnd as isize }
+    }
+}
+
+/// The kind of thing at a physical point of the screen.
+#[cfg(windows)]
+pub fn ground_of_point(x: i32, y: i32) -> Ground {
+    use windows_sys::Win32::Foundation::HWND;
+    use windows_sys::Win32::System::Threading::GetCurrentProcessId;
+    use windows_sys::Win32::UI::WindowsAndMessaging::{GA_ROOT, GetAncestor, GetClassNameW, GetForegroundWindow, GetWindowThreadProcessId};
+    let h = hit_window(x, y);
+    if h == 0 {
+        return Ground::Desktop; // the desktop window itself: nothing in front of the wallpaper
+    }
+    let hwnd = h as HWND;
+    // SAFETY: plain queries with a handle the system gave us; the buffer is valid for the size passed.
+    unsafe {
         let mut pid: u32 = 0;
         GetWindowThreadProcessId(hwnd, &mut pid);
         if pid == GetCurrentProcessId() {
@@ -134,9 +142,58 @@ pub fn ground_of_point(x: i32, y: i32) -> Ground {
     }
 }
 
+/// An opaque number for the ordinary window at a point (0 when it is the desktop, the taskbar, Peak's own window or
+/// nothing). It says only "the same window as before?"; nothing about the window is read, and the page keeps it just to
+/// compare it with the next one.
+#[cfg(windows)]
+pub fn window_id_at(x: i32, y: i32) -> u64 {
+    match ground_of_point(x, y) {
+        Ground::App | Ground::Foreground => {
+            use windows_sys::Win32::Foundation::HWND;
+            use windows_sys::Win32::UI::WindowsAndMessaging::{GA_ROOT, GetAncestor};
+            // SAFETY: a plain query with a handle the system gave us.
+            unsafe { GetAncestor(hit_window(x, y) as HWND, GA_ROOT) as usize as u64 }
+        }
+        _ => 0,
+    }
+}
+
+/// Is that window still there and still under that point: it exists, is shown (not minimized, not hidden by the
+/// system) and its rectangle holds the point. A closed, minimized or dragged-away window says no; another window raised
+/// over it does not.
+#[cfg(windows)]
+pub fn window_holds(id: u64, x: i32, y: i32) -> bool {
+    use windows_sys::Win32::Foundation::{HWND, RECT};
+    use windows_sys::Win32::Graphics::Dwm::{DWMWA_CLOAKED, DwmGetWindowAttribute};
+    use windows_sys::Win32::UI::WindowsAndMessaging::{GetWindowRect, IsIconic, IsWindow, IsWindowVisible};
+    let hwnd = id as usize as HWND;
+    // SAFETY: plain queries; a stale handle only makes `IsWindow` say no.
+    unsafe {
+        if IsWindow(hwnd) == 0 || IsWindowVisible(hwnd) == 0 || IsIconic(hwnd) != 0 {
+            return false;
+        }
+        let mut cloaked: u32 = 0;
+        if DwmGetWindowAttribute(hwnd, DWMWA_CLOAKED as u32, &mut cloaked as *mut u32 as *mut core::ffi::c_void, 4) == 0 && cloaked != 0 {
+            return false;
+        }
+        let mut r = RECT { left: 0, top: 0, right: 0, bottom: 0 };
+        GetWindowRect(hwnd, &mut r) != 0 && x >= r.left && x < r.right && y >= r.top && y < r.bottom
+    }
+}
+
 #[cfg(not(windows))]
 pub fn ground_of_point(_x: i32, _y: i32) -> Ground {
     Ground::Unknown
+}
+
+#[cfg(not(windows))]
+pub fn window_id_at(_x: i32, _y: i32) -> u64 {
+    0
+}
+
+#[cfg(not(windows))]
+pub fn window_holds(_id: u64, _x: i32, _y: i32) -> bool {
+    true
 }
 
 #[cfg(test)]

@@ -47,6 +47,7 @@ Both need the same permission as window geometry (spec/07 section 4): the ground
 - **Quiet and loud places:** a place the user keeps pushing the cat out of (learned, spec/07 layer D) is a high-cost place.
 
 ## 6. Seeing made visible (the part that makes it feel alive)
+*How a reaction is shown (the shape in time, the words, the choice between reactions) is specified once for all events in [`09-reactions.md`](09-reactions.md); this section says only which belief calls for which reflex.*
 A reaction without a cause the user can see looks like a glitch; the same reaction after the cat has visibly noticed looks like intent. Proposed small behaviors, all with poses and springs that exist:
 - **Notice (anticipation):** when the user starts working near the cat, it first looks toward the pointer or the predicted caret and perks its ears for about 0.4 s, *then* decides. The author's earlier complaints (a jolt, a stop that looked like turning and sitting back down, a see-through cat) were all about reactions that lacked this lead-in.
 - **Look toward the attention** while the user types near the cat, not only when the pointer is over it (today the eyes follow the pointer only while it is over the cat).
@@ -60,7 +61,7 @@ A reaction without a cause the user can see looks like a glitch; the same reacti
 | the predicted caret is coming toward me (low confidence) | look along the line the text will take | hop off the row once the prediction reaches about 200 px |
 | the pointer is coming toward me with no typing | look at it, maybe a happy hop | stay (it is about to touch me) |
 | I am over the foreground window and the user is active | nothing | prefer a place over the bare desktop or the taskbar when moving |
-| my ground disappeared | gasp | fall to the ground below, land with a squash |
+| my ground disappeared | gasp | fall to the ground below, land with a squash (the first version, 2026-11-10, is a placeholder that felt flat to the author; the reflex is redesigned as a *startle* beat in [`09-reactions.md`](09-reactions.md)) |
 | I am asleep and the user types right by me for a few seconds | stretch and open the eyes | make way as awake |
 | a long silence | glance around | wander (spec/03) |
 

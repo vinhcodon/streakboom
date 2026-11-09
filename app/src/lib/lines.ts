@@ -22,7 +22,8 @@ export type Trigger =
   | "hint" // nudges toward a gesture the user has not discovered yet (the head scratch)
   | "hintbelly" // ...and the belly rub, once the head scratch is known
   | "belly" // a belly rub it enjoys
-  | "huff"; // a belly rub that turned out to be a trap
+  | "huff" // a belly rub that turned out to be a trap
+  | "fall"; // the window it stood on went away and it is about to fall (PC-7)
 
 export interface Line {
   id: string;
@@ -657,6 +658,13 @@ const JA3: Line[] = [
   ]),
 ];
 
-export const LINES: Line[] = [...EN, ...EN2, ...EN3, ...VI, ...VI2, ...VI3, ...JA, ...JA2, ...JA3];
+// The cry when the ground goes (PC-7): short, a moment of surprise, said as it gasps.
+const FALL: Line[] = [
+  ...mk("en", "fall", ["Whoa!", "Oh no, the floor!", "Wait, where did it go?!", "Ack!", "Hey, that was my spot!"]),
+  ...mk("vi", "fall", ["Ơ!", "Ơ kìa, đâu mất rồi?!", "Ôi, nền đâu rồi!", "Á!", "Ê, chỗ của mình mà!"]),
+  ...mk("ja", "fall", ["わっ！", "えっ、床がない！", "あれ、どこいったの！？", "きゃっ！", "ちょっと、わたしの場所！"]),
+];
+
+export const LINES: Line[] = [...EN, ...EN2, ...EN3, ...VI, ...VI2, ...VI3, ...JA, ...JA2, ...JA3, ...FALL];
 
 export const MILESTONE_DAYS = [3, 7, 30];

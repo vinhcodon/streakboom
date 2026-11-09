@@ -173,7 +173,7 @@
   <div class="root {side}" bind:this={root}>
     <div class="card">
       {#if view.kind === "say"}
-        <div class="say">{view.text}</div>
+        <div class="say" class:exclaim={view.exclaim === true && !reduceMotion}>{view.text}</div>
       {:else if view.kind === "ask"}
         <div class="say">{view.text}</div>
         <div class="row end">
@@ -289,6 +289,18 @@
     flex-direction: column;
     gap: 6px;
     min-width: 80px;
+  }
+  /* A cry (spec/09): bigger and bolder, with a small jolt as it appears */
+  .exclaim {
+    font-weight: 700;
+    font-size: 1.18em;
+    animation: jolt 0.38s ease-out both;
+  }
+  @keyframes jolt {
+    0% { transform: scale(0.7) translateY(4px); }
+    35% { transform: scale(1.12) translateX(-2px); }
+    55% { transform: scale(1.05) translateX(2px); }
+    100% { transform: scale(1); }
   }
   .say {
     text-align: center;

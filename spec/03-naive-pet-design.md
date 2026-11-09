@@ -42,6 +42,7 @@ The brain request (spec/02) is more natural at tier 2 or 3, but it is triggered 
 - **Polite:** nothing is said in fullscreen or presentation mode, in quiet hours, in Quiet mode, while dragging, while another bubble is open, or while the pet is asleep or dozing off (an unprompted line waits and is tried again 2 minutes later; the pet also does not doze off while a bubble is showing).
 
 ## Line system
+*Draft, not built (spec/09): the pools below become the offline source of **slots** of events (`event.slot`), keeping every line id; why the lines feel repeated and how to grow and vary them is in spec/09 section 11 (epic E13); reactions to new situations are described by an appraisal and a beat rather than a new trigger and a new `if` in the page.*
 - **Line pools by trigger:** greeting, return, morning, night, long session, idle, click, pet, how, milestone, brain hint, gesture hint, belly hint, belly, huff. The "snack" and "play" pools exist and are unused (no buttons any more; reserved for future gestures).
 - **Each line has tags:** language, mood band, closeness tier, hours, trigger. Lines marked `~` are sarcastic and hidden in the Gentle tone.
 - **Selection:** filter by tags, exclude recently used (a rolling window of 24), weighted random.

@@ -94,6 +94,8 @@
   import { LEAVE_MIN_ROOM_PX, LEAVE_PX, SLEEP_CROWD_MS, decideFocus, initialFocus, wakesToMakeWay, type FocusOut } from "$lib/focus";
   import { glideOut, rampIn, takeSteps } from "$lib/gait";
   import { chainAt, planFall, splitHop, totalMs, type Flight } from "$lib/hop";
+  import { startGroundWatch, stepGround } from "$lib/groundwatch";
+  import { STARTLE, WORDS_DELAY_MS, type Beat } from "$lib/beats";
   import { escapeRow, initialLane, stepLane, type LaneOut } from "$lib/lane";
   import { engage as engagePure, markShown as markShownPure, minuteIncrement, noShown, type DayCounter, type DayStat } from "$lib/bond";
 
@@ -123,6 +125,7 @@
   // What the bubble window shows: a plain speech line, or one of the panels.
   let panel = $state<Panel>(null);
   let bubbleText = $state("");
+  let bubbleExclaim = $state(false); // the bubble shows a cry: bigger, bolder, with a small jolt (spec/09)
   let bubbleOn = $state(false);
 
   // brain (BYOK). The key itself never reaches this window: it lives in the settings window's
@@ -228,11 +231,21 @@
     return line.text;
   }
 
-  function say(trigger: Trigger, extra: { days?: number } = {}): boolean {
-    const text = pickLine(trigger, extra);
+  function say(trigger: Trigger, extra: { days?: number; exclaim?: boolean } = {}): boolean {
+    const text = pickLine(trigger, { days: extra.days });
     if (!text) return false;
-    showBubble(text);
+    showBubble(text, 0, extra.exclaim === true);
     return true;
+  }
+
+  /**
+   * The words follow the body (spec/09 section 3, RX-3a): run `words` `delayMs` after the pose began, only if the cat is
+   * still in that pose (picked up or told to do something else meanwhile: the words are dropped, not said late).
+   */
+  function wordsAfter(p: PetState, delayMs: number, words: () => void) {
+    setTimeout(() => {
+      if ((pose as PetState) === p) words();
+    }, delayMs);
   }
 
   // ---------------------------------------------------------------- memory
@@ -332,11 +345,12 @@
     pushSettings();
     stopTimers();
     enter("happy");
-    memSay(field === "petName" ? "named" : "calledMe");
+    wordsAfter("happy", WORDS_DELAY_MS.named, () => memSay(field === "petName" ? "named" : "calledMe"));
   }
 
-  function showBubble(text: string, minMs = 0) {
+  function showBubble(text: string, minMs = 0, exclaim = false) {
     bubbleText = text;
+    bubbleExclaim = exclaim;
     bubbleOn = true;
     clearTimeout(bubbleTimer);
     bubbleTimer = setTimeout(() => (bubbleOn = false), Math.max(minMs, 4000 + text.length * 60));
@@ -800,6 +814,81 @@
     if (pose === air) enter("land");
   }
 
+  // ------------------------------------------------- the ground goes (PC-7, ADR-0041)
+  const GROUND_POLL_MS = 1000; // while the cat stands: what is under its feet, asked once a second (3 points, a few ms)
+  const GROUND_COOLDOWN_MS = 20_000;
+  const FALL_MIN_PX = 60; // less room than this below: it only gasps
+  let groundW = startGroundWatch();
+  let lastGroundFall = 0;
+  let groundBusy = false;
+
+  let beatToken = 0;
+  const sleepMs = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));
+  /**
+   * Play a beat (`beats.ts`): hold each step's pose for its time, call `words` at the moment the beat says. Returns false
+   * if anything else took over the pose meanwhile (picked up, told to do something else): the rest is dropped.
+   */
+  async function runBeat(beat: Beat, words?: () => void): Promise<boolean> {
+    const tok = ++beatToken;
+    stopTimers();
+    clearTimeout(oneShotTimer);
+    for (const step of beat.steps) {
+      pose = step.pose;
+      poseTick++;
+      if (step.sayAt !== undefined) {
+        await sleepMs(step.sayAt);
+        if (tok !== beatToken || (pose as PetState) !== step.pose) return false;
+        words?.();
+        await sleepMs(Math.max(0, step.ms - step.sayAt));
+      } else {
+        await sleepMs(step.ms);
+      }
+      if (tok !== beatToken || (pose as PetState) !== step.pose) return false;
+    }
+    return true;
+  }
+
+  /** The window under the cat is gone: it startles (freeze, jolt, a cry), then falls to the ground below (or only startles when there is no room). */
+  async function groundLost() {
+    const now = Date.now();
+    if (quiet || panel !== null || flying || now - lastGroundFall < GROUND_COOLDOWN_MS) return;
+    if (pose !== "idle" && pose !== "look") return;
+    lastGroundFall = now;
+    note("ground lost: startle");
+    if (!(await runBeat(STARTLE, () => say("fall", { exclaim: true })))) return; // picked up or told to do something else meanwhile
+    let down = 0;
+    try {
+      down = (await invoke<{ up: number; down: number }>("vertical_room")).down;
+    } catch {
+      /* unknown: it only gasps */
+    }
+    note(`ground lost: room below ${down}`);
+    if (down >= FALL_MIN_PX) await fly([planFall(down)], "gasp");
+    else enter("idle"); // no room to fall: it has only startled
+  }
+
+  async function groundTick() {
+    if (groundBusy) return;
+    const standing = !flying && !quiet && panel === null && (pose === "idle" || pose === "look");
+    if (!standing) {
+      groundW = startGroundWatch(); // walking, held, asleep, speaking: it will find its footing again when it stands
+      return;
+    }
+    groundBusy = true;
+    try {
+      const g = await invoke<{ id: number; foot: [number, number] }>("ground_under_cat");
+      // asked about the window it stands on (not about the current one under the feet: a window raised over it changes nothing)
+      const holds = groundW.id !== 0 ? await invoke<boolean>("window_holds", { id: groundW.id, x: groundW.x, y: groundW.y }) : null;
+      const r = stepGround(groundW, { id: g.id, x: g.foot[0], y: g.foot[1] }, holds);
+      groundW = r.w;
+      if (r.lost) await groundLost();
+    } catch {
+      /* the sense is not available: nothing happens */
+    } finally {
+      groundBusy = false;
+    }
+  }
+
   // ---------------------------------------------------------------- panels
   function openPanel(p: Exclude<Panel, null>) {
     if (pose === "walk") stopWalking();
@@ -853,7 +942,7 @@
       data = interact(data, "click", now);
       touch("poke");
       count("poke");
-      say("click");
+      wordsAfter("happy", WORDS_DELAY_MS.click, () => say("click"));
     }
   }
 
@@ -1007,11 +1096,11 @@
       rubsSinceHuff = 0;
       lastHuff = now;
       enter("huff");
-      say("huff");
+      wordsAfter("huff", WORDS_DELAY_MS.huff, () => say("huff"));
     } else {
       data = interact(data, "pet", now);
       enter("purr");
-      say("belly");
+      wordsAfter("purr", WORDS_DELAY_MS.belly, () => say("belly"));
     }
     track("first_interaction");
     scheduleSave();
@@ -1029,7 +1118,9 @@
     count("scratch");
     engage();
     track("first_interaction");
-    if (!(Math.random() < 0.25 && memSay("pet", {}, 60 * MIN))) say("pet");
+    wordsAfter("happy", WORDS_DELAY_MS.pet, () => {
+      if (!(Math.random() < 0.25 && memSay("pet", {}, 60 * MIN))) say("pet");
+    });
     scheduleSave();
   }
 
@@ -1563,7 +1654,7 @@
     if (panel === "consent") {
       return { kind: "consent", text: ui.consentText, note: ui.consentNote, yes: ui.consentYes, no: ui.consentNo };
     }
-    if (bubbleOn) return { kind: "say", text: bubbleText };
+    if (bubbleOn) return { kind: "say", text: bubbleText, exclaim: bubbleExclaim };
     return { kind: "none" };
   });
   let lastSent = "";
@@ -1587,6 +1678,7 @@
   onMount(() => {
     const cleanups: Array<() => void> = [];
     let minuteTimer: ReturnType<typeof setInterval> | undefined;
+    let groundLoop: ReturnType<typeof setInterval> | undefined;
     let updateFirst: ReturnType<typeof setTimeout> | undefined;
     let updateEvery: ReturnType<typeof setInterval> | undefined;
 
@@ -1693,8 +1785,9 @@
         if (s.milestone) sayWhenCalm(() => say("milestone", { days: s.milestone! }), 8000);
       }
       scheduleProactive();
+      groundLoop = setInterval(groundTick, GROUND_POLL_MS);
       // Test hook (like window.__cat): lets a debugger trigger the real unprompted-line path now.
-      (window as unknown as Record<string, unknown>).__pet = { proactive: () => void fireProactive(), focus: () => ({ ...focusOut, lastLeave, pose }), trail: () => trail, sleep: () => enter("drowsy"), wake: () => enter("idle"), hop: (dx: number, dy: number) => void fly(splitHop(dx, dy), "walk"), lane: () => ({ ...laneOut, state: laneState, cat: laneCat }), ground: () => invoke("ground_under_cat"), fall: (d: number) => void fly([planFall(d)], "gasp") };
+      (window as unknown as Record<string, unknown>).__pet = { proactive: () => void fireProactive(), focus: () => ({ ...focusOut, lastLeave, pose }), trail: () => trail, sleep: () => enter("drowsy"), wake: () => enter("idle"), hop: (dx: number, dy: number) => void fly(splitHop(dx, dy), "walk"), lane: () => ({ ...laneOut, state: laneState, cat: laneCat }), ground: () => invoke("ground_under_cat"), groundLost: () => void groundLost(), fall: (d: number) => void fly([planFall(d)], "gasp") };
       let lastTick = Date.now();
       minuteTimer = setInterval(() => {
         const now = Date.now();
@@ -1722,6 +1815,7 @@
         clearTimeout(t)
       );
       clearInterval(minuteTimer);
+      clearInterval(groundLoop);
       clearInterval(focusLoop);
       clearTimeout(updateFirst);
       clearInterval(updateEvery);

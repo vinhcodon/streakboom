@@ -22,7 +22,9 @@ Status: **proposed 2026-11-08, asked by Vinh to be carried out story by story.**
 | E7 | Verification and release | 4 / 9 | The 8-hour soak was stopped at 2 h 23 (memory flat) to diagnose CPU; real keys, devices open; the 0.2.1 to 0.2.2 update was seen working |
 | E8 | Focus-safety and places | 6 / 13 | FS-0 to FS-4 and PL-0 done; FS-5 and FS-6 left; PL-1 and PL-7 merged into E9 |
 | E9 | The desktop as terrain | 8 / 16 | Spec 07 and ADR-0030 written; the Rust `monitors_info` and `move_to` exist (TE-2); the lane model (TE-12) and the mouse button reading (TE-13) exist; hops and falls exist (TE-7); the cat leaves the typing lane by a hop (TE-14); a hop costs about a third of what it did (TE-15) |
-| E10 | Perception | 4 / 9 | Spec 08 and ADR-0031: four of five decisions answered; the ground map waits for L3 |
+| E10 | Perception | 5 / 9 | Spec 08 and ADR-0031: four of five decisions answered; the ground map waits for L3 |
+| E13 | Fresh words: more variety in the scripted lines | 1 / 9 | Proposed 2026-11-10 after the author found the lines repetitive; the pools behind poke, scratch and belly are the smallest; nothing built |
+| E12 | Reactions: one way to express what happens | 3 / 11 | Spec 09 written and its four decisions answered (ADR-0041, 2026-11-10); the first fall (PC-7) felt flat, which showed that each reaction is a separate rule; nothing built yet |
 | E11 | Reach: languages and brains | 4 / 5 | Groq is the fourth brain and Japanese is built in full, both released in 0.3.0 (BR-1, JA-1 to JA-3, ADR-0037, ADR-0038); BR-2 needs a key |
 
 Against the roadmap: Phases 0 to 2 done; **Phase 4 in progress** (E7: the soak was stopped early; PR-3 and PR-4 done; PF-3, PR-8, VE-2, VE-3 open; all the unchecked items are in [`verification-debt.md`](verification-debt.md)); Phase 3 blocked on keys (VE-4, VE-5, PE-3); Phase 5 not started (E6).
@@ -58,7 +60,7 @@ Open question for CO-3: the "rest rhythm" idea (using the habit counts for more 
 ## E3. Consistent personality
 | ID | Story | Size | Status | Depends on |
 |---|---|---|---|---|
-| PE-0 | The character, the tone guide, 182 lines per language, the persona and mood tags (ADR-0011, ADR-0013, ADR-0016) | L | done | |
+| PE-0 | The character, the tone guide, 182 lines per language, the persona and mood tags (ADR-0011, ADR-0013, ADR-0016) | L | done (the persona is to be restructured and shown in E12) | |
 | PE-1 | Export all Vietnamese lines to one file for a native reader to review (and a way to apply the corrections) | S | ready | |
 | PE-2 | The pet's own habits and quirks: about 20 lines per language plus a repeating behavior or two (a favorite spot, a favorite time), with tests | M | ready | |
 | PE-3 | Voice consistency check of the Claude and OpenAI brains with real keys | S | blocked (keys, Phase 3) | VE-4, VE-5 |
@@ -164,19 +166,52 @@ Direction agreed 2026-11-09 (ADR-0030). By decision T6 the code comes after FS-4
 | PC-4 | A sleeping cat wakes with its stretch and makes way when the user types right by it for several seconds (gap G5); the stretch was redrawn as a real play bow | S | done (checked in the real app and by the author) | |
 | PC-5 | Rust `ground_at(points)`: the kind of thing at points under and around the cat (desktop, taskbar, app window, foreground), classification only, with a test | M | done (after 0.3.0, not released; no reaction uses it yet; 6 tests; on the real window: taskbar at the bottom row, a window mid-screen, 144 points in 4 to 6 ms) | |
 | PC-6 | The ground map (a coarse grid of the same classification, taken only when about to move) and perches from it; replaces the window-list mechanism of TE-10a and TE-10b | M | needs Vinh (spec/08 section 9 item 3, with the L3 decision) | PC-5 |
-| PC-7 | Ground change: the gasp and the fall when the ground under the cat disappears (the T5 decision) | M | needs Vinh (PC-5 is done; the author was surprised by an unprompted fall in 0.3.0, so ask whether it falls, only gasps, or stays) | PC-5, TE-7 |
+| PC-7 | Ground change: the cat startles and falls when the window it stands on goes (the T5 decision) | M | done (not released; decided 2026-11-10: it startles, then falls; the first version waited for the bare desktop and never fired on a screen covered with windows, so the cat now tracks the window it stands on by an opaque handle; the reflex is the startle beat of RX-1; 7 tests for `groundwatch.ts`; the author tried it and said it was good; CPU A/B before a release is V-69) | PC-5, TE-7, RX-1 |
 | PC-8 | The slow senses (the weekday, battery, lid open after an absence) in the same model (spec/03 lists them as not built) | M | later | |
 
-## Suggested order
-1. **PR-3** (S): explain the CPU. It decides whether the presence quality is healthy at all, and it is the only open story that needs no decision and no waiting.
-2. **ME-3** and **ME-2** (S each): the measuring tool and the checks of the counters, so that the alpha can produce a baseline.
-3. **PR-5**, **CO-3**, **CA-2** (S each, all decisions for Vinh): the three choices that unlock E1 timing, E2 growth and E4 care. These can be asked together as multiple choices.
-4. **PE-1** and **PE-2** (S, M): the personality stories that need no decision.
-5. After the soak ends (about 03:40): **VE-7, PR-8, PF-3** together.
-6. **ME-4**, then the alpha when Phase 4 allows it.
+## Suggested order (updated 2026-11-10)
+The older order (PR-3, ME-3, the soak and so on) is done or overtaken; this is the order now.
+1. **RX-1** (M): the beat runner and the `startle` beat, with PC-7 rebuilt on it. It fixes the flat fall the author saw and proves the shape of spec 09 on a real event. The author looks at a test build before the commit.
+2. **RX-3a** (S), right after or together with RX-1: the words follow the body for the five reflexes that speak.
+3. **LN-1, LN-2, LN-3** (S, M, M): the shuffle bag, escalation and tokens. They make the lines feel fresh without new text, and do not depend on RX-1, so they can run in parallel.
+4. **RX-5** then **RX-6** (S each): the persona in layers, then "What Peak is told" in Settings.
+5. **RX-2** (M): events and the choice of a beat, once RX-1 shows the format works; then **RX-8** and **RX-4**.
+6. Needing Vinh: **LN-4** (a key for the line-factory script and readers), **LN-7** (top-up by the brain), **BR-2** (a Groq key), the PC-6 / L3 ground-map decision.
+7. A release (0.3.1, carrying TE-16, PC-5 and whatever of the above is done) when the author orders it; it needs the CPU A/B and the release routine (ADR-0033).
+8. Unchanged from before: Phase 4 checks (second machine, soak, real keys) and the alpha (E6).
 
 ## What was not verified
 The sizes are estimates, not measured. Which stories matter most for retention is a hypothesis (H5, H6); the alpha is what can test it.
+
+## E12. Reactions: one way to express what happens (spec/09, ADR-0041)
+Why: reactions reach the screen by three separate paths (scripted line pools, poses chosen in the page, mood tags from the model), so every new situation is a new rule, and the first fall showed that a startle has a shape in time that nobody had written down. The spec replaces rules with data: **events** with an **appraisal** (five numbers), a small library of **beats** (short scripts of pose, time and words), and **line slots**; the model, when there is one, writes only the remark that follows, from small **reaction cards**. The persona prompt is split into layers and shown to the user.
+| ID | Story | Size | Status | Depends on |
+|---|---|---|---|---|
+| RX-0 | Spec 09: the model (event, appraisal, beat, words), the rules that hold for every reaction, the reaction cards, the persona layers, the decisions R1 to R4 | S | done (decisions answered, ADR-0041) | |
+| RX-1 | `beats.ts`: the beat format and the runner on top of the rig (steps with pose, time and the moment the words begin), with tests; the `startle` beat as the first (freeze 150 ms, jolt, a cry 120 ms into it, hold, then the fall) and PC-7 rebuilt on it; the bubble got an exclaim style (bigger, bolder, a small jolt; off with reduced motion) | M | done (4 tests; the author tried a test build and said it was good; priority between beats and the per-event cool-down are still the fall's own 20 s: RX-8) | RX-0 |
+| RX-2 | `events.ts` and `choose.ts`: the event list with appraisals, the pure selection of a beat from the appraisal and the situation, with tests (every event in range, deterministic for a seed) | M | blocked (RX-1) | RX-1 |
+| RX-3a | `wordsAfter(pose, delay, words)`: the words follow the body for the five reflexes that speak (poke 150 ms, head scratch 200 ms, belly rub 500 ms, belly trap 250 ms, naming 200 ms); the words are dropped if the cat has left the pose | S | done (the delays are first guesses; the author tried a test build and said it was good) | RX-0 |
+| RX-3 | Move the other existing reactions into beats when each is next touched: the notice beat (PC-2), huff, purr, happy, gasp, the mood reactions of ADR-0016 as appraisal presets (both ways work side by side until then); optionally an ears-up beat before an unprompted line | M | blocked (RX-2) | RX-2 |
+| RX-4 | Line slots: group the pools as `event.slot` without changing any line id, add the lines for the new events in three languages, extend the parity test | S | blocked (RX-2) | RX-2 |
+| RX-5 | The persona into layers (a locked core, the voice, modifiers) as short files, assembled by Rust to the same string as today for the same settings (a test proves it) | S | ready (independent of RX-1) | RX-0 |
+| RX-6 | "What Peak is told": a read-only Settings page (Brain) showing the assembled prompt for the current settings, in three languages | S | blocked (RX-5) | RX-5 |
+| RX-7 | Reaction cards and the model's remark after a reflex: the card format, loading only the matching cards, the prompt assembly, the caps and a Settings switch (R3 decided: event name and appraisal only, ADR-0041) | M | blocked (RX-2, RX-5) | RX-2, RX-5 |
+| RX-8 | The reaction budget and priorities across all beats (spec/09 section 3) as one small module with tests | S | blocked (RX-1) | RX-1 |
+| RX-9 | Editable voice with presets and the locked core untouched; later: loadable character packs (its own decision) | M | later (R2, R4) | RX-6 |
+
+## E13. Fresh words: more variety in the scripted lines (spec/09 section 11)
+Why: the author finds the scripted lines repetitive. The pools behind what users do most are the smallest (poke 13, scratch 12, belly 6, trap 5), the no-repeat memory is shared by all triggers and gives up when a pool is used up, and a line depends on nothing but tier, time band and tone. The offline cat is the only voice for users without a key.
+| ID | Story | Size | Status | Depends on |
+|---|---|---|---|---|
+| LN-0 | The analysis and the proposals (spec/09 section 11) | S | done (proposal, waiting for Vinh to choose) | |
+| LN-1 | A shuffle bag per trigger kept on disk (every line once before any repeats, a window that grows with the pool), replacing the shared last-24 memory; tests | S | ready | |
+| LN-2 | Escalation: repeated pokes, scratches and belly rubs within a short time move through stages with their own lines (playful, annoyed, resigned, forgiving); a counter in memory, not saved | M | ready | LN-1 |
+| LN-3 | Tokens in lines (name, hour, work time, streak, today's pokes, weekday, own favourite spot) with fallbacks and a test that every language fills every token | M | ready | |
+| LN-4 | The line factory: an author-run script that drafts candidates with a model, filters duplicates and unwanted patterns, and leaves the choice to the author and to native readers | M | needs Vinh (a key for the script, and who reads Vietnamese and Japanese) | |
+| LN-5 | Pool targets by frequency (poke 40, scratch 30, belly 20, trap 15, hints 12, greeting 12 per tier, return 20) and the lines to reach them in three languages, with a test that fails under target | L, split by trigger | blocked (LN-4 or hand writing) | LN-4 |
+| LN-6 | Rare lines (about 1 in 100, once a week) and callbacks that remember what Peak joked about | S | blocked (LN-3) | LN-3 |
+| LN-7 | Top-up by the connected brain: once a day, a few new lines for the least varied triggers from the trigger name, the tone and the persona only, kept on the machine and marked as generated | M | needs Vinh (spends the user's key; machine-written lines without review) | LN-1, RX-7 |
+| LN-8 | A repetition report: distinct lines a typical week would show per trigger, and the triggers under target | S | ready | |
 
 ## E11. Reach: languages and brains (ADR-0037, ADR-0038)
 | ID | Story | Size | Status | Depends on |

@@ -12,7 +12,7 @@ export type ProviderId = "gemini" | "groq" | "claude" | "openai";
 /** What the bubble window should show. The pet window resolves all text (language included). */
 export type BubbleView =
   | { kind: "none" }
-  | { kind: "say"; text: string }
+  | { kind: "say"; text: string; exclaim?: boolean } // exclaim: a cry (bigger, bolder, a small jolt)
   | {
       kind: "chat";
       phase: "compose" | "thinking" | "reply";

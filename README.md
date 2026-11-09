@@ -106,7 +106,7 @@ npm run tauri dev          # run the app with hot reload
 ```
 
 ```powershell
-npm test                   # Node tests for the pure logic (src/lib/*.test.ts), 164 tests
+npm test                   # Node tests for the pure logic (src/lib/*.test.ts), 175 tests
 npm run check              # svelte-check (types)
 cd src-tauri; cargo test   # Rust tests (the four brain clients against a mock server, window and monitor geometry, the focus probe, the ground sense), 68 tests
 ```
@@ -160,7 +160,7 @@ The documents are split by the kind of statement they make, so each fact has one
 
 | Where | What it is |
 |---|---|
-| [`spec/`](spec) | **How the product works now.** [`01-product-requirements.md`](spec/01-product-requirements.md) (what it must be), [`02-onboarding-flow.md`](spec/02-onboarding-flow.md) (naive to brained), [`03-naive-pet-design.md`](spec/03-naive-pet-design.md) (the pet, memory, lines), [`04-technical-design.md`](spec/04-technical-design.md) (stack, architecture, brains, data), [`05-north-star-metrics.md`](spec/05-north-star-metrics.md) (Bond Days, specified, not built), [`06-character-and-movement.md`](spec/06-character-and-movement.md) (character, movement and focus-safety; focus-safety and hops are built, places are not), [`07-terrain-and-attention.md`](spec/07-terrain-and-attention.md) (the desktop as terrain; partly built: monitors, hops, the typing lane), [`08-perception.md`](spec/08-perception.md) (Peak's senses; decisions recorded, partly built) |
+| [`spec/`](spec) | **How the product works now.** [`01-product-requirements.md`](spec/01-product-requirements.md) (what it must be), [`02-onboarding-flow.md`](spec/02-onboarding-flow.md) (naive to brained), [`03-naive-pet-design.md`](spec/03-naive-pet-design.md) (the pet, memory, lines), [`04-technical-design.md`](spec/04-technical-design.md) (stack, architecture, brains, data), [`05-north-star-metrics.md`](spec/05-north-star-metrics.md) (Bond Days, specified, not built), [`06-character-and-movement.md`](spec/06-character-and-movement.md) (character, movement and focus-safety; focus-safety and hops are built, places are not), [`07-terrain-and-attention.md`](spec/07-terrain-and-attention.md) (the desktop as terrain; partly built: monitors, hops, the typing lane), [`08-perception.md`](spec/08-perception.md) (Peak's senses; decisions recorded, partly built), [`09-reactions.md`](spec/09-reactions.md) (how Peak expresses what happens: events, appraisal, beats, words, and the persona made visible; a draft for approval, not built) |
 | [`docs/decisions/`](docs/decisions/README.md) | **What was decided, and why**: one short record per decision, with the alternatives rejected |
 | [`docs/hypotheses/`](docs/hypotheses/README.md) | **What we believe but have not proven**, how it would be settled, and the technical assumptions not yet verified |
 | [`docs/handoff/`](docs/handoff/README.md) | **Notes passed between sessions**, kept as received, with an index of what became of each |

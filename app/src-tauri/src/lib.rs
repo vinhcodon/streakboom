@@ -503,6 +503,10 @@ struct GroundUnder {
     under: ground::Ground,
     /// The kind at each of those points, left to right.
     points: Vec<ground::Ground>,
+    /// An opaque number for the window under the cat's middle foot (0: none), to tell later whether it is the same one.
+    id: u64,
+    /// The point it was asked at (physical px), to ask the same place again.
+    foot: (i32, i32),
 }
 
 /// What the cat stands over now: the kind of thing just below its left foot, its middle and its right foot.
@@ -512,7 +516,15 @@ fn ground_under_cat(window: WebviewWindow) -> Result<GroundUnder, String> {
     let scale = window.scale_factor().map_err(|e| e.to_string())?;
     let (l, t, s) = pet_px(scale);
     let points: Vec<ground::Ground> = ground::feet_points(pos.x, pos.y, l, t, s).into_iter().map(|(x, y)| ground::ground_of_point(x, y)).collect();
-    Ok(GroundUnder { under: ground::standing_on(&points), points })
+    let feet = ground::feet_points(pos.x, pos.y, l, t, s);
+    let id = ground::window_id_at(feet[1].0, feet[1].1);
+    Ok(GroundUnder { under: ground::standing_on(&points), points, id, foot: feet[1] })
+}
+
+/// Is the window with that opaque number still there and still under that point (closed, minimized or dragged away: no).
+#[tauri::command]
+fn window_holds(id: u64, x: i32, y: i32) -> bool {
+    ground::window_holds(id, x, y)
 }
 
 #[derive(Serialize)]
@@ -1400,7 +1412,7 @@ pub fn run() {
             edge_room,
             vertical_room,
             ground_at,
-            ground_under_cat,
+            ground_under_cat, window_holds,
             monitors_info,
             move_to,
             pet_place,

@@ -35,6 +35,9 @@ Plan and tests: [`bond-days.md`](bond-days.md) (steps 0 to 6, decisions D1 to D8
 3. Fix what is found; add a test for each bug; record results in the engineering log.
 **Done when** each brain has completed a real chat and a real error case, or the failures are written down.
 
+## Track in parallel (added 2026-11-10): the character's expression and words
+Not a phase, because it does not block or wait for the alpha path. After 0.3.0 the author asked for reactions that feel alive and lines that do not repeat. Epic **E12** (spec 09, ADR-0041: events, appraisal, beats, the persona in layers and shown to the user) and epic **E13** (spec 09 section 11: a shuffle bag, escalation, tokens, a line factory) are the work. They serve hypotheses H4 (a charming naive pet worth keeping for 7 days) and H2b (attachment that leads to a brain) and are cheap in CPU. They are done in the order of the backlog's "Suggested order" and released with the next version the author orders. Real-key checks (Phase 3) and the alpha readiness checks (Phase 4) stay as they are.
+
 ## Phase 4. Alpha readiness
 Verify the assumptions in the hypotheses register before outsiders see the app.
 
