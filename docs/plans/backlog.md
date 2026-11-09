@@ -22,7 +22,7 @@ Status: **proposed 2026-11-08, asked by Vinh to be carried out story by story.**
 | E7 | Verification and release | 4 / 9 | The 8-hour soak was stopped at 2 h 23 (memory flat) to diagnose CPU; real keys, devices open; the 0.2.1 to 0.2.2 update was seen working |
 | E8 | Focus-safety and places | 6 / 13 | FS-0 to FS-4 and PL-0 done; FS-5 and FS-6 left; PL-1 and PL-7 merged into E9 |
 | E9 | The desktop as terrain | 8 / 16 | Spec 07 and ADR-0030 written; the Rust `monitors_info` and `move_to` exist (TE-2); the lane model (TE-12) and the mouse button reading (TE-13) exist; hops and falls exist (TE-7); the cat leaves the typing lane by a hop (TE-14); a hop costs about a third of what it did (TE-15) |
-| E10 | Perception | 3 / 9 | Spec 08 and ADR-0031: four of five decisions answered; the ground map waits for L3 |
+| E10 | Perception | 4 / 9 | Spec 08 and ADR-0031: four of five decisions answered; the ground map waits for L3 |
 | E11 | Reach: languages and brains | 4 / 5 | Groq is the fourth brain and Japanese is built in full, both released in 0.3.0 (BR-1, JA-1 to JA-3, ADR-0037, ADR-0038); BR-2 needs a key |
 
 Against the roadmap: Phases 0 to 2 done; **Phase 4 in progress** (E7: the soak was stopped early; PR-3 and PR-4 done; PF-3, PR-8, VE-2, VE-3 open; all the unchecked items are in [`verification-debt.md`](verification-debt.md)); Phase 3 blocked on keys (VE-4, VE-5, PE-3); Phase 5 not started (E6).
@@ -162,9 +162,9 @@ Direction agreed 2026-11-09 (ADR-0030). By decision T6 the code comes after FS-4
 | PC-2 | The notice beat before making way (look toward the pointer or the predicted caret, ears up, about 0.4 s) and looking toward the user's attention while they type near the cat | S | done (a `notice` pose: ears up and forward, eyes a little wider, a bigger turn of the eyes and head toward the work, 0.4 s before the cat hops or walks away, skipped when it is already walking; the cat also looks toward the pointer or the predicted caret while the user works near it; the lane lead went from 1.5 to 1.9 s to pay for the beat; the author looked at a test build and said to commit) | |
 | PC-3 | An event stream from Rust (typing started and stopped, a click, the monitor set changed), generalizing `focus-hint` | M | proposed | TE-13 |
 | PC-4 | A sleeping cat wakes with its stretch and makes way when the user types right by it for several seconds (gap G5); the stretch was redrawn as a real play bow | S | done (checked in the real app and by the author) | |
-| PC-5 | Rust `ground_at(points)`: the kind of thing at points under and around the cat (desktop, taskbar, app window, foreground), classification only, with a test | M | ready (decided, ADR-0031) | |
+| PC-5 | Rust `ground_at(points)`: the kind of thing at points under and around the cat (desktop, taskbar, app window, foreground), classification only, with a test | M | done (after 0.3.0, not released; no reaction uses it yet; 6 tests; on the real window: taskbar at the bottom row, a window mid-screen, 144 points in 4 to 6 ms) | |
 | PC-6 | The ground map (a coarse grid of the same classification, taken only when about to move) and perches from it; replaces the window-list mechanism of TE-10a and TE-10b | M | needs Vinh (spec/08 section 9 item 3, with the L3 decision) | PC-5 |
-| PC-7 | Ground change: the gasp and the fall when the ground under the cat disappears (the T5 decision) | M | blocked (PC-5, TE-7) | PC-5, TE-7 |
+| PC-7 | Ground change: the gasp and the fall when the ground under the cat disappears (the T5 decision) | M | needs Vinh (PC-5 is done; the author was surprised by an unprompted fall in 0.3.0, so ask whether it falls, only gasps, or stays) | PC-5, TE-7 |
 | PC-8 | The slow senses (the weekday, battery, lid open after an absence) in the same model (spec/03 lists them as not built) | M | later | |
 
 ## Suggested order

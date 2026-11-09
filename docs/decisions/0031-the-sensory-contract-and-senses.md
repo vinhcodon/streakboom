@@ -1,6 +1,6 @@
 # ADR-0031: Peak perceives shapes and activity, never meaning; it may sense the ground under it; it notices before it acts
 
-- **Status:** accepted (decisions; partly built: the button reading and the click anchor in 0.2.5, the sleeping cat that wakes in 0.2.4; the notice beat (PC-2) in 0.3.0; the ground sense is not)
+- **Status:** accepted (decisions; partly built: the button reading and the click anchor in 0.2.5, the sleeping cat that wakes in 0.2.4; the notice beat (PC-2) in 0.3.0; the ground sense (PC-5) is built after 0.3.0 and no reaction uses it yet)
 - **Date:** 2026-11-09
 - **Decided by:** Vinh (author), with Claude
 

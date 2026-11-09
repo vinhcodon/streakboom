@@ -108,7 +108,7 @@ npm run tauri dev          # run the app with hot reload
 ```powershell
 npm test                   # Node tests for the pure logic (src/lib/*.test.ts), 164 tests
 npm run check              # svelte-check (types)
-cd src-tauri; cargo test   # Rust tests (the four brain clients against a mock server, window and monitor geometry, the focus probe), 62 tests
+cd src-tauri; cargo test   # Rust tests (the four brain clients against a mock server, window and monitor geometry, the focus probe, the ground sense), 68 tests
 ```
 
 ```powershell
@@ -173,7 +173,7 @@ The documents are split by the kind of statement they make, so each fact has one
 
 **Shipped.** 0.2.0: the naive pet, the key flow, three brains, memory, gestures, emotional reactions, opt-in stats with Copy stats and the Bond Days counters, the installer and signed auto-update with fallbacks. 0.2.1 to 0.2.3: the daily chat cap in the pet's own voice, a much lighter redraw (the median processor use fell from about 17% to about 9% of one core). 0.2.4: focus-safety (Peak keeps still and quiet while you work and makes way), a real wake-up stretch, a cat-like gait. 0.2.5: hops between rows and the typing lane (Peak leaves the path of your text). 0.3.0: Japanese (a beta, the third language), Groq as the fourth brain, and Peak notices before it makes way (it looks toward your work, ears up).
 
-**Next.** Sensing what is under its feet, a native reader for the Japanese text (the beta label comes off after that), and the checks that need other machines or people: the Groq, Claude and OpenAI brains with real keys, a second and a lower-end computer, several monitors and display scales, and a handful of observed first-time users. **Open:** a lower processor target (the floor is about 4% with software drawing), a place to send stats (or keep Copy stats), code signing, crash reporting without content, and a macOS port. The ordered plan is in [`docs/plans/roadmap.md`](docs/plans/roadmap.md), the stories in [`docs/plans/backlog.md`](docs/plans/backlog.md), and everything built but not yet checked in [`docs/plans/verification-debt.md`](docs/plans/verification-debt.md).
+**Next.** A reaction to what is under its feet (the sense exists, nothing uses it yet), a native reader for the Japanese text (the beta label comes off after that), and the checks that need other machines or people: the Groq, Claude and OpenAI brains with real keys, a second and a lower-end computer, several monitors and display scales, and a handful of observed first-time users. **Open:** a lower processor target (the floor is about 4% with software drawing), a place to send stats (or keep Copy stats), code signing, crash reporting without content, and a macOS port. The ordered plan is in [`docs/plans/roadmap.md`](docs/plans/roadmap.md), the stories in [`docs/plans/backlog.md`](docs/plans/backlog.md), and everything built but not yet checked in [`docs/plans/verification-debt.md`](docs/plans/verification-debt.md).
 
 ## Art and credits 🎨
 

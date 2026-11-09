@@ -1,5 +1,6 @@
 mod brain;
 mod claude;
+mod ground;
 mod groq;
 mod openai;
 mod layout;
@@ -487,6 +488,31 @@ fn edge_room(window: WebviewWindow, dir: i32) -> Result<i32, String> {
     let (l, t, s) = pet_px(scale);
     let area = area_at(&window, (pos.x + l + s / 2) as f64, (pos.y + t + s / 2) as f64).ok_or("no monitor")?;
     Ok(layout::room_to_edge(area, pos.x, l, s, dir, scale))
+}
+
+/// What is under the points the page gives (physical px of the screen): the kind of thing at each, nothing else (see
+/// `ground.rs`). Only asked for when a decision needs it; about 4 ms for 144 points.
+#[tauri::command]
+fn ground_at(points: Vec<(i32, i32)>) -> Vec<ground::Ground> {
+    points.into_iter().take(256).map(|(x, y)| ground::ground_of_point(x, y)).collect()
+}
+
+#[derive(Serialize)]
+struct GroundUnder {
+    /// What the cat stands over, from the points just below its feet.
+    under: ground::Ground,
+    /// The kind at each of those points, left to right.
+    points: Vec<ground::Ground>,
+}
+
+/// What the cat stands over now: the kind of thing just below its left foot, its middle and its right foot.
+#[tauri::command]
+fn ground_under_cat(window: WebviewWindow) -> Result<GroundUnder, String> {
+    let pos = window.outer_position().map_err(|e| e.to_string())?;
+    let scale = window.scale_factor().map_err(|e| e.to_string())?;
+    let (l, t, s) = pet_px(scale);
+    let points: Vec<ground::Ground> = ground::feet_points(pos.x, pos.y, l, t, s).into_iter().map(|(x, y)| ground::ground_of_point(x, y)).collect();
+    Ok(GroundUnder { under: ground::standing_on(&points), points })
 }
 
 #[derive(Serialize)]
@@ -1373,6 +1399,8 @@ pub fn run() {
             focus_probe,
             edge_room,
             vertical_room,
+            ground_at,
+            ground_under_cat,
             monitors_info,
             move_to,
             pet_place,
