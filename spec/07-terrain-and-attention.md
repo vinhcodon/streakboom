@@ -1,6 +1,6 @@
 # 07. The desktop as terrain: a cost field of fixed relief and the user's attention
 
-Status: **draft; the direction was agreed by Vinh on 2026-11-09 (see section 0); no code exists.** It builds on [`06-character-and-movement.md`](06-character-and-movement.md) (focus-safety, favorite places) and replaces its "places on a 3 x 3 grid" with the model below. Plan: [`../docs/plans/terrain-and-attention.md`](../docs/plans/terrain-and-attention.md). Decision: [ADR-0030](../docs/decisions/0030-terrain-as-a-cost-field.md). Backlog: epic E9.
+Status: **draft; the direction was agreed by Vinh on 2026-11-09 (see section 0); no code exists.** It builds on [`06-character-and-movement.md`](06-character-and-movement.md) (focus-safety, favorite places) and replaces its "places on a 3 x 3 grid" with the model below. Plan: [`../docs/plans/terrain-and-attention.md`](../docs/plans/terrain-and-attention.md). Decision: [ADR-0030](../docs/decisions/0030-terrain-as-a-cost-field.md). Backlog: epic E9. What Peak can sense and how it reacts (the layers below are its beliefs), with the gaps found against the specs, is in [`08-perception.md`](08-perception.md).
 
 ## 0. How this came about, and what is decided
 
@@ -78,6 +78,8 @@ Nothing in this makes the cat louder: it moves less than today while the user wo
 
 ## 4. Window relief (L3, later)
 Only when Vinh gives the permission (a Settings switch, default to be decided then): a Rust command returns the visible, non-minimized, non-cloaked, non-own top-level windows as rectangles (from the extended frame bounds, so invisible borders do not count), in z-order, with the maximized flag. The terrain then adds: top edges as **perches** where there is headroom for the cat and the edge is not covered by a higher window (the visible part only); side edges as **walls**; the cat hops up to a perch, sits, naps and watches. **Surfaces must be stable for half a second before they are used** (window animations make the geometry jump). When the surface under the cat disappears or moves (a window dragged, minimized or closed), the cat **falls to the surface below** with a `gasp` (T5). A maximized window offers nothing but its interior, which is plain field: this is the common case, and the cat lives there by layers A and B alone.
+
+**Alternative mechanism (spec/08 section 4, proposed):** instead of listing every window and subtracting the ones above, ask the system for the **topmost window at the points of a coarse grid** and classify each point (bare desktop, taskbar, an app window, the foreground window). Z-order is then handled by the system, no window list, titles or process names are involved, and a perch is a place where an app window has bare desktop above it. It needs the same permission as the window list. Measured on 2026-11-09: 144 points in about 4 ms; on the author's screen every point was one app window (a maximized window), which confirms that the interior is the plain and that this map mostly says which window is under the cat.
 
 ## 5. Rejected
 - **Detecting blank areas of the screen** (sampling pixels, even at low resolution) so that Peak can sit on "empty" parts of a document: that is reading the screen, against the privacy principle, heavy, and flagged by security tools. If ever wanted it would be an opt-in experiment with its own decision record, not part of this.
