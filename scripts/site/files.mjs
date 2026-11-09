@@ -37,7 +37,7 @@ export function llms(ctx) {
 ## Pages
 - [Streakboom, home (English)](${ORIGIN}/): what it is, features, install steps, FAQ, latest changes
 - [Streakboom, trang chủ (Tiếng Việt)](${ORIGIN}/vi/): the same in Vietnamese
-- [Streakboom ホーム（日本語）](${ORIGIN}/ja/): the same in Japanese (the app itself is in English and Vietnamese)
+- [Streakboom ホーム（日本語）](${ORIGIN}/ja/): the same in Japanese (the app speaks Japanese as a beta)
 - [Privacy](${ORIGIN}/privacy/): what Streakboom keeps, what it sends and to whom, what Peak notices around it
 - [Changelog](${ORIGIN}/changelog/): release notes of every version
 

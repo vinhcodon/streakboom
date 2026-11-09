@@ -1,4 +1,4 @@
-// The text of the site in English and Vietnamese: the single source the page builder (scripts/build-site.mjs)
+// The text of the site in English, Vietnamese and Japanese: the single source the page builder (scripts/build-site.mjs)
 // fills the templates from. These strings are our own (never user or network content), so the keys listed in
 // HTML_KEYS (and only those) may carry HTML. Placeholders: {version}, {date}, {exe}.
 import { SCENES } from "./scenes.js";
