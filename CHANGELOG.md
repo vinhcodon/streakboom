@@ -2,6 +2,13 @@
 
 Release notes of every version of Streakboom, newest first. **GitHub keeps the latest release and the one right before it** (installer and update manifest; the previous one is a way back if the newest is bad); when a new version is published, anything older is deleted together with its tag and its notes stay here (ADR-0028). The git history keeps every commit.
 
+## 0.3.0 (2026-11-09)
+- A third language: Peak now speaks Japanese (日本語, marked beta in Settings). The whole interface, all the scripted lines, the lines about what it remembers and the instructions to the AI brain are in Japanese, in a warm casual voice. The text was written by an AI and has not yet been read by a native speaker, so some sentences may sound odd. Settings, General, Language chooses it; "Auto" picks it on a Japanese Windows.
+- A fourth AI brain: Groq, offered right after Gemini (the order is Gemini, Groq, Claude, OpenAI). Groq has a free tier with limits; Settings, Brain tags each brain "free tier" or "paid". It has not been tried with a real key yet.
+- Peak now notices before it makes way: when your work comes near it (or the text you are typing is about to reach it) it stops for a moment, looks toward your work with its ears up, and then walks or hops away. While you work near it, it also looks toward your pointer or toward where your text is heading.
+- Fixed: with the mouse buttons swapped in Windows (left-handed setup) Peak read the wrong button and guessed the wrong place where you were typing; it now follows the button you click with.
+- Fixed: the Vietnamese note about what Peak sends to the AI brain always named Google; it now names the brain you use.
+
 ## 0.2.5 (2026-11-09)
 - Peak keeps out of the way of what you type: from where you last clicked and how long you have been typing it guesses where the text is heading, and before the text reaches it Peak hops up or down to another row (a sleeping Peak wakes first, and curls up if there is no room to hop). The guess can be wrong, so Peak sometimes hops when it was not needed; it waits at least 10 seconds between two hops.
 - Peak now changes rows by hopping along an arc, so it moves up and down as well as sideways.
