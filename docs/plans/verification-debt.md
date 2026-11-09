@@ -34,6 +34,9 @@ How the agent checks on the real machine: run from the author's Terminal panel (
 | V-28 | The cost of hops and falls (TE-15) and the CPU of a walk away and of the probe loop | `scripts/cpu-breakdown.ps1` and `hop_cpu`-style windows | Claude | 2026-11-09 |
 | V-29 | `cargo clippy` is not installed on this machine, so no lint run has been done | `rustup component add clippy` | Claude | 0.2.1 |
 
+| V-30 | The typing lane with real, varied typing: a sleeping cat in the way (it was seen in the log once, waking after 0.6 s, but not by eye), the cat walking into the band, a text field near the top or bottom edge (the side with room), lines that wrap, text that was already there, typing in a title bar or a browser | use it for a week | Vinh | 2026-11-09 |
+| V-31 | How often the cat hops: the author's test session logged 15 lane hops in about 2 minutes (a 6 s cool-down); is that too busy, and what does it cost (TE-15)? | read `window.__pet.trail()` after a day's use; consider 10 to 12 s | either | 2026-11-09 |
+
 ## C. Things that are written but not done (not verification, kept here so they are not lost)
-- The privacy text in the README and on the website for the mouse button reading, the attention field and the ground type (due with TE-14 and TE-9).
+- The privacy text on the **website** for the mouse button reading (the README has it since TE-14); the attention field and the ground type when TE-9 ships. The website session reads `CHANGELOG.md` and must be told when the lane is released.
 - The website session has to be told when the behaviour it describes changes (focus-safety, making way; the typing lane when it ships): its source of truth is `CHANGELOG.md`.

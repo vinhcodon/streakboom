@@ -18,8 +18,14 @@ export const ANCHOR_TTL_MS = 60_000;
 export const TYPING_GAP_MS = 1500;
 /** The typing time is capped (a long line wraps in real text, so the prediction stops growing). */
 export const TAU_CAP_S = 120;
-/** A typist makes about 5 characters a second at about 9 px each. */
-export const CARET_PX_PER_S = 45;
+/**
+ * A typist makes 5 to 7 characters a second at about 8 to 9 px each. The first value, 45 px/s, was too slow: the
+ * author found that the text reached the cat before it moved (2026-11-09), so the prediction runs a little fast, which
+ * only costs an earlier hop.
+ */
+export const CARET_PX_PER_S = 60;
+/** The cat needs a moment to start (a probe every 0.25 s, a decision, the hop itself): the lane looks this far ahead. */
+export const LANE_LEAD_S = 1.5;
 /** Half the height of the band around the anchor row: half the cat plus a margin. */
 export const LANE_HALF_H = 100;
 /** The band reaches this far to the left of the anchor (what is typed already) and this far past the caret. */
@@ -78,7 +84,7 @@ export function laneFor(anchor: { x: number; y: number }, tauMs: number): Lane {
   const tau = Math.min(Math.max(tauMs, 0) / 1000, TAU_CAP_S);
   return {
     x0: anchor.x - LANE_BEHIND,
-    x1: anchor.x + CARET_PX_PER_S * tau + LANE_AHEAD,
+    x1: anchor.x + CARET_PX_PER_S * (tau + LANE_LEAD_S) + LANE_AHEAD,
     y0: anchor.y - LANE_HALF_H,
     y1: anchor.y + LANE_HALF_H,
   };

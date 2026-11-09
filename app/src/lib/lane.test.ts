@@ -6,6 +6,7 @@ import {
   CARET_PX_PER_S,
   ESCAPE_PX,
   LANE_AHEAD,
+  LANE_LEAD_S,
   LANE_BEHIND,
   LANE_HALF_H,
   STEP_CAP_MS,
@@ -81,7 +82,7 @@ test("the typing time is capped", () => {
 
 test("the band reaches behind the anchor and past the predicted caret, and half a cat above and below the row", () => {
   const l = laneFor({ x: 800, y: 500 }, 4000);
-  assert.deepEqual(l, { x0: 800 - LANE_BEHIND, x1: 800 + CARET_PX_PER_S * 4 + LANE_AHEAD, y0: 500 - LANE_HALF_H, y1: 500 + LANE_HALF_H });
+  assert.deepEqual(l, { x0: 800 - LANE_BEHIND, x1: 800 + CARET_PX_PER_S * (4 + LANE_LEAD_S) + LANE_AHEAD, y0: 500 - LANE_HALF_H, y1: 500 + LANE_HALF_H });
   assert.ok(inLane(l, 800, 500));
   assert.ok(!inLane(l, 800, 500 + LANE_HALF_H + 1));
   assert.ok(!inLane(l, 800 - LANE_BEHIND - 1, 500));
@@ -111,7 +112,7 @@ test("the cat is crowded only when the user is active and it stands inside the b
   // above the band
   assert.equal(run([[0, catAt(1000, 500 - LANE_HALF_H - 5)]]).out.crowded, false);
   // far past where the text can reach
-  assert.equal(run([[0, catAt(800 + LANE_AHEAD + 50, 500)]]).out.crowded, false);
+  assert.equal(run([[0, catAt(800 + LANE_AHEAD + CARET_PX_PER_S * LANE_LEAD_S + 50, 500)]]).out.crowded, false);
   // behind the anchor, outside the band
   assert.equal(run([[0, catAt(800 - LANE_BEHIND - 50, 500)]]).out.crowded, false);
 });
@@ -140,8 +141,8 @@ test("the text reaches a cat that stands ahead of the caret as the user keeps ty
     if (r.out.crowded) crowdedAt = t;
   }
   assert.ok(crowdedAt > 0, "the band eventually reaches the cat");
-  // (1300 - 800 - LANE_AHEAD) px at 45 px/s
-  assert.ok(Math.abs(crowdedAt / 1000 - (500 - LANE_AHEAD) / CARET_PX_PER_S) < 0.6);
+  // the band reaches 1300 when 800 + 60 (t + 1.5 s) + 200 = 1300
+  assert.ok(Math.abs(crowdedAt / 1000 - ((500 - LANE_AHEAD) / CARET_PX_PER_S - LANE_LEAD_S)) < 0.6);
 });
 
 test("with the idle time unknown there is no lane and no wrong crowding", () => {

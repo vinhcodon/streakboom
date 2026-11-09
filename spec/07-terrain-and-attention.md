@@ -64,10 +64,11 @@ Moving away from attention is a walk, then (if needed) a hop or two: never a lon
 
 Nothing in this makes the cat louder: it moves less than today while the user works and more while the user rests. Lines (spec/03) keep their own rules.
 
-### 3.1 The typing lane (agreed 2026-11-09; the model `lane.ts` and the mouse button reading are built, the cat does not use them yet: TE-14)
+### 3.1 The typing lane (agreed 2026-11-09; built in TE-12, TE-13 and TE-14: the cat hops out of the band)
 **The gap it closes.** Pointer proximity makes the cat leave when the user starts typing near it. It does not notice when the **text** then runs toward the cat, because the pointer stays where it was. The real caret is not available: the system caret (`GetGUIThreadInfo`) is not reported by Chromium and Electron apps, which is most modern software (tested on 2026-11-09 on the author's machine, foreground class `Chrome_WidgetWin_1`: no caret). UI Automation can give it but is heavy, needs the browser's accessibility mode and looks like surveillance (ADR-0029); reading pixels near the cat is reading the screen. So the caret is **predicted**.
 **The model (pure logic in `lane.ts`, proposals to tune):**
 - **Anchor A:** where the user last clicked (the caret was put there), taken from the mouse button state; if there was no click since typing began, the pointer position when typing began. A new click replaces it. It expires after 60 s without any input.
+- **Tuned after the author's first try (2026-11-09):** the first version moved after the text had reached the cat. Now the predicted caret runs at **60 px/s** (not 45) and the band looks **1.5 s ahead**; the cat can hop **from a walk**; a **sleeping** cat the band reaches wakes after 0.6 s (not 4 s); the lane has its own **6 s cool-down** between hops (the pointer rule keeps 25 s); the poll starts when the user is active and clicked on a row within 200 px of the cat, even with the pointer far away. The author then said the timing was right.
 - **Typing time tau:** seconds of continuous activity (`idleMs < 1.5 s`) since the anchor was set, capped at 120 s. Only the time is counted, never keys.
 - **Predicted caret:** `x = A.x + 45 px/s * tau` along the row `y = A.y` (a typist makes about 5 characters a second at about 9 px each).
 - **The lane:** the band `|y - A.y| <= 100 px` (half the cat plus a margin) from `A.x - 100` to `predicted x + 200` px: what is typed so far and what is about to be.

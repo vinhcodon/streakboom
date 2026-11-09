@@ -94,6 +94,7 @@
   import { LEAVE_MIN_ROOM_PX, LEAVE_PX, SLEEP_CROWD_MS, decideFocus, initialFocus, wakesToMakeWay, type FocusOut } from "$lib/focus";
   import { glideOut, rampIn, takeSteps } from "$lib/gait";
   import { chainAt, planFall, splitHop, totalMs, type Flight } from "$lib/hop";
+  import { escapeRow, initialLane, stepLane, type LaneOut } from "$lib/lane";
   import { engage as engagePure, markShown as markShownPure, minuteIncrement, noShown, type DayCounter, type DayStat } from "$lib/bond";
 
   // Pet window layout (logical px) - keep in sync with src-tauri/src/lib.rs.
@@ -347,10 +348,33 @@
   let focusState = initialFocus();
   let lastPointer: { dx: number; dy: number; t: number } | null = null;
   let focusOut: FocusOut = FOCUS_ALLOW;
+  // The typing lane (spec/07 section 3.1, TE-14): where the text the user types is thought to run (`lane.ts`), found from
+  // the last click and the time spent typing. Stepped on every probe; no keys are read, only the time of the last input.
+  const NO_LANE: LaneOut = { lane: null, caretX: null, crowded: false };
+  let laneState = initialLane();
+  let laneOut: LaneOut = NO_LANE;
+  let laneCat = { x: 0, y: 0 }; // the cat's centre at the last probe (logical px of the screen)
   async function probeFocus(): Promise<FocusOut> {
     try {
-      const p = await invoke<{ idleMs: number | null; dx: number | null; dy: number | null; over: boolean }>("focus_probe");
+      const p = await invoke<{
+        idleMs: number | null;
+        dx: number | null;
+        dy: number | null;
+        over: boolean;
+        catX: number | null;
+        catY: number | null;
+        click: { x: number; y: number; ageMs: number } | null;
+      }>("focus_probe");
       const now = Date.now();
+      if (p.catX !== null && p.catY !== null) {
+        laneCat = { x: p.catX, y: p.catY };
+        const lr = stepLane(laneState, { idleMs: p.idleMs, cat: laneCat, pointer: p.dx !== null && p.dy !== null ? { dx: p.dx, dy: p.dy } : null, click: p.click }, now);
+        laneState = lr.state;
+        laneOut = lr.out;
+      } else {
+        laneState = initialLane();
+        laneOut = NO_LANE;
+      }
       // "moving" = the pointer travelled more than a few px since the last reading a moment ago
       const moving =
         p.dx !== null && p.dy !== null && lastPointer !== null && now - lastPointer.t < 1000 && Math.hypot(p.dx - lastPointer.dx, p.dy - lastPointer.dy) > 6;
@@ -362,6 +386,8 @@
     } catch {
       focusState = initialFocus();
       focusOut = FOCUS_ALLOW; // unknown: no restriction, as before
+      laneState = initialLane();
+      laneOut = NO_LANE;
     }
     noteCrowded(focusOut);
     return focusOut;
@@ -372,6 +398,13 @@
   // The hit-test thread in Rust tells the page only when "the user may be working near the cat" starts or ends
   // (event "focus-hint"); until then nothing is polled. While it holds, the probe is read four times a second.
   const LEAVE_COOLDOWN_MS = 25_000; // never make way more than once in this time
+  // The typing lane is urgent (the text is coming), so it has its own, shorter cool-down, and a sleeping cat that the
+  // lane reaches wakes after a moment instead of after the 4 s of the pointer rule. The author found the first
+  // version moved only after the text had reached the cat (2026-11-09).
+  const LANE_COOLDOWN_MS = 6_000;
+  const SLEEP_LANE_MS = 600;
+  let lastLaneHop = 0;
+  let laneNoted = false; // one trail line per crowded episode (the debugger)
   let focusEngaged = false;
   let focusLoop: ReturnType<typeof setInterval> | undefined;
   let lastLeave = 0;
@@ -381,10 +414,13 @@
   // Asked on every probe while the cat feels crowded: `makeWay` acts only when the cat is standing, so if the crowding
   // began while it was busy (walking, being held) it makes way as soon as it stands, and the cool-down keeps it calm.
   function noteCrowded(fo: FocusOut) {
-    if (fo.crowded) {
+    if (fo.crowded || laneOut.crowded) {
       crowdedSince ??= Date.now();
       void makeWay(fo.leaveDir);
-    } else crowdedSince = null;
+    } else {
+      crowdedSince = null;
+      laneNoted = false;
+    }
   }
 
   const trail: string[] = []; // the last few decisions, for the debugger (window.__pet.trail)
@@ -395,6 +431,35 @@
 
   async function makeWay(away: 1 | -1) {
     const now = Date.now();
+    if (laneOut.crowded && laneOut.lane && !flying) {
+      const why = quiet ? "quiet" : panel !== null ? "a panel is open" : now - lastLaneHop < LANE_COOLDOWN_MS ? "cool-down" : pose === "held" ? "held" : null;
+      if (!laneNoted) {
+        laneNoted = true;
+        note(`lane crowded: pose ${pose}, caret ${Math.round(laneOut.caretX ?? 0)}, cat ${Math.round(laneCat.x)},${Math.round(laneCat.y)}${why ? `, waiting: ${why}` : ""}`);
+      }
+      if (why) return;
+      if (pose === "sleep" || pose === "drowsy") {
+        // asleep it is woken by the lane after a moment (and only if it could then leave), then it hops
+        if (crowdedSince === null || now - crowdedSince < SLEEP_LANE_MS) return;
+        let v = { up: 0, down: 0 };
+        try {
+          v = await invoke<{ up: number; down: number }>("vertical_room");
+        } catch {
+          /* unknown: stay asleep */
+        }
+        if ((pose === "sleep" || pose === "drowsy") && Math.max(v.up, v.down) >= LEAVE_MIN_ROOM_PX) {
+          note(`lane wakes the cat: room ${v.up}/${v.down}`);
+          enter("idle");
+        }
+        return;
+      }
+      if (pose === "idle" || pose === "look" || pose === "walk") {
+        lastLaneHop = now;
+        lastLeave = now;
+        return void (await hopOutOfLane());
+      }
+      return;
+    }
     if (quiet || panel !== null || now - lastLeave < LEAVE_COOLDOWN_MS) return;
     if (pose === "sleep" || pose === "drowsy") {
       // Asleep its senses are dull: it wakes only after several seconds of the user working right by it, and only
@@ -429,6 +494,27 @@
     } else enter("drowsy"); // nowhere to go: it yawns and curls up where it is
   }
 
+  /**
+   * The text the user types is about to run through the cat's row (TE-14): walking sideways cannot escape it (the caret
+   * outpaces the walk), so the cat hops to a row at least 160 px above or below the typing row, on the side with more
+   * room, and curls up where it is if neither side has room. It lands outside the band, so the next probe is calm.
+   */
+  async function hopOutOfLane() {
+    const lane = laneOut.lane;
+    if (!lane) return;
+    let room = { up: 0, down: 0 };
+    try {
+      room = await invoke<{ up: number; down: number }>("vertical_room");
+    } catch {
+      /* unknown: no room */
+    }
+    const esc = escapeRow(lane, laneCat.y, room.up, room.down);
+    note(`lane hop: ${esc ? `${esc.dir < 0 ? "up" : "down"} ${Math.round(esc.dist)}` : "no room"}, room ${room.up}/${room.down}, caret ${Math.round(laneOut.caretX ?? 0)}`);
+    if (pose !== "idle" && pose !== "look" && pose !== "walk") return; // something else happened while asking
+    if (esc) await fly(splitHop(0, esc.dir * esc.dist), "walk");
+    else enter("drowsy"); // nowhere to go: it yawns and curls up where it is
+  }
+
   /** After a walk that was making way: if the user is still working right by the cat, it curls up where it stopped. */
   function settleAfterLeaving() {
     setTimeout(async () => {
@@ -440,14 +526,14 @@
 
   async function focusTick() {
     await probeFocus();
-    if (!focusEngaged && !focusOut.crowded) {
+    if (!focusEngaged && !focusOut.crowded && !laneOut.crowded) {
       clearInterval(focusLoop);
       focusLoop = undefined;
     }
   }
   function onFocusHint(engaged: boolean) {
     focusEngaged = engaged;
-    if ((engaged || focusOut.crowded) && !focusLoop) {
+    if ((engaged || focusOut.crowded || laneOut.crowded) && !focusLoop) {
       void focusTick();
       focusLoop = setInterval(focusTick, 250);
     }
@@ -1561,7 +1647,7 @@
       }
       scheduleProactive();
       // Test hook (like window.__cat): lets a debugger trigger the real unprompted-line path now.
-      (window as unknown as Record<string, unknown>).__pet = { proactive: () => void fireProactive(), focus: () => ({ ...focusOut, lastLeave, pose }), trail: () => trail, sleep: () => enter("drowsy"), wake: () => enter("idle"), hop: (dx: number, dy: number) => void fly(splitHop(dx, dy), "walk"), fall: (d: number) => void fly([planFall(d)], "gasp") };
+      (window as unknown as Record<string, unknown>).__pet = { proactive: () => void fireProactive(), focus: () => ({ ...focusOut, lastLeave, pose }), trail: () => trail, sleep: () => enter("drowsy"), wake: () => enter("idle"), hop: (dx: number, dy: number) => void fly(splitHop(dx, dy), "walk"), lane: () => ({ ...laneOut, state: laneState, cat: laneCat }), fall: (d: number) => void fly([planFall(d)], "gasp") };
       let lastTick = Date.now();
       minuteTimer = setInterval(() => {
         const now = Date.now();

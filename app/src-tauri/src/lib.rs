@@ -418,6 +418,24 @@ fn edge_room(window: WebviewWindow, dir: i32) -> Result<i32, String> {
     Ok(layout::room_to_edge(area, pos.x, l, s, dir, scale))
 }
 
+#[derive(Serialize)]
+struct VerticalRoom {
+    up: i32,
+    down: i32,
+}
+
+/// How far the cat can move up and down before the edges of the work area of its monitor, in logical px: the room a
+/// hop out of the typing lane has.
+#[tauri::command]
+fn vertical_room(window: WebviewWindow) -> Result<VerticalRoom, String> {
+    let pos = window.outer_position().map_err(|e| e.to_string())?;
+    let scale = window.scale_factor().map_err(|e| e.to_string())?;
+    let (l, t, s) = pet_px(scale);
+    let area = area_at(&window, (pos.x + l + s / 2) as f64, (pos.y + t + s / 2) as f64).ok_or("no monitor")?;
+    let (up, down) = layout::room_vertical(area, pos.y, t, s, scale);
+    Ok(VerticalRoom { up, down })
+}
+
 // ------------------------------------------------------------------- dragging
 
 /// Start dragging the pet. We do the drag ourselves (instead of the OS drag) so the pet can be
@@ -1079,7 +1097,15 @@ fn spawn_hit_test(app: AppHandle, win: WebviewWindow) {
             }
             state.focus_ptr.store(ptr_ok, Ordering::Relaxed);
             // tell the page only when "the user may be working near the cat" changes (no polling while it is false)
-            let hint = offset.is_some_and(|(dx, dy)| layout::engaged_near(idle, dx, dy));
+            let click_at = state.click_at.load(Ordering::Relaxed);
+            let lane_hint = ptr_ok
+                && click_at != 0
+                && layout::engaged_lane(
+                    idle,
+                    Some(layout::age_ms(now_ms(), click_at)),
+                    f64::from_bits(state.click_y.load(Ordering::Relaxed)) - f64::from_bits(state.focus_cat_y.load(Ordering::Relaxed)),
+                );
+            let hint = offset.is_some_and(|(dx, dy)| layout::engaged_near(idle, dx, dy)) || lane_hint;
             if hint != last_hint {
                 last_hint = hint;
                 let _ = app.emit("focus-hint", hint);
@@ -1269,6 +1295,7 @@ pub fn run() {
             brain_set_model,
             focus_probe,
             edge_room,
+            vertical_room,
             monitors_info,
             move_to,
             pet_place,

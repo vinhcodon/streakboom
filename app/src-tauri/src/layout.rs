@@ -102,6 +102,27 @@ pub fn engaged_near(idle_ms: Option<u32>, dx: f64, dy: f64) -> bool {
     idle_ms.is_some_and(|i| i < ENGAGE_IDLE_MS) && dx.hypot(dy) < ENGAGE_RADIUS_PX
 }
 
+/// The typing lane (spec/07 section 3.1, `src/lib/lane.ts`) makes the page poll even when the pointer is far from the
+/// cat: the user is active and clicked, within the last `LANE_ANCHOR_MS`, on a row within `LANE_ROW_PX` (logical px)
+/// of the cat's centre, so text typed there may be running toward the cat. A coarse trigger a little wider than the
+/// exact lane (half height 100 px), which `lane.ts` decides; keep them in step.
+pub const LANE_ANCHOR_MS: u64 = 60_000;
+pub const LANE_ROW_PX: f64 = 200.0;
+
+pub fn engaged_lane(idle_ms: Option<u32>, click_age_ms: Option<u64>, click_dy: f64) -> bool {
+    idle_ms.is_some_and(|i| i < ENGAGE_IDLE_MS) && click_age_ms.is_some_and(|a| a < LANE_ANCHOR_MS) && click_dy.abs() <= LANE_ROW_PX
+}
+
+/// How far the cat can move up and down before the work-area edges, in logical px (0 against an edge): the room a
+/// hop out of the typing lane has. `win_y` is the pet window's top edge (physical px); the cat is a `size` square
+/// at `top` inside it.
+pub fn room_vertical(a: Area, win_y: i32, top: i32, size: i32, scale: f64) -> (i32, i32) {
+    let up = (win_y + top) - a.y;
+    let down = a.b - (win_y + top + size);
+    let lg = |v: i32| (v.max(0) as f64 / scale).round() as i32;
+    (lg(up), lg(down))
+}
+
 /// How far the cat can walk before the work-area edge in direction `dir` (+1 right, -1 left), in logical px.
 /// `win_x` is the pet window's left edge (physical px); the cat is a `size` square at `left` inside it.
 pub fn room_to_edge(a: Area, win_x: i32, left: i32, size: i32, dir: i32, scale: f64) -> i32 {
@@ -324,6 +345,30 @@ mod tests {
         assert_eq!(age_ms(10_000, 4_000), 6_000);
         assert_eq!(age_ms(5, 5), 0);
         assert_eq!(age_ms(5, 9), 0);
+    }
+
+    #[test]
+    fn the_lane_trigger_needs_activity_a_recent_click_and_the_same_row() {
+        assert!(engaged_lane(Some(0), Some(5_000), 40.0)); // active, a click 5 s ago, 40 px off the cat's row
+        assert!(engaged_lane(Some(0), Some(5_000), -LANE_ROW_PX)); // the edge of the row counts
+        assert!(!engaged_lane(Some(0), Some(5_000), 260.0)); // another row
+        assert!(!engaged_lane(Some(ENGAGE_IDLE_MS), Some(5_000), 0.0)); // not active any more
+        assert!(!engaged_lane(Some(0), Some(LANE_ANCHOR_MS), 0.0)); // the click is too old
+        assert!(!engaged_lane(Some(0), None, 0.0)); // no click
+        assert!(!engaged_lane(None, Some(5_000), 0.0)); // idle time unknown
+    }
+
+    #[test]
+    fn the_room_up_and_down_is_measured_from_the_cat_not_the_window() {
+        // pet window at y=500 with the cat (120 px) at offset 10: the cat spans 510..630; work area 0..1040
+        assert_eq!(room_vertical(A, 500, 10, 120, 1.0), (510, 1040 - 630));
+        // at 125% the physical room is divided into logical px
+        let (up, down) = room_vertical(A, 500, 12, 150, 1.25);
+        assert_eq!((up, down), (((512) as f64 / 1.25).round() as i32, ((1040 - 662) as f64 / 1.25).round() as i32));
+        // against an edge, or past it, there is no room
+        assert_eq!(room_vertical(A, -10, 10, 120, 1.0).0, 0);
+        assert_eq!(room_vertical(A, 1040 - 130, 10, 120, 1.0).1, 0);
+        assert_eq!(room_vertical(A, 5000, 10, 120, 1.0).1, 0);
     }
 
     #[test]
