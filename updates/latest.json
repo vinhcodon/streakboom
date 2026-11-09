@@ -1,11 +1,11 @@
 {
-    "version":  "0.2.4",
-    "notes":  "Focus-safety (Peak keeps still and quiet while you work and makes way when you work next to it), a real stretch when it wakes, calmer walking, lighter redraw.",
-    "pub_date":  "2026-11-09T04:56:54Z",
+    "version":  "0.2.5",
+    "notes":  "Peak keeps out of the way of what you type: it guesses where the text is heading and hops up or down to another row before the text reaches it.",
+    "pub_date":  "2026-11-09T09:08:10Z",
     "platforms":  {
                       "windows-x86_64":  {
-                                             "signature":  "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVUcHBlQXhYUlVURml5eGtYcEtyVnI4eW9aR1lhZ0FaQmw2Tng2dlNWcTZ2VFcwVlhYUTN2M1JDSVNkdG55eU1OZ2x1UzZLN1NzVlk1L3dYNkhhUDk1WUtiY0hmVGpkRXdnPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzk0MjAwMjEzCWZpbGU6U3RyZWFrYm9vbV8wLjIuNF94NjQtc2V0dXAuZXhlCXZlcnNpb246MC4yLjQKTW1OUzNtM3JBOXVFRVM5eWRYN3Fja0xYR1dZQnprOXhuK2k1ZkM4dkR1a216dUxzbTU1bStxWEwxYS9rT1pWQlgwd0hZRWR5MjlkZkNPTE5NczU4QlE9PQo=",
-                                             "url":  "https://api.github.com/repos/vinhcodon/streakboom/releases/assets/726282058"
+                                             "signature":  "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVUcHBlQXhYUlVURmlrRmRUOTNWaEZWdUhWREZJcGlsTGZDOU5sczRTS09BYXEyS25NUVZIM04vbklyanoyYjd2ZjJMb1VvNG83QmhjUEdhNVJ1WkhtcENBMk9GOUZXNkFVPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzk0MjE1Mjg4CWZpbGU6U3RyZWFrYm9vbV8wLjIuNV94NjQtc2V0dXAuZXhlCXZlcnNpb246MC4yLjUKcHlOTFkzOURPYjJaTGdwVVFkQ2RldFVFbnpjRngyNFZDZTRuVDZpTUw2d01vNmFDQzM4T3R6VG9GK3lSdENQanM4VXJONUE1MHM1VHkxVUMvREpBRHc9PQo=",
+                                             "url":  "https://api.github.com/repos/vinhcodon/streakboom/releases/assets/726859135"
                                          }
                   }
 }
