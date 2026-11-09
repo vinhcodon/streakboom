@@ -3,8 +3,8 @@ import { Rig } from "./peak/engine.js";
 import { drawFrame } from "./peak/draw.js";
 import { t } from "./i18n.js";
 
-const POSES = ["idle", "happy", "purr", "sleep", "walk", "gasp", "sad", "curious"];
-const TIMED = { happy: 1400, purr: 2600, gasp: 900, curious: 1800 }; // then back to idle
+const POSES = ["idle", "happy", "purr", "sleep", "wake", "walk", "gasp", "sad", "curious"];
+const TIMED = { happy: 1400, purr: 2600, gasp: 900, curious: 1800, wake: 1500 }; // then back to idle
 const reduceMotion = matchMedia("(prefers-reduced-motion: reduce)").matches;
 
 export function startPeak(canvas, chipBox) {
