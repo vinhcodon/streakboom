@@ -28,6 +28,20 @@ const BANNED = [
   [/コード署名(される|を行う|します)予定/, "a code-signing promise in Japanese"],
 ];
 
+/** Wording that was true once and is not any more: it may stay in old release notes (the changelog) but not in what the site says now. */
+const OUTDATED = [
+  [/the left mouse button|nút trái chuột|マウスの左ボタン/, "'the left mouse button' (since 0.3.0 the app reads the primary button, the one you click with)"],
+  [/are in English and Vietnamese|are in English and Vietnamese only|bằng tiếng Anh và tiếng Việt\.|英語とベトナム語です/, "'English and Vietnamese only' (the app has spoken Japanese since 0.3.0)"],
+  [/(Gemini, Claude (or|and) OpenAI)|(Gemini、Claude、OpenAI)|(Gemini, Claude hoặc OpenAI)|(three (AI )?brains)/i, "three brains (Groq is the fourth since 0.3.0)"],
+];
+
+/** What the site says about the app now: the pages and files without the release notes they quote. */
+function currentFacts(text) {
+  return text
+    .replace(/<section id="updates"[\s\S]*?<\/section>/, "")
+    .replace(/\n## Newest changes[\s\S]*$/, "");
+}
+
 export function check({ ctx, pages, files, out }) {
   const problems = [];
   const bad = (m) => problems.push(m);
@@ -127,6 +141,9 @@ export function check({ ctx, pages, files, out }) {
   const everything = [...pages.map((p) => [p.path, p.html.replace(/<script type="application\/ld\+json">.*?<\/script>/gs, "")]), ...Object.entries(files).map(([f, t]) => [f, t])];
   for (const [where, text] of everything) {
     for (const [re, why] of BANNED) if (re.test(text)) bad(`${where}: ${why}`);
+    if (where === "/changelog/") continue; // the release notes keep what was true when they were written
+    const now = currentFacts(text);
+    for (const [re, why] of OUTDATED) if (re.test(now)) bad(`${where}: ${why}`);
   }
 
   // 8. the strings: every language has every key English has (except the English-only ones), and nothing else

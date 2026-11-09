@@ -1,6 +1,6 @@
 # ADR-0035: The website also exists in Japanese, and says plainly that the app does not
 
-- **Status:** accepted (built and deployed 2026-11-09)
+- **Status:** accepted (built and deployed 2026-11-09); **the part that says the app has no Japanese is superseded by [ADR-0039](0039-the-website-follows-the-app-in-0-3-0.md)** (the app speaks Japanese since 0.3.0, as a beta)
 - **Date:** 2026-11-09
 - **Decided by:** Vinh (author), with Claude (the website session)
 

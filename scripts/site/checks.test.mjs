@@ -109,6 +109,24 @@ test("a translation with a different number of list items", () => {
   }
 });
 
+test("outdated wording on a page (the left mouse button)", () => fails((c) => {
+  const p = page(c, "/");
+  p.html = p.html.replace("</main>", "<p>whether the left mouse button is pressed</p></main>");
+}, /primary button/));
+test("outdated wording in Japanese (the app is not in Japanese)", () => fails((c) => {
+  const p = page(c, "/ja/");
+  p.html = p.html.replace("</main>", "<p>アプリの画面とPeakのセリフは英語とベトナム語です。</p></main>");
+}, /English and Vietnamese only/));
+test("three brains in llms.txt", () => fails((c) => {
+  c.files["llms.txt"] += "\nAn optional AI brain (Gemini, Claude or OpenAI).\n";
+}, /Groq is the fourth/));
+test("old wording may stay in the release notes of the changelog page", () => {
+  const c = clone();
+  const p = page(c, "/changelog/");
+  p.html = p.html.replace("</main>", "<p>where you last clicked with the left mouse button</p></main>");
+  assert.doesNotThrow(() => check(c));
+});
+
 test("the changelog parser reads the format CHANGELOG.md promises", () => {
   const e = parseChangelog("# Changelog\r\n\r\n## 1.0.0 (2026-01-02), hi\r\n- a\r\n  wrapped\r\n- b\r\n## 0.9.0\r\n- c\r\n## notes\r\n- ignored\r\n");
   assert.deepEqual(e.map((x) => [x.version, x.date, x.title, x.items]), [["1.0.0", "2026-01-02", "hi", ["a wrapped", "b"]], ["0.9.0", "", "", ["c"]]]);

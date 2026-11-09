@@ -117,7 +117,7 @@ A no-JavaScript test (`curl` the page, check that the at-a-glance facts, the ver
 2. **English home, static (M) and Vietnamese (S): done.** `/` and `/vi/`, `hreflang` with `x-default`, the language switch is a plain link, the "At a glance" and "What Streakboom is not" blocks, the FAQ questions as headings. The interactive Peak starts after the first paint.
 3. **Changelog and privacy pages (S each): done.** `/changelog/`, `/privacy/`, `/vi/privacy/`; the home keeps a four-item privacy summary.
 4. **JSON-LD, sitemap, `robots.txt`, `llms.txt`, `llms-full.txt`, `404.html` (S): done.**
-5. **Verification and measuring (S): partly.** Done: unit tests, a build in a clean checkout, the deployed URLs and redirects probed with `curl`, structure and layout looked at in the built-in browser. Open: Lighthouse, an external validator for the JSON-LD, Search Console and Bing (DNS TXT at name.com), the assistant question log (`verification-debt.md` V-46, V-47, V-50 to V-53).
+5. **Verification and measuring (S): partly.** Done: unit tests, a build in a clean checkout, the deployed URLs and redirects probed with `curl`, structure and layout looked at in the built-in browser. Open: Lighthouse, an external validator for the JSON-LD, Search Console and Bing (DNS TXT at name.com), the assistant question log (`verification-debt.md` W-7, W-8 and W-11 to W-14).
 Each step was committed on explicit paths (ADR-0023); the interactive Peak, the favicon and the share image stayed as they were.
 
 ## 7. Measuring success, and what I could not verify
@@ -149,3 +149,39 @@ Answered by Vinh on 2026-11-09; recorded in [ADR-0034](../decisions/0034-website
 | D5 files for AI engines | **C**: `llms.txt` and `llms-full.txt` | 2026-11-09 |
 | D6 crawler policy | **A**: allow everything, name the sitemap | 2026-11-09 |
 | D7 measuring | **A**: Search Console, Bing Webmaster, an assistant answer log; no analytics script | 2026-11-09 |
+
+## 9. Next improvements after 0.3.0 (proposal, 2026-11-09; the author chooses, nothing below is built)
+
+What the site does today, measured on the build of 2026-11-09: three languages (`/`, `/vi/`, `/ja/`), eight pages, every fact in the static HTML, JSON-LD (SoftwareApplication, Person, WebSite, FAQPage) with the version checked against `tauri.conf.json`, titles of 27 to 59 characters and descriptions of 62 to 152, `llms.txt` (1.6 KB) and `llms-full.txt` (13.6 KB). The scripts of a page are about 16 KB gzipped in total, the rig included; the home page is about 27 to 33 KB of HTML. The structured data has no `featureList`, no requirements and no link to the release notes; the Japanese pages use the English questions translated, not the questions Japanese readers ask; no Lighthouse run and no assistant answers have ever been recorded (W-7, W-8).
+
+### N1. The making-way scene of the tour and the new notice beat (the app's 0.3.0)
+In the app Peak now stops for a moment, looks toward your work with ears up (a `notice` pose: eyes a little wider, flat mouth, ears raised; subtle on a cat facing you), and then walks or hops away. The captions and the feature card already say so in words. Should the tour show it?
+- **A. Keep the scene as it is (a walk to the left) and the caption that says "it notices, looks toward your work, then walks off". (Recommended.)** No change; the pose is subtle from the front and would look like a small flicker.
+- **B. Play the notice pose for about one second at the start of the making-way scene, then the walk.** Shows the beat; costs one more pose in a scene; the rig already has it.
+- **C. A scene of its own with its own chip ("Notices").** Most visible; eleven chips (three rows on a phone) and one more caption in three languages.
+
+### N2. A "How it works" page
+Assistants quote pages that answer one question completely. Today the answers are spread over the home page, the FAQ and the privacy page.
+- **A. No new page.**
+- **B. One page per language (`/how-it-works/`, `/vi/how-it-works/`, `/ja/how-it-works/`) in plain words: no AI by default, how a brain is added (your key, kept in the Windows Credential Manager), what is stored on your computer, what Peak notices and never reads, what is free and what is billed, how updates work. Written from the README and the app's records, with the same build checks. (Recommended.)** Cost: nine strings blocks in three languages; every future change of these facts must be made there too (the build's outdated-wording list helps).
+- **C. A comparison with other desktop pets.** I would not: claims about other products cannot be checked from this repository and go stale.
+
+### N3. Japanese search wording
+The Japanese pages are translations. Japanese readers look for things like デスクトップマスコット, 常駐, 無料, オープンソース, 猫.
+- **A. Leave as it is.**
+- **B. Rework the Japanese title, description and headings to use those words where they are true (for example "デスクトップマスコット" next to "デスクトップペット"), and add three or four Japanese questions to the FAQ that Japanese readers ask (is it free, how heavy is it, does it read my screen, how do I uninstall), each with a direct first sentence. (Recommended.)** Needs a Japanese reader to confirm the wording (W-16); no keyword lists.
+- **C. B and a Japanese share image** (the image has English and Vietnamese text today).
+
+### N4. Structured data and the `llms` files, generated from the repository
+- **A. Leave as it is.**
+- **B. Add to `SoftwareApplication`: `featureList` (the nine card titles, from `site/strings.mjs`), `softwareRequirements` ("Windows 10 or 11, 64-bit; WebView2 runtime"), `releaseNotes` (the changelog URL), `screenshot` (the share image); state in `llms.txt` and `llms-full.txt` the languages (English, Vietnamese, Japanese beta), the four brains in order and which are free; add the question "Is Streakboom safe to install?" (open source, unsigned installer, installs for the current user, no administrator rights). All generated, with a build check that each value appears on a visible page. (Recommended.)**
+- **C. B and a second entity `SoftwareSourceCode` for the repository (language Rust and TypeScript, MIT).** Helps developer-style questions; one more thing to keep true.
+
+### N5. Speed and measuring
+- **A. Only measure: run Lighthouse (mobile and desktop) once now and write the numbers into the plan as the baseline; change nothing.**
+- **B. A and a size budget in the build** (fail if the scripts of a page exceed, for example, 30 KB gzipped or the home HTML 60 KB). **(Recommended.)** Cheap, keeps the hero from growing unnoticed; Lighthouse stays a manual check.
+- **C. B and Lighthouse in GitHub Actions on every deploy.** Needs a headless browser in the job, slower and noisier numbers; I would not start here.
+In every option: the fixed question set of section 7 gets three Japanese questions (Streakboomとは？ / Windowsで使える無料のオープンソースのデスクトップペットはある？ / Peakは入力内容や画面を読みますか？), and the baseline answers of the assistants are recorded **before** any of N1 to N4 is built (by the author; the agent cannot ask the assistants).
+
+### What I would not do, and why
+Pages for competitors or "best desktop pets" lists (unverifiable claims, they go stale, and they read as marketing); translating the changelog (the notes are written in English by the app session and would drift); generating a page for every question (thin pages dilute the site); structured data for anything not visible on the page, ratings, reviews or download counts (untrue or unprovable); different text for crawlers; keyword lists in titles or hidden text; more pages than a one-app site needs; analytics scripts (ADR-0034, D7).
