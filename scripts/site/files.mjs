@@ -26,6 +26,12 @@ export function robots() {
   return `User-agent: *\nAllow: /\n\nSitemap: ${ORIGIN}/sitemap.xml\n`;
 }
 
+/** Languages and AI brains, stated the same way in both llms files (the order of the brains is the app's). */
+export const BRAINS = [["Gemini", true], ["Groq", true], ["Claude", false], ["OpenAI", false]];
+const FACTS = `## Languages and AI brains
+- Languages of the app and Peak's built-in lines: English, Vietnamese and Japanese (Japanese is a beta, not yet read by a native speaker).
+- AI brains are optional and use your own API key, offered in this order: ${BRAINS.map(([n]) => n).join(", ")}. Free tiers with limits: ${BRAINS.filter(([, f]) => f).map(([n]) => n).join(" and ")}. Paid: ${BRAINS.filter(([, f]) => !f).map(([n]) => n).join(" and ")}. Only Gemini has been tried with a real key so far.`;
+
 const en = (key, ctx) => fill(STRINGS.en[key], ctx, "en");
 const bullets = (list, ctx) => list.map((t) => `- ${fill(t, ctx, "en")}`).join("\n");
 
@@ -33,6 +39,8 @@ export function llms(ctx) {
   return `# Streakboom
 
 > Streakboom is an open-source desktop pet for Windows 10 and 11. The pet is Peak, a golden chibi cat. The app is free and the code is under the MIT license. Latest version: ${ctx.version}, released ${fmtDate(ctx.date, "en")}. There is no account. The installer is not code-signed yet, so Windows SmartScreen warns on the first run.
+
+${FACTS}
 
 ## Pages
 - [Streakboom, home (English)](${ORIGIN}/): what it is, features, install steps, FAQ, latest changes
@@ -67,6 +75,8 @@ ${bullets(STRINGS.en.glance, ctx)}
 ## What Streakboom is not
 
 ${bullets(STRINGS.en.not_items, ctx)}
+
+${FACTS}
 
 ## Features
 

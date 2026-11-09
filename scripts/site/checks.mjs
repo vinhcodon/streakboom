@@ -74,6 +74,25 @@ export function check({ ctx, pages, files, out }) {
     if (visible.length < 5) bad(`${p.path}: only ${visible.length} FAQ entries found`);
   }
 
+  // 2b. what the structured data states about the app is on the visible page (ADR-0040 N4), and the llms files state the same facts
+  for (const lang of LANGS) {
+    const p = byPath.get(PATHS[lang].home);
+    const ld = [...p.html.matchAll(/<script type="application\/ld\+json">(.*?)<\/script>/gs)].map((m) => JSON.parse(m[1].replace(/\\u003c/g, "<")));
+    const app = ld.flatMap((d) => d["@graph"] || []).find((n) => n["@type"] === "SoftwareApplication");
+    if (!app) continue;
+    const visibleText = unesc(p.html.replace(/<script[\s\S]*?<\/script>/g, ""));
+    if (!Array.isArray(app.featureList) || app.featureList.length !== 9) bad(`${p.path}: featureList does not have the nine feature titles`);
+    else for (const f of app.featureList) if (!visibleText.includes(f)) bad(`${p.path}: featureList entry "${f}" is not on the page`);
+    if (!app.softwareRequirements || !/WebView2/.test(app.softwareRequirements) || !/WebView2/.test(visibleText) || !/64/.test(visibleText)) bad(`${p.path}: softwareRequirements is missing or not backed by the visible text`);
+    if (app.releaseNotes !== ORIGIN + "/changelog/" || !p.html.includes('href="/changelog/"')) bad(`${p.path}: releaseNotes does not point at the linked changelog`);
+    if (app.screenshot !== app.image) bad(`${p.path}: screenshot is not the share image`);
+  }
+  for (const f of ["llms.txt", "llms-full.txt"]) {
+    for (const word of ["Japanese", "Gemini, Groq, Claude, OpenAI", "Free tiers with limits: Gemini and Groq"]) {
+      if (!files[f].includes(word)) bad(`${f}: does not state "${word}"`);
+    }
+  }
+
   for (const p of pages) {
     // 3. canonical, hreflang
     const canon = [...p.html.matchAll(/<link rel="canonical" href="([^"]*)">/g)].map((m) => m[1]);

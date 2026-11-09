@@ -135,6 +135,11 @@ export function faqPairs(lang, ctx) {
   return out;
 }
 
+/** The titles of the nine feature cards without their leading emoji: the `featureList` of the structured data. */
+export function featureTitles(lang, ctx) {
+  return [1, 2, 3, 4, 5, 6, 7, 8, 9].map((i) => raw(lang, `f${i}_h`, ctx).replace(/^[^\p{L}\p{N}]+/u, "").trim());
+}
+
 export function homeJsonLd(lang, ctx) {
   const path = PATHS[lang].home;
   const first = ctx.entries[ctx.entries.length - 1];
@@ -158,6 +163,10 @@ export function homeJsonLd(lang, ctx) {
         license: `${REPO_URL}/blob/main/LICENSE`,
         inLanguage: LANGS,
         image: `${ORIGIN}/assets/og-image.jpg`,
+        screenshot: `${ORIGIN}/assets/og-image.jpg`,
+        featureList: featureTitles(lang, ctx),
+        softwareRequirements: raw(lang, "requirements", ctx),
+        releaseNotes: `${ORIGIN}${PATHS.changelog}`,
         sameAs: [REPO_URL],
         author: { "@id": `${ORIGIN}/#author` },
       },

@@ -136,6 +136,18 @@ test("a language link whose accessible name does not start with its visible text
   p.html = p.html.replace(/aria-label="EN \(English\)"/, 'aria-label="English"');
 }, /accessible name/));
 
+test("a feature in the structured data that is not on the page", () => fails((c) => {
+  const p = page(c, "/");
+  p.html = p.html.replace(/"featureList":\["([^"]*)"/, '"featureList":["A feature nobody wrote"');
+}, /featureList entry/));
+test("requirements in the structured data that the page does not back", () => fails((c) => {
+  const p = page(c, "/ja/");
+  p.html = p.html.replaceAll("WebView2", "WV2");
+}, /softwareRequirements/));
+test("an llms.txt that forgets the languages and brains", () => fails((c) => {
+  c.files["llms.txt"] = c.files["llms.txt"].replace(/## Languages and AI brains[\s\S]*?\n\n/, "");
+}, /llms\.txt: does not state/));
+
 test("the changelog parser reads the format CHANGELOG.md promises", () => {
   const e = parseChangelog("# Changelog\r\n\r\n## 1.0.0 (2026-01-02), hi\r\n- a\r\n  wrapped\r\n- b\r\n## 0.9.0\r\n- c\r\n## notes\r\n- ignored\r\n");
   assert.deepEqual(e.map((x) => [x.version, x.date, x.title, x.items]), [["1.0.0", "2026-01-02", "hi", ["a wrapped", "b"]], ["0.9.0", "", "", ["c"]]]);

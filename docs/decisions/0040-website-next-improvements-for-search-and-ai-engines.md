@@ -1,6 +1,6 @@
 # ADR-0040: The next improvements of the website for search and AI engines
 
-- **Status:** accepted (decisions 2026-11-09; nothing is built yet)
+- **Status:** accepted (decisions 2026-11-09; step 0 and N4 are built, N2, N3 and the N5 budget are not)
 - **Date:** 2026-11-09
 - **Decided by:** Vinh (author), with Claude (the website session)
 
