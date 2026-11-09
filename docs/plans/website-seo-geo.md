@@ -1,6 +1,6 @@
 # Website: a structure friendly to search engines (SEO) and AI answer engines (GEO)
 
-**Status:** proposal, written 2026-11-09 by the website session for the 0.2.5 release (asked for in `../handoff/website-release-prompt.md`). **Nothing is built.** The author chooses among the options in section 3; an ADR records the choice (proposed number: ADR-0034); only then does the work in section 6 start.
+**Status:** proposal written 2026-11-09 by the website session for the 0.2.5 release (asked for in `../handoff/website-release-prompt.md`); **the author chose on 2026-11-09 and [ADR-0034](../decisions/0034-website-structure-for-search-and-ai-engines.md) records it. Nothing is built yet**; the work in section 6 waits for the author to say start.
 
 Source of the facts below: the live site on 2026-11-09 (fetched with `curl`), `site/`, `.github/workflows/pages.yml`, `README.md`, `CHANGELOG.md` and `app/src-tauri/tauri.conf.json`. Things I could not check are listed in section 7.
 
@@ -108,7 +108,7 @@ The build fails (and the deploy does not happen) when:
 2. the FAQ in JSON-LD differs from the visible FAQ;
 3. an `hreflang` pair is not reciprocal, a page lacks a canonical link, or `sitemap.xml` misses a page;
 4. a page has not exactly one `h1`, an image has no `alt`, or an internal link is broken;
-5. a retired name ("Vinh Nguyen") or a forbidden claim ("almost no CPU", "sees what you type", "100% free", a macOS promise) appears.
+5. a retired name (the author's old display name, see ADR-0033) or a forbidden claim ("almost no CPU", "sees what you type", "100% free", a macOS promise) appears.
 A no-JavaScript test (`curl` the page, check that the at-a-glance facts, the version, the install file name and the first changelog entries are in the HTML) runs in the same script. `pages.yml` also triggers on `CHANGELOG.md`, `updates/latest.json` and `app/src-tauri/tauri.conf.json`.
 
 ## 6. Order of work once the author has chosen (sizes: S small, M medium)
@@ -136,12 +136,14 @@ Assistants: ChatGPT, Claude, Gemini, Perplexity, Copilot.
 - Whether the facts in the "At a glance" block are all still true at the next release; the build check covers the version, the rest depends on reading (ADR-0033, release housekeeping).
 
 ## 8. Decisions and result
+Answered by Vinh on 2026-11-09; recorded in [ADR-0034](../decisions/0034-website-structure-for-search-and-ai-engines.md).
+
 | | Choice | Date |
 |---|---|---|
-| D1 languages and URLs | open | |
-| D2 how pages are produced | open | |
-| D3 which pages | open | |
-| D4 structured data | open | |
-| D5 files for AI engines | open | |
-| D6 crawler policy | open | |
-| D7 measuring | open | |
+| D1 languages and URLs | **B**: `/` English, `/vi/` Vietnamese | 2026-11-09 |
+| D2 how pages are produced | **B** (a small Node build script, no framework), chosen by the website session as the author asked ("the option that fits GitHub Pages": static output built in the existing Actions job) | 2026-11-09 |
+| D3 which pages | **B**: home, changelog, privacy | 2026-11-09 |
+| D4 structured data | **B**: SoftwareApplication, Person, WebSite, FAQPage | 2026-11-09 |
+| D5 files for AI engines | **C**: `llms.txt` and `llms-full.txt` | 2026-11-09 |
+| D6 crawler policy | **A**: allow everything, name the sitemap | 2026-11-09 |
+| D7 measuring | **A**: Search Console, Bing Webmaster, an assistant answer log; no analytics script | 2026-11-09 |
