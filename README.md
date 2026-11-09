@@ -4,7 +4,7 @@
 
 <h1 align="center">Streakboom</h1>
 
-An open-source desktop pet for Windows. Meet **Peak**, a cheerful golden chibi cat inspired by the soft, squishy look of mochi illustrations. Peak lives on top of your screen, reacts to being stroked, poked and carried, says short lines in Vietnamese or English, and keeps you company. It is a companion, not an assistant: it is lovable with no AI at all, and if you give it your own API key (Gemini, Claude or OpenAI) it can also chat and remember a few things about you.
+An open-source desktop pet for Windows. Meet **Peak**, a cheerful golden chibi cat inspired by the soft, squishy look of mochi illustrations. Peak lives on top of your screen, reacts to being stroked, poked and carried, says short lines in Vietnamese, English or Japanese (Japanese is a beta: written by Claude and not yet read by a native speaker), and keeps you company. It is a companion, not an assistant: it is lovable with no AI at all, and if you give it your own API key (Gemini, Groq, Claude or OpenAI) it can also chat and remember a few things about you.
 
 > **Status: first official release line (v0.2.5), Windows 10/11 only.** Earlier 0.1.x builds were development builds and have been withdrawn. The installer is not code-signed yet, so Windows SmartScreen will warn when you run it. The Groq, Claude and OpenAI brains have not yet been tried with real keys (Gemini has).
 
@@ -106,9 +106,9 @@ npm run tauri dev          # run the app with hot reload
 ```
 
 ```powershell
-npm test                   # Node tests for the pure logic (src/lib/*.test.ts), 157 tests
+npm test                   # Node tests for the pure logic (src/lib/*.test.ts), 162 tests
 npm run check              # svelte-check (types)
-cd src-tauri; cargo test   # Rust tests (the four brain clients against a mock server, window and monitor geometry, the focus probe), 61 tests
+cd src-tauri; cargo test   # Rust tests (the four brain clients against a mock server, window and monitor geometry, the focus probe), 62 tests
 ```
 
 ```powershell
@@ -173,7 +173,7 @@ The documents are split by the kind of statement they make, so each fact has one
 
 **Shipped.** 0.2.0: the naive pet, the key flow, three brains, memory, gestures, emotional reactions, opt-in stats with Copy stats and the Bond Days counters, the installer and signed auto-update with fallbacks. 0.2.1 to 0.2.3: the daily chat cap in the pet's own voice, a much lighter redraw (the median processor use fell from about 17% to about 9% of one core). 0.2.4: focus-safety (Peak keeps still and quiet while you work and makes way), a real wake-up stretch, a cat-like gait. 0.2.5: hops between rows and the typing lane (Peak leaves the path of your text).
 
-**Next.** The notice beat (Peak visibly notices before it makes way), sensing what is under its feet, and the checks that need other machines or people: the Claude and OpenAI brains with real keys, a second and a lower-end computer, several monitors and display scales, and a handful of observed first-time users. **Open:** a lower processor target (the floor is about 4% with software drawing), a place to send stats (or keep Copy stats), code signing, crash reporting without content, and a macOS port. The ordered plan is in [`docs/plans/roadmap.md`](docs/plans/roadmap.md), the stories in [`docs/plans/backlog.md`](docs/plans/backlog.md), and everything built but not yet checked in [`docs/plans/verification-debt.md`](docs/plans/verification-debt.md).
+**Next.** Sensing what is under its feet, a native reader for the Japanese text, and the checks that need other machines or people: the Groq, Claude and OpenAI brains with real keys, a second and a lower-end computer, several monitors and display scales, and a handful of observed first-time users. **Open:** a lower processor target (the floor is about 4% with software drawing), a place to send stats (or keep Copy stats), code signing, crash reporting without content, and a macOS port. The ordered plan is in [`docs/plans/roadmap.md`](docs/plans/roadmap.md), the stories in [`docs/plans/backlog.md`](docs/plans/backlog.md), and everything built but not yet checked in [`docs/plans/verification-debt.md`](docs/plans/verification-debt.md).
 
 ## Art and credits 🎨
 

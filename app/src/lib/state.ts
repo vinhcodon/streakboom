@@ -342,7 +342,7 @@ export function parse(json: string | null | undefined, now: number): PetData {
       said: o.said && typeof o.said === "object" ? { ...o.said } : {},
       milestones: Array.isArray(o.milestones) ? o.milestones.filter((x: unknown) => typeof x === "number") : [],
       settings: {
-        lang: s.lang === "vi" || s.lang === "en" ? s.lang : "auto",
+        lang: s.lang === "vi" || s.lang === "en" || s.lang === "ja" ? s.lang : "auto",
         freq: s.freq === "quiet" || s.freq === "chatty" ? s.freq : "normal",
         gentle: !!s.gentle,
         qhOn: !!s.qhOn,

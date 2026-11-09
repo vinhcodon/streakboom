@@ -24,7 +24,7 @@ Moved out of this document:
 ## 4. Product requirements in brief
 1. **A transparent, frameless, always-on-top window** with drag, no focus stealing for plain speech, and a pet that always stays on screen.
 2. **Low footprint:** about 120 MB for all processes, idle CPU near zero (ADR-0005). The key is stored in the OS credential store and never sent anywhere but the provider (ADR-0007).
-3. **A naive stage that is already charming:** mood and closeness, scripted lines in Vietnamese and English, gestures, no guilt (ADR-0013, spec/03).
+3. **A naive stage that is already charming:** mood and closeness, scripted lines in Vietnamese, English and Japanese, gestures, no guilt (ADR-0013, spec/03).
 4. **A brained stage on request:** a behavioral, dismissible request for a key, a guided key flow, short chat in one bubble, proactive lines, caps on use (spec/02, ADR-0008).
 5. **Memory under the user's control** (ADR-0014) and **emotional reactions** to answers (ADR-0016).
 6. **Honest data handling:** opt-in local stats, nothing sent automatically (ADR-0009, spec/05 section 6).

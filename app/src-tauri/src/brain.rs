@@ -185,8 +185,17 @@ pub fn split_mood(raw: &str) -> (String, String) {
     (text, mood)
 }
 
+/// The language the pet speaks for an app language code ("vi", "ja"; anything else is English).
+pub fn language_name(lang: &str) -> &'static str {
+    match lang {
+        "vi" => "Vietnamese",
+        "ja" => "Japanese",
+        _ => "English",
+    }
+}
+
 pub fn persona(lang: &str, tier: u8, gentle: bool) -> String {
-    let language = if lang == "vi" { "Vietnamese" } else { "English" };
+    let language = language_name(lang);
     let mut s = String::from(
         "You are a witty, slightly sarcastic, loyal, and tech-savvy digital pet living on the user's desktop. \
          Keep your responses extremely concise (under 2 sentences), playful, and attentive to the user's well-being and productivity.",
@@ -195,6 +204,10 @@ pub fn persona(lang: &str, tier: u8, gentle: bool) -> String {
         " Reply in {language}. Stay in character as a small desktop pet and never claim to be human. \
          Never ask for or repeat passwords, API keys or other secrets. Do not give medical, legal or financial advice."
     ));
+    // The voice in Japanese (ADR-0035) applies whenever the reply is Japanese, also in a chat where the user chose the language.
+    s.push_str(
+        " If you reply in Japanese, speak in a warm, casual, friendly voice (plain form with endings like だよ and ね),          never the formal です/ます form and never cat-speak like にゃ.",
+    );
     if gentle {
         s.push_str(" Be warm and kind; no sarcasm.");
     }
@@ -208,10 +221,10 @@ pub fn persona(lang: &str, tier: u8, gentle: bool) -> String {
 }
 
 pub fn hello_prompt(lang: &str) -> String {
-    if lang == "vi" {
-        "Hãy chào mình bằng một câu ngắn. Mình vừa cho bạn một bộ não.".into()
-    } else {
-        "Greet me in one short sentence. I just gave you a brain.".into()
+    match lang {
+        "vi" => "Hãy chào mình bằng một câu ngắn. Mình vừa cho bạn một bộ não.".into(),
+        "ja" => "短くひとことであいさつしてね。いま、きみに脳みそをあげたところだよ。".into(),
+        _ => "Greet me in one short sentence. I just gave you a brain.".into(),
     }
 }
 
@@ -224,7 +237,7 @@ pub fn persona_with(lang: &str, tier: u8, gentle: bool, known: &[String], follow
     if follow_user {
         // In a chat the user started, answer in whatever language they write in, like any chat
         // assistant. The app's language only decides what to use when that is unclear.
-        let language = if lang == "vi" { "Vietnamese" } else { "English" };
+        let language = language_name(lang);
         s = s.replace(
             &format!(" Reply in {language}."),
             &format!(
@@ -251,7 +264,7 @@ pub fn persona_with(lang: &str, tier: u8, gentle: bool, known: &[String], follow
 /// System prompt for the small background call that picks durable facts out of a chat.
 /// Facts are written in the language the user wrote in (the app's language is only the fallback).
 pub fn extract_prompt(lang: &str, known: &[String]) -> String {
-    let language = if lang == "vi" { "Vietnamese" } else { "English" };
+    let language = language_name(lang);
     let mut s = format!(
         "You extract lasting facts that the user stated about themselves from a short chat with a desktop pet. \
          Output at most 3 lines, one fact per line, each under 60 characters, no numbering, no bullets. \
@@ -774,6 +787,21 @@ mod tests {
         for bad in ["../secret", "a//b", "/leading", "trailing/", "a/b/c", "sp ace", "", "x?key=1", "a/.."] {
             assert!(!model_ok_for(Provider::Groq, bad), "{bad}");
         }
+    }
+
+    #[test]
+    fn japanese_has_its_own_language_greeting_and_voice() {
+        assert_eq!(language_name("ja"), "Japanese");
+        assert_eq!(language_name("vi"), "Vietnamese");
+        assert_eq!(language_name("en"), "English");
+        assert_eq!(language_name("fr"), "English");
+        assert!(persona("ja", 2, false).contains("Reply in Japanese."));
+        assert!(persona("en", 2, false).contains("If you reply in Japanese, speak in a warm, casual"));
+        assert!(hello_prompt("ja").contains("あいさつ"));
+        // in a chat the user starts the reply follows the user's language, with Japanese as the fallback
+        let chat = persona_with("ja", 2, false, &[], true);
+        assert!(chat.contains("Reply in the language of the user's latest message") && chat.contains("use Japanese."));
+        assert!(extract_prompt("ja", &[]).contains("use Japanese"));
     }
 
     #[test]

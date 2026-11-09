@@ -62,5 +62,6 @@ export function remember(recent: string[], id: string, max = 24): string[] {
 
 export function resolveLang(setting: "auto" | Lang, navLang: string): Lang {
   if (setting !== "auto") return setting;
-  return navLang.toLowerCase().startsWith("vi") ? "vi" : "en";
+  const n = navLang.toLowerCase();
+  return n.startsWith("vi") ? "vi" : n.startsWith("ja") ? "ja" : "en";
 }

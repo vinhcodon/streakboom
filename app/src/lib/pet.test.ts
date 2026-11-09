@@ -42,7 +42,7 @@ const HOUR = 3_600_000;
 const DAY = 24 * HOUR;
 const T0 = new Date(2026, 10, 7, 12, 0, 0).getTime();
 
-const LANGS: Lang[] = ["vi", "en"];
+const LANGS: Lang[] = ["vi", "en", "ja"];
 const BANDS: Band[] = ["sleepy", "content", "playful", "bored", "lonely"];
 const ctx = (over: Partial<Ctx> = {}): Ctx => ({ lang: "en", tier: 1, band: "content", hour: 12, gentle: false, ...over });
 
@@ -87,9 +87,10 @@ test("line pools are rich enough, readable and free of repeats", () => {
     for (const t of ["greeting", "return", "morning", "night", "long", "idle", "click", "pet", "how", "hint"] as Trigger[])
       assert.ok(mine.filter((l) => l.trigger === t).length >= (t === "hint" ? 6 : 8), `${lang} ${t}`);
   }
-  // both languages should be about the same size
+  // all the languages should be about the same size
   const n = (lang: Lang) => LINES.filter((l) => l.lang === lang).length;
   assert.ok(Math.abs(n("vi") - n("en")) <= 4);
+  assert.ok(Math.abs(n("ja") - n("en")) <= 4, `ja has ${n("ja")} lines, en ${n("en")}`);
 });
 
 test("gentle tone excludes spicy lines", () => {
@@ -120,6 +121,10 @@ test("resolveLang follows the setting, then the system language", () => {
   assert.equal(resolveLang("auto", "vi-VN"), "vi");
   assert.equal(resolveLang("auto", "en-US"), "en");
   assert.equal(resolveLang("vi", "en-US"), "vi");
+  assert.equal(resolveLang("auto", "ja-JP"), "ja");
+  assert.equal(resolveLang("auto", "ja"), "ja");
+  assert.equal(resolveLang("ja", "en-US"), "ja");
+  assert.equal(resolveLang("auto", "fr-FR"), "en");
 });
 
 test("tiers", () => {
@@ -333,8 +338,8 @@ test("parse restores brain bookkeeping and defaults old saves", () => {
 
 import { recordBellyHint, recordRub, shouldHintBelly } from "./state.ts";
 
-test("belly lines exist in both languages, in gentle tone, and stay short", () => {
-  for (const lang of ["en", "vi"] as const)
+test("belly lines exist in every language, in gentle tone, and stay short", () => {
+  for (const lang of ["en", "vi", "ja"] as const)
     for (const trig of ["belly", "huff", "hintbelly"] as Trigger[]) {
       for (const gentle of [false, true]) assert.ok(candidates(trig, ctx({ lang, gentle })).length > 0, `${lang} ${trig} gentle=${gentle}`);
       for (const l of LINES.filter((x) => x.lang === lang && x.trigger === trig)) assert.ok(l.text.length <= 110, l.text);
@@ -425,4 +430,21 @@ test("a saved file round-trips the counters and the consent version", () => {
   const again = parse(JSON.stringify(d), 5);
   assert.deepEqual(again.telemetry.days, d.telemetry.days);
   assert.equal(again.telemetry.consentV, CONSENT_VERSION);
+});
+
+test("Japanese lines: written in Japanese, with the same triggers, tiers, bands and sarcasm as the English ones", () => {
+  const ja = LINES.filter((l) => l.lang === "ja");
+  const en = LINES.filter((l) => l.lang === "en");
+  const jp = /[぀-ヿ一-鿿]/;
+  for (const l of ja) assert.ok(jp.test(l.text), `${l.id} has no Japanese characters: ${l.text}`);
+  // the lines are translated one to one: the same ids apart from the language, the same spicy marks
+  const key = (l: { id: string }) => l.id.slice(l.id.indexOf(".") + 1);
+  assert.deepEqual(ja.map(key), en.map(key));
+  assert.deepEqual(ja.map((l) => l.spicy), en.map((l) => l.spicy));
+  // no Vietnamese diacritics and no plain English sentence left behind
+  for (const l of ja) assert.ok(!/[ăâêôơưđạảấầẩẫậắằẳẵặẹẻẽếềểễệỉịọỏốồổỗộớờởỡợụủứừửữự]/i.test(l.text), l.text);
+  // the voice (ADR-0035): casual, warm; no polite です/ます endings and no cat-speak にゃ in the scripted lines
+  for (const l of ja) {
+    assert.ok(!/です[。！？…」）]|ます[。！？…」）]|にゃ/.test(l.text), `${l.id} is not in the casual voice: ${l.text}`);
+  }
 });

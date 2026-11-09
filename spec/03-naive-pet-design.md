@@ -5,7 +5,7 @@ Goal: a pet with no AI that is charming enough to keep for 7 days (hypothesis H4
 ## Decisions
 - **Character:** a round 2D "mochi cat" (ADR-0011).
 - **Personality:** playful, mischievous, mildly sarcastic. Teasing never targets the user's worth or work quality; it targets the situation (the clock, the coffee, the pile of tabs). A Gentle tone setting drops the sarcastic lines (ADR-0013).
-- **Languages:** Vietnamese and English line pools, chosen by system language, switchable in Settings.
+- **Languages:** Vietnamese, English and Japanese line pools (Japanese is a beta, ADR-0035: warm casual voice, no cat-speak), chosen by system language (`vi`, `ja`; anything else English), switchable in Settings.
 - **No guilt:** the pet never dies, starves or gets sick. Neglect only makes it "a bit lonely", and it is delighted when the user returns.
 - **Naive is not dumb:** it does not pretend to understand free text. Free-text input is disabled with an in-character hint until a brain is connected.
 
@@ -45,7 +45,7 @@ The brain request (spec/02) is more natural at tier 2 or 3, but it is triggered 
 - **Line pools by trigger:** greeting, return, morning, night, long session, idle, click, pet, how, milestone, brain hint, gesture hint, belly hint, belly, huff. The "snack" and "play" pools exist and are unused (no buttons any more; reserved for future gestures).
 - **Each line has tags:** language, mood band, closeness tier, hours, trigger. Lines marked `~` are sarcastic and hidden in the Gentle tone.
 - **Selection:** filter by tags, exclude recently used (a rolling window of 24), weighted random.
-- **Size today:** 182 lines per language (about 14% sarcastic), written by hand. Tests check that both languages match, that no text repeats, that lines fit a bubble (110 characters), that sarcasm stays between a few lines and 40%, and that every tier and mood has gentle-tone coverage.
+- **Size today:** 182 lines per language (about 14% sarcastic), written by hand. Tests check that the three languages match (the Japanese lines are translated one to one, with the same ids, tiers, bands and sarcasm marks, in the casual voice), that no text repeats, that lines fit a bubble (110 characters), that sarcasm stays between a few lines and 40%, and that every tier and mood has gentle-tone coverage.
 - **Rate limits:** one proactive bubble every 10 to 15 minutes by default (4 to 7 chatty, none when quiet); never during quiet hours, Quiet mode or fullscreen and presentation.
 
 ## Memory (ADR-0014)

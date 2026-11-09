@@ -1,3 +1,4 @@
+import type { Lang } from "./lines.ts";
 // What the pet remembers about the user. Pure data and rules, no I/O; the pet window owns it and
 // saves it to its own file (memory.json), separate from the pet's mood state.
 //
@@ -288,10 +289,13 @@ export const forgetFacts = (m: Memory): Memory => ({ ...m, facts: [], sinceExtra
  * What goes to the model as background in a chat the user started: how they want to be called,
  * the pet's own name, and (if switched on) the stored facts. Never used for unprompted lines.
  */
-export function knownFor(m: Memory, lang: "vi" | "en"): string[] {
+export function knownFor(m: Memory, lang: Lang): string[] {
   const out: string[] = [];
-  if (m.callMe) out.push(lang === "vi" ? `gọi người dùng là ${m.callMe}` : `call the user ${m.callMe}`);
-  if (m.petName) out.push(lang === "vi" ? `tên của bạn (thú cưng) là ${m.petName}` : `your own name is ${m.petName}`);
+  // short notes for the model, in the app's language (the model is told to use them in the language it replies in)
+  const call = { vi: `gọi người dùng là ${m.callMe}`, en: `call the user ${m.callMe}`, ja: `ユーザーを「${m.callMe}」と呼ぶ` };
+  const own = { vi: `tên của bạn (thú cưng) là ${m.petName}`, en: `your own name is ${m.petName}`, ja: `あなた（ペット）の名前は「${m.petName}」` };
+  if (m.callMe) out.push(call[lang]);
+  if (m.petName) out.push(own[lang]);
   if (m.aiLearn) out.push(...m.facts.map((f) => f.text));
   return out;
 }

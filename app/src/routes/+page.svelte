@@ -169,6 +169,10 @@
 
   const lang = $derived(resolveLang(data.settings.lang, navigator.language));
   const ui = $derived(UI[lang]);
+  // the document language decides which font variants the web view picks for Japanese characters
+  $effect(() => {
+    document.documentElement.lang = lang;
+  });
   const canChat = $derived(hasKey && !brainBad);
 
   const rand = (a: number, b: number) => a + Math.random() * (b - a);
@@ -1474,7 +1478,9 @@
     const prompt =
       lang === "vi"
         ? `Bây giờ là ${hour} giờ. Tâm trạng của bạn: ${mood}. Tình huống: ${trigger}. Hãy tự nói một câu ngắn với mình, không cần mình trả lời.`
-        : `It is ${hour}:00. Your mood: ${mood}. Situation: ${trigger}. Say one short thing to me unprompted; no reply needed.`;
+        : lang === "ja"
+          ? `いまは${hour}時だよ。きみの気分：${mood}。状況：${trigger}。自分から短くひとこと話しかけてね。返事はいらないよ。`
+          : `It is ${hour}:00. Your mood: ${mood}. Situation: ${trigger}. Say one short thing to me unprompted; no reply needed.`;
     try {
       const out = await invoke<{ text: string; mood: string }>("brain_chat", {
         lang,

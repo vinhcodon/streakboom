@@ -86,7 +86,7 @@ test("lines use the stored names and never leave a placeholder behind", () => {
   const t = memLine("greet", m, ctx(), () => 0)!;
   assert.ok(t.includes("Vinh"));
   assert.ok(memLine("named", m, ctx(), () => 0)!.includes("Bông"));
-  for (const lang of ["en", "vi"] as const)
+  for (const lang of ["en", "vi", "ja"] as const)
     for (const k of memKeys(lang)) {
       const kind = (k === "greet" || k === "away" || k === "named" || k === "calledMe" || k === "pet" || k.startsWith("mark.") ? k : "habit") as never;
       m = { ...m, sessions: 20, hours: Array(24).fill(0).map((_, h) => (h === 20 ? 20 : 0)) };
@@ -110,9 +110,10 @@ test("gentle tone drops sarcastic lines", () => {
   }
 });
 
-test("pools: both languages, short lines, no duplicates", () => {
+test("pools: every language, short lines, no duplicates", () => {
   assert.deepEqual(memKeys("en").sort(), memKeys("vi").sort());
-  for (const lang of ["en", "vi"] as const) {
+  assert.deepEqual(memKeys("en").sort(), memKeys("ja").sort());
+  for (const lang of ["en", "vi", "ja"] as const) {
     const all = allMemTexts(lang);
     assert.equal(new Set(all).size, all.length);
     for (const t of all) assert.ok(t.length <= 110, t);
@@ -203,6 +204,7 @@ test("only what the model may know is sent: names and, when on, the facts", () =
   assert.deepEqual(knownFor(m, "en"), ["call the user Vinh", "your own name is Bông", "Likes jazz"]);
   assert.deepEqual(knownFor({ ...m, aiLearn: false }, "en"), ["call the user Vinh", "your own name is Bông"]);
   assert.deepEqual(knownFor(defaultMemory(), "vi"), []);
+  assert.deepEqual(knownFor({ ...m, aiLearn: false }, "ja"), ["ユーザーを「Vinh」と呼ぶ", "あなた（ペット）の名前は「Bông」"]);
 });
 
 test("forgetting habits keeps facts; forgetting everything removes them", () => {

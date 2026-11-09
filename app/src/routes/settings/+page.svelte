@@ -58,6 +58,9 @@
     }
   }
   const ui = $derived(UI[snap?.lang ?? "en"]);
+  $effect(() => {
+    document.documentElement.lang = snap?.lang ?? "en";
+  });
   const s = $derived(snap?.settings);
   const pv = $derived(ui.providers[editing]);
   const usageLine = $derived(
@@ -406,7 +409,7 @@
       <h2>{ui.sectionGeneral}</h2>
       <div class="row">
         <span class="lbl">{ui.language}</span>
-        {#each [["auto", ui.auto], ["vi", "Tiếng Việt"], ["en", "English"]] as [v, label]}
+        {#each [["auto", ui.auto], ["vi", "Tiếng Việt"], ["en", "English"], ["ja", "日本語 (beta)"]] as [v, label]}
           <button class="seg" class:on={s.lang === v} onclick={() => patch("lang", v as Settings["lang"])}>{label}</button>
         {/each}
       </div>

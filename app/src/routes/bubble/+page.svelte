@@ -12,6 +12,11 @@
   type Side = "above" | "below" | "left" | "right";
 
   let view = $state<BubbleView>({ kind: "none" });
+  // the bubble only gets text, so the document language is read from it: kana only occur in Japanese, and the language
+  // decides which font variants the web view picks for the kanji
+  $effect(() => {
+    document.documentElement.lang = /[぀-ヿ]/.test(JSON.stringify(view)) ? "ja" : "en";
+  });
   let side = $state<Side>("above");
   let tailAt = $state(60); // distance along the bubble edge to the pet's center (px)
   let boxW = $state(0);
