@@ -108,22 +108,18 @@ export function startPeak(canvas, chipBox) {
     toggle.textContent = userPaused || tour.settled ? t("tour_play") : t("tour_pause");
   }
 
-  // ---- chips (one per scene), and the Pause / Play button
-  SCENES.forEach((sc, i) => {
-    const b = document.createElement("button");
-    b.type = "button";
-    b.className = "chip";
-    b.textContent = t("pose_" + sc.id);
+  // ---- the chips (one per scene) are in the page's HTML; here they get their behaviour
+  chipBox.querySelectorAll(".chip[data-scene]").forEach((b) => {
+    const i = Number(b.dataset.scene);
     b.addEventListener("click", () => (tour ? tour.select(i) : showScene(i, { user: true })));
-    chips.push(b);
-    chipBox.append(b);
+    chips[i] = b;
   });
-  chips[0].setAttribute("aria-pressed", "true");
+  const pendingToggle = chipBox.querySelector("#tour-toggle");
 
-  if (tour) {
-    toggle = document.createElement("button");
-    toggle.type = "button";
-    toggle.className = "chip tour-toggle";
+  if (!tour) pendingToggle?.remove(); // "reduce motion": no tour, so no Pause button
+  else {
+    toggle = pendingToggle;
+    toggle.removeAttribute("data-pending"); // the button was in the HTML (invisible) so its room was reserved
     toggle.addEventListener("click", () => {
       if (userPaused || tour.settled) {
         userPaused = false;
@@ -135,7 +131,6 @@ export function startPeak(canvas, chipBox) {
       }
       refreshToggle();
     });
-    chipBox.append(toggle);
     refreshToggle();
 
     // polite: the tour waits while the pointer or the keyboard is on the cat and its buttons, and the page is not in view

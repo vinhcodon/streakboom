@@ -127,6 +127,15 @@ test("old wording may stay in the release notes of the changelog page", () => {
   assert.doesNotThrow(() => check(c));
 });
 
+test("a scene chip that is missing from the static HTML", () => fails((c) => {
+  const p = page(c, "/");
+  p.html = p.html.replace(/<button class="chip"[^>]*data-scene="3"[^>]*>[^<]*<\/button>\n?/, "");
+}, /chip of scene/));
+test("a language link whose accessible name does not start with its visible text", () => fails((c) => {
+  const p = page(c, "/ja/");
+  p.html = p.html.replace(/aria-label="EN \(English\)"/, 'aria-label="English"');
+}, /accessible name/));
+
 test("the changelog parser reads the format CHANGELOG.md promises", () => {
   const e = parseChangelog("# Changelog\r\n\r\n## 1.0.0 (2026-01-02), hi\r\n- a\r\n  wrapped\r\n- b\r\n## 0.9.0\r\n- c\r\n## notes\r\n- ignored\r\n");
   assert.deepEqual(e.map((x) => [x.version, x.date, x.title, x.items]), [["1.0.0", "2026-01-02", "hi", ["a wrapped", "b"]], ["0.9.0", "", "", ["c"]]]);

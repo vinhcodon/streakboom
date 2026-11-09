@@ -49,12 +49,13 @@ h2 { font-size: clamp(1.5rem, 3.5vw, 2.1rem); }
 .nav nav a:hover { background: var(--bg-alt); }
 .langs { display: flex; gap: 6px; order: 2; }
 
-/* the Windows download is replaced by "send the link to your PC" on other devices (see app.js) */
-body:not(.not-windows) .only-other { display: none; }
-body.not-windows .only-other { display: inline-flex; }
-body.not-windows .other-os { display: block; }
-body.not-windows #download-btn { display: none; }
-body.not-windows .win-note { display: none; }
+/* the Windows download is replaced by "send the link to your PC" on other devices: the class is set on <html> by a small script in the
+   head (scripts/site/pages.mjs) before the first paint, so nothing shifts when the page loads */
+html:not(.not-windows) .only-other { display: none; }
+html.not-windows .only-other { display: inline-flex; }
+html.not-windows .other-os { display: block; }
+html.not-windows #download-btn { display: none; }
+html.not-windows .win-note { display: none; }
 
 main, .footer { max-width: 1100px; margin: 0 auto; padding: 0 24px; }
 
@@ -90,6 +91,8 @@ main, .footer { max-width: 1100px; margin: 0 auto; padding: 0 24px; }
 @media (prefers-reduced-motion: reduce) { .peak-caption { transition: none; } }
 .visually-hidden { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 .tour-toggle { border-style: dashed; }
+/* the Pause button is in the HTML so its place is reserved; it shows when the script has made it work */
+.tour-toggle[data-pending] { visibility: hidden; }
 .chips { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; }
 .chip, .lang {
   font: inherit; font-size: .9rem; cursor: pointer; min-height: 40px;

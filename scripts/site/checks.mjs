@@ -170,6 +170,15 @@ export function check({ ctx, pages, files, out }) {
     }
     const home = byPath.get(PATHS[lang].home);
     if (home && !home.html.includes(`id="peak-caption"`)) bad(`${home.path}: the caption element of the hero is missing`);
+    // the scene chips are static HTML (no layout shift when the script starts; labels readable without it)
+    SCENES.forEach((sc, i) => {
+      if (home && !home.html.includes(`data-scene="${i}"`)) bad(`${home.path}: the chip of scene ${sc.id} is not in the static HTML`);
+      if (home && !home.html.includes(`>${STRINGS[lang]["pose_" + sc.id]}</button>`)) bad(`${home.path}: the label of the chip ${sc.id} is not in the static HTML`);
+    });
+    // a language link's accessible name must start with its visible text (WCAG 2.5.3, Lighthouse "label-content-name-mismatch")
+    for (const m of (home ? home.html : "").matchAll(/<a class="lang"[^>]*aria-label="([^"]*)"[^>]*>([^<]*)<\/a>/g)) {
+      if (!m[1].startsWith(m[2])) bad(`${home.path}: the language link "${m[2]}" has the accessible name "${m[1]}", which does not start with its visible text`);
+    }
     if (home && !home.html.includes(STRINGS[lang].cap_idle)) bad(`${home.path}: the first caption is not in the static HTML`);
   }
 

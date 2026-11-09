@@ -352,4 +352,4 @@ export const HTML_KEYS = new Set(["hero_lead", "alpha_note", "s1", "s2", "s3", "
 /** Keys that exist in English only: the changelog and the 404 page are not translated. */
 export const EN_ONLY = new Set(["cl_page_title", "cl_desc", "cl_title", "cl_intro", "nf_title", "nf_text"]);
 /** The keys the page scripts need (share button, copy note, pose labels); the build puts them in each page. */
-export const UI_KEYS = ["share_btn", "link_copied", "tour_pause", "tour_play", ...SCENES.flatMap((s) => [`pose_${s.id}`, `cap_${s.id}`])];
+export const UI_KEYS = ["share_btn", "link_copied", "tour_pause", "tour_play", ...SCENES.map((s) => `cap_${s.id}`)];

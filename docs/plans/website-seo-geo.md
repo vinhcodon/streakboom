@@ -195,3 +195,20 @@ Pages for competitors or "best desktop pets" lists (unverifiable claims, they go
 | N4 structured data and `llms` files | **B**: `featureList`, requirements, release notes, screenshot; languages and brains in the `llms` files; a "safe to install" question |
 | N5 speed and measuring | **B**: a Lighthouse baseline and a size budget in the build |
 Order of work: the baseline first (before N2 to N4), then N4, N2, N3, N5's budget.
+
+## 10. Baseline, step 0 of ADR-0040 (2026-11-09)
+
+**Lighthouse 12.6.1, Chrome (the author's machine), one run each, simulated throttling for mobile.** Run on the live site before any change of ADR-0040:
+
+| Page | Form factor | Performance | Accessibility | Best practices | SEO | FCP | LCP | TBT | CLS |
+|---|---|---|---|---|---|---|---|---|---|
+| `/` | desktop | 98 | 100 | 100 | 100 | 0.6 s | 0.6 s | 0 ms | 0.076 |
+| `/` | mobile | 98 | 100 | 100 | 100 | 1.7 s | 1.7 s | 70 ms | 0.015 |
+| `/ja/` | mobile | 98 | 100 | 100 | 100 | 1.8 s | 1.8 s | 30 ms | 0 |
+| `/privacy/` | mobile | 100 | 100 | 100 | 100 | 1.0 s | 1.0 s | 0 ms | 0 |
+
+Transfer: 39 to 41 KB and 12 requests for a home page, 15 KB and 4 requests for the privacy page. What Lighthouse still lists, not fixed on purpose: static assets cached for 10 minutes (GitHub Pages sets the header; we cannot change it), 2 KiB of unminified JavaScript (a build-time minifier would be a new dependency for 2 KiB), images "properly sized" (the 96 px header logo shown at 32 px, 4 to 6 KiB), a DOM-size and a network-chain insight (the module scripts load in a chain, but only after the first paint).
+
+**Two things the baseline found, fixed the same day** (site commit of 2026-11-09 after `de24437`): (1) a layout shift of 0.076 on desktop and 0.015 on a phone: the scene chips were created by the script and, on a phone, the "send the link to my PC" notes were switched by the script after load; the chips are now in the static HTML (the labels are readable without the script too) and the platform class is set on `<html>` by a small script in the head before the first paint; (2) the language links (`EN`, `VI`, `JA`) had accessible names that did not contain their visible text ("English" for "EN"); they are now "EN (English)". After, on a local build (so without GitHub's compression, and one or two runs): desktop performance 100, layout shift 0.007; mobile performance 98 to 99, layout shift 0; the name-mismatch audit passes. The build now checks both (the chips in the static HTML, the accessible names). A re-run on the live site after the deploy is in `verification-debt.md` (W-24).
+
+**Not yet recorded: the assistants' answers** to the fixed question set of section 7 (English, Vietnamese and now three Japanese questions). Only the author can ask them; the baseline of the answers must exist **before** N2 to N4 are built.

@@ -1,6 +1,7 @@
 // The pages of the website as functions of (language, release facts). Output is plain static HTML that GitHub Pages
 // serves as it is; nothing here runs in the visitor's browser. Text comes from site/strings.mjs, facts from facts.mjs.
 import { STRINGS, HTML_KEYS, UI_KEYS, LANGS } from "../../site/strings.mjs";
+import { SCENES } from "../../site/scenes.js";
 import { AUTHOR, ORIGIN, RELEASES_URL, REPO_URL, fmtDate } from "./facts.mjs";
 
 export const PATHS = {
@@ -67,6 +68,7 @@ ${ogAlt ? ogAlt + "\n" : ""}  <meta property="og:image" content="${ORIGIN}/asset
   <meta name="twitter:description" content="${esc(description)}">
   <meta name="twitter:image" content="${ORIGIN}/assets/og-image.jpg">
   <link rel="stylesheet" href="/style.css">
+  <script>document.documentElement.classList.toggle("not-windows", !(/windows/i.test((navigator.userAgentData && navigator.userAgentData.platform) || navigator.userAgent) && !/phone|mobile/i.test(navigator.userAgent)));</script>
 ${jsonld.map((o) => `  <script type="application/ld+json">${json(o)}</script>`).join("\n")}
   <script type="application/json" id="ui-strings">${json(ui)}</script>
 </head>`;
@@ -77,7 +79,7 @@ function header({ lang, ctx, switchTo }) {
   const s = (k) => tx(lang, k, ctx);
   const home = PATHS[lang].home;
   const links = LANGS.filter((l) => l !== lang)
-    .map((l) => `<a class="lang" href="${switchTo[l]}" hreflang="${l}" lang="${l}" title="${esc(LANG_INFO[l].name)}" aria-label="${esc(LANG_INFO[l].name)}">${LANG_INFO[l].short}</a>`).join("\n      ");
+    .map((l) => `<a class="lang" href="${switchTo[l]}" hreflang="${l}" lang="${l}" title="${esc(LANG_INFO[l].name)}" aria-label="${LANG_INFO[l].short} (${esc(LANG_INFO[l].name)})">${LANG_INFO[l].short}</a>`).join("\n      ");
   return `<header class="nav">
     <a class="brand" href="${home}"><img src="/assets/peak-logo.png" width="32" height="32" alt="">Streakboom</a>
     <span class="langs">
@@ -184,6 +186,8 @@ export function homePage(lang, ctx) {
   const privacy = ["p1", "p2", "p3", "p7"].map((k) => `        <li>${s(k)}</li>`).join("\n");
   const faq = faqPairs(lang, ctx)
     .map((p) => `      <details><summary><h3>${esc(p.q)}</h3></summary><p>${esc(p.a)}</p></details>`).join("\n");
+  // the scene chips are in the HTML (the script only binds them): no shift when it starts, labels readable without it
+  const chips = SCENES.map((sc, i) => `          <button class="chip" type="button" data-scene="${i}" aria-pressed="${i === 0}">${s("pose_" + sc.id)}</button>`).join("\n");
   const recent = ctx.entries.slice(0, 3).map((e) => "        " + entryHtml(e, lang, 3)).join("\n");
 
   const main = `
@@ -213,7 +217,10 @@ export function homePage(lang, ctx) {
         <canvas id="peak" width="360" height="360" role="img" aria-label="${s("peak_alt")}"></canvas>
         <p id="peak-caption" class="peak-caption">${s("cap_idle")}</p>
         <p id="peak-status" class="visually-hidden" role="status"></p>
-        <div id="poses" class="chips" role="group" aria-label="${s("poses_label")}"></div>
+        <div id="poses" class="chips" role="group" aria-label="${s("poses_label")}">
+${chips}
+          <button id="tour-toggle" class="chip tour-toggle" type="button" data-pending>${s("tour_pause")}</button>
+        </div>
         <p class="demo-hint">${s("demo_hint")}</p>
       </div>
     </section>

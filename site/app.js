@@ -1,14 +1,10 @@
 // The page's script. Everything a reader or a crawler needs (the facts, the version, the notes, both languages) is static HTML
 // built by scripts/build-site.mjs; this file only adds the small interactive parts:
-//  - on phones and computers that are not Windows, replace the .exe download by "send the link to my PC",
+//  - on phones and computers that are not Windows the .exe download is replaced by "send the link to my PC" (the page decides this
+//    itself in a small script in the head, before the first paint; this file only runs the share button),
 //  - start the interactive Peak after the first paint (it must never delay the page).
 import { t } from "./ui.js";
 import { startPeak } from "./peak.js";
-
-// Peak is Windows only. On a phone, a Mac or Linux the .exe is useless, so offer to send the link to a PC instead.
-const platform = navigator.userAgentData?.platform || navigator.userAgent;
-const isWindows = /windows/i.test(platform) && !/phone|mobile/i.test(navigator.userAgent);
-document.body.classList.toggle("not-windows", !isWindows);
 
 const shareBtn = document.getElementById("share-btn");
 let toastTimer;
