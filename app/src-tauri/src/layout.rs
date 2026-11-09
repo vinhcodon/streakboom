@@ -74,6 +74,23 @@ pub fn idle_since(now_tick: u32, last_input_tick: u32) -> u32 {
     if d > u32::MAX / 2 { 0 } else { d }
 }
 
+/// Reading of the left mouse button from `GetAsyncKeyState` (`raw`): whether it is down now (the high bit) and whether
+/// it was pressed since the previous reading (the low bit). A button, never a key: nothing else is read (T8, ADR-0031).
+pub fn button_bits(raw: i16) -> (bool, bool) {
+    (raw < 0, raw & 1 != 0)
+}
+
+/// Is this reading a new click? A press shows as the button being down when it was not before, or as the "pressed
+/// since the last reading" bit, which catches a click shorter than the polling interval.
+pub fn is_click(was_down: bool, down: bool, pressed_since: bool) -> bool {
+    (down && !was_down) || pressed_since
+}
+
+/// Milliseconds since `at` (both from the same millisecond clock); 0 when `at` is in the future.
+pub fn age_ms(now: u64, at: u64) -> u64 {
+    now.saturating_sub(at)
+}
+
 /// The pointer must be within this many logical px of the cat's centre, and the user active within the last
 /// `ENGAGE_IDLE_MS`, for the hit-test thread to tell the page "the user may be working near the cat". It is a coarse
 /// trigger a little wider than the exact limits of `src/lib/focus.ts` (NEAR_PX 200, ACTIVE_MS 3000), which make the
@@ -282,6 +299,31 @@ mod tests {
         assert_eq!(clamp_to_world(&mons, 9000, 100, pet), Some((1920 + 2880 - 15 - 180, 100, true)));
         assert_eq!(clamp_to_world(&mons, 3000, 9000, pet), Some((3000, 1560 - 15 - 180, true)));
         assert_eq!(clamp_to_world(&[], 0, 0, pet), None);
+    }
+
+    #[test]
+    fn the_button_reading_is_split_into_down_now_and_pressed_since() {
+        assert_eq!(button_bits(0), (false, false));
+        assert_eq!(button_bits(i16::MIN), (true, false)); // 0x8000: down now
+        assert_eq!(button_bits(i16::MIN | 1), (true, true)); // down now and pressed since the last reading
+        assert_eq!(button_bits(1), (false, true)); // a click that was over before this reading
+    }
+
+    #[test]
+    fn a_click_is_a_new_press_or_a_press_since_the_last_reading() {
+        assert!(is_click(false, true, false)); // went down
+        assert!(!is_click(true, true, false)); // still held: not a new click
+        assert!(!is_click(false, false, false)); // nothing
+        assert!(!is_click(true, false, false)); // released: the click was counted when it went down
+        assert!(is_click(false, false, true)); // a click shorter than the polling interval
+        assert!(is_click(true, true, true)); // released and pressed again between two readings
+    }
+
+    #[test]
+    fn the_age_of_a_click_never_goes_negative() {
+        assert_eq!(age_ms(10_000, 4_000), 6_000);
+        assert_eq!(age_ms(5, 5), 0);
+        assert_eq!(age_ms(5, 9), 0);
     }
 
     #[test]

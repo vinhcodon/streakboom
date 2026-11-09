@@ -107,6 +107,17 @@ struct AppState {
     focus_ptr: AtomicBool,
     /// The pointer is on the cat (inside its hit region).
     focus_over: AtomicBool,
+    /// The cat's centre in logical px of the screen (physical px divided by the window's scale): the common frame of
+    /// `src/lib/lane.ts`, so the typing lane stays where it is while the cat walks. `f64` bits.
+    focus_cat_x: AtomicU64,
+    focus_cat_y: AtomicU64,
+    /// The left mouse button is down now (a button, never a key: T8, ADR-0031).
+    button_down: AtomicBool,
+    /// The last click made away from the cat: when (ms since the epoch, 0 = none) and where (logical px, `f64` bits).
+    /// Kept in memory only; it tells the typing lane where the caret was probably put.
+    click_at: AtomicU64,
+    click_x: AtomicU64,
+    click_y: AtomicU64,
 }
 
 fn now_ms() -> u64 {
@@ -210,6 +221,36 @@ struct FocusProbe {
     dy: Option<f64>,
     /// The pointer is on the cat itself.
     over: bool,
+    /// The cat's centre in logical px of the screen; None when unknown.
+    cat_x: Option<f64>,
+    cat_y: Option<f64>,
+    /// The left mouse button is down now.
+    button_down: bool,
+    /// The last click away from the cat, if any.
+    click: Option<ClickInfo>,
+}
+
+/// Where and how long ago the user last clicked away from the cat (logical px of the screen).
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+struct ClickInfo {
+    x: f64,
+    y: f64,
+    age_ms: u64,
+}
+
+/// The raw state of the left mouse button (`GetAsyncKeyState`), 0 where it cannot be read.
+fn left_button_raw() -> i16 {
+    #[cfg(windows)]
+    {
+        use windows_sys::Win32::UI::Input::KeyboardAndMouse::{GetAsyncKeyState, VK_LBUTTON};
+        // SAFETY: a plain query of one virtual-key code; no pointers.
+        unsafe { GetAsyncKeyState(VK_LBUTTON as i32) }
+    }
+    #[cfg(not(windows))]
+    {
+        0
+    }
 }
 
 /// Milliseconds since the last user input (Windows: `GetLastInputInfo`). None elsewhere or on failure.
@@ -241,6 +282,17 @@ fn focus_probe(state: State<AppState>) -> FocusProbe {
         dx: ptr.then(|| f64::from_bits(state.focus_dx.load(Ordering::Relaxed))),
         dy: ptr.then(|| f64::from_bits(state.focus_dy.load(Ordering::Relaxed))),
         over: ptr && state.focus_over.load(Ordering::Relaxed),
+        cat_x: ptr.then(|| f64::from_bits(state.focus_cat_x.load(Ordering::Relaxed))),
+        cat_y: ptr.then(|| f64::from_bits(state.focus_cat_y.load(Ordering::Relaxed))),
+        button_down: state.button_down.load(Ordering::Relaxed),
+        click: {
+            let at = state.click_at.load(Ordering::Relaxed);
+            (at != 0).then(|| ClickInfo {
+                x: f64::from_bits(state.click_x.load(Ordering::Relaxed)),
+                y: f64::from_bits(state.click_y.load(Ordering::Relaxed)),
+                age_ms: layout::age_ms(now_ms(), at),
+            })
+        },
     }
 }
 
@@ -952,6 +1004,7 @@ fn spawn_hit_test(app: AppHandle, win: WebviewWindow) {
     std::thread::spawn(move || {
         let mut ignoring: Option<bool> = None;
         let mut last_hint = false;
+        let mut was_down = false;
         let mut last_flush = Instant::now();
         loop {
             let state = app.state::<AppState>();
@@ -980,6 +1033,18 @@ fn spawn_hit_test(app: AppHandle, win: WebviewWindow) {
                     state.focus_dx.store(dx.to_bits(), Ordering::Relaxed);
                     state.focus_dy.store(dy.to_bits(), Ordering::Relaxed);
                     state.focus_over.store(inside, Ordering::Relaxed);
+                    state.focus_cat_x.store(((pos.x as f64 / scale) + PET_LEFT + PET_SIZE / 2.0).to_bits(), Ordering::Relaxed);
+                    state.focus_cat_y.store(((pos.y as f64 / scale) + PET_TOP + PET_SIZE / 2.0).to_bits(), Ordering::Relaxed);
+                    // the left button: a press away from the cat is a click that put the caret somewhere (typing lane);
+                    // a press on the cat is a gesture on it, and a press while dragging is the drag
+                    let (down, pressed) = layout::button_bits(left_button_raw());
+                    state.button_down.store(down, Ordering::Relaxed);
+                    if layout::is_click(was_down, down, pressed) && !inside && !state.dragging.load(Ordering::Relaxed) {
+                        state.click_x.store((cur.x / scale).to_bits(), Ordering::Relaxed);
+                        state.click_y.store((cur.y / scale).to_bits(), Ordering::Relaxed);
+                        state.click_at.store(now_ms().max(1), Ordering::Relaxed);
+                    }
+                    was_down = down;
                     ptr_ok = true;
                     offset = Some((dx, dy));
                     // While dragging the window follows the cursor and must keep receiving events.
@@ -1098,6 +1163,12 @@ pub fn run() {
                 focus_dy: AtomicU64::new(0),
                 focus_ptr: AtomicBool::new(false),
                 focus_over: AtomicBool::new(false),
+                focus_cat_x: AtomicU64::new(0),
+                focus_cat_y: AtomicU64::new(0),
+                button_down: AtomicBool::new(false),
+                click_at: AtomicU64::new(0),
+                click_x: AtomicU64::new(0),
+                click_y: AtomicU64::new(0),
                 dragging: AtomicBool::new(false),
                 drag: Mutex::new(DragStart::default()),
                 bubble: Mutex::new(BubbleState::default()),

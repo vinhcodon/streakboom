@@ -64,7 +64,7 @@ Moving away from attention is a walk, then (if needed) a hop or two: never a lon
 
 Nothing in this makes the cat louder: it moves less than today while the user works and more while the user rests. Lines (spec/03) keep their own rules.
 
-### 3.1 The typing lane (agreed 2026-11-09, not built)
+### 3.1 The typing lane (agreed 2026-11-09; the model `lane.ts` and the mouse button reading are built, the cat does not use them yet: TE-14)
 **The gap it closes.** Pointer proximity makes the cat leave when the user starts typing near it. It does not notice when the **text** then runs toward the cat, because the pointer stays where it was. The real caret is not available: the system caret (`GetGUIThreadInfo`) is not reported by Chromium and Electron apps, which is most modern software (tested on 2026-11-09 on the author's machine, foreground class `Chrome_WidgetWin_1`: no caret). UI Automation can give it but is heavy, needs the browser's accessibility mode and looks like surveillance (ADR-0029); reading pixels near the cat is reading the screen. So the caret is **predicted**.
 **The model (pure logic in `lane.ts`, proposals to tune):**
 - **Anchor A:** where the user last clicked (the caret was put there), taken from the mouse button state; if there was no click since typing began, the pointer position when typing began. A new click replaces it. It expires after 60 s without any input.
