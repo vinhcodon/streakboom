@@ -1,6 +1,6 @@
 # ADR-0032: Hops and falls move the window along an arc; a test build tries them from a temporary menu; a dropped Peak stays where it is
 
-- **Status:** accepted (decisions); built (TE-7); the author tried it on a test build on 2026-11-09 and said to go on
+- **Status:** accepted (decisions); built (TE-7, TE-15) and released in 0.2.5; the author tried it on a test build on 2026-11-09 and said to go on
 - **Date:** 2026-11-09
 - **Decided by:** Vinh (author), with Claude
 

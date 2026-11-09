@@ -10,6 +10,8 @@ Each kind of statement has one home. Before adding a sentence, decide which kind
 | Handoffs | [`handoff/`](handoff/README.md) | What did another session or conversation tell us? | never edited after receipt; the index records what became of it |
 | Plans | [`plans/`](plans/README.md) | What will we do next, in what order, tested how? | work starts or finishes |
 | History | [`engineering-log.md`](engineering-log.md) | What was built, measured and learned, and what was not verified? | appended, never rewritten |
+| Open checks | [`plans/verification-debt.md`](plans/verification-debt.md) | What was built but not yet checked, and how to check it? | after every task; a row is ticked or removed when checked |
+| Release notes | [`../CHANGELOG.md`](../CHANGELOG.md) | What does each version change for the user? | at every release (the website reads it) |
 
 ## Keeping them in step
 1. A change to behavior updates the spec in the same commit as the code, and the README if users see it.
@@ -18,3 +20,4 @@ Each kind of statement has one home. Before adding a sentence, decide which kind
 4. Numbers that appear in several places (test counts, line counts, versions) are updated together; the specs and the README state them, so check them at each release.
 5. Say what was **not** verified. Every plan and log entry ends with it.
 6. Commit documents with explicit paths, like code (ADR-0023).
+7. **At every release** audit the documents for consistency, refresh the README, check the names, and prepare the prompt for the website session (ADR-0033; `node scripts/audit-docs.mjs`).

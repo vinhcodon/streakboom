@@ -135,7 +135,7 @@ Priority: fullscreen/busy/Quiet mode/asleep rules stay as they are and win; a sl
 - A per-day count of how often the cat made way ("yield") would be a new kind of count; the consent wording of version 2 lists the counts it covers, so adding it means a new consent version and asking people again. **Decision: no new counter in this work** ("fades" in the earlier wording means "makes way" now). The effect is judged by observation in the alpha and by the existing guardrails (Quiet mode use; the hide rate once the Rust event exists, PF-5).
 
 ## 5. Constraints
-- Idle cat at about 0% CPU; walking measured before and after (engineering-log recipe and `scripts/cpu-breakdown.ps1`).
+- Idle cat at about 0% CPU was the target; with software drawing it is not reached (about 4 to 6% of one core standing, a median of about 9% in normal use, 0.2.5; PR-9); walking measured before and after (engineering-log recipe and `scripts/cpu-breakdown.ps1`).
 - The pet window owns all state; other windows send patches over `bus.ts`.
 - Pure logic (focus decision, zone counters, favorite choice) in `src/lib` with Node tests; platform specifics stay in Rust.
 - No global keyboard hook, no screen-content reading, no new network call.

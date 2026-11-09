@@ -2,6 +2,8 @@
 
 Status: **spec approved by Vinh on 2026-11-08 ([`../../spec/06-character-and-movement.md`](../../spec/06-character-and-movement.md)); work proceeds story by story from step 0.** Decisions D1 to D8 are answered (spec section 0, ADR-0029). The work sits in epic E8 and in E1, E3 and E5 of [`backlog.md`](backlog.md).
 
+**Progress (2026-11-09, version 0.2.5):** step 0 is done (PR-3, PR-4; the CPU target PR-9 is open); steps 1 to 3 are done (FS-1 to FS-3; the ghost fade was dropped for making way, FS-4, ADR-0029); the notice beat (PC-2) and the manual checks (FS-5) are open; step 5 (FS-6) is open and the line in spec/05 about "no input hook" is still true (no hook is used); vertical movement is built as hops (steps 6 and 7 in part, see `terrain-and-attention.md`); favorite places and the character content (steps 6 and 8) are not built.
+
 ## Order (D2: CPU first)
 Step 0 is a gate: steps 1 to 5 do not start until the baseline CPU is understood and brought down, because every later step adds motion or a probe.
 
@@ -37,4 +39,4 @@ Step 0 is a gate: steps 1 to 5 do not start until the baseline CPU is understood
 5. *Edge cases:* fullscreen video, locked screen, a remote session, a screen share (A4).
 
 ## What could not be verified (yet)
-Everything about the new behavior: nothing is built. The constants are starting points. The effect of the proposed CPU levers is an estimate until PR-4 measures it.
+Everything about the parts that are not built (favorite places, character content), and for the built ones what is in `verification-debt.md`. The constants are starting points. The effect of the proposed CPU levers is an estimate until PR-4 measures it.

@@ -1,6 +1,6 @@
 # ADR-0030: The desktop is terrain, modeled as a cost field of fixed relief and the user's attention
 
-- **Status:** accepted (direction; not built)
+- **Status:** accepted (direction; partly built in 0.2.5: monitor geometry, hops, the typing lane; the cost field, places and window relief are not)
 - **Date:** 2026-11-09
 - **Decided by:** Vinh (author), with Claude
 

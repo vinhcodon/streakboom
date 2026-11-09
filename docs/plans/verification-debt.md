@@ -38,6 +38,9 @@ How the agent checks on the real machine: run from the author's Terminal panel (
 | V-31 | How often the cat hops in real use now that the cool-down is 10 s (a 6 s one gave 15 hops in two minutes in the author's test) | after a day of use read `window.__pet.trail()` (needs the debug port) or ask the author | either | 2026-11-09 |
 | V-32 | The system timer set to 1 ms during a flight (`timeBeginPeriod`): that the even frames hold on other machines and that nothing else is slowed or kept awake | the second machine (V-1) | Vinh | 2026-11-09 |
 
+| V-34 | The documentation audit (`scripts/audit-docs.mjs`) checks links, indexes, versions, retired names and test counts only; whether a spec or plan sentence is out of date was checked by reading on 2026-11-09 and can drift again | read the specs, plans, ADR statuses and progress notes at every release (ADR-0033) | Claude | 2026-11-09 |
+| V-35 | The website session has not yet acted on `website-release-prompt.md` (the name, the new text, the SEO and GEO proposal) | ask the author, or look at `site/` and `docs/plans/website-seo-geo.md` after the session reports | Vinh | 2026-11-09 |
+
 ## C. Things that are written but not done (not verification, kept here so they are not lost)
 - The privacy text on the **website** for the mouse button reading (the README has it since TE-14); the attention field and the ground type when TE-9 ships. The website session reads `CHANGELOG.md` and must be told when the lane is released.
 - The website session has to be told when the behaviour it describes changes (focus-safety, making way; the typing lane when it ships): its source of truth is `CHANGELOG.md`.

@@ -1,6 +1,6 @@
 # 07. The desktop as terrain: a cost field of fixed relief and the user's attention
 
-Status: **draft; the direction was agreed by Vinh on 2026-11-09 (see section 0); no code exists.** It builds on [`06-character-and-movement.md`](06-character-and-movement.md) (focus-safety, favorite places) and replaces its "places on a 3 x 3 grid" with the model below. Plan: [`../docs/plans/terrain-and-attention.md`](../docs/plans/terrain-and-attention.md). Decision: [ADR-0030](../docs/decisions/0030-terrain-as-a-cost-field.md). Backlog: epic E9. What Peak can sense and how it reacts (the layers below are its beliefs), with the gaps found against the specs, is in [`08-perception.md`](08-perception.md).
+Status: **draft; the direction was agreed by Vinh on 2026-11-09 (see section 0). Partly built (2026-11-09, released in 0.2.5): the Rust monitor geometry and `move_to` (TE-2), hops and falls (TE-7, TE-15), the typing lane (TE-12, TE-13, TE-14). Not built: the attention field and the cost field, places and window relief (L3).** It builds on [`06-character-and-movement.md`](06-character-and-movement.md) (focus-safety, favorite places) and replaces its "places on a 3 x 3 grid" with the model below. Plan: [`../docs/plans/terrain-and-attention.md`](../docs/plans/terrain-and-attention.md). Decision: [ADR-0030](../docs/decisions/0030-terrain-as-a-cost-field.md). Backlog: epic E9. What Peak can sense and how it reacts (the layers below are its beliefs), with the gaps found against the specs, is in [`08-perception.md`](08-perception.md).
 
 ## 0. How this came about, and what is decided
 
@@ -93,7 +93,7 @@ Only when Vinh gives the permission (a Settings switch, default to be decided th
 - If window geometry is ever added (L3), only the position, size and maximized state of visible windows would be read, only while the setting is on, never titles or contents, never stored or sent.
 
 ## 7. Constraints
-Idle cat about 0% CPU (hops and falls are full-speed motion and are measured one by one); no new network call; no global keyboard hook; no screen-content reading; the pet window owns the state; pure logic in `src/lib` with Node tests (`terrain.ts`, `attention.ts`, place choice); platform specifics in Rust behind a small interface (a monitor list, `move_to`, later a window list), so a macOS port stays possible.
+Idle cat about 0% CPU is the target (not reached with software drawing: about 4 to 6% of one core standing, PR-9); hops and falls are measured one by one (a hop costs about 0.34 core-seconds, TE-15); no new network call; no global keyboard hook; no screen-content reading; the pet window owns the state; pure logic in `src/lib` with Node tests (`terrain.ts`, `attention.ts`, place choice); platform specifics in Rust behind a small interface (a monitor list, `move_to`, later a window list), so a macOS port stays possible.
 
 ## 8. Open questions
 1. **Keyboard-only users** (pointer parked, typing): the field is blind to the caret. Mitigations: the FS-1 stillness while active; a longer decay when typing continues with a parked pointer; or accept the limit. To be settled in L2 with real use.

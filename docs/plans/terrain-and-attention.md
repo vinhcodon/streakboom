@@ -2,6 +2,8 @@
 
 Status: **proposed 2026-11-09 after Vinh agreed the direction ([`../../spec/07-terrain-and-attention.md`](../../spec/07-terrain-and-attention.md), decisions T1 to T6); no code until FS-4 and the CPU target (PR-9) are done (T6).** Epic E9 in [`backlog.md`](backlog.md).
 
+**Progress (2026-11-09, released in 0.2.5):** the order changed (T9): the typing lane came first because it needs vertical movement. Built: step 2 (TE-2), step 7 (TE-7, and TE-15 which made it light) and step 8b (TE-12, TE-13, TE-14). Not built: steps 1, 3 to 6, 8, 9 and 10 (the world model, walking across monitors, the attention field, danger zones, the cost-based choice, the L3 window layer).
+
 ## Levels and order
 | Level | What | Needs a permission? | Stories |
 |---|---|---|---|
@@ -42,4 +44,4 @@ Order inside L1 and L2: the pure logic first with Node tests (`terrain.ts`, `att
 **By hand (real window, debug port recipe, back up and restore the real data around synthetic tests):** the cat leaves a place where the user is typing; it does not run around when the pointer moves a lot; on two monitors the hill on the other monitor does not move it; at 125% and 150% DPI the grid and the danger zones land where expected; a maximized window with the cat inside it while the user is idle; CPU for a standing, walking, hopping and avoiding cat.
 
 ## What could not be verified (yet)
-Everything: nothing is built. The main open assumption is that the pointer is a good enough proxy for the user's attention (H9). The constants are starting values.
+Everything that is not built (see the progress note above); and the built steps are verified only on one machine and one display scale, with synthetic input and the author's own use (`verification-debt.md`). The main open assumption is that the pointer is a good enough proxy for the user's attention (H9). The constants are starting values.

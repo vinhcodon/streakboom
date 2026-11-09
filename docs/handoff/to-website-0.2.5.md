@@ -11,6 +11,9 @@
 - **Polite while you work** (0.2.4): Peak does not start a walk and does not speak on its own while you type or use the mouse; when you work right next to it, it makes way (walks away, or yawns and curls up if there is no room); a sleeping Peak wakes up and makes way if you type right by it.
 - **Out of the way of your text** (0.2.5): from where you last clicked and how long you have typed, Peak guesses where the text is heading and hops to another row before it arrives. The guess can be wrong, so it sometimes hops when it was not needed; at least 10 seconds pass between two hops.
 
+## The author's name changed (2026-11-09)
+The author's GitHub display name is now **Vinh Codon** (it was "Vinh Nguyen"). `LICENSE` and `README.md` are updated. `site/i18n.js` (`foot_a`, English and Vietnamese) and `site/index.html` (the footer) still say "Vinh Nguyen": please change them. The repository owner and every URL (`vinhcodon`) are unchanged. The full list of things to do for this release, and the request for an SEO and AI-search (GEO) structure proposal, is in [`website-release-prompt.md`](website-release-prompt.md).
+
 ## Privacy (new bullet in the README: "What Peak notices around it")
 Peak reads only **when** you last used the keyboard or the mouse (one number, never which keys), **where** the pointer is, and **whether the left mouse button is pressed** (so it remembers where you last clicked). It never reads what you type, which keys you press, what is on your screen, window titles or app names. The readings are kept only in memory, are never written to a file or sent anywhere, and are gone when Peak closes. If the site has its own privacy text, add this.
 
