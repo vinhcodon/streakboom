@@ -175,3 +175,12 @@ test("the changelog parser reads the format CHANGELOG.md promises", () => {
   assert.deepEqual(e.map((x) => [x.version, x.date, x.title, x.items]), [["1.0.0", "2026-01-02", "hi", ["a wrapped", "b"]], ["0.9.0", "", "", ["c"]]]);
   assert.equal(parseChangelog("").length, 0);
 });
+
+test("the size budget passes on the real site and fails when exceeded", async () => {
+  const { sizeProblems, BUDGET } = await import("./checks.mjs");
+  assert.deepEqual(sizeProblems({ pages: r.pages, out: r.out }), []);
+  const tiny = sizeProblems({ pages: r.pages, out: r.out }, { scriptsGzip: 1000, homeHtml: 1000 });
+  assert.ok(tiny.some((m) => /scripts are/.test(m)), "scripts over budget");
+  assert.equal(tiny.filter((m) => /of HTML/.test(m)).length, 3, "each home page over budget");
+  assert.ok(BUDGET.scriptsGzip === 30 * 1024 && BUDGET.homeHtml === 60 * 1024);
+});

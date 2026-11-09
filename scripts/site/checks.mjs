@@ -1,12 +1,34 @@
 // Checks the built site against the repository and against itself (ADR-0034). If anything is wrong the build throws and the
 // deploy does not happen, so the site on the Pages host is always the last site that passed.
-import { existsSync, readFileSync } from "node:fs";
+import { existsSync, readFileSync, readdirSync } from "node:fs";
+import { gzipSync } from "node:zlib";
 import { join } from "node:path";
 import { ORIGIN, fmtDate } from "./facts.mjs";
 import { pageList } from "./files.mjs";
 import { PATHS, esc } from "./pages.mjs";
 import { STRINGS, EN_ONLY, LANGS, UI_KEYS } from "../../site/strings.mjs";
 import { SCENES } from "../../site/scenes.js";
+
+/** The size budget (ADR-0040 N5): what the browser must download to show a page stays small. Limits are in bytes. */
+export const BUDGET = { scriptsGzip: 30 * 1024, homeHtml: 60 * 1024 };
+
+/** All .js files under a directory (the scripts a page loads: the page script, the rig and the tour). */
+function jsFiles(dir) {
+  return readdirSync(dir, { withFileTypes: true }).flatMap((e) => (e.isDirectory() ? jsFiles(join(dir, e.name)) : e.name.endsWith(".js") ? [join(dir, e.name)] : []));
+}
+
+/** Problems with the size budget: the scripts together (gzipped) and the largest home page (as sent, not gzipped). */
+export function sizeProblems({ pages, out }, limits = BUDGET) {
+  const problems = [];
+  const scripts = jsFiles(out).reduce((n, file) => n + gzipSync(readFileSync(file)).length, 0);
+  if (scripts > limits.scriptsGzip) problems.push(`size: the scripts are ${(scripts / 1024).toFixed(1)} KB gzipped, over the budget of ${(limits.scriptsGzip / 1024).toFixed(0)} KB`);
+  for (const p of pages) {
+    if (!LANGS.some((l) => PATHS[l].home === p.path)) continue;
+    const bytes = Buffer.byteLength(p.html);
+    if (bytes > limits.homeHtml) problems.push(`size: ${p.path} is ${(bytes / 1024).toFixed(1)} KB of HTML, over the budget of ${(limits.homeHtml / 1024).toFixed(0)} KB`);
+  }
+  return problems;
+}
 
 const unesc = (s) => s.replace(/&quot;/g, '"').replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&amp;/g, "&");
 const count = (s, re) => (s.match(re) || []).length;
@@ -205,6 +227,7 @@ export function check({ ctx, pages, files, out }) {
   for (const f of ["sitemap.xml", "robots.txt", "llms.txt", "llms-full.txt"]) if (!files[f] || files[f].length < 50) bad(`${f} is missing or empty`);
   if (!existsSync(join(out, "404.html"))) bad("404.html is missing");
 
+  problems.push(...sizeProblems({ pages, out }));
   if (problems.length) {
     throw new Error(`The site did not pass its checks (${problems.length}):\n  - ${problems.join("\n  - ")}`);
   }
