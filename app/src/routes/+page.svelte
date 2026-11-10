@@ -99,7 +99,8 @@
   import { NOTICE, wordsAtMs, type Beat } from "$lib/beats";
   import { chooseBeat, moodBeat } from "$lib/choose";
   import { endReaction, mayReact, newGate, startReaction } from "$lib/reactions";
-  import { desktopShare, ledges, summary, type GroundMap } from "$lib/groundmap";
+  import { desktopShare, ledges, summary, type GroundKind, type GroundMap } from "$lib/groundmap";
+  import { believe, responseFor, startBelief } from "$lib/perception";
   import { EVENTS, type EventId } from "$lib/events";
   import { escapeRow, initialLane, stepLane, type LaneOut } from "$lib/lane";
   import { engage as engagePure, markShown as markShownPure, minuteIncrement, noShown, type DayCounter, type DayStat } from "$lib/bond";
@@ -519,6 +520,7 @@
   // Asked on every probe while the cat feels crowded: `makeWay` acts only when the cat is standing, so if the crowding
   // began while it was busy (walking, being held) it makes way as soon as it stands, and the cool-down keeps it calm.
   function noteCrowded(fo: FocusOut) {
+    beliefState = believe(beliefState, fo, laneOut, lastGround).state; // the guess of the lane is steadier for being counted per probe (PC-1)
     if (fo.crowded || laneOut.crowded) {
       crowdedSince ??= Date.now();
       void makeWay(fo.leaveDir);
@@ -978,6 +980,30 @@
     return lastMap;
   }
 
+  /**
+   * Events from Rust (PC-3): the user started or stopped working, a click happened (where it was stays in Rust and is read
+   * with the probe), the monitors changed. Only the kind and a flag arrive. They are kept in the trail for the debugger;
+   * a change of monitors drops what was believed about the old layout; the user starting to work probes at once instead
+   * of waiting for the next poll.
+   */
+  function onPercept(p: { kind: string; on?: boolean }) {
+    note(`percept ${p.kind}${p.on === undefined ? "" : p.on ? " on" : " off"}`);
+    if (p.kind === "monitors") {
+      groundW = startGroundWatch();
+      lastMap = null;
+    } else if (p.kind === "activity" && p.on) {
+      void probeFocus();
+    }
+  }
+
+  // What Peak believes about being in the way, and how sure it is (PC-1, spec/08); for the debugger and the trail for now
+  let beliefState = startBelief();
+  let lastGround: GroundKind | null = null;
+  function currentBelief() {
+    const r = believe(beliefState, focusOut, laneOut, lastGround);
+    return { belief: r.belief, response: responseFor(r.belief), state: r.state };
+  }
+
   async function groundTick() {
     if (groundBusy) return;
     const standing = !flying && !quiet && panel === null && (pose === "idle" || pose === "look");
@@ -987,7 +1013,8 @@
     }
     groundBusy = true;
     try {
-      const g = await invoke<{ id: number; foot: [number, number] }>("ground_under_cat");
+      const g = await invoke<{ id: number; foot: [number, number]; under: GroundKind }>("ground_under_cat");
+      lastGround = g.under;
       // asked about the window it stands on (not about the current one under the feet: a window raised over it changes nothing)
       const holds = groundW.id !== 0 ? await invoke<boolean>("window_holds", { id: groundW.id, x: groundW.x, y: groundW.y }) : null;
       const r = stepGround(groundW, { id: g.id, x: g.foot[0], y: g.foot[1] }, holds);
@@ -1810,6 +1837,7 @@
       );
       cleanups.push(await win.listen<BubbleAction>("bubble-action", (e) => onBubbleAction(e.payload)));
       cleanups.push(await win.listen<boolean>("focus-hint", (e) => onFocusHint(e.payload)));
+      cleanups.push(await win.listen<{ kind: string; on?: boolean }>("percept", (e) => onPercept(e.payload)));
       cleanups.push(await win.listen("bubble-ready", resendView));
       cleanups.push(await win.listen("settings-ready", pushSettings));
       // test builds only (cargo feature `hop-test`): the right-click menu items that try the hops and the fall
@@ -1898,7 +1926,7 @@
       scheduleProactive();
       groundLoop = setInterval(groundTick, GROUND_POLL_MS);
       // Test hook (like window.__cat): lets a debugger trigger the real unprompted-line path now.
-      (window as unknown as Record<string, unknown>).__pet = { proactive: () => void fireProactive(), focus: () => ({ ...focusOut, lastLeave, pose }), trail: () => trail, sleep: () => enter("drowsy"), wake: () => enter("idle"), hop: (dx: number, dy: number) => void fly(splitHop(dx, dy), "walk"), lane: () => ({ ...laneOut, state: laneState, cat: laneCat }), ground: () => invoke("ground_under_cat"), map: () => takeGroundMap().then((m) => (m ? { summary: summary(m), ledges: ledges(m).length } : null)), groundLost: () => void groundLost(), say: (t: Trigger, kind?: RepeatKind) => (kind ? say(t, repeatNow(kind)) : say(t)), bubble: () => bubbleText, fall: (d: number) => void fly([planFall(d)], "gasp") };
+      (window as unknown as Record<string, unknown>).__pet = { proactive: () => void fireProactive(), focus: () => ({ ...focusOut, lastLeave, pose }), trail: () => trail, sleep: () => enter("drowsy"), wake: () => enter("idle"), hop: (dx: number, dy: number) => void fly(splitHop(dx, dy), "walk"), lane: () => ({ ...laneOut, state: laneState, cat: laneCat }), ground: () => invoke("ground_under_cat"), belief: () => { const b = currentBelief(); return { ...b.belief, response: b.response }; }, map: () => takeGroundMap().then((m) => (m ? { summary: summary(m), ledges: ledges(m).length } : null)), groundLost: () => void groundLost(), say: (t: Trigger, kind?: RepeatKind) => (kind ? say(t, repeatNow(kind)) : say(t)), bubble: () => bubbleText, fall: (d: number) => void fly([planFall(d)], "gasp") };
       let lastTick = Date.now();
       minuteTimer = setInterval(() => {
         const now = Date.now();

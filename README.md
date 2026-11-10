@@ -108,9 +108,9 @@ npm run tauri dev          # run the app with hot reload
 ```
 
 ```powershell
-npm test                   # Node tests for the pure logic (src/lib/*.test.ts), 209 tests
+npm test                   # Node tests for the pure logic (src/lib/*.test.ts), 214 tests
 npm run check              # svelte-check (types)
-cd src-tauri; cargo test   # Rust tests (the four brain clients against a mock server, window and monitor geometry, the focus probe, the ground sense, the persona layers and reaction cards), 71 tests
+cd src-tauri; cargo test   # Rust tests (the four brain clients against a mock server, window and monitor geometry, the focus probe, the ground sense, the persona layers and reaction cards, the activity and monitor events), 73 tests
 ```
 
 ```powershell

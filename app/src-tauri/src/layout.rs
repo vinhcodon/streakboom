@@ -110,6 +110,28 @@ pub fn age_ms(now: u64, at: u64) -> u64 {
 pub const ENGAGE_RADIUS_PX: f64 = 250.0;
 pub const ENGAGE_IDLE_MS: u32 = 3000;
 
+/// The user's activity as events (PC-3): becomes active when the last input is under `ACTIVE_ON_MS` ago and stops being
+/// active once it is `ACTIVE_OFF_MS` or more ago. The gap between the two keeps a pause in typing from flickering.
+pub const ACTIVE_ON_MS: u32 = 1500;
+pub const ACTIVE_OFF_MS: u32 = 3000;
+pub fn activity_next(active: bool, idle_ms: Option<u32>) -> bool {
+    match idle_ms {
+        None => active,
+        Some(i) => {
+            if active {
+                i < ACTIVE_OFF_MS
+            } else {
+                i < ACTIVE_ON_MS
+            }
+        }
+    }
+}
+
+/// A fingerprint of the set of monitors (their work areas and scales), to tell when it changed (PC-3).
+pub fn monitors_signature(mons: &[Mon]) -> Vec<(i32, i32, i32, i32, u64)> {
+    mons.iter().map(|m| (m.work.x, m.work.y, m.work.r, m.work.b, m.scale.to_bits())).collect()
+}
+
 pub fn engaged_near(idle_ms: Option<u32>, dx: f64, dy: f64) -> bool {
     idle_ms.is_some_and(|i| i < ENGAGE_IDLE_MS) && dx.hypot(dy) < ENGAGE_RADIUS_PX
 }
@@ -206,6 +228,28 @@ pub fn place_bubble(a: Area, px: i32, py: i32, size: i32, w: i32, h: i32, gap: i
 
 #[cfg(test)]
 mod tests {
+    #[test]
+    fn activity_starts_quickly_and_stops_slowly() {
+        use super::{activity_next, ACTIVE_OFF_MS, ACTIVE_ON_MS};
+        assert!(activity_next(false, Some(ACTIVE_ON_MS - 1)));
+        assert!(!activity_next(false, Some(ACTIVE_ON_MS)));
+        assert!(!activity_next(false, Some(2000)), "a pause of 2 s does not start it");
+        assert!(activity_next(true, Some(2000)), "and does not stop it either");
+        assert!(activity_next(true, Some(ACTIVE_OFF_MS - 1)));
+        assert!(!activity_next(true, Some(ACTIVE_OFF_MS)));
+        assert!(activity_next(true, None) && !activity_next(false, None), "unknown keeps the state");
+    }
+
+    #[test]
+    fn the_monitor_signature_changes_with_the_set_and_the_scale() {
+        use super::{monitors_signature, Area, Mon};
+        let m = |x: i32, scale: f64| Mon { full: Area { x, y: 0, r: x + 1920, b: 1080 }, work: Area { x, y: 0, r: x + 1920, b: 1040 }, scale };
+        let one = monitors_signature(&[m(0, 1.25)]);
+        assert_eq!(one, monitors_signature(&[m(0, 1.25)]));
+        assert_ne!(one, monitors_signature(&[m(0, 1.25), m(1920, 1.0)]), "a second monitor");
+        assert_ne!(one, monitors_signature(&[m(0, 1.5)]), "another scale");
+    }
+
     use super::*;
 
     const A: Area = Area { x: 0, y: 0, r: 1920, b: 1040 };

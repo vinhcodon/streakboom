@@ -1208,6 +1208,9 @@ fn spawn_hit_test(app: AppHandle, win: WebviewWindow) {
         let mut ignoring: Option<bool> = None;
         let mut last_hint = false;
         let mut was_down = false;
+        let mut was_active = false;
+        let mut mons_sig = layout::monitors_signature(&mons_of(&win));
+        let mut mons_checked = Instant::now();
         let mut last_flush = Instant::now();
         loop {
             let state = app.state::<AppState>();
@@ -1246,6 +1249,8 @@ fn spawn_hit_test(app: AppHandle, win: WebviewWindow) {
                         state.click_x.store((cur.x / scale).to_bits(), Ordering::Relaxed);
                         state.click_y.store((cur.y / scale).to_bits(), Ordering::Relaxed);
                         state.click_at.store(now_ms().max(1), Ordering::Relaxed);
+                        // only that a click happened: where stays here and is read with the probe (PC-3)
+                        let _ = app.emit("percept", serde_json::json!({ "kind": "click" }));
                     }
                     was_down = down;
                     ptr_ok = true;
@@ -1259,6 +1264,20 @@ fn spawn_hit_test(app: AppHandle, win: WebviewWindow) {
                 }
             }
             state.focus_ptr.store(ptr_ok, Ordering::Relaxed);
+            // events for the page (PC-3): the user started or stopped working, and the monitors changed (checked every few seconds)
+            let act = layout::activity_next(was_active, idle);
+            if act != was_active {
+                was_active = act;
+                let _ = app.emit("percept", serde_json::json!({ "kind": "activity", "on": act }));
+            }
+            if mons_checked.elapsed() > Duration::from_secs(5) {
+                mons_checked = Instant::now();
+                let sig = layout::monitors_signature(&mons_of(&win));
+                if sig != mons_sig {
+                    mons_sig = sig;
+                    let _ = app.emit("percept", serde_json::json!({ "kind": "monitors" }));
+                }
+            }
             // tell the page only when "the user may be working near the cat" changes (no polling while it is false)
             let click_at = state.click_at.load(Ordering::Relaxed);
             let lane_hint = ptr_ok
