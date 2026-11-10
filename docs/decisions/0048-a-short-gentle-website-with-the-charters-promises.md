@@ -1,6 +1,6 @@
 # ADR-0048: A short, gentle website: a short home, details behind links, the charter's promises, one round of the tour
 
-- **Status:** accepted (decisions answered by the author on 2026-11-10); **nothing is built yet**
+- **Status:** accepted (decisions answered by the author on 2026-11-10); **built on 2026-11-10** (committed, see the result below)
 - **Date:** 2026-11-10
 - **Decided by:** Vinh (author), with Claude (the website session), answering the request in `docs/handoff/website-restructure-request.md`
 
@@ -14,6 +14,18 @@ The author said the site had become long-winded, and Peak now has a charter (`do
 4. **The hero tour plays one round, then stands still** (`LOOPS` from 2 to 1; about 45 seconds). It still pauses on hover, focus, when hidden or off screen, has the Pause button, and does not move by itself with `prefers-reduced-motion`; no pop-ups, nothing that interrupts the reading.
 5. **The voice** is Peak's: warm, short, a little playful, never loud, no jargon, no claim we cannot back. Examples for the headline, one feature and one FAQ answer are in plan section 14. The Vietnamese and Japanese rewrites are written by the website session and have no native reader; they stay marked as such in the verification list.
 6. **What does not change** (ADR-0034): per-language URLs, the crawlable changelog, structured data, `llms.txt`, `llms-full.txt`, the sitemap, `facts.mjs` as the source of truth, the build checks. The build checks that depend on text now on the home page (the nine feature titles, `softwareRequirements`, the README numbers, the "under its feet" wording) are moved to the page that carries the text or changed to link-aware checks, and the FAQ in the structured data stays exactly the visible one on every page that has an FAQ. Only released behaviour (0.3.1) is described; the author's name is Vinh Codon.
+
+## Result (2026-11-10, measured on the built site)
+| English words (Japanese in characters) | before | budget | after |
+|---|---|---|---|
+| Home | 2,862 (JA 8,591) | about 600 | **727** (JA 2,112; VI 848) |
+| How it works | 659 (JA 1,626) | about 900 | **1,441** (JA 3,595; VI 1,704) |
+| Privacy | 623 (JA 1,736) | about 500 | **693** (JA 1,906; VI 843) |
+| `llms-full.txt` | 3,037 | about 1,500 | **2,754** |
+
+The home page is a quarter of its old length (and a short page: four promises, four feature lines, the install, five answers of 19 to 51 words, the newest update's first line). The three pages together went from 4,144 to 2,861 English words. **Three budgets were missed:** the How it works page absorbed the nine features and the gestures table and still repeats a little (its sections on the AI brain, what is free and how updates work overlap the feature cards), the privacy page gained the promises (about 70 words), and `llms-full.txt` carries all ten answers, the nine features and the full privacy text. Trimming the How it works page further is a follow-up, not done.
+
+What was built: `LOOPS` is 1; the home page has the hero, the four promises with the link to the charter, four feature lines in a two-by-two grid, the install, five FAQ answers and the newest update (first line only); the How it works page has the nine features, the gestures, the six sections and its own five questions with its own `FAQPage`; the privacy page opens with the promises. The build checks: the FAQ in the structured data equals the visible one on both pages and every answer is short (at most 75 words, 220 characters in Japanese); `featureList` is checked against the home and the How it works pages; the README's numbers are checked against the How it works page; each promise is on the home and the privacy page of every language, is backed by a sentence of the README, and the charter link resolves to a file that exists. Tests: 58 in `scripts/site/` (6 new).
 
 ## Alternatives considered
 S2, a medium home of about 1,100 words that keeps six feature cards and a short gestures table (less change, still twice as long); S3, trimming in place to about 1,800 words (least risk for search, but still one long page); the charter as a link in the footer only, as a full page, or not at all; five promises with the fifth limited to what is true, or waiting for CH-2 and CH-3 before any promise; leaving the tour at two rounds, or standing still until the visitor touches it.
