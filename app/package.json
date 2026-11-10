@@ -1,6 +1,6 @@
 {
   "name": "streakboom",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "description": "Streakboom: a small desktop pet that can talk with your own Gemini key",
   "type": "module",
   "scripts": {

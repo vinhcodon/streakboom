@@ -2,6 +2,16 @@
 
 Release notes of every version of Streakboom, newest first. **GitHub keeps the latest release and the one right before it** (installer and update manifest; the previous one is a way back if the newest is bad); when a new version is published, anything older is deleted together with its tag and its notes stay here (ADR-0028). The git history keeps every commit.
 
+## 0.3.1 (2026-11-10)
+- Peak no longer drops by itself while you are doing nothing near it. It used to hop away when the mouse moved after you had clicked on its row; now it leaves a row only while you are actually typing, it prefers to go up, and it crouches for a moment first so the hop looks meant.
+- Peak notices when the window it stands on goes away: if you close it, minimize it or drag it off, Peak freezes for a moment, jolts, cries out ("Á!", "Ơ kìa, đâu mất rồi?!") in a bigger, bolder speech bubble, and falls to the bottom of the screen. If another window is merely brought in front of it, nothing happens. To do this it asks the system what kind of window is just under its feet and remembers an opaque number for it; it never reads titles, contents or app names (README, Privacy).
+- Words now follow the body: when you poke, scratch or rub Peak, it moves first and speaks a moment later, instead of both at the same instant.
+- Repeating the same thing changes how Peak answers: the first pokes are playful, then it gets a little annoyed, resigned, and finally forgives you; scratching and belly rubs go through their own stages too.
+- Peak varies its lines more: every line is said once before any repeats, there are 48 new plain lines per language for the things you do most (idle, poking, greetings, belly rubs, "how are you", scratching, coming back), and some lines use your name, the time or the weekday (only when it knows them).
+- Settings, Brain has a new section, **What Peak is told**: it shows, read-only and in your language, the notes Peak is given about who it is every time a brain answers, layer by layer, with the safety parts marked as locked.
+- Measured on one computer, the processor use is the same as in 0.3.0 (a median of about 11% of one core, standing about 10%).
+- Not yet tried by a native speaker: the new Japanese and English lines.
+
 ## 0.3.0 (2026-11-09)
 - A third language: Peak now speaks Japanese (日本語, marked beta in Settings). The whole interface, all the scripted lines, the lines about what it remembers and the instructions to the AI brain are in Japanese, in a warm casual voice. The text was written by an AI and has not yet been read by a native speaker, so some sentences may sound odd. Settings, General, Language chooses it; "Auto" picks it on a Japanese Windows.
 - A fourth AI brain: Groq, offered right after Gemini (the order is Gemini, Groq, Claude, OpenAI). Groq has a free tier with limits; Settings, Brain tags each brain "free tier" or "paid". It has not been tried with a real key yet.
