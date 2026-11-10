@@ -133,11 +133,11 @@ export function entryHtml(e, lang, level, maxItems = Infinity) {
 
 /** The questions of the home page and of the How it works page (numbers of the q/a keys); together they are all of them. */
 export const HOME_FAQ = [1, 10, 2, 8, 4];
-export const HOW_FAQ = [3, 5, 6, 7, 9];
+export const HOW_FAQ = [5, 6, 7, 9];
 
 /** Question and answer pairs: those with the given numbers, or all of them in order. */
 export function faqPairs(lang, ctx, ids = null) {
-  const list = ids || (() => { const n = []; for (let i = 1; STRINGS[lang]["q" + i]; i++) n.push(i); return n; })();
+  const list = ids || [...HOME_FAQ, ...HOW_FAQ].sort((a, b) => a - b);
   return list.map((i) => ({ q: raw(lang, "q" + i, ctx), a: raw(lang, "a" + i, ctx) }));
 }
 
