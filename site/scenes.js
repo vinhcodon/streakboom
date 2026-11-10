@@ -16,8 +16,8 @@ export const SCENES = [
   { id: "wake", pose: "wake", dir: 1, ms: 4200, hold: 1500 },
 ];
 
-/** How many times the whole day plays by itself before Peak settles into standing still. */
-export const LOOPS = 2;
+/** How many times the whole day plays by itself before Peak settles into standing still: once (ADR-0048; the charter says Peak is lively when invited). */
+export const LOOPS = 1;
 /** After the visitor takes control, the tour waits this long without any interaction, then plays this many more rounds. */
 export const RESUME_MS = 10000;
 export const RESUME_LOOPS = 1;

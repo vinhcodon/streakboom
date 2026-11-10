@@ -1,6 +1,6 @@
 // The interactive Peak of the hero, drawn by the app's own rig (built into ./peak/ by scripts/build-site.mjs).
 // It plays "a day of Peak" by itself (site/scenes.js, sequenced by site/tour.js) with a caption for each scene, and settles into
-// standing still after two rounds. Like the real Peak it is polite: it stops when the visitor takes control, when the pointer
+// standing still after one round. Like the real Peak it is polite: it stops when the visitor takes control, when the pointer
 // is over it, when the page is hidden or scrolled away, and it does not move by itself at all when the system asks for less motion.
 import { Rig } from "./peak/engine.js";
 import { drawFrame } from "./peak/draw.js";

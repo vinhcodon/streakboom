@@ -162,11 +162,11 @@ test("the real scenes: ordered ids, durations, holds shorter than the scene, and
     if (s.hold) assert.ok(s.hold < s.ms, `${s.id}: the hold ends before the scene`);
     assert.ok(s.dir === 1 || s.dir === -1);
   }
-  assert.equal(LOOPS, 2);
+  assert.equal(LOOPS, 1);
   assert.equal(RESUME_LOOPS, 1);
   assert.ok(RESUME_MS >= 5000);
   const total = SCENES.reduce((n, s) => n + s.ms, 0) * LOOPS;
-  assert.ok(total < 120_000, `the tour settles within two minutes (${total} ms)`);
+  assert.ok(total < 60_000, `the tour settles within a minute (${total} ms)`);
 });
 
 test("with the default (real) timers it runs and settles", async () => {
