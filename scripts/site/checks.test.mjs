@@ -184,3 +184,18 @@ test("the size budget passes on the real site and fails when exceeded", async ()
   assert.equal(tiny.filter((m) => /of HTML/.test(m)).length, 3, "each home page over budget");
   assert.ok(BUDGET.scriptsGzip === 30 * 1024 && BUDGET.homeHtml === 60 * 1024);
 });
+
+test("a number of hand-written lines that differs from the README", () => fails((c) => {
+  const p = page(c, "/ja/");
+  p.html = p.html.replaceAll("267個", "182個");
+}, /does not say 267個/));
+test("a privacy page that lacks the sense under Peak's feet (README says it has it)", () => fails((c) => {
+  const p = page(c, "/vi/privacy/");
+  p.html = p.html.replaceAll("dưới chân nó", "ở đâu đó");
+}, /under its feet/));
+test("the new sense is on the privacy pages in three languages", () => {
+  const c = clone();
+  for (const [path, word] of [["/privacy/", "just under its feet"], ["/vi/privacy/", "dưới chân nó"], ["/ja/privacy/", "足元"]]) {
+    assert.ok(page(c, path).html.includes(word), `${path} mentions it`);
+  }
+});

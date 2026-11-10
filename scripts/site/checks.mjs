@@ -3,7 +3,7 @@
 import { existsSync, readFileSync, readdirSync } from "node:fs";
 import { gzipSync } from "node:zlib";
 import { join } from "node:path";
-import { ORIGIN, fmtDate } from "./facts.mjs";
+import { ORIGIN, ROOT, fmtDate } from "./facts.mjs";
 import { pageList } from "./files.mjs";
 import { PATHS, esc } from "./pages.mjs";
 import { STRINGS, EN_ONLY, LANGS, UI_KEYS } from "../../site/strings.mjs";
@@ -55,6 +55,7 @@ const OUTDATED = [
   [/the left mouse button|nút trái chuột|マウスの左ボタン/, "'the left mouse button' (since 0.3.0 the app reads the primary button, the one you click with)"],
   [/(are|is) in English and Vietnamese(?! and)|are in English and Vietnamese only|bằng tiếng Anh và tiếng Việt\.|英語とベトナム語です/, "'English and Vietnamese only' (the app has spoken Japanese since 0.3.0)"],
   [/(Gemini, Claude (or|and) OpenAI)|(Gemini、Claude、OpenAI)|(Gemini, Claude hoặc OpenAI)|(three (AI )?brains)/i, "three brains (Groq is the fourth since 0.3.0)"],
+  [/first official release|bản phát hành chính thức đầu tiên|正式リリース第1弾/i, "'first official release (0.2)' (the app is at a later version; the notice states the current one)"],
 ];
 
 /** What the site says about the app now: the pages and files without the release notes they quote. */
@@ -108,6 +109,24 @@ export function check({ ctx, pages, files, out }) {
     if (!app.softwareRequirements || !/WebView2/.test(app.softwareRequirements) || !/WebView2/.test(visibleText) || !/64/.test(visibleText)) bad(`${p.path}: softwareRequirements is missing or not backed by the visible text`);
     if (app.releaseNotes !== ORIGIN + "/changelog/" || !p.html.includes('href="/changelog/"')) bad(`${p.path}: releaseNotes does not point at the linked changelog`);
     if (app.screenshot !== app.image) bad(`${p.path}: screenshot is not the share image`);
+  }
+  // 2c. the numbers and the privacy wording that the README states are on the pages in every language (ADR-0042)
+  const readme = readFileSync(join(ROOT, "README.md"), "utf8");
+  const lines = readme.match(/(\d+) hand-written lines per language/);
+  if (!lines) bad("README.md no longer says how many hand-written lines there are per language: the site cannot be checked against it");
+  const SAYS_LINES = { en: (n) => `${n} hand-written lines`, vi: (n) => `${n} câu viết tay`, ja: (n) => `${n}個` };
+  const GROUND = { en: "just under its feet", vi: "dưới chân nó", ja: "足元" };
+  const hasGround = /just under its feet/.test(readme);
+  for (const lang of LANGS) {
+    for (const path of [PATHS[lang].home, PATHS[lang].how]) {
+      const html = unesc(byPath.get(path).html);
+      if (lines && !html.includes(SAYS_LINES[lang](lines[1]))) bad(`${path}: does not say ${SAYS_LINES[lang](lines[1])} (the README says ${lines[1]} lines per language)`);
+    }
+    if (hasGround) {
+      for (const path of [PATHS[lang].home, PATHS[lang].privacy, PATHS[lang].how]) {
+        if (!unesc(byPath.get(path).html).includes(GROUND[lang])) bad(`${path}: the README says Peak asks what is under its feet, this page does not (privacy wording)`);
+      }
+    }
   }
   for (const f of ["llms.txt", "llms-full.txt"]) {
     for (const word of ["Japanese", "Gemini, Groq, Claude, OpenAI", "Free tiers with limits: Gemini and Groq"]) {
