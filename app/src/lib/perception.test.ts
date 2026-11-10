@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { INTENT_CONFIDENCE, LANE_SURE_PROBES, believe, responseFor, startBelief } from "./perception.ts";
+import { INTENT_CONFIDENCE, LANE_HOLD_MS, believe, responseFor, startBelief } from "./perception.ts";
 import type { FocusOut } from "./focus.ts";
 import type { LaneOut } from "./lane.ts";
 
@@ -23,37 +23,39 @@ test("the pointer right by the cat while the user is active is a fact: the inten
   assert.equal(belief.userActive, true);
 });
 
-test("a lane guess first calls for a reflex and only for the intent once it has held for several probes", () => {
+test("a lane guess first calls for a reflex and only for the intent once it has held for long enough", () => {
   let st = startBelief();
-  const seen: string[] = [];
-  for (let i = 0; i < LANE_SURE_PROBES + 1; i++) {
-    const r = believe(st, focus(), lane(true), null);
+  const at = (t: number) => {
+    const r = believe(st, focus(), lane(true), null, t);
     st = r.state;
-    seen.push(responseFor(r.belief));
-  }
-  assert.deepEqual(seen.slice(0, LANE_SURE_PROBES - 1), Array(LANE_SURE_PROBES - 1).fill("reflex"));
-  assert.equal(seen[LANE_SURE_PROBES - 1], "intent");
-  assert.equal(seen[LANE_SURE_PROBES], "intent");
+    return responseFor(r.belief);
+  };
+  assert.equal(at(1000), "reflex");
+  assert.equal(at(1000 + 20), "reflex", "a second probe a few milliseconds later does not make it sure");
+  assert.equal(at(1000 + LANE_HOLD_MS - 1), "reflex");
+  assert.equal(at(1000 + LANE_HOLD_MS), "intent");
+  assert.equal(at(1000 + LANE_HOLD_MS + 250), "intent");
 });
 
-test("a flickering guess never reaches the intent: one miss starts the count again", () => {
+test("a flickering guess never reaches the intent: one miss starts the time again", () => {
   let st = startBelief();
-  for (let i = 0; i < LANE_SURE_PROBES - 1; i++) st = believe(st, focus(), lane(true), null).state;
-  const miss = believe(st, focus(), lane(false), null);
+  st = believe(st, focus(), lane(true), null, 0).state;
+  st = believe(st, focus(), lane(true), null, LANE_HOLD_MS - 50).state;
+  const miss = believe(st, focus(), lane(false), null, LANE_HOLD_MS);
   assert.equal(miss.belief.crowded, null);
-  assert.equal(miss.state.laneStreak, 0);
-  const again = believe(miss.state, focus(), lane(true), null);
+  assert.equal(miss.state.laneSince, null);
+  const again = believe(miss.state, focus(), lane(true), null, LANE_HOLD_MS + 100);
   assert.equal(responseFor(again.belief), "reflex");
 });
 
 test("the confidence of a guess stays below the intent threshold until it has held, and a fact outranks a guess", () => {
   let st = startBelief();
-  for (let i = 0; i < LANE_SURE_PROBES - 1; i++) {
-    const r = believe(st, focus(), lane(true), null);
-    st = r.state;
-    assert.ok(r.belief.confidence < INTENT_CONFIDENCE);
-  }
-  const both = believe(st, focus({ crowded: true }), lane(true), null);
+  const r1 = believe(st, focus(), lane(true), null, 0);
+  st = r1.state;
+  assert.ok(r1.belief.confidence < INTENT_CONFIDENCE);
+  const r2 = believe(st, focus(), lane(true), null, LANE_HOLD_MS - 1);
+  assert.ok(r2.belief.confidence < INTENT_CONFIDENCE);
+  const both = believe(r2.state, focus({ crowded: true }), lane(true), null, LANE_HOLD_MS);
   assert.equal(both.belief.crowded, "pointer");
   assert.equal(both.belief.confidence, 1);
 });

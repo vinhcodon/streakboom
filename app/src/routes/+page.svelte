@@ -100,7 +100,8 @@
   import { chooseBeat, moodBeat } from "$lib/choose";
   import { endReaction, mayReact, newGate, startReaction } from "$lib/reactions";
   import { desktopShare, ledges, summary, type GroundKind, type GroundMap } from "$lib/groundmap";
-  import { believe, responseFor, startBelief } from "$lib/perception";
+  import { believe, responseFor, startBelief, type Belief } from "$lib/perception";
+  import { choosePerch } from "$lib/perch";
   import { EVENTS, type EventId } from "$lib/events";
   import { escapeRow, initialLane, stepLane, type LaneOut } from "$lib/lane";
   import { engage as engagePure, markShown as markShownPure, minuteIncrement, noShown, type DayCounter, type DayStat } from "$lib/bond";
@@ -520,13 +521,16 @@
   // Asked on every probe while the cat feels crowded: `makeWay` acts only when the cat is standing, so if the crowding
   // began while it was busy (walking, being held) it makes way as soon as it stands, and the cool-down keeps it calm.
   function noteCrowded(fo: FocusOut) {
-    beliefState = believe(beliefState, fo, laneOut, lastGround).state; // the guess of the lane is steadier for being counted per probe (PC-1)
+    const b = believe(beliefState, fo, laneOut, lastGround); // the guess of the lane is steadier for being counted per probe (PC-1)
+    beliefState = b.state;
+    lastBelief = b.belief;
     if (fo.crowded || laneOut.crowded) {
       crowdedSince ??= Date.now();
       void makeWay(fo.leaveDir);
     } else {
       crowdedSince = null;
       laneNoted = false;
+      laneReflexDone = false;
     }
   }
 
@@ -545,6 +549,16 @@
         note(`lane crowded: pose ${pose}, caret ${Math.round(laneOut.caretX ?? 0)}, cat ${Math.round(laneCat.x)},${Math.round(laneCat.y)}${why ? `, waiting: ${why}` : ""}`);
       }
       if (why) return;
+      // A guess about where the text is heading first gets only a reflex (the cat looks toward it, ears up); the hop
+      // follows once the guess has held for a moment (PC-1, spec/08 section 3). A fact (the pointer right by it) acts at once.
+      if (!laneReflexDone && responseFor(lastBelief) === "reflex" && (pose === "idle" || pose === "look")) {
+        laneReflexDone = true;
+        note(`lane guess: reflex, confidence ${lastBelief.confidence.toFixed(2)}`);
+        const l0 = laneOut.lane;
+        if (l0) void noticeBeat((laneOut.caretX ?? laneCat.x) - laneCat.x, (l0.y0 + l0.y1) / 2 - laneCat.y);
+        return;
+      }
+      if (responseFor(lastBelief) === "reflex") return; // not sure yet
       if (pose === "sleep" || pose === "drowsy") {
         // asleep it is woken by the lane after a moment (and only if it could then leave), then it hops
         if (crowdedSince === null || now - crowdedSince < SLEEP_LANE_MS) return;
@@ -560,7 +574,7 @@
         }
         return;
       }
-      if (pose === "idle" || pose === "look") {
+      if (pose === "idle" || pose === "look" || pose === "notice") {
         lastLaneHop = now;
         lastLeave = now;
         const l = laneOut.lane;
@@ -729,9 +743,76 @@
     if (quiet) return pose === "sleep" || pose === "drowsy" ? undefined : enter("drowsy");
     if (panel) return scheduleNext();
     const r = Math.random();
+    if (data.settings.groundMap && r > 0.97) return void perchNow();
     if (r < 0.5) enter("look");
     else if (r < 0.85) void tryWalk();
     else enter(bubbleOn ? "look" : "drowsy"); // yawns first, then falls asleep (never while it is speaking)
+  }
+
+  // ------------------------------------------------------------------ perches (TE-10c, TE-10d, ADR-0043)
+  const PERCH_COOLDOWN_MS = 5 * 60_000;
+  let lastPerch = 0;
+  /**
+   * Hop up onto the top edge of a window when the ground map (only if the user switched it on) shows one nearby: the cat
+   * looks at it, crouches, hops, and then simply stays (it sits, dozes, watches like anywhere else). If the window goes
+   * away under it, the ground watch of PC-7 makes it startle and fall (TE-10d). `fake` and `force` are for the debugger.
+   */
+  async function perchNow(fake?: GroundMap, force = false) {
+    const now = Date.now();
+    if (flying || quiet || panel !== null || (pose !== "idle" && pose !== "look")) return scheduleNext();
+    if (!force && now - lastPerch < PERCH_COOLDOWN_MS) return scheduleNext();
+    const fo = await probeFocus();
+    if (!fo.walkAllowed && !force) return scheduleNext();
+    const map = fake ?? (await takeGroundMap());
+    if (!map) return scheduleNext();
+    const place = await invoke<{ x: number; y: number; scale: number }>("pet_place");
+    const geo = await invoke<{ catX: number | null; catY: number | null }>("focus_probe");
+    if (geo.catX === null || geo.catY === null) return scheduleNext();
+    // the feet in physical px: the cat's centre (logical) plus half its size, times the scale
+    const feet = { x: geo.catX * place.scale, y: (geo.catY + PET_SIZE / 2) * place.scale };
+    const perch = choosePerch(map, feet, place.scale, undefined, Math.random());
+    note(perch ? `perch: ledge ${perch.col},${perch.row}, go ${perch.dx},${perch.dy}` : "perch: no ledge");
+    if (!perch) return scheduleNext();
+    lastPerch = now;
+    if (!(await noticeBeat(perch.dx, perch.dy))) return;
+    await fly(splitHop(perch.dx, perch.dy), "walk");
+  }
+
+  /**
+   * For the test build's menu: hop onto a ledge that is not there. A made-up map puts a "window" with bare desktop above it
+   * a little up and to the side of the cat, so the hop can be looked at on a screen that has no real ledge. It ignores the
+   * cool-down and the switch of the ground map, and nothing is read from the screen.
+   */
+  async function perchPretend() {
+    if (flying || (pose !== "idle" && pose !== "look")) return;
+    const m = (await invoke<{ x: number; y: number; w: number; h: number; scale: number }[]>("monitors_info"))[0];
+    if (!m) return;
+    const cols = 16;
+    const rows = 9;
+    const read = async () => {
+      const place = await invoke<{ x: number; y: number; scale: number }>("pet_place");
+      const geo = await invoke<{ catX: number | null; catY: number | null }>("focus_probe");
+      return { place, geo };
+    };
+    let { place, geo } = await read();
+    if (geo.catX === null || geo.catY === null) return;
+    const feetRow = () => Math.floor((((geo.catY ?? 0) + PET_SIZE / 2) * place.scale - m.y) / m.h * rows);
+    if (feetRow() < 5) {
+      // too high for a ledge three rows above it: first let it drop to the floor
+      const down = (await invoke<{ up: number; down: number }>("vertical_room")).down;
+      if (down >= FALL_MIN_PX) await fly([planFall(down)], "gasp");
+      await sleepMs(900);
+      ({ place, geo } = await read());
+      if (geo.catX === null || geo.catY === null) return;
+    }
+    // a block of "window" cells, its top edge three rows above the cat's feet, four cells wide, starting four cells to the
+    // right of the cat (or to its left near the right edge)
+    const ledgeRow = Math.max(2, feetRow() - 3);
+    const catCol = Math.floor(((geo.catX * place.scale - m.x) / m.w) * cols);
+    const start = catCol + 8 < cols ? catCol + 4 : Math.max(0, catCol - 8);
+    const cells: GroundKind[] = [];
+    for (let r = 0; r < rows; r++) for (let c = 0; c < cols; c++) cells.push(c >= start && c < start + 4 && r >= ledgeRow ? "app" : "desktop");
+    await perchNow({ x: m.x, y: m.y, w: m.w, h: m.h, cols, rows, cells }, true);
   }
 
   /** A walk starts only if the user has paused; otherwise the cat stays where it is and tries again later. */
@@ -998,11 +1079,10 @@
 
   // What Peak believes about being in the way, and how sure it is (PC-1, spec/08); for the debugger and the trail for now
   let beliefState = startBelief();
+  let lastBelief: Belief = { crowded: null, confidence: 0, userActive: false, ground: null };
   let lastGround: GroundKind | null = null;
-  function currentBelief() {
-    const r = believe(beliefState, focusOut, laneOut, lastGround);
-    return { belief: r.belief, response: responseFor(r.belief), state: r.state };
-  }
+  let laneReflexDone = false; // the cat has already shown it noticed the lane guess in this episode
+  const currentBelief = () => ({ belief: lastBelief, response: responseFor(lastBelief) });
 
   async function groundTick() {
     if (groundBusy) return;
@@ -1846,6 +1926,7 @@
           if (e.payload === "pm_hop_up") void fly(splitHop(0, -160), "walk");
           else if (e.payload === "pm_hop_down") void fly(splitHop(0, 160), "walk");
           else if (e.payload === "pm_fall") void fly([planFall(400)], "gasp");
+          else if (e.payload === "pm_perch") void perchPretend();
         }),
       );
       cleanups.push(await win.listen<SettingsPatch>("settings-patch", (e) => onSettingsPatch(e.payload)));
@@ -1926,7 +2007,7 @@
       scheduleProactive();
       groundLoop = setInterval(groundTick, GROUND_POLL_MS);
       // Test hook (like window.__cat): lets a debugger trigger the real unprompted-line path now.
-      (window as unknown as Record<string, unknown>).__pet = { proactive: () => void fireProactive(), focus: () => ({ ...focusOut, lastLeave, pose }), trail: () => trail, sleep: () => enter("drowsy"), wake: () => enter("idle"), hop: (dx: number, dy: number) => void fly(splitHop(dx, dy), "walk"), lane: () => ({ ...laneOut, state: laneState, cat: laneCat }), ground: () => invoke("ground_under_cat"), belief: () => { const b = currentBelief(); return { ...b.belief, response: b.response }; }, map: () => takeGroundMap().then((m) => (m ? { summary: summary(m), ledges: ledges(m).length } : null)), groundLost: () => void groundLost(), say: (t: Trigger, kind?: RepeatKind) => (kind ? say(t, repeatNow(kind)) : say(t)), bubble: () => bubbleText, fall: (d: number) => void fly([planFall(d)], "gasp") };
+      (window as unknown as Record<string, unknown>).__pet = { proactive: () => void fireProactive(), focus: () => ({ ...focusOut, lastLeave, pose }), trail: () => trail, sleep: () => enter("drowsy"), wake: () => enter("idle"), hop: (dx: number, dy: number) => void fly(splitHop(dx, dy), "walk"), lane: () => ({ ...laneOut, state: laneState, cat: laneCat }), ground: () => invoke("ground_under_cat"), belief: () => { const b = currentBelief(); return { ...b.belief, response: b.response }; }, perch: (fake?: unknown) => void perchNow(fake as GroundMap | undefined, true), map: () => takeGroundMap().then((m) => (m ? { summary: summary(m), ledges: ledges(m).length } : null)), groundLost: () => void groundLost(), say: (t: Trigger, kind?: RepeatKind) => (kind ? say(t, repeatNow(kind)) : say(t)), bubble: () => bubbleText, fall: (d: number) => void fly([planFall(d)], "gasp") };
       let lastTick = Date.now();
       minuteTimer = setInterval(() => {
         const now = Date.now();

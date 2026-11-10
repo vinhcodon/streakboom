@@ -796,7 +796,7 @@ fn show_pet_menu(app: AppHandle, window: WebviewWindow, state: State<AppState>, 
     let menu = Menu::with_items(&app, &[&settings, &quiet_item, &quit]).map_err(|e| e.to_string())?;
     // test builds only (cargo feature `hop-test`): items to try the hops and the fall
     #[cfg(feature = "hop-test")]
-    for (id, text) in [("pm_hop_up", "Test: hop up"), ("pm_hop_down", "Test: hop down"), ("pm_fall", "Test: fall")] {
+    for (id, text) in [("pm_hop_up", "Test: hop up"), ("pm_hop_down", "Test: hop down"), ("pm_fall", "Test: fall"), ("pm_perch", "Test: hop onto a ledge (pretend)")] {
         let item = MenuItem::with_id(&app, id, text, true, None::<&str>).map_err(|e| e.to_string())?;
         menu.append(&item).map_err(|e| e.to_string())?;
     }
@@ -1427,7 +1427,7 @@ pub fn run() {
             }
             "pm_quit" => quit_app(app),
             #[cfg(feature = "hop-test")]
-            id @ ("pm_hop_up" | "pm_hop_down" | "pm_fall") => {
+            id @ ("pm_hop_up" | "pm_hop_down" | "pm_fall" | "pm_perch") => {
                 let _ = app.emit("dev-hop", id);
             }
             _ => {}

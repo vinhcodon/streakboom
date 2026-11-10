@@ -25,25 +25,27 @@ export interface Belief {
 }
 
 export interface BeliefState {
-  /** Consecutive probes in which the lane guess said "crowded". */
-  laneStreak: number;
+  /** Since when the lane guess has said "crowded" without a break (ms), or null. Time, not a count of probes: two probes
+   *  can come a few milliseconds apart (an event from Rust makes the page probe at once). */
+  laneSince: number | null;
 }
 
-export const startBelief = (): BeliefState => ({ laneStreak: 0 });
+export const startBelief = (): BeliefState => ({ laneSince: null });
 
-/** Probes in a row the lane guess must hold before it counts as sure (a probe is about a quarter of a second while engaged). */
-export const LANE_SURE_PROBES = 3;
+/** How long the lane guess must hold before it counts as sure, ms: long enough for the cat to be seen noticing first. */
+export const LANE_HOLD_MS = 450;
 /** The confidence at or above which the cat acts (the intent); below it only a reflex. */
 export const INTENT_CONFIDENCE = 0.8;
 
 /**
  * One reading in, one belief out. The pointer being near the cat while the user is active is a fact (confidence 1). The
- * lane (where the text may be heading) is a guess: its confidence is the share of `LANE_SURE_PROBES` it has held for,
- * capped below the intent threshold until it has held for all of them.
+ * lane (where the text may be heading) is a guess: its confidence is the share of `LANE_HOLD_MS` it has held for, capped
+ * below the intent threshold until it has held for all of it.
  */
-export function believe(state: BeliefState, focus: FocusOut, lane: LaneOut, ground: GroundKind | null): { state: BeliefState; belief: Belief } {
-  const streak = lane.crowded ? state.laneStreak + 1 : 0;
-  const next: BeliefState = { laneStreak: streak };
+export function believe(state: BeliefState, focus: FocusOut, lane: LaneOut, ground: GroundKind | null, now: number = Date.now()): { state: BeliefState; belief: Belief } {
+  const since = lane.crowded ? (state.laneSince ?? now) : null;
+  const held = since === null ? 0 : now - since;
+  const next: BeliefState = { laneSince: since };
   let crowded: Crowd = null;
   let confidence = 0;
   if (focus.crowded) {
@@ -51,7 +53,7 @@ export function believe(state: BeliefState, focus: FocusOut, lane: LaneOut, grou
     confidence = 1;
   } else if (lane.crowded) {
     crowded = "lane";
-    confidence = streak >= LANE_SURE_PROBES ? 0.9 : Math.min(0.7, (streak / LANE_SURE_PROBES) * 0.9);
+    confidence = held >= LANE_HOLD_MS ? 0.9 : Math.min(0.7, (held / LANE_HOLD_MS) * 0.9);
   }
   return { state: next, belief: { crowded, confidence, userActive: focus.active, ground } };
 }
