@@ -1,11 +1,11 @@
 {
-    "version":  "0.3.0",
-    "notes":  "Japanese (beta), the Groq brain, and Peak notices before it makes way.",
-    "pub_date":  "2026-11-09T13:39:31Z",
+    "version":  "0.3.1",
+    "notes":  "Peak no longer drops by itself; it startles and falls when the window it stands on goes; its words follow its body; repeated pokes, scratches and belly rubs change its answers; more varied lines; Settings shows what Peak is told. See CHANGELOG.md.",
+    "pub_date":  "2026-11-10T04:03:31Z",
     "platforms":  {
                       "windows-x86_64":  {
-                                             "signature":  "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVUcHBlQXhYUlVURmtYUUlJMDdtaW90c3VEOGt4OUk0dTlXcHlBc3M0QmxSNUdQT2sxVFREOWJITTRGd3F0Mit1THI2dzdHa3F2L241Vm9VSDJzZENJWUFHRHpMNFF1ZWcwPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzk0MjMxNTY5CWZpbGU6U3RyZWFrYm9vbV8wLjMuMF94NjQtc2V0dXAuZXhlCXZlcnNpb246MC4zLjAKSnRxc2ltK2VPQXMzUnNxOUJMc3VIMno0Y3o4QkdLd2V0TzFtZUMrRXZBeExkWVJBUUtodUM5aDAxaUlsdVF3Zm80bDk2ZVhkTEZXVlZ3MDJlZ0ZQQUE9PQo=",
-                                             "url":  "https://api.github.com/repos/vinhcodon/streakboom/releases/assets/727624238"
+                                             "signature":  "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVUcHBlQXhYUlVURmhXSkJ3OUFKODlGbW9UeTVHL294ejYyQ2F0ekhCb1k0SHFqcTY2Q2VSVEJmbFoxTC9lZ0ROZFRqZkROdFFmUWpGTWxTSmVWOStNRDF0NlJqaTA2NmdnPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzk0MjgzNDA3CWZpbGU6U3RyZWFrYm9vbV8wLjMuMV94NjQtc2V0dXAuZXhlCXZlcnNpb246MC4zLjEKd0FkclUzc2ViRXFXeXhZakx1T0cxYTduUzRNZW12d2U0SlhFR3QzU0FLMGplU3RMdnRvdzBRWHpqWEVtQXErc2xCTjgwK3RWMElvMVZNS2NXRWpjQlE9PQo=",
+                                             "url":  "https://api.github.com/repos/vinhcodon/streakboom/releases/assets/730034489"
                                          }
                   }
 }
