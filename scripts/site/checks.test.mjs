@@ -234,11 +234,11 @@ test("the home page is short: four feature lines, five questions, one update, no
     assert.ok(main.split(/\s+/).filter(Boolean).length < words, `${path}: under ${words} words`);
   }
 });
-test("the How it works page carries all nine features, the gestures and the other five questions", () => {
+test("the How it works page carries all nine features, the gestures and the other four questions", () => {
   const c = clone();
   for (const path of ["/how-it-works/", "/vi/how-it-works/", "/ja/how-it-works/"]) {
     const h = page(c, path).html;
-    assert.equal((h.match(/<h3>/g) || []).length, 9 + 5, `${path}: nine features and five questions`);
+    assert.equal((h.match(/<h3>/g) || []).length, 9 + 4, `${path}: nine features and four questions`);
     assert.ok(h.includes('<table class="gestures">'), `${path}: the gestures`);
     assert.ok(h.includes('"@type":"FAQPage"'), `${path}: its own FAQPage`);
   }

@@ -90,7 +90,7 @@ ${bullets(STRINGS.en.not_items, ctx)}
 export function llmsFull(ctx) {
   const sections = STRINGS.en.pv_sections.map((s) => `### ${s.h}\n\n${s.p.join("\n\n")}`).join("\n\n");
   const faq = faqPairs("en", ctx).map((p) => `### ${p.q}\n\n${p.a}`).join("\n\n");
-  const recent = ctx.entries.slice(0, 3).map((e) => `### Streakboom ${e.version} (${e.date})${e.title ? ", " + e.title : ""}\n\n${e.items.map((i) => `- ${i}`).join("\n")}`).join("\n\n");
+  const recent = ctx.entries.slice(0, 1).map((e) => `### Streakboom ${e.version} (${e.date})${e.title ? ", " + e.title : ""}\n\n${e.items.map((i) => `- ${i}`).join("\n")}`).join("\n\n");
   return `# Streakboom: facts for assistants
 
 Source of truth: ${ORIGIN}/ (English) and ${ORIGIN}/vi/ (Vietnamese); the code and the README are at ${REPO_URL}. This file repeats the facts of those pages in plain text. Last built for version ${ctx.version} (${ctx.date}).
