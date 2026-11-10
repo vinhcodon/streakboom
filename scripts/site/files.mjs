@@ -1,8 +1,8 @@
 // The files for crawlers and assistants: sitemap.xml, robots.txt, llms.txt and llms-full.txt (ADR-0034).
 // llms.txt files are plain Markdown summaries of the same facts as the pages, never a different story.
 import { STRINGS } from "../../site/strings.mjs";
-import { ORIGIN, RELEASES_URL, REPO_URL, fmtDate } from "./facts.mjs";
-import { PATHS, alternatesFor, faqPairs, fill } from "./pages.mjs";
+import { AUTHOR, ORIGIN, RELEASES_URL, REPO_URL, fmtDate } from "./facts.mjs";
+import { PATHS, alternatesFor, esc, faqPairs, fill } from "./pages.mjs";
 import { LANGS } from "../../site/strings.mjs";
 
 /** Every indexable page: path, and the languages it exists in (for hreflang). */
@@ -21,6 +21,30 @@ export function sitemap(ctx) {
     return `  <url>\n    <loc>${ORIGIN}${p.path}</loc>\n    <lastmod>${ctx.date}</lastmod>\n${alts ? alts + "\n" : ""}  </url>`;
   }).join("\n");
   return `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:xhtml="http://www.w3.org/1999/xhtml">\n${urls}\n</urlset>\n`;
+}
+
+/** The changelog as an Atom feed, generated from CHANGELOG.md like the changelog page (an entry without a date takes the feed's date). */
+export function changelogFeed(ctx) {
+  const stamp = (d) => `${d || ctx.date}T00:00:00Z`;
+  const entries = ctx.entries.map((e) => `  <entry>
+    <title>Streakboom ${esc(e.version)}${e.title ? ": " + esc(e.title) : ""}</title>
+    <id>${ORIGIN}${PATHS.changelog}#v${esc(e.version)}</id>
+    <link rel="alternate" type="text/html" href="${ORIGIN}${PATHS.changelog}#v${esc(e.version)}"/>
+    <updated>${stamp(e.date)}</updated>
+    <content type="text">${e.items.map((i) => "- " + esc(i)).join("\n")}</content>
+  </entry>`).join("\n");
+  return `<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+  <title>Streakboom changelog</title>
+  <subtitle>Release notes of every version of Streakboom, newest first</subtitle>
+  <link rel="self" type="application/atom+xml" href="${ORIGIN}${PATHS.feed}"/>
+  <link rel="alternate" type="text/html" href="${ORIGIN}${PATHS.changelog}"/>
+  <id>${ORIGIN}${PATHS.changelog}</id>
+  <updated>${stamp(ctx.date)}</updated>
+  <author><name>${esc(AUTHOR.name)}</name></author>
+${entries}
+</feed>
+`;
 }
 
 export function robots() {
@@ -50,6 +74,7 @@ ${FACTS}
 - [How it works](${ORIGIN}/how-it-works/): Peak with no AI, adding your own AI key, what is stored, what is free, how updates work (also in /vi/ and /ja/)
 - [Privacy](${ORIGIN}/privacy/): what Streakboom keeps, what it sends and to whom, what Peak notices around it
 - [Changelog](${ORIGIN}/changelog/): release notes of every version
+- [Changelog feed (Atom)](${ORIGIN}${PATHS.feed}): the same notes as a feed, newest first
 
 ## Source and downloads
 - [README](${REPO_URL}#readme): the reference text for features, privacy and status

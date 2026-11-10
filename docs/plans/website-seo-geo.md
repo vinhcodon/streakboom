@@ -241,3 +241,20 @@ Asked on 2026-11-10, **after** the N4 and N2 changes were live (so this is a bas
 **Decision (Vinh, 2026-11-10):** option C, no wording change for now. Option A (the name with its kind in the H1 and first line, a line "not a habit tracker" in the not-list, and an FAQ question "Is Streakboom the same as StreakBloom or a habit tracker?") stays available; ask the assistants again in a few weeks (after Search Console and Bing have crawled the site) and decide then from the new answers.
 
 **Search Console and Bing Webmaster (D7), 2026-11-10:** Vinh registered the site in both and submitted `https://streakboom.com/sitemap.xml`. Not verified by the website session: whether either accepted the sitemap or has indexed any page (only the author can see that). Next check: in about two weeks look at the page indexing report and any coverage errors, then ask the assistants the fixed question set again and compare with the baseline above.
+
+## 13. After 0.3.1 (2026-11-10): what was done, and the proposals the author answered
+**Done (ADR-0042):** the privacy wording for the sense under Peak's feet in all four places and three languages, the fall and the end of self-hopping on the "out of your way" card, 267 lines and the stages on the "alive without AI" card and the How it works page, What Peak is told on the How it works page, the numbers of the README, "An early release ({version})" in place of "First official release (0.2)". The build now reads the README and fails if the line count, the memory and processor numbers or the "under its feet" wording are missing from a language's pages.
+
+**Proposed as multiple choice, answered by Vinh on 2026-11-10:**
+
+| | Proposal | Answer |
+|---|---|---|
+| P1 | A tour scene for "the window it stands on goes away, Peak falls" | **No scene** (recommended): the page has no window to lose; a startled pose with a caption would mislead |
+| P2 | The build checks memory and processor numbers against the README too | **Yes** (recommended) |
+| P3 | An Atom feed of the whole changelog generated from `CHANGELOG.md` | **Yes** (not the recommended option, which was no; built) |
+
+**Still open from before:** the wording that names the product with its kind next to its name and separates it from StreakBloom (option A of section 12; the author chose to wait and ask the assistants again after the crawlers have visited); a native reader for the Vietnamese and Japanese texts.
+
+**What I would not do, and why:** a comparison page with other desktop pets (claims about other products cannot be verified, ADR-0040); a Japanese-only share image (little gain); `HowTo` structured data (search engines have dropped most HowTo rich results); an `llms.txt` per language (the assistants read the English file and the pages are in three languages already); a monitoring script on the page (the site has no analytics on purpose, ADR-0034).
+
+**Not verified:** nothing of this is on the Pages host yet (not pushed); the feed has not been opened in a feed reader; the new texts have no native reader.

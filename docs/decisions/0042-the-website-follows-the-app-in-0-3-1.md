@@ -17,12 +17,14 @@ The review of the site found that every place that said what Peak notices (the h
 - **The build is made to catch the next drift:** it reads the README, requires every home page and How it works page to state its number of hand-written lines in the language's own words, and requires the privacy page, the home page and the How it works page of each language to carry the "under its feet" wording while the README has it; "first official release" is on the outdated-wording list. Three new tests.
 - **The hero tour is not changed.** The page cannot show a window going away; whether to add a scene is a proposal for the author (plan section 13).
 
+- **Chosen by the author on 2026-11-10 from the proposals of plan section 13:** (1) no new tour scene for the fall (the page has no window to lose, a startled pose with a caption would mislead; the card describes it in words); (2) the build checks the memory and processor numbers against the README too, in all three languages; (3) the site generates an Atom feed of the changelog, `/changelog.xml`, from `CHANGELOG.md` (GitHub keeps only the two newest releases, so its `releases.atom` loses the older ones). The feed is linked from the changelog page, listed in `llms.txt`, and checked by the build: it must list every version of `CHANGELOG.md`, newest first. It is not in the sitemap (the sitemap lists pages).
+
 ## Alternatives considered
 Adding the new sense only to the privacy page (rejected: the other three places claim "only" and would contradict it); leaving the 182 and the 0.2 wording for the author's next release pass (rejected: they are false now); generating the numbers from the README instead of checking them (the text is a sentence in three languages, so a check is simpler and fails loudly).
 
 ## Consequences
 - More privacy text to keep true in three languages. The new Vietnamese and Japanese wording is mine and has no native reader.
-- Not verified: the state on the Pages host (nothing is pushed), other browsers, a phone, a Japanese or Vietnamese reader, the Rust code beyond a read of `ground.rs`: it matches the wording (the class name is looked at only to tell the desktop and the taskbar and is dropped; the opaque number is the window handle, kept only to compare). It also compares a window's process id with Peak's own, only to know that the window is Peak's; the README and the site do not mention that and nothing is kept.
+- Not verified: the feed was parsed as XML by PowerShell and checked by the build, but no feed validator or reader was run on it; the state on the Pages host (nothing is pushed), other browsers, a phone, a Japanese or Vietnamese reader, the Rust code beyond a read of `ground.rs`: it matches the wording (the class name is looked at only to tell the desktop and the taskbar and is dropped; the opaque number is the window handle, kept only to compare). It also compares a window's process id with Peak's own, only to know that the window is Peak's; the README and the site do not mention that and nothing is kept.
 
 ## Sources
 `README.md` (Privacy, features), `CHANGELOG.md` 0.3.1, ADR-0041, ADR-0033, ADR-0039, `docs/handoff/website-release-prompt.md`.

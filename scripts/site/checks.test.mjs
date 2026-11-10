@@ -199,3 +199,23 @@ test("the new sense is on the privacy pages in three languages", () => {
     assert.ok(page(c, path).html.includes(word), `${path} mentions it`);
   }
 });
+
+test("the changelog feed lists every version and is linked", () => {
+  const c = clone();
+  const feed = c.files["changelog.xml"];
+  assert.match(feed, /^<\?xml/);
+  for (const e of c.ctx.entries) assert.ok(feed.includes(`<title>Streakboom ${e.version}`), `entry ${e.version}`);
+  assert.match(page(c, "/changelog/").html, /type="application\/atom\+xml"/);
+  assert.match(c.files["llms.txt"], /changelog\.xml/);
+});
+test("a changelog feed that misses a version", () => fails((c) => {
+  c.files["changelog.xml"] = c.files["changelog.xml"].replace(/<entry>(?:(?!<entry>)[\s\S])*?<\/entry>\n?/, "");
+}, /changelog\.xml lists/));
+test("a processor number on the home page that differs from the README", () => fails((c) => {
+  const p = page(c, "/vi/");
+  p.html = p.html.replace("9 đến 11%", "9 đến 10%");
+}, /does not say 9 đến 11%/));
+test("a memory number on the Japanese home page that differs from the README", () => fails((c) => {
+  const p = page(c, "/ja/");
+  p.html = p.html.replaceAll("100〜120MB", "90〜110MB");
+}, /does not say 100〜120MB/));

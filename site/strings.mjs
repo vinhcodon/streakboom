@@ -101,6 +101,7 @@ export const STRINGS = {
     cl_page_title: "Streakboom changelog: release notes of every version",
     cl_desc: "The release notes of every version of Streakboom, newest first.",
     cl_title: "Streakboom changelog",
+    cl_feed: "Subscribe to this changelog (Atom feed)",
     cl_intro: "Release notes of every version of Streakboom, newest first. The notes are written in English. GitHub keeps only the two newest releases; the notes of every version stay here.",
     nf_title: "Page not found",
     nf_text: "This page does not exist. Go to the home page or the changelog.",
@@ -398,6 +399,6 @@ export const LANGS = ["en", "vi", "ja"];
 /** Keys whose value is HTML written by us (everything else is plain text and is escaped). */
 export const HTML_KEYS = new Set(["hero_lead", "alpha_note", "s1", "s2", "s3", "upd_sub"]);
 /** Keys that exist in English only: the changelog and the 404 page are not translated. */
-export const EN_ONLY = new Set(["cl_page_title", "cl_desc", "cl_title", "cl_intro", "nf_title", "nf_text"]);
+export const EN_ONLY = new Set(["cl_feed", "cl_page_title", "cl_desc", "cl_title", "cl_intro", "nf_title", "nf_text"]);
 /** The keys the page scripts need (share button, copy note, pose labels); the build puts them in each page. */
 export const UI_KEYS = ["share_btn", "link_copied", "tour_pause", "tour_play", ...SCENES.map((s) => `cap_${s.id}`)];

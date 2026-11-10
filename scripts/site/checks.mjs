@@ -128,6 +128,30 @@ export function check({ ctx, pages, files, out }) {
       }
     }
   }
+  // the other numbers of the README: memory and processor use
+  const num = (re) => { const m = readme.match(re); if (!m) bad(`README.md no longer matches ${re}: the site cannot be checked against it`); return m; };
+  const mem = num(/[Aa]bout (\d+) to (\d+) MB of memory/);
+  const still = num(/about (\d+) to (\d+)% of one core while it stands still/);
+  const median = num(/median of about (\d+) to (\d+)% in normal use/);
+  const RANGE = { en: (a, b) => `${a} to ${b}`, vi: (a, b) => `${a} đến ${b}`, ja: (a, b) => `${a}〜${b}` };
+  const UNIT = { en: [" MB", "%"], vi: [" MB", "%"], ja: ["MB", "%"] };
+  for (const lang of LANGS) {
+    const html = unesc(byPath.get(PATHS[lang].home).html);
+    for (const [m, unit, what] of [[mem, UNIT[lang][0], "memory"], [still, UNIT[lang][1], "processor use standing"], [median, UNIT[lang][1], "processor use median"]]) {
+      if (!m) continue;
+      const want = RANGE[lang](m[1], m[2]) + unit;
+      if (!html.includes(want)) bad(`${PATHS[lang].home}: does not say ${want} (${what}, as in the README)`);
+    }
+  }
+
+  // the Atom feed of the changelog: it lists every version of CHANGELOG.md, newest first, and is linked from the changelog page
+  const feed = files["changelog.xml"] || "";
+  const feedEntries = [...feed.matchAll(/<entry>[\s\S]*?<title>Streakboom ([^<:]+)/g)].map((m) => m[1]);
+  if (!feed.startsWith("<?xml") || !feed.includes("<feed")) bad("changelog.xml is not an Atom feed");
+  if (JSON.stringify(feedEntries) !== JSON.stringify(ctx.entries.map((e) => e.version))) bad(`changelog.xml lists ${feedEntries.join(", ")} but CHANGELOG.md has ${ctx.entries.map((e) => e.version).join(", ")}`);
+  if (!byPath.get(PATHS.changelog).html.includes(`href="${PATHS.feed}"`)) bad("the changelog page does not link to changelog.xml");
+  if (!files["llms.txt"].includes(PATHS.feed)) bad("llms.txt does not mention the changelog feed");
+
   for (const f of ["llms.txt", "llms-full.txt"]) {
     for (const word of ["Japanese", "Gemini, Groq, Claude, OpenAI", "Free tiers with limits: Gemini and Groq"]) {
       if (!files[f].includes(word)) bad(`${f}: does not state "${word}"`);
@@ -201,7 +225,7 @@ export function check({ ctx, pages, files, out }) {
   const everything = [...pages.map((p) => [p.path, p.html.replace(/<script type="application\/ld\+json">.*?<\/script>/gs, "")]), ...Object.entries(files).map(([f, t]) => [f, t])];
   for (const [where, text] of everything) {
     for (const [re, why] of BANNED) if (re.test(text)) bad(`${where}: ${why}`);
-    if (where === "/changelog/") continue; // the release notes keep what was true when they were written
+    if (where === "/changelog/" || where === "changelog.xml") continue; // the release notes keep what was true when they were written
     const now = currentFacts(text);
     for (const [re, why] of OUTDATED) if (re.test(now)) bad(`${where}: ${why}`);
   }

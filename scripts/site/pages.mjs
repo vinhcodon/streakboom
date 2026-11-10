@@ -9,6 +9,7 @@ export const PATHS = {
   vi: { home: "/vi/", privacy: "/vi/privacy/", how: "/vi/how-it-works/" },
   ja: { home: "/ja/", privacy: "/ja/privacy/", how: "/ja/how-it-works/" },
   changelog: "/changelog/",
+  feed: "/changelog.xml",
 };
 
 /** How each language is named (the language links), and its Open Graph locale. */
@@ -36,7 +37,7 @@ export const tx = (lang, key, ctx) => (HTML_KEYS.has(key) ? raw(lang, key, ctx) 
 
 const json = (o) => JSON.stringify(o).replace(/</g, "\\u003c");
 
-function head({ lang, ctx, path, title, description, alternates, jsonld = [], noindex = false }) {
+function head({ lang, ctx, path, title, description, alternates, jsonld = [], noindex = false, feed = false }) {
   const url = ORIGIN + path;
   const locale = LANG_INFO[lang].locale;
   const alt = (alternates || []).map((a) => `  <link rel="alternate" hreflang="${a.hreflang}" href="${ORIGIN}${a.path}">`).join("\n");
@@ -53,7 +54,7 @@ ${noindex ? '  <meta name="robots" content="noindex">\n' : ""}  <meta name="them
   <link rel="icon" type="image/png" sizes="16x16" href="/assets/favicon-16.png">
   <link rel="apple-touch-icon" href="/assets/apple-touch-icon.png">
   <link rel="canonical" href="${url}">
-${alt ? alt + "\n" : ""}  <meta property="og:type" content="website">
+${feed ? `  <link rel="alternate" type="application/atom+xml" title="Streakboom changelog" href="${ORIGIN}${PATHS.feed}">\n` : ""}${alt ? alt + "\n" : ""}  <meta property="og:type" content="website">
   <meta property="og:site_name" content="Streakboom">
   <meta property="og:title" content="${esc(title)}">
   <meta property="og:description" content="${esc(description)}">
@@ -127,7 +128,7 @@ ${script ? '\n  <script type="module" src="/app.js"></script>\n' : ""}</body>
 export function entryHtml(e, lang, level) {
   const when = e.date ? `<time datetime="${esc(e.date)}">${esc(fmtDate(e.date, lang))}</time>` : "";
   const sub = [when, e.title ? esc(e.title) : ""].filter(Boolean).join(" · ");
-  return `<li><h${level}>Streakboom ${esc(e.version)}</h${level}><div class="meta">${sub}</div><ul>${e.items.map((i) => `<li>${esc(i)}</li>`).join("")}</ul></li>`;
+  return `<li${level === 2 ? ` id="v${esc(e.version)}"` : ""}><h${level}>Streakboom ${esc(e.version)}</h${level}><div class="meta">${sub}</div><ul>${e.items.map((i) => `<li>${esc(i)}</li>`).join("")}</ul></li>`;
 }
 
 export function faqPairs(lang, ctx) {
@@ -376,12 +377,12 @@ export function changelogPage(ctx) {
       <ol class="releases">
 ${all}
       </ol>
-      <p class="links"><a href="${REPO_URL}/releases.atom">${s("rss")}</a> · <a href="${PATHS.en.home}">${s("pv_back")}</a></p>
+      <p class="links"><a href="${PATHS.feed}">${s("cl_feed")}</a> · <a href="${REPO_URL}/releases.atom">${s("rss")}</a> · <a href="${PATHS.en.home}">${s("pv_back")}</a></p>
     </article>
 `;
   return htmlDoc({
     lang, ctx, switchTo: { vi: PATHS.vi.home, ja: PATHS.ja.home },
-    headArgs: { path: PATHS.changelog, title: raw(lang, "cl_page_title", ctx), description: raw(lang, "cl_desc", ctx) },
+    headArgs: { path: PATHS.changelog, title: raw(lang, "cl_page_title", ctx), description: raw(lang, "cl_desc", ctx), feed: true },
     main, script: false,
   });
 }

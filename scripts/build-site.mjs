@@ -13,7 +13,7 @@ import { fileURLToPath } from "node:url";
 import { ROOT, context } from "./site/facts.mjs";
 import { PATHS, changelogPage, homePage, howPage, notFoundPage, privacyPage } from "./site/pages.mjs";
 import { LANGS } from "../site/strings.mjs";
-import { llms, llmsFull, robots, sitemap } from "./site/files.mjs";
+import { changelogFeed, llms, llmsFull, robots, sitemap } from "./site/files.mjs";
 import { check } from "./site/checks.mjs";
 
 export const OUT = join(ROOT, "_site");
@@ -55,7 +55,7 @@ export function build({ out = OUT } = {}) {
     { path: PATHS.changelog, file: "changelog/index.html", lang: "en", html: changelogPage(ctx) },
     { path: "/404.html", file: "404.html", lang: "en", html: notFoundPage(ctx) },
   ];
-  const files = { "sitemap.xml": sitemap(ctx), "robots.txt": robots(), "llms.txt": llms(ctx), "llms-full.txt": llmsFull(ctx) };
+  const files = { "sitemap.xml": sitemap(ctx), "robots.txt": robots(), "llms.txt": llms(ctx), "llms-full.txt": llmsFull(ctx), "changelog.xml": changelogFeed(ctx) };
   for (const p of pages) write(out, p.file, p.html);
   for (const [name, text] of Object.entries(files)) write(out, name, text);
 
