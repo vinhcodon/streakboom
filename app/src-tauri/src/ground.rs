@@ -181,6 +181,14 @@ pub fn window_holds(id: u64, x: i32, y: i32) -> bool {
     }
 }
 
+/// The kind at a point and, for an ordinary window, an opaque number for it (0 otherwise): one cell of the ground map with
+/// regions (spec/10). The number is the system's handle, compared only inside one map and then dropped.
+pub fn cell_at(x: i32, y: i32) -> (Ground, u64) {
+    let g = ground_of_point(x, y);
+    let id = if matches!(g, Ground::App | Ground::Foreground) { window_id_at(x, y) } else { 0 };
+    (g, id)
+}
+
 #[cfg(not(windows))]
 pub fn ground_of_point(_x: i32, _y: i32) -> Ground {
     Ground::Unknown

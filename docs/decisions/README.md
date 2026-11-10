@@ -10,6 +10,8 @@ What was **decided**, why, and what was rejected. One short file per decision (a
 
 | ADR | Decision | Status | Date |
 |---|---|---|---|
+| [0045](0045-vertical-terrain-falls-to-the-plane-below-and-the-screen-picture.md) | Peak climbs vertical surfaces and falls only to the plane below; the screen picture sense is allowed as an opt-in | accepted (decisions; being built) | 2026-11-10 |
+| [0044](0044-the-terrain-from-regions-with-identity.md) | The desktop is a terrain of surfaces and costs built from regions with identity; the ground map is on by default; props wait; the overlay comes first | accepted (decisions; being built) | 2026-11-10 |
 | [0043](0043-line-factory-model-remarks-and-the-ground-map.md) | A line factory run by the author, a model's remark after a reflex, and a ground map kept in memory; no top-up of lines by the connected brain yet | accepted (decisions; built after 0.3.1, not released) | 2026-11-10 |
 | [0042](0042-the-website-follows-the-app-in-0-3-1.md) | The website follows the app in 0.3.1: the sense under Peak's feet, 267 lines, the fall | accepted (website session; built 2026-11-10, deployed since) | 2026-11-10 |
 | [0041](0041-reactions-as-events-appraisal-beats-and-words.md) | Reactions are events with an appraisal, shown by a small library of beats and words from slots; the persona is layered and shown read-only | accepted (decisions; nothing built yet) | 2026-11-10 |

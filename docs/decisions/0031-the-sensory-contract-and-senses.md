@@ -21,3 +21,4 @@ No shared contract (rejected: the rule was spread over three ADRs); reading the 
 - Spec/08 section 9 is answered for items 1, 2, 4 and 5; item 3 stays open. Backlog E10: PC-2, PC-4 and PC-5 are ready (the author looks at test builds first); PC-6 waits for the L3 decision; PC-1 (the belief module) can follow.
 - The privacy text (README, website) gains one paragraph covering the contract, the attention field, the click anchor and the ground type when they ship (TE-9).
 - Not verified: everything except the probe measurements of 2026-11-09.
+- **Amended 2026-11-10 (ADR-0045):** the screen picture sense (looking at the pixels of the screen, in memory, reduced at once to rectangles) is allowed as an **opt-in, off by default**; the rule "never what is on the screen" stays for everything else.

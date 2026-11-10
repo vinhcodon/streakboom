@@ -1,9 +1,9 @@
 // Choosing a perch (TE-10c, ADR-0043): from the coarse ground map (`groundmap.ts`), a ledge near the cat that it can hop up
-// to: the top edge of a window with the bare desktop above it, enough room over it for the cat, and not too far or too
+// to: a window's top edge (a boundary with whatever is above it: bare desktop, or another window it stands in front of), enough room over it for the cat, and not too far or too
 // high for one hop chain. Pure: it returns the way to go in logical px, the page does the hopping. Only used when the
 // user switched the ground map on.
 
-import { kindAt, ledges, type GroundMap } from "./groundmap.ts";
+import { headroomClear, ledges, type GroundMap } from "./groundmap.ts";
 
 export interface PerchLimits {
   /** The farthest sideways, logical px. */
@@ -34,10 +34,7 @@ export interface Perch {
  */
 export function choosePerch(map: GroundMap, feet: { x: number; y: number }, scale: number, lim: PerchLimits = PERCH_LIMITS, pick = 0): Perch | null {
   const usable = ledges(map)
-    .filter((l) => {
-      for (let k = 1; k <= lim.headroomRows; k++) if (kindAt(map, l.col, l.row - k) !== "desktop") return false;
-      return true;
-    })
+    .filter((l) => headroomClear(map, l.col, l.row, lim.headroomRows))
     .map((l) => ({ l, dx: (l.x - feet.x) / scale, dy: (l.y - feet.y) / scale }))
     .filter(({ l, dx, dy }) => {
       const rise = -dy;

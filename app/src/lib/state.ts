@@ -11,7 +11,7 @@ export interface Settings {
   qhEnd: number;
   updates: "auto" | "ask" | "off"; // install by itself when idle / offer through the pet / do not check
   remarks: boolean; // a connected brain may add a short remark after a reflex (RX-7, ADR-0043)
-  groundMap: boolean; // Peak may take a coarse picture of where windows are, in memory, when about to move (PC-6, ADR-0043)
+  groundMap: boolean; // Peak may take a coarse picture of where windows are, in memory, when about to move (PC-6, ADR-0043); on by default (ADR-0044)
 }
 
 /** Bookkeeping for the "give me a brain" (API key) request. The key itself is never stored here. */
@@ -297,7 +297,7 @@ export const DEFAULT_SETTINGS: Settings = {
   qhEnd: 7,
   updates: "ask",
   remarks: true,
-  groundMap: false,
+  groundMap: true,
 };
 
 export function defaultData(now: number): PetData {
@@ -368,7 +368,7 @@ export function parse(json: string | null | undefined, now: number): PetData {
         qhEnd: clamp(Math.floor(num(s.qhEnd, 7)), 0, 23),
         updates: s.updates === "auto" || s.updates === "off" ? s.updates : "ask",
         remarks: s.remarks !== false,
-        groundMap: s.groundMap === true,
+        groundMap: s.groundMap !== false,
       },
       brain: {
         asks: clamp(Math.floor(num(o.brain?.asks, 0)), 0, 99),

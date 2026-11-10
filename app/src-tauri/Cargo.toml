@@ -25,6 +25,11 @@ tauri-plugin-autostart = "2"
 [target.'cfg(windows)'.dependencies]
 windows-sys = { version = "0.59", features = ["Win32_UI_Shell", "Win32_UI_Input_KeyboardAndMouse", "Win32_System_SystemInformation", "Win32_Media", "Win32_UI_WindowsAndMessaging", "Win32_Foundation", "Win32_Graphics_Dwm", "Win32_System_Threading"] }
 
+[features]
+# A developer build that adds "Terrain overlay (dev)" to the tray menu: a window that draws what Peak believes about the
+# screen (spec/10, TT-1). Never part of a release.
+terrain-overlay = []
+
 [profile.release]
 codegen-units = 1
 lto = true
@@ -32,7 +37,3 @@ opt-level = 3
 panic = "abort"
 strip = true
 
-[features]
-# A test build with extra items in the pet's right-click menu to try the hops and the fall (spec/07, TE-7);
-# not part of a release.
-hop-test = []

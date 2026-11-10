@@ -2,6 +2,7 @@
   // The pet window. It owns all state and logic; speech bubbles are shown by the "bubble"
   // window and settings by the "settings" window (see $lib/bus.ts for the messages).
   import { invoke } from "@tauri-apps/api/core";
+  import { emitTo } from "@tauri-apps/api/event";
   import { getCurrentWebviewWindow } from "@tauri-apps/api/webviewWindow";
   import { onMount } from "svelte";
   import Pet from "$lib/PetRig.svelte";
@@ -100,6 +101,7 @@
   import { chooseBeat, moodBeat } from "$lib/choose";
   import { endReaction, mayReact, newGate, startReaction } from "$lib/reactions";
   import { desktopShare, ledges, summary, type GroundKind, type GroundMap } from "$lib/groundmap";
+  import { surfaceBelow, surfaces } from "$lib/terrain";
   import { believe, responseFor, startBelief, type Belief } from "$lib/perception";
   import { choosePerch } from "$lib/perch";
   import { EVENTS, type EventId } from "$lib/events";
@@ -697,6 +699,7 @@
   let wakeThen: PetState | null = null; // what to do once the pet has finished waking up
 
   function enter(requested: PetState) {
+    if (requested === "held") perchedUntil = 0; // carried away: it is no longer where it perched
     if (flying) void invoke("fly_cancel"); // picked up or told to do something else in mid-air: the flight ends
     let next = requested;
     // A sleeping pet wakes up first (stretch, eyes open), then carries on.
@@ -742,6 +745,7 @@
     if (flying) return scheduleNext();
     if (quiet) return pose === "sleep" || pose === "drowsy" ? undefined : enter("drowsy");
     if (panel) return scheduleNext();
+    if (Date.now() < perchedUntil) return void (Math.random() < 0.6 ? enter("look") : enter(bubbleOn ? "look" : "drowsy"));
     const r = Math.random();
     if (data.settings.groundMap && r > 0.97) return void perchNow();
     if (r < 0.5) enter("look");
@@ -752,6 +756,71 @@
   // ------------------------------------------------------------------ perches (TE-10c, TE-10d, ADR-0043)
   const PERCH_COOLDOWN_MS = 5 * 60_000;
   let lastPerch = 0;
+  let perchedUntil = 0; // while it is perched it only looks around and dozes (never walks off the ledge)
+  /**
+   * The grid is coarse (a cell is about 115 px tall): the real top edge of the window under a ledge cell, found by asking a few
+   * pixels at a time from half a cell above the cell's top down to it, where what is above stops and the window begins.
+   * Physical px; null when it could not be asked.
+   */
+  async function refinedEdgeY(map: GroundMap, col: number, row: number): Promise<number | null> {
+    try {
+      const colX = Math.round(map.x + ((col + 0.5) * map.w) / map.cols);
+      const cellH = map.h / map.rows;
+      const top = map.y + row * cellH;
+      const pts: [number, number][] = [];
+      for (let y = Math.round(top - cellH * 0.5); y <= Math.round(top + 4); y += 4) pts.push([colX, y]);
+      const kinds = await invoke<string[]>("ground_at", { points: pts });
+      const hit = kinds.findIndex((k) => k === "app" || k === "foreground");
+      note(`edge at ${pts[Math.max(0, hit)][1]} (the cell said ${Math.round(top)})`);
+      return hit > 0 ? pts[hit][1] : Math.round(top);
+    } catch {
+      return null;
+    }
+  }
+
+  /**
+   * How far a fall goes before the next surface below the cat (spec/10 section 11, ADR-0045): the ground map is read when
+   * the seat has gone and the first edge under the cat's feet is found; logical px, or null when the map is off, shows
+   * nothing below, or could not be taken (the fall then goes to the floor, as before).
+   */
+  async function planeBelow(): Promise<number | null> {
+    if (!data.settings.groundMap) return null;
+    const map = await takeGroundMap();
+    const at = await catFeet();
+    if (!map || !at) return null;
+    const s = surfaceBelow(map, at.feet);
+    if (!s) return null;
+    const y = (await refinedEdgeY(map, s.col, s.row)) ?? s.y;
+    return Math.round((y - at.feet.y) / at.scale);
+  }
+
+  /** Where the cat's feet are, in physical px (the same space as the ground map), and the scale. */
+  async function catFeet(): Promise<{ feet: { x: number; y: number }; scale: number } | null> {
+    const place = await invoke<{ x: number; y: number; scale: number }>("pet_place");
+    const geo = await invoke<{ catX: number | null; catY: number | null }>("focus_probe");
+    if (geo.catX === null || geo.catY === null) return null;
+    // the cat's centre (logical) plus half its size, times the scale
+    return { feet: { x: geo.catX * place.scale, y: (geo.catY + PET_SIZE / 2) * place.scale }, scale: place.scale };
+  }
+
+  // The developer overlay (TT-1, spec/10): only a build with the cargo feature `terrain-overlay` has the tray item that opens
+  // it. While it is open the page takes a map every 800 ms (whatever the switch says: it is for looking) and sends it, with
+  // the surfaces, the cat's feet and the ledge it would choose, to the overlay window.
+  let overlayTimer: ReturnType<typeof setInterval> | undefined;
+  async function feedOverlay() {
+    try {
+      const map = await invoke<GroundMap>("ground_map");
+      const at = await catFeet();
+      const perch = at ? choosePerch(map, at.feet, at.scale, undefined, 0) : null;
+      const target = perch && at ? { x: Math.round(at.feet.x + perch.dx * at.scale), y: Math.round(at.feet.y + perch.dy * at.scale) } : null;
+      const ss = surfaces(map);
+      const note = `${summary(map)} | ${ss.length} surfaces (${ss.filter((s) => s.roomy).length} with room) | ${target ? "target at " + target.x + "," + target.y : "no target"}`;
+      await emitTo("overlay", "overlay-data", { map, surfaces: ss, target, feet: at ? at.feet : null, note });
+    } catch {
+      /* the overlay may have been closed meanwhile */
+    }
+  }
+
   /**
    * Hop up onto the top edge of a window when the ground map (only if the user switched it on) shows one nearby: the cat
    * looks at it, crouches, hops, and then simply stays (it sits, dozes, watches like anywhere else). If the window goes
@@ -765,21 +834,26 @@
     if (!fo.walkAllowed && !force) return scheduleNext();
     const map = fake ?? (await takeGroundMap());
     if (!map) return scheduleNext();
-    const place = await invoke<{ x: number; y: number; scale: number }>("pet_place");
-    const geo = await invoke<{ catX: number | null; catY: number | null }>("focus_probe");
-    if (geo.catX === null || geo.catY === null) return scheduleNext();
-    // the feet in physical px: the cat's centre (logical) plus half its size, times the scale
-    const feet = { x: geo.catX * place.scale, y: (geo.catY + PET_SIZE / 2) * place.scale };
-    const perch = choosePerch(map, feet, place.scale, undefined, Math.random());
+    const at = await catFeet();
+    if (!at) return scheduleNext();
+    const { feet, scale } = at;
+    const place = { scale };
+    const perch = choosePerch(map, feet, scale, undefined, Math.random());
     note(perch ? `perch: ledge ${perch.col},${perch.row}, go ${perch.dx},${perch.dy}` : "perch: no ledge");
     if (!perch) return scheduleNext();
     lastPerch = now;
-    if (!(await noticeBeat(perch.dx, perch.dy))) return;
-    await fly(splitHop(perch.dx, perch.dy), "walk");
+    // The grid is coarse (a cell is about 115 px tall): find the window's real top edge by asking, a few pixels at a time,
+    // from the cell above down to the cell's top edge, where the bare desktop stops and the window begins.
+    let dy = perch.dy;
+    const edge = await refinedEdgeY(map, perch.col, perch.row);
+    if (edge !== null) dy = Math.round((edge - feet.y) / place.scale);
+    if (!(await noticeBeat(perch.dx, dy))) return;
+    await fly(splitHop(perch.dx, dy), "walk");
+    perchedUntil = Date.now() + 3 * 60_000; // it stays up there a while: no walking off the edge into the air
   }
 
   /**
-   * For the test build's menu: hop onto a ledge that is not there. A made-up map puts a "window" with bare desktop above it
+   * For the debugger (`window.__pet.perchPretend()`): hop onto a ledge that is not there. A made-up map puts a "window" with bare desktop above it
    * a little up and to the side of the cat, so the hop can be looked at on a screen that has no real ledge. It ignores the
    * cool-down and the switch of the ground map, and nothing is read from the screen.
    */
@@ -985,8 +1059,9 @@
   async function groundLost() {
     const now = Date.now();
     if (quiet || panel !== null || flying || !mayReact(gate, EVENTS.ground_lost, now)) return;
-    if (pose !== "idle" && pose !== "look") return;
+    if (pose !== "idle" && pose !== "look" && !isDozing(pose)) return; // a sleeping cat on a perch that goes is startled out of its sleep
     gate = startReaction(gate, EVENTS.ground_lost, now);
+    perchedUntil = 0;
     try {
       note("ground lost: startle");
       if (!(await runBeat(chooseBeat(EVENTS.ground_lost.appraisal), () => say("fall", { exclaim: true })))) return; // picked up or told to do something else meanwhile
@@ -996,8 +1071,11 @@
       } catch {
         /* unknown: it only gasps */
       }
-      note(`ground lost: room below ${down}`);
-      if (down >= FALL_MIN_PX) await fly([planFall(down)], "gasp");
+      // it falls to the plane below (a dialog, a window under it), not past it to the floor (ADR-0045)
+      const plane = await planeBelow();
+      const dist = plane !== null ? Math.min(plane, down) : down;
+      note(`ground lost: room below ${down}, plane below ${plane === null ? "none" : plane}`);
+      if (dist >= FALL_MIN_PX) await fly([planFall(dist)], "gasp");
       else enter("idle"); // no room to fall: it has only startled
     } finally {
       gate = endReaction(gate, Date.now());
@@ -1086,7 +1164,7 @@
 
   async function groundTick() {
     if (groundBusy) return;
-    const standing = !flying && !quiet && panel === null && (pose === "idle" || pose === "look");
+    const standing = !flying && !quiet && panel === null && (pose === "idle" || pose === "look" || isDozing(pose));
     if (!standing) {
       groundW = startGroundWatch(); // walking, held, asleep, speaking: it will find its footing again when it stands
       return;
@@ -1917,18 +1995,16 @@
       );
       cleanups.push(await win.listen<BubbleAction>("bubble-action", (e) => onBubbleAction(e.payload)));
       cleanups.push(await win.listen<boolean>("focus-hint", (e) => onFocusHint(e.payload)));
+      cleanups.push(
+        await win.listen<boolean>("overlay-toggle", (e) => {
+          clearInterval(overlayTimer);
+          overlayTimer = e.payload ? setInterval(feedOverlay, 800) : undefined;
+          if (e.payload) setTimeout(feedOverlay, 600);
+        }),
+      );
       cleanups.push(await win.listen<{ kind: string; on?: boolean }>("percept", (e) => onPercept(e.payload)));
       cleanups.push(await win.listen("bubble-ready", resendView));
       cleanups.push(await win.listen("settings-ready", pushSettings));
-      // test builds only (cargo feature `hop-test`): the right-click menu items that try the hops and the fall
-      cleanups.push(
-        await win.listen<string>("dev-hop", (e) => {
-          if (e.payload === "pm_hop_up") void fly(splitHop(0, -160), "walk");
-          else if (e.payload === "pm_hop_down") void fly(splitHop(0, 160), "walk");
-          else if (e.payload === "pm_fall") void fly([planFall(400)], "gasp");
-          else if (e.payload === "pm_perch") void perchPretend();
-        }),
-      );
       cleanups.push(await win.listen<SettingsPatch>("settings-patch", (e) => onSettingsPatch(e.payload)));
       cleanups.push(await win.listen<BrainChange>("brain-changed", (e) => onBrainChanged(e.payload)));
 
@@ -2007,7 +2083,7 @@
       scheduleProactive();
       groundLoop = setInterval(groundTick, GROUND_POLL_MS);
       // Test hook (like window.__cat): lets a debugger trigger the real unprompted-line path now.
-      (window as unknown as Record<string, unknown>).__pet = { proactive: () => void fireProactive(), focus: () => ({ ...focusOut, lastLeave, pose }), trail: () => trail, sleep: () => enter("drowsy"), wake: () => enter("idle"), hop: (dx: number, dy: number) => void fly(splitHop(dx, dy), "walk"), lane: () => ({ ...laneOut, state: laneState, cat: laneCat }), ground: () => invoke("ground_under_cat"), belief: () => { const b = currentBelief(); return { ...b.belief, response: b.response }; }, perch: (fake?: unknown) => void perchNow(fake as GroundMap | undefined, true), map: () => takeGroundMap().then((m) => (m ? { summary: summary(m), ledges: ledges(m).length } : null)), groundLost: () => void groundLost(), say: (t: Trigger, kind?: RepeatKind) => (kind ? say(t, repeatNow(kind)) : say(t)), bubble: () => bubbleText, fall: (d: number) => void fly([planFall(d)], "gasp") };
+      (window as unknown as Record<string, unknown>).__pet = { proactive: () => void fireProactive(), focus: () => ({ ...focusOut, lastLeave, pose }), trail: () => trail, sleep: () => enter("drowsy"), wake: () => enter("idle"), hop: (dx: number, dy: number) => void fly(splitHop(dx, dy), "walk"), lane: () => ({ ...laneOut, state: laneState, cat: laneCat }), ground: () => invoke("ground_under_cat"), belief: () => { const b = currentBelief(); return { ...b.belief, response: b.response }; }, perch: (fake?: unknown) => void perchNow(fake as GroundMap | undefined, true), perchPretend: () => void perchPretend(), overlay: () => invoke<string>("overlay_toggle"), map: () => takeGroundMap().then((m) => (m ? { summary: summary(m), ledges: ledges(m).length } : null)), groundLost: () => void groundLost(), say: (t: Trigger, kind?: RepeatKind) => (kind ? say(t, repeatNow(kind)) : say(t)), bubble: () => bubbleText, fall: (d: number) => void fly([planFall(d)], "gasp") };
       let lastTick = Date.now();
       minuteTimer = setInterval(() => {
         const now = Date.now();

@@ -539,6 +539,9 @@ struct GroundMap {
     rows: usize,
     /// the kind at the centre of each cell, row by row from the top left
     cells: Vec<ground::Ground>,
+    /// an opaque number for the window at each cell (0: none, the desktop or the taskbar): cells with the same number
+    /// belong to the same window, so a boundary between two numbers is an edge (spec/10)
+    ids: Vec<u64>,
 }
 
 /// A coarse picture of what is where on the monitor the cat is on (PC-6, ADR-0043): the kind (desktop, taskbar, window,
@@ -555,14 +558,17 @@ fn ground_map(window: WebviewWindow, cols: Option<usize>, rows: Option<usize>) -
     let rows = rows.unwrap_or(9).clamp(1, 9);
     let (w, h) = (a.r - a.x, a.b - a.y);
     let mut cells = Vec::with_capacity(cols * rows);
+    let mut ids = Vec::with_capacity(cols * rows);
     for r in 0..rows {
         for c in 0..cols {
             let px = a.x + ((c as f64 + 0.5) * w as f64 / cols as f64) as i32;
             let py = a.y + ((r as f64 + 0.5) * h as f64 / rows as f64) as i32;
-            cells.push(ground::ground_of_point(px, py));
+            let (g, id) = ground::cell_at(px, py);
+            cells.push(g);
+            ids.push(id);
         }
     }
-    Ok(GroundMap { x: a.x, y: a.y, w, h, cols, rows, cells })
+    Ok(GroundMap { x: a.x, y: a.y, w, h, cols, rows, cells, ids })
 }
 
 /// Is the window with that opaque number still there and still under that point (closed, minimized or dragged away: no).
@@ -794,12 +800,6 @@ fn show_pet_menu(app: AppHandle, window: WebviewWindow, state: State<AppState>, 
     let quiet_item = CheckMenuItem::with_id(&app, "pm_quiet", label(1, "Quiet mode"), true, quiet, None::<&str>).map_err(|e| e.to_string())?;
     let quit = MenuItem::with_id(&app, "pm_quit", label(2, "Quit"), true, None::<&str>).map_err(|e| e.to_string())?;
     let menu = Menu::with_items(&app, &[&settings, &quiet_item, &quit]).map_err(|e| e.to_string())?;
-    // test builds only (cargo feature `hop-test`): items to try the hops and the fall
-    #[cfg(feature = "hop-test")]
-    for (id, text) in [("pm_hop_up", "Test: hop up"), ("pm_hop_down", "Test: hop down"), ("pm_fall", "Test: fall"), ("pm_perch", "Test: hop onto a ledge (pretend)")] {
-        let item = MenuItem::with_id(&app, id, text, true, None::<&str>).map_err(|e| e.to_string())?;
-        menu.append(&item).map_err(|e| e.to_string())?;
-    }
     window.popup_menu(&menu).map_err(|e| e.to_string())
 }
 
@@ -1303,6 +1303,58 @@ fn spawn_hit_test(app: AppHandle, win: WebviewWindow) {
 
 // ---------------------------------------------------------------------- tray
 
+/// The developer overlay (TT-1, spec/10 section 7): a click-through, transparent window over the monitor's work area that
+/// draws what Peak believes about the screen (the page `overlay`). Opens or closes it, tells the pet page, and puts the pet
+/// window back on top so the cat is never hidden by it.
+#[cfg(feature = "terrain-overlay")]
+fn toggle_overlay(app: &AppHandle) -> String {
+    if let Some(w) = app.get_webview_window("overlay") {
+        let _ = w.close();
+        let _ = app.emit_to("main", "overlay-toggle", false);
+        return "closed".into();
+    }
+    let Some(main) = app.get_webview_window("main") else { return "no main window".into() };
+    let (Ok(pos), Ok(scale)) = (main.outer_position(), main.scale_factor()) else { return "no position".into() };
+    let (l, t, s) = pet_px(scale);
+    let Some(a) = area_at(&main, (pos.x + l + s / 2) as f64, (pos.y + t + s / 2) as f64) else { return "no monitor".into() };
+    let built = WebviewWindowBuilder::new(app, "overlay", WebviewUrl::App("overlay".into()))
+        .transparent(true)
+        .decorations(false)
+        .always_on_top(true)
+        .skip_taskbar(true)
+        .focused(false)
+        .resizable(false)
+        .shadow(false)
+        .additional_browser_args(BROWSER_ARGS) // the same arguments as the other windows (WebView2 refuses a window whose environment differs)
+        .position(a.x as f64 / scale, a.y as f64 / scale)
+        .inner_size((a.r - a.x) as f64 / scale, (a.b - a.y) as f64 / scale)
+        .build();
+    match built {
+        Ok(w) => {
+            let _ = w.set_ignore_cursor_events(true);
+            let _ = main.set_always_on_top(true); // above the overlay: the cat is never hidden
+            let _ = app.emit_to("main", "overlay-toggle", true);
+            "opened".into()
+        }
+        Err(e) => format!("could not open: {e}"),
+    }
+}
+
+/// Open or close the developer overlay from the page (for the debugger); false in a build without the feature.
+#[tauri::command]
+async fn overlay_toggle(app: AppHandle) -> String {
+    // an async command: creating a window from a synchronous one blocks on Windows
+    #[cfg(feature = "terrain-overlay")]
+    {
+        toggle_overlay(&app)
+    }
+    #[cfg(not(feature = "terrain-overlay"))]
+    {
+        let _ = app;
+        "not in this build".to_string()
+    }
+}
+
 fn toggle_visibility(app: &AppHandle) {
     if let Some(win) = app.get_webview_window("main") {
         if win.is_visible().unwrap_or(false) {
@@ -1321,6 +1373,9 @@ fn build_tray(app: &AppHandle, quiet: bool) -> tauri::Result<()> {
     let quiet_item = CheckMenuItem::with_id(app, "quiet", "Quiet mode", true, quiet, None::<&str>)?;
     let quit = MenuItem::with_id(app, "quit", "Quit", true, None::<&str>)?;
     let menu = Menu::with_items(app, &[&toggle, &settings, &quiet_item, &quit])?;
+    // a developer build only (cargo feature `terrain-overlay`, never in a release): show what Peak believes about the screen
+    #[cfg(feature = "terrain-overlay")]
+    menu.append(&MenuItem::with_id(app, "overlay", "Terrain overlay (dev)", true, None::<&str>)?)?;
     let quiet_ref = quiet_item.clone();
     *app.state::<AppState>().quiet_item.lock().unwrap() = Some(quiet_item.clone());
 
@@ -1333,6 +1388,12 @@ fn build_tray(app: &AppHandle, quiet: bool) -> tauri::Result<()> {
             "settings" => open_settings_async(app),
             "quiet" => set_quiet(app, quiet_ref.is_checked().unwrap_or(false)),
             "quit" => quit_app(app),
+            #[cfg(feature = "terrain-overlay")]
+            "overlay" => {
+                // from the tray handler: not on this thread (creating a window here can block on Windows)
+                let app = app.clone();
+                std::thread::spawn(move || toggle_overlay(&app));
+            }
             _ => {}
         })
         .on_tray_icon_event(|tray, event| {
@@ -1426,10 +1487,6 @@ pub fn run() {
                 set_quiet(app, !q);
             }
             "pm_quit" => quit_app(app),
-            #[cfg(feature = "hop-test")]
-            id @ ("pm_hop_up" | "pm_hop_down" | "pm_fall" | "pm_perch") => {
-                let _ = app.emit("dev-hop", id);
-            }
             _ => {}
         })
         .on_window_event(|window, event| {
@@ -1480,7 +1537,7 @@ pub fn run() {
             edge_room,
             vertical_room,
             ground_at,
-            ground_under_cat, window_holds, persona_preview, ground_map,
+            ground_under_cat, window_holds, persona_preview, ground_map, overlay_toggle,
             monitors_info,
             move_to,
             pet_place,
