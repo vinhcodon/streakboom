@@ -125,17 +125,35 @@ ${script ? '\n  <script type="module" src="/app.js"></script>\n' : ""}</body>
 }
 
 /** One release as a card; `level` is the heading level (3 on the home page, 2 on the changelog page). */
-export function entryHtml(e, lang, level) {
+export function entryHtml(e, lang, level, maxItems = Infinity) {
   const when = e.date ? `<time datetime="${esc(e.date)}">${esc(fmtDate(e.date, lang))}</time>` : "";
   const sub = [when, e.title ? esc(e.title) : ""].filter(Boolean).join(" · ");
-  return `<li${level === 2 ? ` id="v${esc(e.version)}"` : ""}><h${level}>Streakboom ${esc(e.version)}</h${level}><div class="meta">${sub}</div><ul>${e.items.map((i) => `<li>${esc(i)}</li>`).join("")}</ul></li>`;
+  return `<li${level === 2 ? ` id="v${esc(e.version)}"` : ""}><h${level}>Streakboom ${esc(e.version)}</h${level}><div class="meta">${sub}</div><ul>${e.items.slice(0, maxItems).map((i) => `<li>${esc(i)}</li>`).join("")}</ul></li>`;
 }
 
-export function faqPairs(lang, ctx) {
-  const out = [];
-  for (let i = 1; STRINGS[lang]["q" + i]; i++) out.push({ q: raw(lang, "q" + i, ctx), a: raw(lang, "a" + i, ctx) });
-  return out;
+/** The questions of the home page and of the How it works page (numbers of the q/a keys); together they are all of them. */
+export const HOME_FAQ = [1, 10, 2, 8, 4];
+export const HOW_FAQ = [3, 5, 6, 7, 9];
+
+/** Question and answer pairs: those with the given numbers, or all of them in order. */
+export function faqPairs(lang, ctx, ids = null) {
+  const list = ids || (() => { const n = []; for (let i = 1; STRINGS[lang]["q" + i]; i++) n.push(i); return n; })();
+  return list.map((i) => ({ q: raw(lang, "q" + i, ctx), a: raw(lang, "a" + i, ctx) }));
 }
+
+const faqHtml = (pairs) => pairs.map((p) => `      <details><summary><h3>${esc(p.q)}</h3></summary><p>${esc(p.a)}</p></details>`).join("\n");
+
+const faqNode = (lang, ctx, path, ids) => ({
+  "@type": "FAQPage",
+  "@id": `${ORIGIN}${path}#faq`,
+  inLanguage: lang,
+  mainEntity: faqPairs(lang, ctx, ids).map((p) => ({ "@type": "Question", name: p.q, acceptedAnswer: { "@type": "Answer", text: p.a } })),
+});
+
+/** The charter of Peak on GitHub: the proof behind the promises (docs/charter.md; the build checks that the file exists). */
+export const CHARTER_URL = `${REPO_URL}/blob/main/docs/charter.md`;
+/** The four promises of the home page and the privacy page (keys pr1 to pr4); the build checks each against the README. */
+export const PROMISES = ["pr1", "pr2", "pr3", "pr4"];
 
 /** The titles of the nine feature cards without their leading emoji: the `featureList` of the structured data. */
 export function featureTitles(lang, ctx) {
@@ -174,32 +192,27 @@ export function homeJsonLd(lang, ctx) {
       },
       { "@type": "Person", "@id": `${ORIGIN}/#author`, name: AUTHOR.name, sameAs: [AUTHOR.github] },
       { "@type": "WebSite", "@id": `${ORIGIN}/#site`, url: `${ORIGIN}/`, name: "Streakboom", inLanguage: LANGS, publisher: { "@id": `${ORIGIN}/#author` } },
-      {
-        "@type": "FAQPage",
-        "@id": `${ORIGIN}${path}#faq`,
-        inLanguage: lang,
-        mainEntity: faqPairs(lang, ctx).map((p) => ({ "@type": "Question", name: p.q, acceptedAnswer: { "@type": "Answer", text: p.a } })),
-      },
+      faqNode(lang, ctx, path, HOME_FAQ),
     ],
   }];
 }
 
+export function howJsonLd(lang, ctx) {
+  return [{ "@context": "https://schema.org", "@graph": [faqNode(lang, ctx, PATHS[lang].how, HOW_FAQ)] }];
+}
+
 export function homePage(lang, ctx) {
   const s = (k) => tx(lang, k, ctx);
-  const S = STRINGS[lang];
   const path = PATHS[lang].home;
-  const features = [1, 2, 3, 4, 5, 6, 7, 8, 9]
-    .map((i) => `        <article class="card"><h3>${s(`f${i}_h`)}</h3><p>${s(`f${i}_p`)}</p></article>`).join("\n");
-  const gestures = [1, 2, 3, 4, 5, 7, 6]
-    .map((i) => `          <tr><th>${s(`g${i}_a`)}</th><td>${s(`g${i}_b`)}</td></tr>`).join("\n");
-  const glance = S.glance.map((t) => `        <li>${esc(fill(t, ctx, lang))}</li>`).join("\n");
-  const notItems = S.not_items.map((t) => `        <li>${esc(fill(t, ctx, lang))}</li>`).join("\n");
-  const privacy = ["p1", "p2", "p3", "p7"].map((k) => `        <li>${s(k)}</li>`).join("\n");
-  const faq = faqPairs(lang, ctx)
-    .map((p) => `      <details><summary><h3>${esc(p.q)}</h3></summary><p>${esc(p.a)}</p></details>`).join("\n");
+  // short on purpose (ADR-0048): the promises, four feature lines, the install, five answers and the newest update;
+  // the detail is on the How it works page and the privacy page
+  const teasers = [1, 2, 3, 9]
+    .map((i) => `        <article class="card"><h3>${s(`f${i}_h`)}</h3><p>${s(`fl${i}`)}</p></article>`).join("\n");
+  const promises = PROMISES.map((k) => `        <li>${s(k)}</li>`).join("\n");
+  const faq = faqHtml(faqPairs(lang, ctx, HOME_FAQ));
   // the scene chips are in the HTML (the script only binds them): no shift when it starts, labels readable without it
   const chips = SCENES.map((sc, i) => `          <button class="chip" type="button" data-scene="${i}" aria-pressed="${i === 0}">${s("pose_" + sc.id)}</button>`).join("\n");
-  const recent = ctx.entries.slice(0, 3).map((e) => "        " + entryHtml(e, lang, 3)).join("\n");
+  const recent = ctx.entries.slice(0, 1).map((e) => "        " + entryHtml(e, lang, 3, 1)).join("\n");
 
   const main = `
     <!-- HERO -->
@@ -236,35 +249,28 @@ ${chips}
       </div>
     </section>
 
-    <!-- AT A GLANCE: the facts in plain sentences, in the HTML (no script needed) -->
-    <section id="glance" class="section">
-      <h2>${s("glance_title")}</h2>
-      <ul class="facts">
-${glance}
+    <!-- THE PROMISES (the charter, distilled; the proof is the charter on GitHub) -->
+    <section id="promises" class="section">
+      <h2>${s("promise_title")}</h2>
+      <p class="sub">${s("promise_sub")}</p>
+      <ul class="checks">
+${promises}
       </ul>
+      <p class="links"><a href="${PATHS[lang].privacy}">${s("priv_more")}</a> · <a href="${CHARTER_URL}">${s("charter_link")}</a></p>
     </section>
 
-    <!-- FEATURES -->
+    <!-- FEATURES: four lines; every feature is on the How it works page -->
     <section id="features" class="section alt">
       <h2>${s("feat_title")}</h2>
       <p class="sub">${s("feat_sub")}</p>
-      <div class="grid">
-${features}
+      <div class="grid quad">
+${teasers}
       </div>
-    </section>
-
-    <!-- HOW TO USE -->
-    <section class="section">
-      <h2>${s("use_title")}</h2>
-      <table class="gestures">
-        <tbody>
-${gestures}
-        </tbody>
-      </table>
+      <p class="links"><a href="${PATHS[lang].how}">${s("nav_how")}</a></p>
     </section>
 
     <!-- INSTALL -->
-    <section id="install" class="section alt">
+    <section id="install" class="section">
       <h2>${s("inst_title")}</h2>
       <ol class="steps">
         <li>${s("s1")}</li>
@@ -274,31 +280,15 @@ ${gestures}
       <p class="sub">${s("inst_note")}</p>
     </section>
 
-    <!-- PRIVACY (a summary; the full text is its own page) -->
-    <section id="privacy" class="section">
-      <h2>${s("priv_title")}</h2>
-      <ul class="checks">
-${privacy}
-      </ul>
-      <p><a href="${PATHS[lang].privacy}">${s("priv_more")}</a></p>
-    </section>
-
-    <!-- WHAT IT IS NOT -->
-    <section id="not" class="section alt">
-      <h2>${s("not_title")}</h2>
-      <ul class="checks">
-${notItems}
-      </ul>
-    </section>
-
-    <!-- FAQ: each question is a heading-like summary, the answer starts with the direct answer -->
-    <section id="faq" class="section">
+    <!-- FAQ: five answers of one or two sentences; the rest is on the How it works page -->
+    <section id="faq" class="section alt">
       <h2>${s("faq_title")}</h2>
 ${faq}
+      <p class="links"><a href="${PATHS[lang].how}#faq">${s("hw_faq_title")}</a></p>
     </section>
 
-    <!-- LATEST UPDATES, from CHANGELOG.md at build time -->
-    <section id="updates" class="section alt">
+    <!-- THE NEWEST UPDATE, from CHANGELOG.md at build time -->
+    <section id="updates" class="section">
       <h2>${s("upd_title")}</h2>
       <p class="sub">${s("upd_sub")}</p>
       <ol class="releases">
@@ -318,10 +308,14 @@ ${recent}
   });
 }
 
-/** "How it works": the same shape as the privacy page (a title, a lead, sections of paragraphs), written from the README and the app's records. */
+/** "How it works": what it does, how to play, six plain sections and the rest of the questions; written from the README and the app's records. */
 export function howPage(lang, ctx) {
   const s = (k) => tx(lang, k, ctx);
   const path = PATHS[lang].how;
+  const features = [1, 2, 3, 4, 5, 6, 7, 8, 9]
+    .map((i) => `        <h3>${s(`f${i}_h`)}</h3>\n        <p>${s(`f${i}_p`)}</p>`).join("\n");
+  const gestures = [1, 2, 3, 4, 5, 7, 6]
+    .map((i) => `          <tr><th>${s(`g${i}_a`)}</th><td>${s(`g${i}_b`)}</td></tr>`).join("\n");
   const sections = STRINGS[lang].hw_sections
     .map((sec) => `      <section>
         <h2>${esc(sec.h)}</h2>
@@ -331,13 +325,29 @@ ${sec.p.map((p) => `        <p>${esc(p)}</p>`).join("\n")}
     <article class="section prose">
       <h1>${s("hw_title")}</h1>
       <p class="lead">${s("hw_lead")}</p>
+      <section id="features">
+        <h2>${s("hw_feat_title")}</h2>
+${features}
+      </section>
+      <section id="gestures">
+        <h2>${s("use_title")}</h2>
+        <table class="gestures">
+          <tbody>
+${gestures}
+          </tbody>
+        </table>
+      </section>
 ${sections}
+      <section id="faq">
+        <h2>${s("hw_faq_title")}</h2>
+${faqHtml(faqPairs(lang, ctx, HOW_FAQ))}
+      </section>
       <p><a href="${PATHS[lang].privacy}">${s("priv_more")}</a> · <a href="${PATHS[lang].home}">${s("pv_back")}</a></p>
     </article>
 `;
   return htmlDoc({
     lang, ctx, switchTo: Object.fromEntries(LANGS.map((l) => [l, PATHS[l].how])),
-    headArgs: { path, title: raw(lang, "hw_page_title", ctx), description: raw(lang, "hw_desc", ctx), alternates: alternatesFor("how") },
+    headArgs: { path, title: raw(lang, "hw_page_title", ctx), description: raw(lang, "hw_desc", ctx), alternates: alternatesFor("how"), jsonld: howJsonLd(lang, ctx) },
     main, script: false,
   });
 }
@@ -352,6 +362,13 @@ export function privacyPage(lang, ctx) {
     <article class="section prose">
       <h1>${s("pv_title")}</h1>
       <p class="lead">${s("pv_lead")}</p>
+      <section>
+        <h2>${s("promise_title")}</h2>
+        <ul class="checks">
+${PROMISES.map((k) => `          <li>${s(k)}</li>`).join("\n")}
+        </ul>
+        <p><a href="${CHARTER_URL}">${s("charter_link")}</a></p>
+      </section>
 ${sections}
       <p><a href="${PATHS[lang].home}">${s("pv_back")}</a></p>
     </article>

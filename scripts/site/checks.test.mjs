@@ -80,7 +80,8 @@ test("the Japanese pages are built", () => {
     assert.match(p.html, /<html lang="ja"/);
     assert.match(p.html, /hreflang="ja"/);
   }
-  assert.match(page(c, "/ja/").html, /2026年11月9日/);
+  const [y, m, d] = r.ctx.date.split("-").map(Number);
+  assert.match(page(c, "/ja/").html, new RegExp(`${y}年${m}月${d}日`));
   assert.match(c.files["sitemap.xml"], /<loc>https:\/\/streakboom\.com\/ja\/<\/loc>/);
 });
 test("a Japanese page whose hreflang back-link is missing", () => fails((c) => {
@@ -186,7 +187,7 @@ test("the size budget passes on the real site and fails when exceeded", async ()
 });
 
 test("a number of hand-written lines that differs from the README", () => fails((c) => {
-  const p = page(c, "/ja/");
+  const p = page(c, "/ja/how-it-works/");
   p.html = p.html.replaceAll("267個", "182個");
 }, /does not say 267個/));
 test("a privacy page that lacks the sense under Peak's feet (README says it has it)", () => fails((c) => {
@@ -211,11 +212,53 @@ test("the changelog feed lists every version and is linked", () => {
 test("a changelog feed that misses a version", () => fails((c) => {
   c.files["changelog.xml"] = c.files["changelog.xml"].replace(/<entry>(?:(?!<entry>)[\s\S])*?<\/entry>\n?/, "");
 }, /changelog\.xml lists/));
-test("a processor number on the home page that differs from the README", () => fails((c) => {
-  const p = page(c, "/vi/");
+test("a processor number on the How it works page that differs from the README", () => fails((c) => {
+  const p = page(c, "/vi/how-it-works/");
   p.html = p.html.replace("9 đến 11%", "9 đến 10%");
 }, /does not say 9 đến 11%/));
-test("a memory number on the Japanese home page that differs from the README", () => fails((c) => {
-  const p = page(c, "/ja/");
+test("a memory number on the Japanese How it works page that differs from the README", () => fails((c) => {
+  const p = page(c, "/ja/how-it-works/");
   p.html = p.html.replaceAll("100〜120MB", "90〜110MB");
 }, /does not say 100〜120MB/));
+
+// ADR-0048: the short home page, the promises, the split FAQ
+test("the home page is short: four feature lines, five questions, one update, no long blocks", () => {
+  const c = clone();
+  for (const [path, words] of [["/", 800], ["/vi/", 900]]) { // was 2,862 and 3,198 words before ADR-0048
+    const h = page(c, path).html;
+    assert.equal((h.match(/<article class="card">/g) || []).length, 4, `${path}: four feature lines`);
+    assert.equal((h.match(/<details>/g) || []).length, 5, `${path}: five questions`);
+    assert.equal((h.match(/<li><h3>Streakboom /g) || []).length, 1, `${path}: the newest update only`);
+    for (const id of ["glance", "not", "privacy"]) assert.ok(!h.includes(`<section id="${id}"`), `${path}: no ${id} block`);
+    const main = h.slice(h.indexOf("<main"), h.indexOf("</main>")).replace(/<script[\s\S]*?<\/script>/g, " ").replace(/<[^>]+>/g, " ");
+    assert.ok(main.split(/\s+/).filter(Boolean).length < words, `${path}: under ${words} words`);
+  }
+});
+test("the How it works page carries all nine features, the gestures and the other five questions", () => {
+  const c = clone();
+  for (const path of ["/how-it-works/", "/vi/how-it-works/", "/ja/how-it-works/"]) {
+    const h = page(c, path).html;
+    assert.equal((h.match(/<h3>/g) || []).length, 9 + 5, `${path}: nine features and five questions`);
+    assert.ok(h.includes('<table class="gestures">'), `${path}: the gestures`);
+    assert.ok(h.includes('"@type":"FAQPage"'), `${path}: its own FAQPage`);
+  }
+});
+test("a promise that is missing from the home page", () => fails((c) => {
+  const p = page(c, "/ja/");
+  p.html = p.html.replace("入力した内容も、画面に映っているものも、決して読みません。", "入力した内容は読みません。");
+}, /the promise pr1 is not on the page/));
+test("a promise that is missing from the top of the privacy page", () => fails((c) => {
+  const p = page(c, "/privacy/");
+  p.html = p.html.replace("It works without AI, and if you add a brain the key is yours.", "It works.");
+}, /the promise pr3 is not on the page/));
+test("a home page without the link to the charter", () => fails((c) => {
+  const p = page(c, "/vi/");
+  p.html = p.html.replace(/<a href="https:\/\/github\.com\/[^"]*\/docs\/charter\.md">/, '<a href="#">');
+}, /there is no link to the charter/));
+test("a FAQ answer that is not short", () => fails((c) => {
+  const p = page(c, "/");
+  const long = "word ".repeat(120);
+  const html = p.html.replace(/(<summary><h3>Is it really free\?<\/h3><\/summary><p>)/, `$1${long}`);
+  p.html = html;
+  // the JSON-LD must still say the same, so it fails on length first and on the mismatch too
+}, /keep FAQ answers short/));

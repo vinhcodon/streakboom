@@ -5,8 +5,8 @@ import { gzipSync } from "node:zlib";
 import { join } from "node:path";
 import { ORIGIN, ROOT, fmtDate } from "./facts.mjs";
 import { pageList } from "./files.mjs";
-import { PATHS, esc } from "./pages.mjs";
-import { STRINGS, EN_ONLY, LANGS, UI_KEYS } from "../../site/strings.mjs";
+import { CHARTER_URL, HOME_FAQ, HOW_FAQ, PROMISES, PATHS, esc } from "./pages.mjs";
+import { STRINGS, EN_ONLY, HTML_KEYS, LANGS, UI_KEYS } from "../../site/strings.mjs";
 import { SCENES } from "../../site/scenes.js";
 
 /** The size budget (ADR-0040 N5): what the browser must download to show a page stays small. Limits are in bytes. */
@@ -41,7 +41,7 @@ const BANNED = [
   [/100% free|miễn phí 100%/i, "'100% free' (the AI brain is billed by the provider)"],
   [/hand-?drawn|vẽ tay/i, "'hand-drawn' (the cat is drawn by code written with Claude's help)"],
   [/Peak (sees|watches) (what )?you/i, "Peak 'sees' what you do (ADR-0031: it perceives activity, never meaning)"],
-  [/reads what you type(?!, which keys)/i, "'reads what you type' without a negation"],
+  [/(?<!never )reads what you type(?!, which keys)/i, "'reads what you type' without a negation"],
   [/macOS (version|port)? ?(is coming|will|soon)|sắp có (bản )?macOS/i, "a macOS promise"],
   [/will be code-signed|sẽ được ký số/i, "a code-signing promise"],
   [/100%\s*無料|完全無料/, "'100% free' in Japanese"],
@@ -87,14 +87,21 @@ export function check({ ctx, pages, files, out }) {
 
   // 2. the FAQ in JSON-LD is exactly the visible FAQ
   for (const lang of LANGS) {
-    const p = byPath.get(PATHS[lang].home);
-    const visible = [...p.html.matchAll(/<summary><h3>(.*?)<\/h3><\/summary><p>(.*?)<\/p>/gs)].map((m) => [unesc(m[1]), unesc(m[2])]);
-    const ld = [...p.html.matchAll(/<script type="application\/ld\+json">(.*?)<\/script>/gs)].map((m) => JSON.parse(m[1].replace(/\\u003c/g, "<")));
-    const faq = ld.flatMap((d) => d["@graph"] || []).find((n) => n["@type"] === "FAQPage");
-    if (!faq) { bad(`${p.path}: no FAQPage JSON-LD`); continue; }
-    const fromLd = faq.mainEntity.map((q) => [q.name, q.acceptedAnswer.text]);
-    if (JSON.stringify(fromLd) !== JSON.stringify(visible)) bad(`${p.path}: the FAQ in JSON-LD differs from the visible FAQ`);
-    if (visible.length < 5) bad(`${p.path}: only ${visible.length} FAQ entries found`);
+    for (const [path, ids] of [[PATHS[lang].home, HOME_FAQ], [PATHS[lang].how, HOW_FAQ]]) {
+      const p = byPath.get(path);
+      const visible = [...p.html.matchAll(/<summary><h3>(.*?)<\/h3><\/summary><p>(.*?)<\/p>/gs)].map((m) => [unesc(m[1]), unesc(m[2])]);
+      const ld = [...p.html.matchAll(/<script type="application\/ld\+json">(.*?)<\/script>/gs)].map((m) => JSON.parse(m[1].replace(/\\u003c/g, "<")));
+      const faq = ld.flatMap((d) => d["@graph"] || []).find((n) => n["@type"] === "FAQPage");
+      if (!faq) { bad(`${p.path}: no FAQPage JSON-LD`); continue; }
+      const fromLd = faq.mainEntity.map((q) => [q.name, q.acceptedAnswer.text]);
+      if (JSON.stringify(fromLd) !== JSON.stringify(visible)) bad(`${p.path}: the FAQ in JSON-LD differs from the visible FAQ`);
+      if (visible.length !== ids.length) bad(`${p.path}: ${visible.length} FAQ entries found, expected ${ids.length}`);
+      // a short answer is easier to quote (ADR-0048): at most about 70 words, or 200 characters in Japanese
+      for (const [q, a] of visible) {
+        const size = lang === "ja" ? a.length : a.split(/\s+/).length;
+        if (size > (lang === "ja" ? 220 : 75)) bad(`${p.path}: the answer to "${q}" is ${size} ${lang === "ja" ? "characters" : "words"} (keep FAQ answers short)`);
+      }
+    }
   }
 
   // 2b. what the structured data states about the app is on the visible page (ADR-0040 N4), and the llms files state the same facts
@@ -103,10 +110,10 @@ export function check({ ctx, pages, files, out }) {
     const ld = [...p.html.matchAll(/<script type="application\/ld\+json">(.*?)<\/script>/gs)].map((m) => JSON.parse(m[1].replace(/\\u003c/g, "<")));
     const app = ld.flatMap((d) => d["@graph"] || []).find((n) => n["@type"] === "SoftwareApplication");
     if (!app) continue;
-    const visibleText = unesc(p.html.replace(/<script[\s\S]*?<\/script>/g, ""));
+    const visibleText = unesc(p.html.replace(/<script[\s\S]*?<\/script>/g, "") + byPath.get(PATHS[lang].how).html.replace(/<script[\s\S]*?<\/script>/g, ""));
     if (!Array.isArray(app.featureList) || app.featureList.length !== 9) bad(`${p.path}: featureList does not have the nine feature titles`);
     else for (const f of app.featureList) if (!visibleText.includes(f)) bad(`${p.path}: featureList entry "${f}" is not on the page`);
-    if (!app.softwareRequirements || !/WebView2/.test(app.softwareRequirements) || !/WebView2/.test(visibleText) || !/64/.test(visibleText)) bad(`${p.path}: softwareRequirements is missing or not backed by the visible text`);
+    if (!app.softwareRequirements || !/WebView2/.test(app.softwareRequirements) || !/WebView2/.test(unesc(p.html)) || !/64/.test(unesc(p.html))) bad(`${p.path}: softwareRequirements is missing or not backed by the visible text`);
     if (app.releaseNotes !== ORIGIN + "/changelog/" || !p.html.includes('href="/changelog/"')) bad(`${p.path}: releaseNotes does not point at the linked changelog`);
     if (app.screenshot !== app.image) bad(`${p.path}: screenshot is not the share image`);
   }
@@ -115,10 +122,10 @@ export function check({ ctx, pages, files, out }) {
   const lines = readme.match(/(\d+) hand-written lines per language/);
   if (!lines) bad("README.md no longer says how many hand-written lines there are per language: the site cannot be checked against it");
   const SAYS_LINES = { en: (n) => `${n} hand-written lines`, vi: (n) => `${n} câu viết tay`, ja: (n) => `${n}個` };
-  const GROUND = { en: "just under its feet", vi: "dưới chân nó", ja: "足元" };
+  const GROUND = { en: "under its feet", vi: "dưới chân nó", ja: "足元" };
   const hasGround = /just under its feet/.test(readme);
   for (const lang of LANGS) {
-    for (const path of [PATHS[lang].home, PATHS[lang].how]) {
+    for (const path of [PATHS[lang].how]) {
       const html = unesc(byPath.get(path).html);
       if (lines && !html.includes(SAYS_LINES[lang](lines[1]))) bad(`${path}: does not say ${SAYS_LINES[lang](lines[1])} (the README says ${lines[1]} lines per language)`);
     }
@@ -136,11 +143,35 @@ export function check({ ctx, pages, files, out }) {
   const RANGE = { en: (a, b) => `${a} to ${b}`, vi: (a, b) => `${a} đến ${b}`, ja: (a, b) => `${a}〜${b}` };
   const UNIT = { en: [" MB", "%"], vi: [" MB", "%"], ja: ["MB", "%"] };
   for (const lang of LANGS) {
-    const html = unesc(byPath.get(PATHS[lang].home).html);
+    const html = unesc(byPath.get(PATHS[lang].how).html);
     for (const [m, unit, what] of [[mem, UNIT[lang][0], "memory"], [still, UNIT[lang][1], "processor use standing"], [median, UNIT[lang][1], "processor use median"]]) {
       if (!m) continue;
       const want = RANGE[lang](m[1], m[2]) + unit;
-      if (!html.includes(want)) bad(`${PATHS[lang].home}: does not say ${want} (${what}, as in the README)`);
+      if (!html.includes(want)) bad(`${PATHS[lang].how}: does not say ${want} (${what}, as in the README)`);
+    }
+  }
+
+  // the promises: each is on the home page and the privacy page in every language, and each is backed by a sentence of the README
+  const BACKING = {
+    pr1: [/never reads what you type/i, "README.md: 'never reads what you type'"],
+    pr2: [/never dies or starves/i, "README.md: 'never dies or starves'"],
+    pr3: [/alive without any AI/i, "README.md: 'alive without any AI'"],
+    pr4: [/companion, not an assistant/i, "README.md: 'a companion, not an assistant'"],
+  };
+  for (const k of PROMISES) {
+    const [re, what] = BACKING[k] || [];
+    if (!re) bad(`promise ${k} has no backing sentence listed in the checks`);
+    else if (!re.test(readme)) bad(`promise ${k} is not backed by the README any more (${what}): change the promise or the README`);
+  }
+  if (!existsSync(join(ROOT, "docs", "charter.md"))) bad("docs/charter.md does not exist: the promises link to it");
+  for (const lang of LANGS) {
+    for (const path of [PATHS[lang].home, PATHS[lang].privacy]) {
+      const html = byPath.get(path).html;
+      for (const k of PROMISES) {
+        const text = HTML_KEYS.has(k) ? STRINGS[lang][k] : esc(STRINGS[lang][k]);
+        if (!html.includes(text)) bad(`${path}: the promise ${k} is not on the page`);
+      }
+      if (!html.includes(`href="${CHARTER_URL}"`)) bad(`${path}: there is no link to the charter`);
     }
   }
 
