@@ -1,6 +1,6 @@
 # 11. Restraint, play, and a charter for Peak
 
-**Status:** the charter, the three modes and the fall rule are decided (ADR-0047, 2026-11-10); the audit in section 6 and the stories in section 5 wait for the author's go-ahead. Nothing here is built. It answers the author's message of 2026-11-10: knocks and slips should be rare and strong; slow, easy actions come first; Peak lives on the screen beside someone who is working, so it must not distract; how does it tell work from play; and does Peak need a manifesto or constitution.
+**Status:** the charter, the three modes and the fall rule are decided (ADR-0047, 2026-11-10). **Built so far (2026-11-10, not released): CH-2 (the edge check) and CH-3 (the attention modes in `attention.ts`, the thresholds, the silent fall in Work); the audit findings 1 to 5 of section 6 are fixed, 6 is by design, 7 is CH-6.** The edge ladder with its poses (CH-4), the person's push (CH-5) and the shoo (CH-6) are not built. It answers the author's message of 2026-11-10: knocks and slips should be rare and strong; slow, easy actions come first; Peak lives on the screen beside someone who is working, so it must not distract; how does it tell work from play; and does Peak need a manifesto or constitution.
 
 ## 1. Falls, knocks and slips: a strong feeling is spent rarely
 
@@ -97,7 +97,7 @@ Rules that follow: spontaneous behaviour is picked from tiers 0 and 1; a tier-2 
 | Usage figures (consent, daily) | consents | keep |
 | Tray: Show or Hide, Quiet mode, Settings, Quit | the person's quick words: put it to sleep, hide it | keep; Quiet mode is the honest "less" |
 
-**Behaviours, against the tempo ladder and the manners** (each is a finding, with the fix in the stories).
+**Behaviours, against the tempo ladder and the manners** (each is a finding, with the fix in the stories). **Fixed on 2026-11-10 (CH-2, CH-3): findings 1 to 5**; the numbers below are as found.
 1. **"Free" starts after 5 seconds of no input** (`CALM_MS`), which is a pause in typing, not a rest. A walk and a perch (tiers 1 and 2) can then start while the person is thinking, with their eyes on the screen. The first mode threshold should be about **45 to 60 seconds**; 5 seconds can stay as "may be about to type" for tier 0 only (CH-3).
 2. **A line is allowed after 6 seconds of no input** (`LINE_MS`): the same fault. Lines wait for Free, or follow a touch (CH-3).
 3. **Walking along a ledge has no edge check**: the cat can walk off the end of a perch into the air (CH-2). Today the stay on a perch is 3 minutes and then it walks again. With a wall it now climbs down, but a perch by a hop has no way down and no edge.

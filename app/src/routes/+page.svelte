@@ -93,9 +93,9 @@
   } from "$lib/state";
   import type { FunnelEvent } from "$lib/telemetry";
   import { UI, type ErrKind } from "$lib/ui";
-  import { LEAVE_MIN_ROOM_PX, LEAVE_PX, SLEEP_CROWD_MS, decideFocus, initialFocus, wakesToMakeWay, type FocusOut } from "$lib/focus";
+  import { LEAVE_MIN_ROOM_PX, LEAVE_PX, NEAR_PX, SLEEP_CROWD_MS, decideFocus, initialFocus, wakesToMakeWay, type FocusOut } from "$lib/focus";
   import { glideOut, rampIn, takeSteps } from "$lib/gait";
-  import { CLIMB_PX_PER_S, WALK_TO_WALL_PX_PER_S, chainAt, planCrawl, planFall, planHop, splitHop, totalMs, type Flight } from "$lib/hop";
+  import { CLIMB_PX_PER_S, HOP_MAX_PX, WALK_TO_WALL_PX_PER_S, chainAt, planCrawl, planFall, planHop, splitHop, totalMs, type Flight } from "$lib/hop";
   import { startGroundWatch, stepGround } from "$lib/groundwatch";
   import { NOTICE, wordsAtMs, type Beat } from "$lib/beats";
   import { chooseBeat, moodBeat } from "$lib/choose";
@@ -105,6 +105,7 @@
   import { believe, responseFor, startBelief, type Belief } from "$lib/perception";
   import { choosePerch, PERCH_LIMITS } from "$lib/perch";
   import { bodyPoints, escapePlaces } from "$lib/escape";
+  import { initialAttention, mayAct, mayChatter, silentReaction, stepAttention, touched as attnTouched, type Mode } from "$lib/attention";
   import { EVENTS, type EventId } from "$lib/events";
   import { escapeRow, initialLane, stepLane, type LaneOut } from "$lib/lane";
   import { engage as engagePure, markShown as markShownPure, minuteIncrement, noShown, type DayCounter, type DayStat } from "$lib/bond";
@@ -307,6 +308,7 @@
   // ---------------------------------------------------------------- memory
   const DAY_MS = 24 * 60 * MIN;
   const touch = (kind: Touch) => {
+    playTouched();
     mem = recordTouch(mem, kind);
     scheduleSave();
   };
@@ -420,6 +422,13 @@
   const FOCUS_RETRY_MS = 45_000; // an unprompted line held back for the user's work is tried again after this long
   const FOCUS_ALLOW: FocusOut = { walkAllowed: true, keepWalking: true, speakAllowed: true, crowded: false, leaveDir: 1, dist: null, active: false };
   let focusState = initialFocus();
+  // The attention mode (spec/11 section 3, ADR-0047): work, free or play. Refreshed at every probe; a touch starts play.
+  let attn = initialAttention();
+  let mode: Mode = "work";
+  function playTouched() {
+    attn = attnTouched(attn, Date.now());
+    mode = "play";
+  }
   let lastPointer: { dx: number; dy: number; t: number } | null = null;
   let focusOut: FocusOut = FOCUS_ALLOW;
   // The typing lane (spec/07 section 3.1, TE-14): where the text the user types is thought to run (`lane.ts`), found from
@@ -461,7 +470,11 @@
       const r = decideFocus(focusState, { idleMs: p.idleMs, pointer, busy: false, quiet }, now);
       focusState = r.state;
       focusOut = r.out;
+      const am = stepAttention(attn, { idleMs: p.idleMs, pointerNear: pointer === null ? null : pointer.over || pointer.dist < NEAR_PX }, now);
+      attn = am.state;
+      mode = am.mode;
     } catch {
+      mode = "work"; // unknown: the person is working
       focusState = initialFocus();
       focusOut = FOCUS_ALLOW; // unknown: no restriction, as before
       laneState = initialLane();
@@ -645,7 +658,10 @@
     const esc = escapeRow(lane, laneCat.y, room.up, room.down);
     note(`lane hop: ${esc ? `${esc.dir < 0 ? "up" : "down"} ${Math.round(esc.dist)}` : "no room"}, room ${room.up}/${room.down}, caret ${Math.round(laneOut.caretX ?? 0)}`);
     if (pose !== "idle" && pose !== "look" && pose !== "walk" && pose !== "notice") return; // something else happened while asking
-    if (esc) await fly(splitHop(0, esc.dir * esc.dist), "walk");
+    if (esc) {
+      leavePerch();
+      await fly(splitHop(0, esc.dir * esc.dist), "walk");
+    }
     else enter("drowsy"); // nowhere to go: it yawns and curls up where it is
   }
 
@@ -701,8 +717,7 @@
 
   function enter(requested: PetState) {
     if (requested === "held") {
-      perchedUntil = 0; // carried away: it is no longer where it perched
-      perchWall = null;
+      leavePerch(); // carried away: it is no longer where it perched
     }
     if (flying) void invoke("fly_cancel"); // picked up or told to do something else in mid-air: the flight ends
     let next = requested;
@@ -750,6 +765,7 @@
     if (quiet) return pose === "sleep" || pose === "drowsy" ? undefined : enter("drowsy");
     if (panel) return scheduleNext();
     if (perchWall && Date.now() >= perchedUntil && (pose === "idle" || pose === "look")) return void descend();
+    if (perchSeat && !perchWall && Date.now() >= perchedUntil && (pose === "idle" || pose === "look")) return void hopDown();
     if (Date.now() < perchedUntil) return void (Math.random() < 0.6 ? enter("look") : enter(bubbleOn ? "look" : "drowsy"));
     const r = Math.random();
     if (data.settings.groundMap && r > 0.97) return void perchNow();
@@ -762,6 +778,24 @@
   const PERCH_COOLDOWN_MS = 5 * 60_000;
   let lastPerch = 0;
   let perchedUntil = 0; // while it is perched it only looks around and dozes (never walks off the ledge)
+  /** The ledge it sits on, physical px (the ends of the run of the edge): it never walks past them (CH-2, the charter's article 3). */
+  let perchSeat: { x0: number; x1: number } | null = null;
+  const EDGE_MARGIN = 44; // logical px kept between the cat's feet and the end of the seat (the coast of a stop included)
+  const SEAT_MIN_WALK = 70; // less room than this to either side and it only looks around
+  function leavePerch() {
+    perchedUntil = 0;
+    perchWall = null;
+    perchSeat = null;
+  }
+  /** Room to walk on the seat to the left and the right of the cat's feet, logical px; null when it is not on a seat. */
+  async function seatRoom(): Promise<{ left: number; right: number } | null> {
+    if (!perchSeat) return null;
+    const at = await catFeet();
+    if (!at) return null;
+    const m = EDGE_MARGIN * at.scale;
+    return { left: Math.max(0, (at.feet.x - (perchSeat.x0 + m)) / at.scale), right: Math.max(0, (perchSeat.x1 - m - at.feet.x) / at.scale) };
+  }
+  let walkSeatRoom: { left: number; right: number } | null = null;
   /**
    * The grid is coarse (a cell is about 115 px tall): the real top edge of the window under a ledge cell, found by asking a few
    * pixels at a time from half a cell above the cell's top down to it, where what is above stops and the window begins.
@@ -836,7 +870,7 @@
     if (flying || quiet || panel !== null || (pose !== "idle" && pose !== "look")) return scheduleNext();
     if (!force && now - lastPerch < PERCH_COOLDOWN_MS) return scheduleNext();
     const fo = await probeFocus();
-    if (!fo.walkAllowed && !force) return scheduleNext();
+    if ((!fo.walkAllowed || !mayAct(mode, 2, "own", quiet)) && !force) return scheduleNext(); // a perch is brisk: only when the person is not working
     const map = fake ?? (await takeGroundMap());
     if (!map) return scheduleNext();
     const at = await catFeet();
@@ -849,7 +883,9 @@
     const canClimb = !!wall && wall.width >= MIN_CLIMB_LEDGE * scale && how !== "hop";
     const climb = canClimb && (how === "climb" || -perch!.dy > 200 || Math.random() < 0.5);
     note(perch ? `perch: ledge ${perch.col},${perch.row}, go ${perch.dx},${perch.dy}${climb ? ", by climbing" : ""}` : "perch: no ledge");
-    if (!perch || (!climb && -perch.dy > PERCH_LIMITS.maxRise)) return scheduleNext();
+    if (!perch || (!climb && -perch.dy > HOP_MAX_PX)) return scheduleNext(); // by hop one hop up, so that one hop brings it down again
+    const run = surfaces(map).find((u) => u.row === perch.row && perch.col >= u.c0 && perch.col <= u.c1);
+    const seat = run ? { x0: run.x0, x1: run.x1 } : null;
     lastPerch = now;
     // The grid is coarse (a cell is about 115 px tall): find the window's real top edge by asking, a few pixels at a time,
     // from the cell above down to the cell's top edge, where the bare desktop stops and the window begins.
@@ -857,13 +893,30 @@
     const edge = await refinedEdgeY(map, perch.col, perch.row);
     if (edge !== null) dy = Math.round((edge - feet.y) / place.scale);
     if (climb && wall) {
-      if (await climbUp(map, wall, edge ?? Math.round(feet.y + dy * scale), feet, scale)) perchedUntil = Date.now() + 3 * 60_000;
-      else perchWall = null;
+      if (await climbUp(map, wall, edge ?? Math.round(feet.y + dy * scale), feet, scale)) {
+        perchedUntil = Date.now() + 3 * 60_000;
+        perchSeat = seat;
+      } else perchWall = null;
       return;
     }
     if (!(await noticeBeat(perch.dx, dy))) return;
     await fly(splitHop(perch.dx, dy), "walk");
-    perchedUntil = Date.now() + 3 * 60_000; // it stays up there a while: no walking off the edge into the air
+    perchedUntil = Date.now() + 3 * 60_000; // it stays up there a while, and never walks off the seat (CH-2)
+    perchSeat = seat;
+  }
+
+  /** A seat reached by a hop is left by a hop: a deliberate step down with a crouch, not a fall (spec/11 section 1.1). */
+  async function hopDown() {
+    if (!perchSeat || perchWall || flying) return;
+    leavePerch();
+    let down = 0;
+    try {
+      down = (await invoke<{ up: number; down: number }>("vertical_room")).down;
+    } catch {
+      /* unknown: it stays */
+    }
+    note(`hop down ${Math.round(down)}`);
+    if (down >= 30) await fly(splitHop(0, down), "walk");
   }
 
   // ------------------------------------------------------------------ walls and climbing (TT-12, TT-14, spec/10 section 11)
@@ -936,6 +989,7 @@
     const w = perchWall;
     if (!w || flying) return;
     perchWall = null;
+    perchSeat = null;
     perchedUntil = 0;
     note("descend");
     // walk to the edge (the cat faces away from the wall's side first: it walks the way it came from), then over
@@ -1004,15 +1058,21 @@
     if (flying) return;
     const fo = await probeFocus();
     if (pose !== "idle") return; // something else took over while the probe was read
-    if (fo.walkAllowed) enter("walk");
-    else scheduleNext();
+    if (!fo.walkAllowed || !mayAct(mode, 1, "own", quiet)) return scheduleNext(); // a walk is unhurried: not while the person is working
+    const room = await seatRoom();
+    if (pose !== "idle") return;
+    if (room && Math.max(room.left, room.right) < SEAT_MIN_WALK) return void enter("look"); // at the end of a small seat: it only looks around
+    walkSeatRoom = room;
+    enter("walk");
   }
 
   function startWalk() {
     const plan = walkPlan;
     walkPlan = null;
     const leaving = plan !== null; // walking away from the user's work
-    dir = plan ? plan.dir : Math.random() < 0.5 ? -1 : 1;
+    const seatRoomNow = walkSeatRoom;
+    walkSeatRoom = null;
+    dir = plan ? plan.dir : seatRoomNow && seatRoomNow.left < SEAT_MIN_WALK ? 1 : seatRoomNow && seatRoomNow.right < SEAT_MIN_WALK ? -1 : Math.random() < 0.5 ? -1 : 1;
     const scale = window.devicePixelRatio || 1;
     // pixels per tick at full speed; fractional, the remainder is carried (see gait.ts)
     const fullStep = (WALK_SPEED * scale * WALK_TICK_MS) / 1000;
@@ -1037,6 +1097,15 @@
           const fo = await probeFocus();
           if (pose !== "walk") return;
           if (!fo.keepWalking) return stopWalking();
+        }
+        // on a seat it never walks past the end of it: it stops at the edge (CH-2)
+        if (perchSeat && ticks % 3 === 0) {
+          const room = await seatRoom();
+          if (pose !== "walk") return;
+          if (room && (dir > 0 ? room.right : room.left) < 4) {
+            if (leaving) settleAfterLeaving();
+            return stopWalking();
+          }
         }
         // the window speeds up as the legs start (the legs follow a spring, see Rig)
         const want = fullStep * rampIn(ticks * WALK_TICK_MS);
@@ -1171,11 +1240,12 @@
     if (quiet || panel !== null || flying || !mayReact(gate, EVENTS.ground_lost, now)) return;
     if (pose !== "idle" && pose !== "look" && !isDozing(pose)) return; // a sleeping cat on a perch that goes is startled out of its sleep
     gate = startReaction(gate, EVENTS.ground_lost, now);
-    perchedUntil = 0;
-    perchWall = null;
+    await probeFocus(); // the mode at this moment decides whether it cries out
+    const silent = silentReaction(mode);
+    leavePerch();
     try {
       note("ground lost: startle");
-      if (!(await runBeat(chooseBeat(EVENTS.ground_lost.appraisal), () => say("fall", { exclaim: true })))) return; // picked up or told to do something else meanwhile
+      if (!(await runBeat(chooseBeat(EVENTS.ground_lost.appraisal), silent ? undefined : () => say("fall", { exclaim: true })))) return; // picked up or told to do something else meanwhile
       let down = 0;
       try {
         down = (await invoke<{ up: number; down: number }>("vertical_room")).down;
@@ -1191,7 +1261,7 @@
     } finally {
       gate = endReaction(gate, Date.now());
     }
-    void remarkAfter("ground_lost");
+    if (!silent) void remarkAfter("ground_lost"); // while the person works the fall is silent: no cry, no remark
   }
 
   /**
@@ -1305,8 +1375,7 @@
       if (!way) return;
       escaping = true;
       lastEscape = Date.now();
-      perchedUntil = 0;
-      perchWall = null;
+      leavePerch();
       await fly(splitHop(way.dx, way.dy), "walk");
     } catch {
       /* the sense is not available: nothing happens */
@@ -1409,6 +1478,7 @@
   }
 
   function openChat() {
+    playTouched();
     chatUser = "";
     chatSlow = false;
     chatDraft = false;
@@ -1436,6 +1506,7 @@
   }
 
   async function beginDrag() {
+    playTouched();
     dragging = true;
     clearTimeout(clickTimer);
     clearTimeout(oneShotTimer);
@@ -1963,7 +2034,8 @@
       pose === "held" ||
       isDozing(pose) ||
       panel !== null ||
-      bubbleOn;
+      bubbleOn ||
+      !mayChatter(mode);
     if (blocked || !fo.speakAllowed) {
       proactiveTimer = setTimeout(() => fireProactive(), blocked ? 2 * MIN : FOCUS_RETRY_MS);
       return;
@@ -2237,7 +2309,7 @@
       scheduleProactive();
       groundLoop = setInterval(groundTick, GROUND_POLL_MS);
       // Test hook (like window.__cat): lets a debugger trigger the real unprompted-line path now.
-      (window as unknown as Record<string, unknown>).__pet = { proactive: () => void fireProactive(), focus: () => ({ ...focusOut, lastLeave, pose }), trail: () => trail, sleep: () => enter("drowsy"), wake: () => enter("idle"), hop: (dx: number, dy: number) => void fly(splitHop(dx, dy), "walk"), lane: () => ({ ...laneOut, state: laneState, cat: laneCat }), ground: () => invoke("ground_under_cat"), belief: () => { const b = currentBelief(); return { ...b.belief, response: b.response }; }, perch: (fake?: unknown, how?: "hop" | "climb") => void perchNow(fake as GroundMap | undefined, true, how), perchPretend: () => void perchPretend(),  descend: () => void descend(), overlay: () => invoke<string>("overlay_toggle"), map: () => takeGroundMap().then((m) => (m ? { summary: summary(m), ledges: ledges(m).length } : null)), groundLost: () => void groundLost(), say: (t: Trigger, kind?: RepeatKind) => (kind ? say(t, repeatNow(kind)) : say(t)), bubble: () => bubbleText, fall: (d: number) => void fly([planFall(d)], "gasp") };
+      (window as unknown as Record<string, unknown>).__pet = { proactive: () => void fireProactive(), focus: () => ({ ...focusOut, lastLeave, pose }), trail: () => trail, sleep: () => enter("drowsy"), wake: () => enter("idle"), hop: (dx: number, dy: number) => void fly(splitHop(dx, dy), "walk"), lane: () => ({ ...laneOut, state: laneState, cat: laneCat }), ground: () => invoke("ground_under_cat"), belief: () => { const b = currentBelief(); return { ...b.belief, response: b.response }; }, perch: (fake?: unknown, how?: "hop" | "climb") => void perchNow(fake as GroundMap | undefined, true, how), perchPretend: () => void perchPretend(),  descend: () => void descend(), mode: () => ({ mode, playUntil: attn.playUntil, seat: perchSeat }), play: () => playTouched(), walk: () => void tryWalk(), overlay: () => invoke<string>("overlay_toggle"), map: () => takeGroundMap().then((m) => (m ? { summary: summary(m), ledges: ledges(m).length } : null)), groundLost: () => void groundLost(), say: (t: Trigger, kind?: RepeatKind) => (kind ? say(t, repeatNow(kind)) : say(t)), bubble: () => bubbleText, fall: (d: number) => void fly([planFall(d)], "gasp") };
       let lastTick = Date.now();
       minuteTimer = setInterval(() => {
         const now = Date.now();
