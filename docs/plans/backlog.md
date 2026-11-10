@@ -23,6 +23,7 @@ Status: **proposed 2026-11-08, asked by Vinh to be carried out story by story.**
 | E8 | Focus-safety and places | 6 / 13 | FS-0 to FS-4 and PL-0 done; FS-5 and FS-6 left; PL-1 and PL-7 merged into E9 |
 | E9 | The desktop as terrain | 10 / 16 | Spec 07 and ADR-0030 written; the Rust `monitors_info` and `move_to` exist (TE-2); the lane model (TE-12) and the mouse button reading (TE-13) exist; hops and falls exist (TE-7); the cat leaves the typing lane by a hop (TE-14); a hop costs about a third of what it did (TE-15) |
 | E10 | Perception | 7 / 9 | Spec 08 and ADR-0031: four of five decisions answered; the ground map waits for L3 |
+| E15 | Restraint, play and the charter (spec/11, ADR-0047) | 1 / 6 | The charter is written (CH-1); the audit found seven faults today; CH-2 (an edge check) is the first fix |
 | E14 | The desktop as terrain, version 2 (spec/10) | 6 / 16 (TT-12 and TT-14 built and looked at by the author; TT-15 done) | Drafted 2026-11-10 after the author never saw a perch and pointed out that his screen always has a full-screen window; the overlay to see the terrain comes first |
 | E13 | Fresh words: more variety in the scripted lines | 7 / 9 | Proposed 2026-11-10 after the author found the lines repetitive; the pools behind poke, scratch and belly are the smallest; nothing built |
 | E12 | Reactions: one way to express what happens | 11 / 11 | Spec 09 written and its four decisions answered (ADR-0041, 2026-11-10); the first fall (PC-7) felt flat, which showed that each reaction is a separate rule; nothing built yet |
@@ -243,3 +244,15 @@ Why: the author finds the scripted lines repetitive. The pools behind what users
 | JA-1 | Japanese interface: Settings, the tour, bubbles, buttons, errors (the UI table), the language setting with the third value and `ja` detection, the beta label | M | done (the UI table, the language setting with `ja` detection, the beta label, the document language, the prompts) | |
 | JA-2 | Japanese lines: the whole pool of scripted lines in the warm casual voice, with the tests that the pools match across the languages | L | done (182 lines translated one to one, the casual voice checked by a test; not read by a native speaker) | JA-1 |
 | JA-3 | Japanese memory lines and the prompts to the brain (the persona, the greeting, the fact extractor) | M | done (the memory lines, `knownFor` and the Rust prompts with the Japanese voice rule) | JA-1 |
+
+## E15. Restraint, play and the charter (spec/11, ADR-0047)
+Why: the author asked for rare, strong falls, slow actions first, no distraction of someone who is working, and a way for Peak to tell work from play without a settings page. The charter ranks the principles; the modes and the tempo ladder are how they show up in behaviour; the audit (spec 11 section 6) lists what is wrong today.
+| ID | Story | Size | Status | Depends on |
+|---|---|---|---|---|
+| CH-1 | The charter (`docs/charter.md`), ADR-0047, the audit; later the README promise in plain words (articles 1 to 4) at the next release | S | done (charter, ADR and audit written; the README line comes with the next release, ADR-0033) | |
+| CH-2 | The edge check: a cat that reaches the end of a surface stops, peeks if it can, and never walks into the air (fixes the walk off a perch); a perch by hop gets a way down | S | ready (audit finding 3) | |
+| CH-3 | The attention mode (Work, Free, Play) as pure logic with tests and the debugger; the tempo tier on every action; Free starts after about 45 to 60 s without input; lines wait for Free or follow a touch; in Work a lost seat is a silent jolt and fall, no cry | M | ready (audit findings 1, 2, 4, 5) | |
+| CH-4 | The edge ladder: poses `peek` and `sit at the edge` (a rig change, the author looks first) and climbing down at the end of a surface | M | ready | CH-2 |
+| CH-5 | The person's push: a drop in the air and a flick at an edge, the teeter and the fall, wariness and the bruise after a fall | M | ready | CH-3, CH-4 |
+| CH-6 | The shoo (quieter for the rest of the day after the person moves Peak away or puts it to sleep; memory only) and the retirement of the settings that are amounts (Chattiness, Quiet hours) with a one-time migration | M | waits for the author's go-ahead | CH-3 |
+

@@ -10,6 +10,7 @@ What was **decided**, why, and what was rejected. One short file per decision (a
 
 | ADR | Decision | Status | Date |
 |---|---|---|---|
+| [0047](0047-the-charter-modes-falls-and-few-settings.md) | A charter ranks Peak's principles; three attention modes (Work, Free, Play; assume Work when unsure); a fall only by the person's push or a lost seat; few settings | accepted | 2026-11-10 |
 | [0046](0046-peak-gets-out-from-under-what-covers-it.md) | Peak gets out from under a window it cannot be raised over (the Start menu, Search): it asks Rust about five points of its body, and hops to the nearest free place | accepted | 2026-11-10 |
 | [0045](0045-vertical-terrain-falls-to-the-plane-below-and-the-screen-picture.md) | Peak climbs vertical surfaces and falls only to the plane below; the screen picture sense is allowed as an opt-in | accepted (decisions; being built) | 2026-11-10 |
 | [0044](0044-the-terrain-from-regions-with-identity.md) | The desktop is a terrain of surfaces and costs built from regions with identity; the ground map is on by default; props wait; the overlay comes first | accepted (decisions; being built) | 2026-11-10 |
