@@ -233,6 +233,25 @@ pub fn persona(lang: &str, tier: u8, gentle: bool) -> String {
     persona_layers(lang, tier, gentle).into_iter().map(|l| l.text).collect::<Vec<_>>().join(" ")
 }
 
+/// The reaction card for an event (spec/09 section 5, RX-7): a few lines saying how a short remark after a reflex should
+/// sound. Only events listed here have a card; anything else gets none. The cards are compiled in.
+pub fn reaction_card(event: &str) -> Option<&'static str> {
+    match event {
+        "ground_lost" => Some(include_str!("../persona/cards/ground_lost.md")),
+        _ => None,
+    }
+}
+
+/// The persona with the card of an event added after it (the chat persona is not used: a remark is never a chat).
+pub fn persona_with_card(lang: &str, tier: u8, gentle: bool, event: &str) -> String {
+    let mut s = persona(lang, tier, gentle);
+    if let Some(card) = reaction_card(event) {
+        s.push_str("\n\n");
+        s.push_str(card.trim());
+    }
+    s
+}
+
 pub fn hello_prompt(lang: &str) -> String {
     match lang {
         "vi" => "Hãy chào mình bằng một câu ngắn. Mình vừa cho bạn một bộ não.".into(),
@@ -858,6 +877,17 @@ mod tests {
         let chat = persona_with("ja", 2, false, &[], true);
         assert!(chat.contains("Reply in the language of the user's latest message") && chat.contains("use Japanese."));
         assert!(extract_prompt("ja", &[]).contains("use Japanese"));
+    }
+
+    #[test]
+    fn a_reaction_card_is_added_after_the_persona_and_only_for_known_events() {
+        let plain = persona("en", 2, false);
+        let with = persona_with_card("en", 2, false, "ground_lost");
+        assert!(with.starts_with(&plain));
+        assert!(with.contains("Situation card: ground_lost") && with.contains("at most 12 words") && with.contains("Do not mention windows"));
+        assert_eq!(persona_with_card("en", 2, false, "poked"), plain, "no card, no change");
+        assert_eq!(persona_with_card("en", 2, false, "../../etc/passwd"), plain, "an event name is only a key into a fixed list");
+        assert!(reaction_card("ground_lost").is_some() && reaction_card("").is_none());
     }
 
     #[test]

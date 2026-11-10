@@ -3,6 +3,8 @@
 
 import { BEATS } from "./beats.ts";
 import type { Appraisal, Beat } from "./beats.ts";
+import { MOOD_APPRAISAL } from "./events.ts";
+import type { Mood } from "./sprites.ts";
 
 /** Squared distance between two appraisals. */
 export function distance(x: Appraisal, y: Appraisal): number {
@@ -21,4 +23,13 @@ export function chooseBeat(ap: Appraisal, beats: Beat[] = BEATS): Beat {
     }
   }
   return best;
+}
+
+/**
+ * The pose that acts out the mood a brain named for its answer (ADR-0016), chosen from the same space as the events. An
+ * unknown tag is a plain nod, and in the Gentle tone sassy is a nod too, as before.
+ */
+export function moodBeat(mood: string | undefined, gentle: boolean): Beat {
+  const m = (mood && mood in MOOD_APPRAISAL ? mood : "neutral") as Mood;
+  return chooseBeat(MOOD_APPRAISAL[gentle && m === "sassy" ? "neutral" : m]);
 }

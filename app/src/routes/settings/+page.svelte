@@ -560,6 +560,8 @@
         {/if}
         <p class="muted">{pv.keyNote}</p>
       {/if}
+      <label class="chk"><input type="checkbox" checked={s?.remarks ?? true} onchange={(e) => patch("remarks", e.currentTarget.checked)} /> {ui.remarksLabel}</label>
+      <p class="muted">{ui.remarksNote}</p>
       <h3 class="persona-h">{ui.personaTitle}</h3>
       <p class="muted">{ui.personaLead}</p>
       <div class="row">
@@ -647,6 +649,8 @@
         <button class="seg" class:on={snap.consent !== "on"} onclick={() => setConsent(false)}>{ui.off}</button>
       </div>
       <p class="muted">{ui.consentNote}</p>
+      <label class="chk"><input type="checkbox" checked={s?.groundMap ?? false} onchange={(e) => patch("groundMap", e.currentTarget.checked)} /> {ui.groundMapLabel}</label>
+      <p class="muted">{ui.groundMapNote}</p>
       {#if snap.consent === "on"}
         <div class="row">
           <span class="lbl">{ui.dailyLabel}</span>

@@ -5,7 +5,7 @@
   import { getCurrentWebviewWindow } from "@tauri-apps/api/webviewWindow";
   import { onMount } from "svelte";
   import Pet from "$lib/PetRig.svelte";
-  import { isDozing, moodPose, needsWakeFirst, TIMED, type PetState } from "$lib/sprites";
+  import { isDozing, needsWakeFirst, TIMED, type PetState } from "$lib/sprites";
   import type { Trigger } from "$lib/lines";
   import { bagAfter, candidates, fill, pick, remember, resolveLang } from "$lib/selector";
   import { REPEAT_WINDOW_MS, bump, stageFor, type Repeat, type RepeatKind } from "$lib/escalation";
@@ -96,8 +96,10 @@
   import { glideOut, rampIn, takeSteps } from "$lib/gait";
   import { chainAt, planFall, splitHop, totalMs, type Flight } from "$lib/hop";
   import { startGroundWatch, stepGround } from "$lib/groundwatch";
-  import { wordsAtMs, type Beat } from "$lib/beats";
-  import { chooseBeat } from "$lib/choose";
+  import { NOTICE, wordsAtMs, type Beat } from "$lib/beats";
+  import { chooseBeat, moodBeat } from "$lib/choose";
+  import { endReaction, mayReact, newGate, startReaction } from "$lib/reactions";
+  import { desktopShare, ledges, summary, type GroundMap } from "$lib/groundmap";
   import { EVENTS, type EventId } from "$lib/events";
   import { escapeRow, initialLane, stepLane, type LaneOut } from "$lib/lane";
   import { engage as engagePure, markShown as markShownPure, minuteIncrement, noShown, type DayCounter, type DayStat } from "$lib/bond";
@@ -473,7 +475,7 @@
   // The typing lane is urgent (the text is coming), so it has its own, shorter cool-down, and a sleeping cat that the
   // lane reaches wakes after a moment instead of after the 4 s of the pointer rule. The author found the first
   // version moved only after the text had reached the cat (2026-11-09).
-  const NOTICE_MS = 400; // the beat before it makes way: it looks toward the user's work, ears up (PC-2, ADR-0031)
+  const NOTICE_MS = NOTICE.steps[0].ms; // the beat before it makes way: it looks toward the user's work, ears up (PC-2, ADR-0031)
   const LANE_COOLDOWN_MS = 10_000; // 6 s gave 15 hops in two minutes in the author's test (TE-15); the author chose 10 s
   const SLEEP_LANE_MS = 600;
   let lastLaneHop = 0;
@@ -865,10 +867,9 @@
 
   // ------------------------------------------------- the ground goes (PC-7, ADR-0041)
   const GROUND_POLL_MS = 1000; // while the cat stands: what is under its feet, asked once a second (3 points, a few ms)
-  const GROUND_COOLDOWN_MS = 20_000;
   const FALL_MIN_PX = 60; // less room than this below: it only gasps
   let groundW = startGroundWatch();
-  let lastGroundFall = 0;
+  let gate = newGate(); // one reaction at a time, a budget for the ones Peak starts by itself (RX-8)
   let groundBusy = false;
 
   let beatToken = 0;
@@ -900,20 +901,81 @@
   /** The window under the cat is gone: it startles (freeze, jolt, a cry), then falls to the ground below (or only startles when there is no room). */
   async function groundLost() {
     const now = Date.now();
-    if (quiet || panel !== null || flying || now - lastGroundFall < GROUND_COOLDOWN_MS) return;
+    if (quiet || panel !== null || flying || !mayReact(gate, EVENTS.ground_lost, now)) return;
     if (pose !== "idle" && pose !== "look") return;
-    lastGroundFall = now;
-    note("ground lost: startle");
-    if (!(await runBeat(chooseBeat(EVENTS.ground_lost.appraisal), () => say("fall", { exclaim: true })))) return; // picked up or told to do something else meanwhile
-    let down = 0;
+    gate = startReaction(gate, EVENTS.ground_lost, now);
     try {
-      down = (await invoke<{ up: number; down: number }>("vertical_room")).down;
-    } catch {
-      /* unknown: it only gasps */
+      note("ground lost: startle");
+      if (!(await runBeat(chooseBeat(EVENTS.ground_lost.appraisal), () => say("fall", { exclaim: true })))) return; // picked up or told to do something else meanwhile
+      let down = 0;
+      try {
+        down = (await invoke<{ up: number; down: number }>("vertical_room")).down;
+      } catch {
+        /* unknown: it only gasps */
+      }
+      note(`ground lost: room below ${down}`);
+      if (down >= FALL_MIN_PX) await fly([planFall(down)], "gasp");
+      else enter("idle"); // no room to fall: it has only startled
+    } finally {
+      gate = endReaction(gate, Date.now());
     }
-    note(`ground lost: room below ${down}`);
-    if (down >= FALL_MIN_PX) await fly([planFall(down)], "gasp");
-    else enter("idle"); // no room to fall: it has only startled
+    void remarkAfter("ground_lost");
+  }
+
+  /**
+   * After a reflex, a connected brain may add one short remark (RX-7, ADR-0043). It is sent only the event name and the
+   * five appraisal numbers (the card is in Rust), counts toward the daily cap of unprompted lines, needs the switch in
+   * Settings, Brain, and never waits: the cry and the fall have already happened. Any problem is silent.
+   */
+  async function remarkAfter(id: EventId) {
+    const t = Date.now();
+    if (!canChat || !data.settings.remarks || quiet || aiGate(data, "proactive", t) !== "ok") return;
+    data = recordAi(data, "proactive", t);
+    scheduleSave();
+    const ap = EVENTS[id].appraisal;
+    const prompt = `Event: ${id}. How it feels to you: surprise ${ap.surprise.toFixed(2)}, valence ${ap.valence.toFixed(2)}, arousal ${ap.arousal.toFixed(2)}, about the user ${ap.aboutUser.toFixed(2)}, control ${ap.control.toFixed(2)}. Say your remark now.`;
+    try {
+      const out = await invoke<{ text: string; mood: string }>("brain_chat", {
+        lang,
+        tier: tierOf(data.closeness),
+        gentle: data.settings.gentle,
+        history: [{ role: "user" as const, text: prompt }],
+        event: id,
+      });
+      // the cry is still on the screen: the remark waits for it to go (at most 6 s), it does not replace it
+      for (let i = 0; i < 20 && bubbleOn; i++) await sleepMs(300);
+      const fo = await probeFocus();
+      if (quiet || panel !== null || bubbleOn || pose === "held" || isDozing(pose) || !fo.speakAllowed) {
+        note(`remark not shown: ${fo.speakAllowed ? "busy" : "the user is active"}`);
+        return;
+      }
+      note("remark shown");
+      showBubble(clip(out.text), 5000);
+    } catch (e) {
+      const k = errKind(e);
+      if (k === "invalid_key") brainBad = true;
+      if (k === "rate_limit") data = coolDown(data, Date.now());
+      scheduleSave();
+    }
+  }
+
+  /**
+   * A coarse picture of where windows are (PC-6, ADR-0043), only when the user switched it on in Settings, Privacy, and
+   * only when the cat is about to move. Kept in memory (the last one), never saved or sent. Null when the switch is off.
+   */
+  let lastMap: GroundMap | null = null;
+  async function takeGroundMap(): Promise<GroundMap | null> {
+    if (!data.settings.groundMap) {
+      lastMap = null;
+      return null;
+    }
+    try {
+      lastMap = await invoke<GroundMap>("ground_map");
+      note(`ground map ${summary(lastMap)}, ${ledges(lastMap).length} ledges, desktop ${Math.round(desktopShare(lastMap) * 100)}%`);
+    } catch {
+      lastMap = null;
+    }
+    return lastMap;
   }
 
   async function groundTick() {
@@ -1329,7 +1391,7 @@
       // If the chat was closed while waiting, still deliver the answer as a plain bubble.
       if (panel !== "chat") showBubble(chatReply, 5000);
       // act out the answer's feeling (a plain nod when there is none; nothing special after an error)
-      enter(replyMood === "none" ? "idle" : moodPose(replyMood, data.settings.gentle));
+      enter(replyMood === "none" ? "idle" : moodBeat(replyMood, data.settings.gentle).steps[0].pose);
       resetMenuTimer();
       scheduleSave();
     }
@@ -1643,7 +1705,7 @@
       const reply = clip(out.text);
       const fo = await probeFocus(); // the user may have started typing while the model was answering
       if (quiet || panel !== null || bubbleOn || pose === "held" || isDozing(pose) || !fo.speakAllowed) return false;
-      enter(moodPose(out.mood, data.settings.gentle));
+      enter(moodBeat(out.mood, data.settings.gentle).steps[0].pose);
       showBubble(reply, 5000);
       return true;
     } catch (e) {
@@ -1836,7 +1898,7 @@
       scheduleProactive();
       groundLoop = setInterval(groundTick, GROUND_POLL_MS);
       // Test hook (like window.__cat): lets a debugger trigger the real unprompted-line path now.
-      (window as unknown as Record<string, unknown>).__pet = { proactive: () => void fireProactive(), focus: () => ({ ...focusOut, lastLeave, pose }), trail: () => trail, sleep: () => enter("drowsy"), wake: () => enter("idle"), hop: (dx: number, dy: number) => void fly(splitHop(dx, dy), "walk"), lane: () => ({ ...laneOut, state: laneState, cat: laneCat }), ground: () => invoke("ground_under_cat"), groundLost: () => void groundLost(), say: (t: Trigger, kind?: RepeatKind) => (kind ? say(t, repeatNow(kind)) : say(t)), bubble: () => bubbleText, fall: (d: number) => void fly([planFall(d)], "gasp") };
+      (window as unknown as Record<string, unknown>).__pet = { proactive: () => void fireProactive(), focus: () => ({ ...focusOut, lastLeave, pose }), trail: () => trail, sleep: () => enter("drowsy"), wake: () => enter("idle"), hop: (dx: number, dy: number) => void fly(splitHop(dx, dy), "walk"), lane: () => ({ ...laneOut, state: laneState, cat: laneCat }), ground: () => invoke("ground_under_cat"), map: () => takeGroundMap().then((m) => (m ? { summary: summary(m), ledges: ledges(m).length } : null)), groundLost: () => void groundLost(), say: (t: Trigger, kind?: RepeatKind) => (kind ? say(t, repeatNow(kind)) : say(t)), bubble: () => bubbleText, fall: (d: number) => void fly([planFall(d)], "gasp") };
       let lastTick = Date.now();
       minuteTimer = setInterval(() => {
         const now = Date.now();

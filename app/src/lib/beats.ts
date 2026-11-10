@@ -67,6 +67,12 @@ export const BEATS: Beat[] = [
   { id: "nod", home: a(0.05, 0, 0.1, 0.5, 0.5), steps: [{ pose: "nod", ms: 550 }] }, // nothing special
 ];
 
+/**
+ * The lead-in before Peak makes way (PC-2): it stops, looks toward the user's work, ears up. It is not chosen from an
+ * appraisal (it is not a feeling shown for its own sake but the beat before an action), so it is not in `BEATS`.
+ */
+export const NOTICE: Beat = { id: "notice", home: a(0.4, 0, 0.5, 1, 0.5), steps: [{ pose: "notice", ms: 400 }] };
+
 /** Total length of a beat in ms. */
 export const beatMs = (b: Beat): number => b.steps.reduce((s, x) => s + x.ms, 0);
 

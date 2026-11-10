@@ -12,6 +12,6 @@ What Peak is told when a brain is connected (spec/09 section 6, RX-5). `persona(
 | mood | `mood.md` | always | **yes**: the leading mood tag the app needs to act the feeling out (ADR-0016) |
 | closeness | `closeness-shy.md` or `closeness-close.md` | tiers 0 and 1, or 3 and 4 | no |
 
-After these, a chat the user started adds what the user told Peak earlier (`persona_with`), which Settings already shows under "What the pet remembers".
+A **reaction card** (`cards/<event>.md`, RX-7) is added after the persona when Peak asks its brain for a short remark after a reflex; it holds only how the remark should sound, and the request carries only the event name and five appraisal numbers. After these, a chat the user started adds what the user told Peak earlier (`persona_with`), which Settings already shows under "What the pet remembers".
 
 A test fixes the exact words (a fingerprint over every language, tier and tone), so changing a file is a decision, not an accident: change the fingerprint in the test with it.

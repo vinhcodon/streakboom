@@ -15,6 +15,10 @@ export interface EventDef {
   words: Trigger | null;
   /** If it can be repeated within a short time, which counter moves its lines through stages (LN-2). */
   repeat?: RepeatKind;
+  /** Peak started it by itself (the user did nothing): it is then subject to the budget of `reactions.ts`. */
+  automatic?: boolean;
+  /** An automatic event does not start again within this long, ms. */
+  cooldownMs?: number;
 }
 
 const a = (surprise: number, valence: number, arousal: number, aboutUser: number, control: number): Appraisal => ({ surprise, valence, arousal, aboutUser, control });
@@ -25,7 +29,7 @@ export const EVENTS: Record<EventId, EventDef> = {
   belly_enjoyed: { id: "belly_enjoyed", appraisal: a(0.15, 0.9, 0.15, 1, 0.6), words: "belly", repeat: "belly" },
   belly_trap: { id: "belly_trap", appraisal: a(0.7, -0.6, 0.6, 1, 0.2), words: "huff" },
   named: { id: "named", appraisal: a(0.15, 0.8, 0.4, 1, 0.7), words: null },
-  ground_lost: { id: "ground_lost", appraisal: a(0.95, -0.5, 0.9, 0.3, 0.05), words: "fall" },
+  ground_lost: { id: "ground_lost", appraisal: a(0.95, -0.5, 0.9, 0.3, 0.05), words: "fall", automatic: true, cooldownMs: 20_000 },
 };
 
 /**

@@ -528,6 +528,43 @@ fn persona_preview(lang: String, tier: u8, gentle: bool) -> Vec<brain::PersonaLa
     brain::persona_layers(&lang, tier, gentle)
 }
 
+#[derive(Serialize)]
+struct GroundMap {
+    /// the monitor's work area (physical px)
+    x: i32,
+    y: i32,
+    w: i32,
+    h: i32,
+    cols: usize,
+    rows: usize,
+    /// the kind at the centre of each cell, row by row from the top left
+    cells: Vec<ground::Ground>,
+}
+
+/// A coarse picture of what is where on the monitor the cat is on (PC-6, ADR-0043): the kind (desktop, taskbar, window,
+/// window in front) at the centre of each cell of a `cols` x `rows` grid, at most 16 x 9. It reveals where the user's
+/// windows are, so the page asks for it only when the user allowed it and the cat is about to move, keeps it in memory
+/// and never writes or sends it. No title, process or window list.
+#[tauri::command]
+fn ground_map(window: WebviewWindow, cols: Option<usize>, rows: Option<usize>) -> Result<GroundMap, String> {
+    let pos = window.outer_position().map_err(|e| e.to_string())?;
+    let scale = window.scale_factor().map_err(|e| e.to_string())?;
+    let (l, t, s) = pet_px(scale);
+    let a = area_at(&window, (pos.x + l + s / 2) as f64, (pos.y + t + s / 2) as f64).ok_or("no monitor")?;
+    let cols = cols.unwrap_or(16).clamp(1, 16);
+    let rows = rows.unwrap_or(9).clamp(1, 9);
+    let (w, h) = (a.r - a.x, a.b - a.y);
+    let mut cells = Vec::with_capacity(cols * rows);
+    for r in 0..rows {
+        for c in 0..cols {
+            let px = a.x + ((c as f64 + 0.5) * w as f64 / cols as f64) as i32;
+            let py = a.y + ((r as f64 + 0.5) * h as f64 / rows as f64) as i32;
+            cells.push(ground::ground_of_point(px, py));
+        }
+    }
+    Ok(GroundMap { x: a.x, y: a.y, w, h, cols, rows, cells })
+}
+
 /// Is the window with that opaque number still there and still under that point (closed, minimized or dragged away: no).
 #[tauri::command]
 fn window_holds(id: u64, x: i32, y: i32) -> bool {
@@ -1055,11 +1092,16 @@ async fn brain_chat(
     history: Vec<Turn>,
     known: Option<Vec<String>>,
     follow_user: Option<bool>,
+    event: Option<String>,
 ) -> Result<ChatReply, AiError> {
     tauri::async_runtime::spawn_blocking(move || {
         let state = app.state::<AppState>();
         let key = brain::load_key(active(&state)).ok_or_else(|| AiError::new(Kind::InvalidKey, "no key"))?;
-        let system = brain::persona_with(&lang, tier, gentle, known.as_deref().unwrap_or(&[]), follow_user.unwrap_or(false));
+        // A remark after a reflex (RX-7) uses the persona and the card of that event, never the user's notes.
+        let system = match event.as_deref() {
+            Some(ev) if brain::reaction_card(ev).is_some() => brain::persona_with_card(&lang, tier, gentle, ev),
+            _ => brain::persona_with(&lang, tier, gentle, known.as_deref().unwrap_or(&[]), follow_user.unwrap_or(false)),
+        };
         let raw = run_generate(&state, &key, &system, &history)?;
         let (text, mood) = brain::split_mood(&raw);
         Ok(ChatReply { text, mood })
@@ -1419,7 +1461,7 @@ pub fn run() {
             edge_room,
             vertical_room,
             ground_at,
-            ground_under_cat, window_holds, persona_preview,
+            ground_under_cat, window_holds, persona_preview, ground_map,
             monitors_info,
             move_to,
             pet_place,
