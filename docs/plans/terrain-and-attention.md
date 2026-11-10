@@ -1,6 +1,6 @@
 # Plan: the desktop as terrain (cost field and attention)
 
-Status: **proposed 2026-11-09 after Vinh agreed the direction ([`../../spec/07-terrain-and-attention.md`](../../spec/07-terrain-and-attention.md), decisions T1 to T6); no code until FS-4 and the CPU target (PR-9) are done (T6).** Epic E9 in [`backlog.md`](backlog.md).
+Status: **proposed 2026-11-09 after Vinh agreed the direction ([`../../spec/07-terrain-and-attention.md`](../../spec/07-terrain-and-attention.md), decisions T1 to T6); no code until FS-4 and the CPU target (PR-9) are done (T6).** Epic E9 in [`backlog.md`](backlog.md). **Update 2026-11-10:** levels L1 and L2 are built (the typing lane, hops, falls); L3, the window relief, was done as the ground map and the terrain of [`../../spec/10-terrain-model.md`](../../spec/10-terrain-model.md) (epic E14), which supersedes the 3 x 3 places grid; the cost field (TE-1, TE-4 to TE-6, TE-8) is still unbuilt and waits.
 
 **Progress (2026-11-09, released in 0.2.5):** the order changed (T9): the typing lane came first because it needs vertical movement. Built: step 2 (TE-2), step 7 (TE-7, and TE-15 which made it light) and step 8b (TE-12, TE-13, TE-14). Not built: steps 1, 3 to 6, 8, 9 and 10 (the world model, walking across monitors, the attention field, danger zones, the cost-based choice, the L3 window layer).
 
