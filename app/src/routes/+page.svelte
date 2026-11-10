@@ -96,7 +96,9 @@
   import { glideOut, rampIn, takeSteps } from "$lib/gait";
   import { chainAt, planFall, splitHop, totalMs, type Flight } from "$lib/hop";
   import { startGroundWatch, stepGround } from "$lib/groundwatch";
-  import { STARTLE, WORDS_DELAY_MS, type Beat } from "$lib/beats";
+  import { wordsAtMs, type Beat } from "$lib/beats";
+  import { chooseBeat } from "$lib/choose";
+  import { EVENTS, type EventId } from "$lib/events";
   import { escapeRow, initialLane, stepLane, type LaneOut } from "$lib/lane";
   import { engage as engagePure, markShown as markShownPure, minuteIncrement, noShown, type DayCounter, type DayStat } from "$lib/bond";
 
@@ -277,6 +279,24 @@
     }, delayMs);
   }
 
+  /**
+   * An event happened (spec/09, RX-2, RX-3): its appraisal picks a beat; the beat's first pose is entered at once (with the
+   * usual timer and wake-first rule) and `then` is called with the pose and the delay after which the words follow.
+   */
+  function startReflex(id: EventId): { pose: PetState; wordsAt: number } {
+    const beat = chooseBeat(EVENTS[id].appraisal);
+    const p = beat.steps[0].pose;
+    enter(p);
+    return { pose: p, wordsAt: wordsAtMs(beat) ?? 0 };
+  }
+
+  /** The words of an event, from the pool the event names, at the stage of the run when it repeats (LN-2). */
+  function sayEvent(id: EventId): boolean {
+    const ev = EVENTS[id];
+    if (!ev.words) return false;
+    return say(ev.words, ev.repeat ? repeatNow(ev.repeat) : {});
+  }
+
   // ---------------------------------------------------------------- memory
   const DAY_MS = 24 * 60 * MIN;
   const touch = (kind: Touch) => {
@@ -373,8 +393,8 @@
     scheduleSave();
     pushSettings();
     stopTimers();
-    enter("happy");
-    wordsAfter("happy", WORDS_DELAY_MS.named, () => memSay(field === "petName" ? "named" : "calledMe"));
+    const r = startReflex("named");
+    wordsAfter(r.pose, r.wordsAt, () => memSay(field === "petName" ? "named" : "calledMe"));
   }
 
   function showBubble(text: string, minMs = 0, exclaim = false) {
@@ -884,7 +904,7 @@
     if (pose !== "idle" && pose !== "look") return;
     lastGroundFall = now;
     note("ground lost: startle");
-    if (!(await runBeat(STARTLE, () => say("fall", { exclaim: true })))) return; // picked up or told to do something else meanwhile
+    if (!(await runBeat(chooseBeat(EVENTS.ground_lost.appraisal), () => say("fall", { exclaim: true })))) return; // picked up or told to do something else meanwhile
     let down = 0;
     try {
       down = (await invoke<{ up: number; down: number }>("vertical_room")).down;
@@ -963,7 +983,7 @@
 
   function singleClick() {
     stopTimers();
-    enter("happy");
+    const r = startReflex("poked");
     engage();
     const now = Date.now();
     if (now - lastClickSay > 3000) {
@@ -971,7 +991,7 @@
       data = interact(data, "click", now);
       touch("poke");
       count("poke");
-      wordsAfter("happy", WORDS_DELAY_MS.click, () => say("click", repeatNow("click")));
+      wordsAfter(r.pose, r.wordsAt, () => sayEvent("poked"));
     }
   }
 
@@ -1124,12 +1144,12 @@
     if (trap) {
       rubsSinceHuff = 0;
       lastHuff = now;
-      enter("huff");
-      wordsAfter("huff", WORDS_DELAY_MS.huff, () => say("huff"));
+      const r = startReflex("belly_trap");
+      wordsAfter(r.pose, r.wordsAt, () => sayEvent("belly_trap"));
     } else {
       data = interact(data, "pet", now);
-      enter("purr");
-      wordsAfter("purr", WORDS_DELAY_MS.belly, () => say("belly", repeatNow("belly")));
+      const r = startReflex("belly_enjoyed");
+      wordsAfter(r.pose, r.wordsAt, () => sayEvent("belly_enjoyed"));
     }
     track("first_interaction");
     scheduleSave();
@@ -1141,14 +1161,14 @@
   function onHeadScratch() {
     lonely = false;
     stopTimers();
-    enter("happy");
+    const r = startReflex("scratched");
     data = recordScratch(interact(data, "pet", Date.now()));
     touch("scratch");
     count("scratch");
     engage();
     track("first_interaction");
-    wordsAfter("happy", WORDS_DELAY_MS.pet, () => {
-      if (!(Math.random() < 0.25 && memSay("pet", {}, 60 * MIN))) say("pet", repeatNow("pet"));
+    wordsAfter(r.pose, r.wordsAt, () => {
+      if (!(Math.random() < 0.25 && memSay("pet", {}, 60 * MIN))) sayEvent("scratched");
     });
     scheduleSave();
   }

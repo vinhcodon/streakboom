@@ -715,6 +715,71 @@ const JA4: Line[] = [
   ...mk("ja", "idle", ["{time}だよ。水、飲む？待ってるね。", "時計は{time}。報告しただけ。"], {}, "t"),
 ];
 
+// A batch of plain lines for the pools the repetition report found smallest (LN-5, spec/09 section 11): none is sarcastic,
+// so the gentle tone gets them too. The three languages are translated one to one, in the same order.
+const EN5: Line[] = [
+  ...mk("en", "idle", ["My eyes are loading... 12%.", "Just resting my eyes. For a very long moment.", "I can hear a pillow calling my name from far away."], { bands: ["sleepy"] }, "n"),
+  ...mk("en", "idle", ["Warm screen, you nearby. Today is fine.", "I'm doing the most important job: sitting next to you.", "Nothing is happening. I like days like this."], { bands: ["content"] }, "n"),
+  ...mk("en", "idle", ["I see a mouse pointer. It is looking at me. The hunt begins.", "Anyone up for a lap around the screen?", "I have 40% energy and 100% bad ideas."], { bands: ["playful"] }, "n"),
+  ...mk("en", "idle", ["I counted the pixels again. Same number as before.", "If anyone needs a cat, I am available.", "I'm practicing staring. Visible progress."], { bands: ["bored"] }, "n"),
+  ...mk("en", "idle", ["I'm here if you want to talk. No rush.", "A bit quiet. I'm telling myself stories.", "I miss the sound of you typing. Just saying."], { bands: ["lonely"] }, "n"),
+  ...mk("en", "click", ["Beep. I have been activated.", "Do it again, I'm considering it.", "That's my forehead. I allow it because you're nice.", "Oh! A valid poke.", "You called, I came. I'm always here, though.", "Gentle tickle. I will remember this.", "One poke equals one cat heartbeat.", "I poked you back. In my mind. It took a while.", "Anything up? Or just poking?", "Yes yes, I'm here. Poke confirmed."], {}, "n"),
+  ...mk("en", "greeting", ["Oh, hi. I'm just standing here.", "Hello. I won't be in your way."], { tiers: [1] }, "n"),
+  ...mk("en", "greeting", ["You again. I know that face now.", "Hi. The screen is brighter when you arrive."], { tiers: [2] }, "n"),
+  ...mk("en", "greeting", ["You're back. Your spot is still warm.", "You arrive, my day begins."], { tiers: [3, 4] }, "n"),
+  ...mk("en", "belly", ["Mm... right there. Tell no one.", "My belly has entered happy mode.", "Soft? I am cotton with a heart.", "Very professional. Have you done this before?"], {}, "n"),
+  ...mk("en", "how", ["Sleepy but fine. Ask again, I'm listening."], { bands: ["sleepy"] }, "n"),
+  ...mk("en", "how", ["Very well. Warm screen, you close."], { bands: ["content"] }, "n"),
+  ...mk("en", "how", ["Full of energy! Ask quickly, I'm running."], { bands: ["playful"] }, "n"),
+  ...mk("en", "how", ["A bit bored, but you asking helps."], { bands: ["bored"] }, "n"),
+  ...mk("en", "how", ["A bit quiet. Thanks for asking."], { bands: ["lonely"] }, "n"),
+  ...mk("en", "pet", ["Yes, that kind of scratch is the right one.", "My ears are dreaming. Don't stop.", "Noted: one head scratch, one point of trust."], {}, "n"),
+  ...mk("en", "return", ["You're back! I wasn't counting the hours. Only three times.", "Welcome back. The screen waited nicely for you.", "You're back, so I'm sitting up straight."], {}, "n"),
+  ...mk("en", "huff", ["Trap! I did warn you!", "That belly is mine, and I hadn't agreed."], {}, "n"),
+];
+
+const VI5: Line[] = [
+  ...mk("vi", "idle", ["Mắt mình đang tải... 12%.", "Chỉ chợp mắt một chút thôi. Một chút rất dài.", "Mình nghe thấy cái gối ở xa gọi tên mình."], { bands: ["sleepy"] }, "n"),
+  ...mk("vi", "idle", ["Màn hình ấm, bạn ở đây. Hôm nay ổn.", "Mình đang làm việc quan trọng nhất: ngồi cạnh bạn.", "Không có gì xảy ra. Mình thích những ngày như vậy."], { bands: ["content"] }, "n"),
+  ...mk("vi", "idle", ["Mình thấy một con trỏ chuột. Nó đang nhìn mình. Cuộc săn bắt đầu.", "Ai chạy một vòng quanh màn hình với mình không?", "Mình có 40% năng lượng và 100% ý tưởng tồi."], { bands: ["playful"] }, "n"),
+  ...mk("vi", "idle", ["Mình đếm pixel lần nữa. Vẫn bằng số lần trước.", "Nếu ai cần một chú mèo, mình đang rảnh.", "Mình đang luyện nhìn chằm chằm. Tiến bộ rõ rệt."], { bands: ["bored"] }, "n"),
+  ...mk("vi", "idle", ["Mình ở đây nếu bạn muốn nói chuyện. Không vội.", "Hơi yên tĩnh. Mình tự kể chuyện cho mình nghe.", "Mình nhớ tiếng bạn gõ phím. Nói vậy thôi."], { bands: ["lonely"] }, "n"),
+  ...mk("vi", "click", ["Bíp. Mình đã được kích hoạt.", "Chạm lần nữa đi, mình đang cân nhắc.", "Đó là trán mình. Mình cho phép vì bạn dễ mến.", "Ối! Một cú chạm hợp lệ.", "Bạn gọi, mình đến. Mà mình luôn ở đây.", "Nhột nhẹ thôi. Mình sẽ nhớ chuyện này.", "Một cú chạm bằng một nhịp tim của mèo.", "Mình chạm lại bạn rồi. Trong đầu. Hơi lâu.", "Có chuyện gì không? Hay chỉ muốn chạm thôi?", "Ừ ừ, mình đây. Chạm xác nhận rồi."], {}, "n"),
+  ...mk("vi", "greeting", ["Ơ, chào. Mình chỉ đang đứng đây thôi.", "Chào bạn. Mình sẽ không cản đường đâu."], { tiers: [1] }, "n"),
+  ...mk("vi", "greeting", ["Lại là bạn. Mình quen mặt rồi đó.", "Chào. Màn hình sáng hơn khi bạn đến."], { tiers: [2] }, "n"),
+  ...mk("vi", "greeting", ["Về rồi à. Chỗ của bạn vẫn ấm.", "Bạn đến, ngày của mình bắt đầu."], { tiers: [3, 4] }, "n"),
+  ...mk("vi", "belly", ["Ừm... đúng chỗ rồi. Đừng nói với ai.", "Bụng mình đang bật chế độ hạnh phúc.", "Mềm không? Mình là bông gòn có tim.", "Rất chuyên nghiệp. Bạn có kinh nghiệm không?"], {}, "n"),
+  ...mk("vi", "how", ["Buồn ngủ nhưng ổn. Hỏi tiếp đi, mình đang nghe."], { bands: ["sleepy"] }, "n"),
+  ...mk("vi", "how", ["Rất ổn. Màn hình ấm, bạn ở gần."], { bands: ["content"] }, "n"),
+  ...mk("vi", "how", ["Tràn năng lượng! Hỏi nhanh nhé, mình đang chạy."], { bands: ["playful"] }, "n"),
+  ...mk("vi", "how", ["Hơi chán, nhưng bạn hỏi là vui rồi."], { bands: ["bored"] }, "n"),
+  ...mk("vi", "how", ["Hơi yên lặng. Cảm ơn vì đã hỏi."], { bands: ["lonely"] }, "n"),
+  ...mk("vi", "pet", ["Ừ, vuốt kiểu đó là chuẩn.", "Tai mình đang mơ màng. Đừng dừng.", "Ghi sổ rồi: một lần vuốt đầu, một điểm tin tưởng."], {}, "n"),
+  ...mk("vi", "return", ["Bạn về rồi! Mình không đếm giờ. Chỉ đếm ba lần.", "Chào mừng về. Màn hình đã ngoan ngoãn chờ bạn.", "Bạn về, nên mình ngồi thẳng lưng lên."], {}, "n"),
+  ...mk("vi", "huff", ["Bẫy! Mình đã cảnh báo rồi mà!", "Cái bụng đó là của mình, và mình chưa đồng ý."], {}, "n"),
+];
+
+const JA5: Line[] = [
+  ...mk("ja", "idle", ["目を読み込み中…12%。", "ちょっと目を休めるだけ。すごく長いちょっと。", "遠くで枕がわたしを呼んでる気がする。"], { bands: ["sleepy"] }, "n"),
+  ...mk("ja", "idle", ["画面はあったかくて、きみがそばにいる。今日はいい日。", "いちばん大事な仕事をしてるよ。きみのそばにいること。", "何も起きてない。こういう日、好きだな。"], { bands: ["content"] }, "n"),
+  ...mk("ja", "idle", ["マウスカーソルを発見。こっちを見てる。狩りの始まりだよ。", "画面を一周、いっしょに走らない？", "元気は40%、悪だくみは100%だよ。"], { bands: ["playful"] }, "n"),
+  ...mk("ja", "idle", ["ピクセルをまた数えたよ。さっきと同じ数だった。", "猫が必要な人がいたら、わたし空いてるよ。", "じっと見つめる練習中。かなり上達したよ。"], { bands: ["bored"] }, "n"),
+  ...mk("ja", "idle", ["話したくなったら、ここにいるよ。急がなくていいからね。", "ちょっと静かだな。自分にお話を聞かせてるよ。", "きみがキーを打つ音、ちょっと恋しいな。言ってみただけ。"], { bands: ["lonely"] }, "n"),
+  ...mk("ja", "click", ["ピッ。起動したよ。", "もう一回どうぞ。考え中だから。", "そこはおでこ。きみだから許してるんだよ。", "わっ！有効なつんつんだね。", "呼んだ？来たよ。ずっといるけどね。", "くすぐったいな。覚えておくね。", "つんつん一回で、猫の鼓動が一回。", "心の中でつつき返したよ。ちょっと長かった。", "何かあった？それとも、つつきたかっただけ？", "うんうん、いるよ。つんつん、確認完了。"], {}, "n"),
+  ...mk("ja", "greeting", ["あ、こんにちは。ただ立ってるだけだよ。", "こんにちは。じゃましないからね。"], { tiers: [1] }, "n"),
+  ...mk("ja", "greeting", ["またきみだ。もう顔を覚えたよ。", "やあ。きみが来ると画面が明るくなるね。"], { tiers: [2] }, "n"),
+  ...mk("ja", "greeting", ["おかえり。きみの席、まだあったかいよ。", "きみが来て、わたしの一日が始まるよ。"], { tiers: [3, 4] }, "n"),
+  ...mk("ja", "belly", ["んー…そこ。だれにも言わないでね。", "お腹がしあわせモードに入ったよ。", "ふわふわ？わたしは心のある綿なんだよ。", "すごく上手。経験者でしょ？"], {}, "n"),
+  ...mk("ja", "how", ["ねむいけど元気だよ。また聞いて、ちゃんと聞いてるから。"], { bands: ["sleepy"] }, "n"),
+  ...mk("ja", "how", ["すごく元気。画面があったかくて、きみが近い。"], { bands: ["content"] }, "n"),
+  ...mk("ja", "how", ["元気いっぱい！早めに聞いてね、走ってるから。"], { bands: ["playful"] }, "n"),
+  ...mk("ja", "how", ["ちょっとたいくつ。でも聞いてくれてうれしい。"], { bands: ["bored"] }, "n"),
+  ...mk("ja", "how", ["ちょっと静か。聞いてくれてありがとう。"], { bands: ["lonely"] }, "n"),
+  ...mk("ja", "pet", ["うん、そのなで方、正解。", "耳がうっとりしてる。やめないで。", "メモした。なでなで一回、信頼一ポイント。"], {}, "n"),
+  ...mk("ja", "return", ["おかえり！時間は数えてないよ。三回だけね。", "おかえり。画面はいい子で待ってたよ。", "帰ってきたから、背すじをのばしたよ。"], {}, "n"),
+  ...mk("ja", "huff", ["わな！ちゃんと言ったでしょ！", "そのお腹はわたしのもの。許可してないよ。"], {}, "n"),
+];
+
 // The cry when the ground goes (PC-7): short, a moment of surprise, said as it gasps.
 const FALL: Line[] = [
   ...mk("en", "fall", ["Whoa!", "Oh no, the floor!", "Wait, where did it go?!", "Ack!", "Hey, that was my spot!"]),
@@ -722,6 +787,6 @@ const FALL: Line[] = [
   ...mk("ja", "fall", ["わっ！", "えっ、床がない！", "あれ、どこいったの！？", "きゃっ！", "ちょっと、わたしの場所！"]),
 ];
 
-export const LINES: Line[] = [...EN, ...EN2, ...EN3, ...EN4, ...VI, ...VI2, ...VI3, ...VI4, ...JA, ...JA2, ...JA3, ...JA4, ...FALL];
+export const LINES: Line[] = [...EN, ...EN2, ...EN3, ...EN4, ...EN5, ...VI, ...VI2, ...VI3, ...VI4, ...VI5, ...JA, ...JA2, ...JA3, ...JA4, ...JA5, ...FALL];
 
 export const MILESTONE_DAYS = [3, 7, 30];
