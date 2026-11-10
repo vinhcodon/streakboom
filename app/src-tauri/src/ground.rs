@@ -204,6 +204,72 @@ pub fn window_holds(_id: u64, _x: i32, _y: i32) -> bool {
     true
 }
 
+/// A window that is in front of Peak at a point and that Peak cannot be raised over: the Start menu, Search and the like sit in
+/// a higher layer than an always-on-top window, so they hide the cat. Found by asking what is at the point (the system's answer
+/// skips Peak, it is click-through): an always-on-top window that is not ours, not the desktop and not the taskbar, and that is
+/// **not** below Peak in the stacking order (the windows of the higher layers do not appear in it at all, a window of the same
+/// layer that is below Peak does). Nothing about the window is read but that one is there.
+#[cfg(windows)]
+pub fn cover_at(own: isize, x: i32, y: i32) -> bool {
+    use windows_sys::Win32::Foundation::HWND;
+    use windows_sys::Win32::System::Threading::GetCurrentProcessId;
+    use windows_sys::Win32::UI::WindowsAndMessaging::{GA_ROOT, GW_HWNDNEXT, GWL_EXSTYLE, GetAncestor, GetClassNameW, GetWindow, GetWindowLongW, GetWindowThreadProcessId, WS_EX_TOPMOST};
+    let h = hit_window(x, y);
+    if h == 0 {
+        return false;
+    }
+    // SAFETY: plain queries with handles the system gave us; the buffer is valid for the size passed.
+    unsafe {
+        let top = GetAncestor(h as HWND, GA_ROOT);
+        if top.is_null() {
+            return false;
+        }
+        let mut pid: u32 = 0;
+        GetWindowThreadProcessId(top, &mut pid);
+        if pid == GetCurrentProcessId() {
+            return false;
+        }
+        let mut buf = [0u16; 64];
+        let n = GetClassNameW(top, buf.as_mut_ptr(), buf.len() as i32);
+        let class = if n > 0 { String::from_utf16_lossy(&buf[..n as usize]) } else { String::new() };
+        if class_ground(&class).is_some() {
+            return false;
+        }
+        if (GetWindowLongW(top, GWL_EXSTYLE) as u32) & WS_EX_TOPMOST == 0 {
+            return false; // an ordinary window cannot be in front of an always-on-top one
+        }
+        let mut w = GetWindow(own as HWND, GW_HWNDNEXT);
+        let mut guard = 0;
+        while !w.is_null() && guard < 800 {
+            if w == top {
+                return false; // below Peak
+            }
+            w = GetWindow(w, GW_HWNDNEXT);
+            guard += 1;
+        }
+        true
+    }
+}
+
+/// Raise Peak's window to the top of the always-on-top layer (over a window of its own layer that came later).
+#[cfg(windows)]
+pub fn raise_own(own: isize) {
+    use windows_sys::Win32::Foundation::HWND;
+    use windows_sys::Win32::UI::WindowsAndMessaging::{HWND_TOPMOST, SWP_NOACTIVATE, SWP_NOMOVE, SWP_NOSIZE, SetWindowPos};
+    // SAFETY: a plain call with the handle of our own window.
+    unsafe {
+        SetWindowPos(own as HWND, HWND_TOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE);
+    }
+}
+
+#[cfg(not(windows))]
+pub fn cover_at(_own: isize, _x: i32, _y: i32) -> bool {
+    false
+}
+
+#[cfg(not(windows))]
+pub fn raise_own(_own: isize) {}
+
 #[cfg(test)]
 mod tests {
     use super::*;

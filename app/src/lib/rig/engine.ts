@@ -118,6 +118,8 @@ export const LOOKS: Record<PetState, Look> = {
   notice: { ...REST, wide: 0.5, perk: 1, mouth: "flat", cheek: 0.5 }, // alert: eyes a little wider, ears up, looking toward the work
   curious: { ...REST, roll: 8, gx: 3, gy: -3, wide: 0.45, mouth: "flat", dots: 0 },
   sad: { ...REST, roll: -6, dy: 5, gy: 2, lid: 0.7, mouth: "flat", cheek: 0.2, droop: 1 },
+  climb: { ...REST, base: "climb", theta: 1, walk: 1, roll: -26, mouth: "flat", cheek: 0.4 },
+  cling: { ...REST, base: "climb", theta: 1, roll: -22, mouth: "flat", cheek: 0.4 },
   huff: { ...REST, roll: 7, dy: -1, lid: 0.55, mouth: "flat", cheek: 0.3 },
 };
 

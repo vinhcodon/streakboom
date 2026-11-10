@@ -20,6 +20,8 @@ export type PetState =
   | "notice" // looks toward the user's work, ears up, a moment before it makes way (PC-2)
   | "curious" // head tilted, eyes up
   | "sad" // ears down, eyes low: sympathy
+  | "climb" // up or down a vertical surface, paws over paws (spec/10, TT-14)
+  | "cling" // holds on to the wall and rests
   | "wake"; // stretches and opens its eyes, on the way out of sleep
 
 export interface TimedPose {

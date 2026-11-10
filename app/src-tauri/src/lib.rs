@@ -509,6 +509,22 @@ struct GroundUnder {
     foot: (i32, i32),
 }
 
+/// Which of these points (physical px) are covered by a window that Peak cannot be raised over (the Start menu, Search)? The
+/// window's rectangle is useless (the Start menu's is the whole screen), only a touch at a point tells where its flyout is, so
+/// the page tries places for the cat and asks about their points. With `raise`, Peak first puts itself back on top (a window of
+/// its own layer may simply have come later) and the answer is taken after that. Only "covered or not" comes back.
+#[tauri::command]
+fn cover_probe(window: WebviewWindow, points: Vec<(i32, i32)>, raise: bool) -> Result<Vec<bool>, String> {
+    let own = window.hwnd().map_err(|e| e.to_string())?.0 as isize;
+    let ask = |pts: &[(i32, i32)]| pts.iter().map(|(x, y)| ground::cover_at(own, *x, *y)).collect::<Vec<bool>>();
+    let mut out = ask(&points);
+    if raise && out.iter().any(|c| *c) {
+        ground::raise_own(own);
+        out = ask(&points);
+    }
+    Ok(out)
+}
+
 /// What the cat stands over now: the kind of thing just below its left foot, its middle and its right foot.
 #[tauri::command]
 fn ground_under_cat(window: WebviewWindow) -> Result<GroundUnder, String> {
@@ -1537,7 +1553,7 @@ pub fn run() {
             edge_room,
             vertical_room,
             ground_at,
-            ground_under_cat, window_holds, persona_preview, ground_map, overlay_toggle,
+            ground_under_cat, cover_probe, window_holds, persona_preview, ground_map, overlay_toggle,
             monitors_info,
             move_to,
             pet_place,

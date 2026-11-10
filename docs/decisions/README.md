@@ -10,6 +10,7 @@ What was **decided**, why, and what was rejected. One short file per decision (a
 
 | ADR | Decision | Status | Date |
 |---|---|---|---|
+| [0046](0046-peak-gets-out-from-under-what-covers-it.md) | Peak gets out from under a window it cannot be raised over (the Start menu, Search): it asks Rust about five points of its body, and hops to the nearest free place | accepted | 2026-11-10 |
 | [0045](0045-vertical-terrain-falls-to-the-plane-below-and-the-screen-picture.md) | Peak climbs vertical surfaces and falls only to the plane below; the screen picture sense is allowed as an opt-in | accepted (decisions; being built) | 2026-11-10 |
 | [0044](0044-the-terrain-from-regions-with-identity.md) | The desktop is a terrain of surfaces and costs built from regions with identity; the ground map is on by default; props wait; the overlay comes first | accepted (decisions; being built) | 2026-11-10 |
 | [0043](0043-line-factory-model-remarks-and-the-ground-map.md) | A line factory run by the author, a model's remark after a reflex, and a ground map kept in memory; no top-up of lines by the connected brain yet | accepted (decisions; built after 0.3.1, not released) | 2026-11-10 |

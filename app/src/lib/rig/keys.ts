@@ -184,6 +184,21 @@ export const STRETCH_F: Key = {
   belly: { x: 60, y: 102, rx: 21, ry: 10, rot: 0 },
 };
 
+// ------------------------------------------------------------------------------- climbing
+// On a vertical wall at its right (the cat faces +x; a mirrored cat has the wall on the left): the body upright and leaning
+// a little toward the wall, the belly against it, the head up and turned to look up the wall, the front paws reaching up
+// with claws out, the hind paws spread low, the tail hanging. Drawn in the side view only (it is always side-on).
+const CLIMB_HEAD = shiftHead(STAND_S, -22, -42);
+export const CLIMB_S: Key = {
+  ...CLIMB_HEAD,
+  shadow: { x: 60, y: 115, rx: 0, ry: 0 },
+  tail: { p0: [48, 104], p1: [32, 114], p2: [22, 104], w: 9 },
+  body: { x: 56, y: 82, rx: 36, ry: 21, rot: 112 },
+  belly: { x: 66, y: 80, rx: 20, ry: 8, rot: 112 },
+  legs: [leg(66, 52, 94, 18, 9, 5, 4, 1, 1), leg(50, 98, 88, 110, 10, 5, 4, 1, 1), leg(70, 56, 98, 32, 10, 5.5, 4, 1, 0), leg(54, 100, 92, 96, 11, 5.5, 4, 1, 0)],
+  fx: { sweat: 0, z: 0 },
+};
+
 /** Each pose has a front key and a side key; poses without a real side view reuse the front. */
 export const POSE_KEYS = {
   stand: { f: STAND_F, s: STAND_S },
@@ -191,6 +206,7 @@ export const POSE_KEYS = {
   loaf: { f: LOAF_F, s: LOAF_S },
   hang: { f: HANG_F, s: HANG_F },
   stretch: { f: STRETCH_F, s: STRETCH_S },
+  climb: { f: CLIMB_S, s: CLIMB_S },
 } as const;
 export type PoseName = keyof typeof POSE_KEYS;
 export const POSE_NAMES = Object.keys(POSE_KEYS) as PoseName[];

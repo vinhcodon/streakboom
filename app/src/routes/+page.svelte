@@ -95,15 +95,16 @@
   import { UI, type ErrKind } from "$lib/ui";
   import { LEAVE_MIN_ROOM_PX, LEAVE_PX, SLEEP_CROWD_MS, decideFocus, initialFocus, wakesToMakeWay, type FocusOut } from "$lib/focus";
   import { glideOut, rampIn, takeSteps } from "$lib/gait";
-  import { chainAt, planFall, splitHop, totalMs, type Flight } from "$lib/hop";
+  import { CLIMB_PX_PER_S, WALK_TO_WALL_PX_PER_S, chainAt, planCrawl, planFall, planHop, splitHop, totalMs, type Flight } from "$lib/hop";
   import { startGroundWatch, stepGround } from "$lib/groundwatch";
   import { NOTICE, wordsAtMs, type Beat } from "$lib/beats";
   import { chooseBeat, moodBeat } from "$lib/choose";
   import { endReaction, mayReact, newGate, startReaction } from "$lib/reactions";
   import { desktopShare, ledges, summary, type GroundKind, type GroundMap } from "$lib/groundmap";
-  import { surfaceBelow, surfaces } from "$lib/terrain";
+  import { surfaceBelow, surfaces, wallFor, type Wall } from "$lib/terrain";
   import { believe, responseFor, startBelief, type Belief } from "$lib/perception";
-  import { choosePerch } from "$lib/perch";
+  import { choosePerch, PERCH_LIMITS } from "$lib/perch";
+  import { bodyPoints, escapePlaces } from "$lib/escape";
   import { EVENTS, type EventId } from "$lib/events";
   import { escapeRow, initialLane, stepLane, type LaneOut } from "$lib/lane";
   import { engage as engagePure, markShown as markShownPure, minuteIncrement, noShown, type DayCounter, type DayStat } from "$lib/bond";
@@ -699,7 +700,10 @@
   let wakeThen: PetState | null = null; // what to do once the pet has finished waking up
 
   function enter(requested: PetState) {
-    if (requested === "held") perchedUntil = 0; // carried away: it is no longer where it perched
+    if (requested === "held") {
+      perchedUntil = 0; // carried away: it is no longer where it perched
+      perchWall = null;
+    }
     if (flying) void invoke("fly_cancel"); // picked up or told to do something else in mid-air: the flight ends
     let next = requested;
     // A sleeping pet wakes up first (stretch, eyes open), then carries on.
@@ -745,6 +749,7 @@
     if (flying) return scheduleNext();
     if (quiet) return pose === "sleep" || pose === "drowsy" ? undefined : enter("drowsy");
     if (panel) return scheduleNext();
+    if (perchWall && Date.now() >= perchedUntil && (pose === "idle" || pose === "look")) return void descend();
     if (Date.now() < perchedUntil) return void (Math.random() < 0.6 ? enter("look") : enter(bubbleOn ? "look" : "drowsy"));
     const r = Math.random();
     if (data.settings.groundMap && r > 0.97) return void perchNow();
@@ -826,7 +831,7 @@
    * looks at it, crouches, hops, and then simply stays (it sits, dozes, watches like anywhere else). If the window goes
    * away under it, the ground watch of PC-7 makes it startle and fall (TE-10d). `fake` and `force` are for the debugger.
    */
-  async function perchNow(fake?: GroundMap, force = false) {
+  async function perchNow(fake?: GroundMap, force = false, how?: "hop" | "climb") {
     const now = Date.now();
     if (flying || quiet || panel !== null || (pose !== "idle" && pose !== "look")) return scheduleNext();
     if (!force && now - lastPerch < PERCH_COOLDOWN_MS) return scheduleNext();
@@ -838,18 +843,123 @@
     if (!at) return scheduleNext();
     const { feet, scale } = at;
     const place = { scale };
-    const perch = choosePerch(map, feet, scale, undefined, Math.random());
-    note(perch ? `perch: ledge ${perch.col},${perch.row}, go ${perch.dx},${perch.dy}` : "perch: no ledge");
-    if (!perch) return scheduleNext();
+    // a ledge up to CLIMB_MAX_RISE high counts when there is a wall to climb to it (spec/10 section 11); without one, the hop's limit
+    const perch = choosePerch(map, feet, scale, { ...PERCH_LIMITS, maxRise: CLIMB_MAX_RISE }, Math.random());
+    const wall = perch ? wallFor(map, perch.col, perch.row, feet.x) : null;
+    const canClimb = !!wall && wall.width >= MIN_CLIMB_LEDGE * scale && how !== "hop";
+    const climb = canClimb && (how === "climb" || -perch!.dy > 200 || Math.random() < 0.5);
+    note(perch ? `perch: ledge ${perch.col},${perch.row}, go ${perch.dx},${perch.dy}${climb ? ", by climbing" : ""}` : "perch: no ledge");
+    if (!perch || (!climb && -perch.dy > PERCH_LIMITS.maxRise)) return scheduleNext();
     lastPerch = now;
     // The grid is coarse (a cell is about 115 px tall): find the window's real top edge by asking, a few pixels at a time,
     // from the cell above down to the cell's top edge, where the bare desktop stops and the window begins.
     let dy = perch.dy;
     const edge = await refinedEdgeY(map, perch.col, perch.row);
     if (edge !== null) dy = Math.round((edge - feet.y) / place.scale);
+    if (climb && wall) {
+      if (await climbUp(map, wall, edge ?? Math.round(feet.y + dy * scale), feet, scale)) perchedUntil = Date.now() + 3 * 60_000;
+      else perchWall = null;
+      return;
+    }
     if (!(await noticeBeat(perch.dx, dy))) return;
     await fly(splitHop(perch.dx, dy), "walk");
     perchedUntil = Date.now() + 3 * 60_000; // it stays up there a while: no walking off the edge into the air
+  }
+
+  // ------------------------------------------------------------------ walls and climbing (TT-12, TT-14, spec/10 section 11)
+  const CLIMB_MAX_RISE = 900; // logical px: a wall can be climbed as high as the screen
+  const MIN_CLIMB_LEDGE = 200; // the ledge must be this wide (logical px) for the cat to pull itself up and stand
+  const CLAW_DX = 42; // from the cat's centre to the wall it clings to (the paws of the climb drawing)
+  const MANTLE_DX = 78; // from the clinging place to the middle of the cat standing on the ledge
+  const MANTLE_DY = 88; // how far the feet line is under the ledge while the paws are on its edge
+  /** Where the cat perched by climbing, to go down the same way: physical px of the wall and facing; null when it hopped up or not at all. */
+  let perchWall: { dir: 1 | -1; x: number } | null = null;
+
+  /** The wall's real x: the cell edge is coarse, so ask a few pixels at a time from outside the window toward it, just under its top edge. Physical px. */
+  async function refinedWallX(map: GroundMap, wall: Wall, topY: number): Promise<number> {
+    try {
+      const cellW = map.w / map.cols;
+      const y = Math.round(topY + 24);
+      const pts: [number, number][] = [];
+      if (wall.dir === 1) for (let x = Math.round(wall.x - cellW * 0.5); x <= Math.round(wall.x + cellW * 0.75); x += 4) pts.push([x, y]);
+      else for (let x = Math.round(wall.x + cellW * 0.5); x >= Math.round(wall.x - cellW * 0.75); x -= 4) pts.push([x, y]);
+      const kinds = await invoke<string[]>("ground_at", { points: pts });
+      const hit = kinds.findIndex((k) => k === "app" || k === "foreground");
+      note(`wall at ${hit >= 0 ? pts[hit][0] : "?"} (the cell said ${wall.x})`);
+      return hit >= 0 ? pts[hit][0] : wall.x;
+    } catch {
+      return wall.x;
+    }
+  }
+
+  /** Still in the pose the route set (not picked up or told to do something else meanwhile). */
+  const still = (p: PetState) => (pose as PetState) === p;
+
+  /**
+   * Walk to the wall, cling, climb up it, cling, pull up onto the ledge (a hop with no crouch), then sit there. False when
+   * something took over on the way (the route stops where it is). `top` is the window's top edge, physical px.
+   */
+  async function climbUp(map: GroundMap, wall: Wall, top: number, feet: { x: number; y: number }, scale: number): Promise<boolean> {
+    const wallX = await refinedWallX(map, wall, top);
+    const centreX = wallX - wall.dir * CLAW_DX * scale;
+    const approach = (centreX - feet.x) / scale;
+    const rise = (feet.y - (top + MANTLE_DY * scale)) / scale;
+    note(`climb: approach ${Math.round(approach)}, up ${Math.round(rise)}, facing ${wall.dir}`);
+    if (rise < 30) return false;
+    if (!(await noticeBeat(approach, -rise))) return false;
+    if (Math.abs(approach) > 4) {
+      dir = approach > 0 ? 1 : -1;
+      await fly([planCrawl(approach, 0, WALK_TO_WALL_PX_PER_S)], "walk", { settle: false });
+      if (!still("walk")) return false;
+    }
+    dir = wall.dir;
+    pose = "cling";
+    poseTick++;
+    await sleepMs(300);
+    if (!still("cling")) return false;
+    await fly([planCrawl(0, -rise, CLIMB_PX_PER_S)], "climb", { settle: false });
+    if (!still("climb")) return false;
+    pose = "cling";
+    poseTick++;
+    await sleepMs(350);
+    if (!still("cling")) return false;
+    await fly([planHop(wall.dir * MANTLE_DX, -MANTLE_DY)], "walk", { crouch: false, keepDir: true });
+    perchWall = { dir: wall.dir, x: wallX };
+    return true;
+  }
+
+  /**
+   * Go down the way it came up: to the edge, over it onto the wall, down the wall to the floor, and stand. Called from `pickNext`
+   * when the stay on the ledge is over. If anything is wrong (no room under it, picked up) it simply stops where it is.
+   */
+  async function descend() {
+    const w = perchWall;
+    if (!w || flying) return;
+    perchWall = null;
+    perchedUntil = 0;
+    note("descend");
+    // walk to the edge (the cat faces away from the wall's side first: it walks the way it came from), then over
+    dir = (-w.dir) as 1 | -1;
+    await fly([planCrawl(-w.dir * (MANTLE_DX - CLAW_DX - 16), 0, WALK_TO_WALL_PX_PER_S)], "walk", { settle: false });
+    if (!still("walk")) return;
+    dir = w.dir;
+    pose = "cling";
+    poseTick++;
+    await sleepMs(300);
+    if (!still("cling")) return;
+    await fly([planHop(-w.dir * (CLAW_DX + 16), MANTLE_DY)], "cling", { crouch: false, keepDir: true, settle: false });
+    if (!still("cling")) return;
+    let down = 0;
+    try {
+      down = (await invoke<{ up: number; down: number }>("vertical_room")).down;
+    } catch {
+      /* unknown: it stays where it is */
+    }
+    note(`descend: down ${Math.round(down)}`);
+    if (down < 30) return void enter("idle");
+    await sleepMs(250);
+    if (!still("cling")) return;
+    await fly([planCrawl(0, down, CLIMB_PX_PER_S)], "climb");
   }
 
   /**
@@ -985,15 +1095,15 @@
    * Move the window along a chain of hops or a fall (positions come from `hop.ts`, each one is a `move_to`), with the
    * cat in the pose `air` meanwhile, then land. Anything that takes the pose away (being picked up) ends it.
    */
-  async function fly(flights: Flight[], air: PetState) {
+  async function fly(flights: Flight[], air: PetState, opts: { crouch?: boolean; settle?: boolean; keepDir?: boolean } = {}) {
     if (flying || flights.length === 0) return;
     flying = true;
     stopTimers();
     clearTimeout(oneShotTimer);
     try {
       const start = await invoke<{ x: number; y: number; scale: number }>("pet_place");
-      if (flights[0].dx !== 0) dir = flights[0].dx > 0 ? 1 : -1;
-      if (flights[0].kind === "hop") {
+      if (flights[0].dx !== 0 && !opts.keepDir) dir = flights[0].dx > 0 ? 1 : -1;
+      if (flights[0].kind === "hop" && opts.crouch !== false) {
         // a short crouch before the takeoff (the `land` squash) so a hop, down as well as up, reads as a decision and not as a fall
         pose = "land";
         poseTick++;
@@ -1019,7 +1129,7 @@
       flying = false;
       airborne = false;
     }
-    if (pose === air) enter("land");
+    if (pose === air && opts.settle !== false) enter("land");
   }
 
   // ------------------------------------------------- the ground goes (PC-7, ADR-0041)
@@ -1062,6 +1172,7 @@
     if (pose !== "idle" && pose !== "look" && !isDozing(pose)) return; // a sleeping cat on a perch that goes is startled out of its sleep
     gate = startReaction(gate, EVENTS.ground_lost, now);
     perchedUntil = 0;
+    perchWall = null;
     try {
       note("ground lost: startle");
       if (!(await runBeat(chooseBeat(EVENTS.ground_lost.appraisal), () => say("fall", { exclaim: true })))) return; // picked up or told to do something else meanwhile
@@ -1162,7 +1273,50 @@
   let laneReflexDone = false; // the cat has already shown it noticed the lane guess in this episode
   const currentBelief = () => ({ belief: lastBelief, response: responseFor(lastBelief) });
 
+  /**
+   * Something in front of the cat that it cannot be raised over (the Start menu, Search: windows of a higher layer than an
+   * always-on-top one) hides it, and nothing in it noticed. Once a second, Rust is asked about five points of the cat's body
+   * (and puts Peak back on top first, in case a window of its own layer simply came later). If it is still covered, the places
+   * it could hop to are tried nearest first (`escape.ts`) by asking about their points too, and it hops to the first one that
+   * is free: a window's rectangle says nothing here (the Start menu's window is the whole screen, only its flyout answers a
+   * touch). Only "covered or not" is used.
+   */
+  let escaping = false;
+  let lastEscape = 0;
+  async function coverTick() {
+    if (escaping || flying || panel !== null || Date.now() - lastEscape < 3000) return;
+    if (!(pose === "idle" || pose === "look" || pose === "walk" || isDozing(pose))) return;
+    try {
+      const at = await catFeet();
+      if (!at) return;
+      const half = (PET_SIZE / 2) * at.scale;
+      const cat = { x: at.feet.x - half, y: at.feet.y - PET_SIZE * at.scale, r: at.feet.x + half, b: at.feet.y };
+      const here = bodyPoints(cat);
+      if (!(await invoke<boolean[]>("cover_probe", { points: here, raise: true })).some(Boolean) || flying) return;
+      const mons = await invoke<{ x: number; y: number; w: number; h: number; scale: number }[]>("monitors_info");
+      const m = mons.find((k) => at.feet.x >= k.x && at.feet.x < k.x + k.w && at.feet.y >= k.y && at.feet.y <= k.y + k.h) ?? mons[0];
+      if (!m) return;
+      const places = escapePlaces(cat, { x: m.x, y: m.y, r: m.x + m.w, b: m.y + m.h }, at.scale);
+      const probe = places.flatMap((p) => bodyPoints({ x: cat.x + p.dx * at.scale, y: cat.y + p.dy * at.scale, r: cat.r + p.dx * at.scale, b: cat.b + p.dy * at.scale }));
+      const covered = await invoke<boolean[]>("cover_probe", { points: probe, raise: false });
+      const per = here.length;
+      const way = places.find((_, i) => !covered.slice(i * per, (i + 1) * per).some(Boolean));
+      note(`covered: ${way ? `out by ${way.dx},${way.dy}` : "nowhere to go"}`);
+      if (!way) return;
+      escaping = true;
+      lastEscape = Date.now();
+      perchedUntil = 0;
+      perchWall = null;
+      await fly(splitHop(way.dx, way.dy), "walk");
+    } catch {
+      /* the sense is not available: nothing happens */
+    } finally {
+      escaping = false;
+    }
+  }
+
   async function groundTick() {
+    void coverTick();
     if (groundBusy) return;
     const standing = !flying && !quiet && panel === null && (pose === "idle" || pose === "look" || isDozing(pose));
     if (!standing) {
@@ -2083,7 +2237,7 @@
       scheduleProactive();
       groundLoop = setInterval(groundTick, GROUND_POLL_MS);
       // Test hook (like window.__cat): lets a debugger trigger the real unprompted-line path now.
-      (window as unknown as Record<string, unknown>).__pet = { proactive: () => void fireProactive(), focus: () => ({ ...focusOut, lastLeave, pose }), trail: () => trail, sleep: () => enter("drowsy"), wake: () => enter("idle"), hop: (dx: number, dy: number) => void fly(splitHop(dx, dy), "walk"), lane: () => ({ ...laneOut, state: laneState, cat: laneCat }), ground: () => invoke("ground_under_cat"), belief: () => { const b = currentBelief(); return { ...b.belief, response: b.response }; }, perch: (fake?: unknown) => void perchNow(fake as GroundMap | undefined, true), perchPretend: () => void perchPretend(), overlay: () => invoke<string>("overlay_toggle"), map: () => takeGroundMap().then((m) => (m ? { summary: summary(m), ledges: ledges(m).length } : null)), groundLost: () => void groundLost(), say: (t: Trigger, kind?: RepeatKind) => (kind ? say(t, repeatNow(kind)) : say(t)), bubble: () => bubbleText, fall: (d: number) => void fly([planFall(d)], "gasp") };
+      (window as unknown as Record<string, unknown>).__pet = { proactive: () => void fireProactive(), focus: () => ({ ...focusOut, lastLeave, pose }), trail: () => trail, sleep: () => enter("drowsy"), wake: () => enter("idle"), hop: (dx: number, dy: number) => void fly(splitHop(dx, dy), "walk"), lane: () => ({ ...laneOut, state: laneState, cat: laneCat }), ground: () => invoke("ground_under_cat"), belief: () => { const b = currentBelief(); return { ...b.belief, response: b.response }; }, perch: (fake?: unknown, how?: "hop" | "climb") => void perchNow(fake as GroundMap | undefined, true, how), perchPretend: () => void perchPretend(),  descend: () => void descend(), overlay: () => invoke<string>("overlay_toggle"), map: () => takeGroundMap().then((m) => (m ? { summary: summary(m), ledges: ledges(m).length } : null)), groundLost: () => void groundLost(), say: (t: Trigger, kind?: RepeatKind) => (kind ? say(t, repeatNow(kind)) : say(t)), bubble: () => bubbleText, fall: (d: number) => void fly([planFall(d)], "gasp") };
       let lastTick = Date.now();
       minuteTimer = setInterval(() => {
         const now = Date.now();

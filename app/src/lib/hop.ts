@@ -26,7 +26,7 @@ export interface Flight {
   durationMs: number;
   /** How far the path rises above the straight line (0 for a fall). */
   apex: number;
-  kind: "hop" | "fall";
+  kind: "hop" | "fall" | "crawl";
 }
 
 const clamp = (v: number, lo: number, hi: number) => Math.min(hi, Math.max(lo, v));
@@ -46,6 +46,14 @@ export function planFall(dist: number): Flight {
   return { dx: 0, dy: d, durationMs: Math.sqrt((2 * d) / GRAVITY) * 1000, apex: 0, kind: "fall" };
 }
 
+/** A climb or a walk along a surface: a straight line at a steady speed (logical px per second), no arc. */
+export const CLIMB_PX_PER_S = 105;
+export const WALK_TO_WALL_PX_PER_S = 110;
+export function planCrawl(dx: number, dy: number, pxPerS: number): Flight {
+  const dist = Math.hypot(dx, dy);
+  return { dx, dy, durationMs: pxPerS > 0 ? (dist / pxPerS) * 1000 : 0, apex: 0, kind: "crawl" };
+}
+
 /** A way longer than one hop is a chain of equal hops in a row. */
 export function splitHop(dx: number, dy: number): Flight[] {
   const n = Math.max(1, Math.ceil(Math.max(Math.abs(dx), Math.abs(dy)) / HOP_MAX_PX));
@@ -56,6 +64,7 @@ export function splitHop(dx: number, dy: number): Flight[] {
 export function flightAt(f: Flight, ms: number): { x: number; y: number; done: boolean } {
   if (f.durationMs <= 0 || ms >= f.durationMs) return { x: f.dx, y: f.dy, done: true };
   const t = Math.max(0, ms) / f.durationMs;
+  if (f.kind === "crawl") return { x: f.dx * (ms / f.durationMs), y: f.dy * (ms / f.durationMs), done: false };
   if (f.kind === "fall") return { x: 0, y: f.dy * t * t, done: false }; // y = g t^2 / 2 with the duration fitted to the distance
   return { x: f.dx * t || 0, y: f.dy * t - 4 * f.apex * t * (1 - t) || 0, done: false }; // `|| 0` turns a -0 into 0
 }

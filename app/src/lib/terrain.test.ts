@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { surfaceBelow, surfaces } from "./terrain.ts";
+import { surfaceBelow, surfaces, wallFor } from "./terrain.ts";
 import { choosePerch } from "./perch.ts";
 import { headroomClear, ledges, regionAt, type GroundKind, type GroundMap } from "./groundmap.ts";
 
@@ -71,6 +71,18 @@ test("two windows side by side make a wall between them and ledges on both tops"
   const s = surfaces(m);
   assert.equal(s.length, 1);
   assert.deepEqual([s[0].c0, s[0].c1], [0, 3]);
+});
+
+test("a wall to climb: the side of the window nearer to the cat, none when the window fills the screen's width", () => {
+  // the dialog's run is columns 2..5 of row 4: its left face is at x = 200, its right face at x = 600
+  const l = wallFor(withDialog, 3, 4, 50);
+  assert.deepEqual(l, { dir: 1, x: 200, top: 400, width: 400 });
+  const r = wallFor(withDialog, 3, 4, 750);
+  assert.deepEqual(r, { dir: -1, x: 600, top: 400, width: 400 });
+  // a window across the whole width has no side to climb
+  const wide = map(["........", "........", "........", "wwwwwwww", "wwwwwwww", "wwwwwwww"], ids(["........", "........", "........", "11111111", "11111111", "11111111"], { "1": 1 }));
+  assert.equal(wallFor(wide, 3, 3, 50), null);
+  assert.equal(wallFor(withDialog, 3, 2, 50), null, "no surface there");
 });
 
 test("a fall lands on the next surface below at the same column, and on the floor when there is none", () => {

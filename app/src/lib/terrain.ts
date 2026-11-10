@@ -52,6 +52,34 @@ export function surfaces(m: GroundMap, headroomRows = 2): Surface[] {
   return out;
 }
 
+export interface Wall {
+  /** The way the cat faces on it: +1 the wall is at its right (the cat stands left of the window), -1 at its left. */
+  dir: 1 | -1;
+  /** The physical x of the wall (the side of the window, at cell resolution) and the y of the top edge it leads to. */
+  x: number;
+  top: number;
+  /** The width of the ledge it leads to, physical px (it must be wide enough to stand on). */
+  width: number;
+}
+
+/**
+ * The wall to climb to reach a surface (spec/10 section 11): the side of the window under the surface's run that the cat is
+ * nearer to, when the cell beside the run is not the same window (so there is a face to climb) and is inside the map.
+ * Null when neither side has one (the run reaches both edges of the screen). `feetX` is the cat's x in physical px.
+ */
+export function wallFor(m: GroundMap, col: number, row: number, feetX: number): Wall | null {
+  const s = surfaces(m).find((u) => u.row === row && col >= u.c0 && col <= u.c1);
+  if (!s) return null;
+  const left = s.c0 - 1 >= 0 && regionAt(m, s.c0 - 1, s.row) !== s.below;
+  const right = s.c1 + 1 < m.cols && regionAt(m, s.c1 + 1, s.row) !== s.below;
+  const cand: Wall[] = [];
+  if (left) cand.push({ dir: 1, x: s.x0, top: s.y, width: s.x1 - s.x0 });
+  if (right) cand.push({ dir: -1, x: s.x1, top: s.y, width: s.x1 - s.x0 });
+  if (cand.length === 0) return null;
+  cand.sort((a, b) => Math.abs(a.x - feetX) - Math.abs(b.x - feetX));
+  return cand[0];
+}
+
 /**
  * The next surface below a point (a fall lands on it, spec/10 section 11): the nearest edge under `feet` in the cell column
  * of `feet.x`, more than `minDrop` physical px lower than the feet. Null when there is none (it then falls to the floor).

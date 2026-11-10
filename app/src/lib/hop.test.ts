@@ -11,6 +11,7 @@ import {
   chainAt,
   flightAt,
   planFall,
+  planCrawl,
   planHop,
   splitHop,
   totalMs,
@@ -103,4 +104,12 @@ test("a hop of 240 px along either axis is one hop", () => {
   assert.equal(splitHop(0, HOP_MAX_PX).length, 1);
   assert.equal(splitHop(HOP_MAX_PX + 1, 0).length, 2);
   assert.ok(HOP_APEX_MAX > HOP_APEX_MIN);
+});
+
+test("a crawl is a straight line at a steady speed and ends exactly at its target", () => {
+  const f = planCrawl(0, -210, 105);
+  assert.equal(f.durationMs, 2000);
+  assert.deepEqual(flightAt(f, 1000), { x: 0, y: -105, done: false });
+  assert.deepEqual(flightAt(f, 2000), { x: 0, y: -210, done: true });
+  assert.equal(planCrawl(0, 0, 105).durationMs, 0);
 });
