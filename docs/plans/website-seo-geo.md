@@ -258,3 +258,79 @@ Asked on 2026-11-10, **after** the N4 and N2 changes were live (so this is a bas
 **What I would not do, and why:** a comparison page with other desktop pets (claims about other products cannot be verified, ADR-0040); a Japanese-only share image (little gain); `HowTo` structured data (search engines have dropped most HowTo rich results); an `llms.txt` per language (the assistants read the English file and the pages are in three languages already); a monitoring script on the page (the site has no analytics on purpose, ADR-0034).
 
 **Not verified:** nothing of this is on the Pages host yet (not pushed); the feed has not been opened in a feed reader; the new texts have no native reader.
+
+## 14. A short, gentle site (2026-11-10): measurements, structures, voice, the charter (ADR-0048)
+Asked by the app session (`docs/handoff/website-restructure-request.md`): the site feels long-winded; propose, the author decides, a record first. **Decided by Vinh on 2026-11-10 (all four the recommended options): [ADR-0048](../decisions/0048-a-short-gentle-website-with-the-charters-promises.md). Nothing is built yet.**
+
+### 14.1 Measurements (the built site at version 0.3.1, visible text of the main area, without the header and footer)
+| | English (words) | Vietnamese (words) | Japanese (characters) |
+|---|---|---|---|
+| Home page | 2,862 | 3,198 | 8,591 |
+| How it works | 659 | 775 | 1,626 |
+| Privacy | 623 | 756 | 1,736 |
+| `llms-full.txt` (English only) | 3,037 | | |
+| `llms.txt` | 338 | | |
+
+Japanese is counted in characters (about 3 per English word), so the columns are not comparable. **The home page has nine blocks** (English words): hero 205, at a glance 158, features 559 (nine cards), how to play 92, install 74, privacy 261, not 71, FAQ 638, updates 810 (the three newest releases). **The FAQ has ten answers** of 19 to 137 words in English (a8, the one about reading the screen, is the longest; the Japanese ones reach 285 characters).
+
+**What is said more than once** (English; number of places in the strings, home / privacy / how-it-works):
+| Fact | Places | Where |
+|---|---|---|
+| Works without AI | 9 | 5 / 0 / 4 (feature title, FAQ, description, not-list, the whole how page) |
+| Free and MIT | 7 | 6 / 0 / 1 |
+| Gemini and Groq have free tiers | 7 | 5 / 1 / 1 |
+| Never reads what you type or your screen | 6 | 4 / 1 / 1 (the home privacy block, two FAQ answers, the not-list, the privacy page, the how page) |
+| Not code-signed, SmartScreen | 5 | 5 / 0 / 0 (the hero notice, a2, at a glance, not-list, a10) |
+| No account | 5 | 3 / 1 / 1 |
+| The key stays on your computer (Credential Manager) | 4 | 2 / 1 / 1 |
+| How updates work | 4 | 2 / 1 / 1 |
+| Groq, Claude and OpenAI not yet tried with a real key | 3 | 3 / 0 / 0 |
+| Daily limit of 60 and 6 | 3 | 2 / 0 / 1 |
+| Memory use of 100 to 120 MB | 2 | 2 / 0 / 0 |
+
+**The worst repeats:** "does it read my screen" (four places on the home page alone plus the two pages), the not-code-signed warning (five places on one page), and "free" (seven). **What a first-time visitor needs to decide "do I download it":** what it is (hero), what it will not do to you (a few promises), that it is free, what it costs in trouble (Windows only, the SmartScreen warning), the three install steps, and a handful of answers. **What is for people who want the detail:** every feature in full, the gestures table, the limits, memory and processor numbers, the exact privacy list, the changelog.
+
+### 14.2 The three structures proposed (word budgets are English; Vietnamese about +12%, Japanese about 3 characters per word)
+| | S1 short home (chosen) | S2 medium home | S3 trim in place |
+|---|---|---|---|
+| Home | 600 | 1,100 | 1,800 |
+| How it works | 900 (adds the features in detail, the gestures, the rest of the FAQ) | 700 | 650 |
+| Privacy | 500 ("exactly what, where kept") | 450 | 500 |
+| `llms-full.txt` | about 1,500 | about 2,000 | about 2,400 |
+| Cut | at a glance, not, the home privacy block, nine cards to four lines, the updates to one | not merged into the FAQ, updates to one, gestures shortened | wording only |
+| Moves behind a link | feature detail, gestures, 5 of 10 FAQ answers | gestures to a link | nothing |
+| Cost for search and AI | the build's text checks must move to the pages that carry the text; FAQPage on two pages; less keyword text on the home page | smaller | none |
+| Cost for the three languages | three rewrites, two of them unread by a native speaker | the same, smaller | the same, smaller |
+| Cost for the hero tour | none | none | none |
+
+### 14.3 The voice: before and after (the headline block, one feature, one FAQ answer)
+Rules: warm, short, a little playful, never loud, no guilt, no jargon, no claim the app cannot back (charter article 1). The headline says "makes way when you work next to it", which is released behaviour; it does not say "quiet while you work" (see 14.4).
+
+**The headline block** (title and lead):
+| | Before | After |
+|---|---|---|
+| EN | Streakboom: meet Peak, a little cat that lives on your screen Meet Peak, a cheerful golden chibi cat. It reacts when you stroke, poke or carry it, says short lines in Vietnamese, English or Japanese, and keeps you company. The app is free and open source, for Windows. (48 words) | Streakboom: meet Peak, a little cat on your screen Peak keeps you company, says a few words, and makes way when you work next to it. Free, open source, for Windows. (31 words) |
+| VI | Streakboom: gặp Peak, chú mèo nhỏ sống trên màn hình của bạn Gặp Peak, chú mèo chibi màu vàng vui vẻ. Peak phản ứng khi bạn vuốt ve, chọc hay bế nó, nói vài câu ngắn bằng tiếng Việt, tiếng Anh hoặc tiếng Nhật và ở bên bạn lúc làm việc. Ứng dụng miễn phí và mã nguồn mở, dành cho Windows. (62 words) | Streakboom: gặp Peak, chú mèo nhỏ trên màn hình của bạn Peak ở bên bạn, thỉnh thoảng nói vài câu, và nhường chỗ khi bạn làm việc ngay cạnh nó. Miễn phí, mã nguồn mở, dành cho Windows. (38 words) |
+| JA | Streakboom: 画面の上で暮らす小さなネコ、Peakと出会おう 金色のちびネコPeakと出会いましょう。なでたり、つついたり、持ち上げたりすると反応し、ベトナム語、英語、日本語で短いひとことを話して、そばにいてくれます。アプリは無料のオープンソースで、Windows向けです。 (128 chars) | Streakboom：画面の隅にいる、ネコのPeakと出会おう Peakはそばにいて、ときどきひとこと話し、すぐ隣で作業すると道をあけます。無料のオープンソースで、Windows用です。 (85 chars) |
+
+**One feature** ("Bring your own brain"; the detail moves to the how-it-works page):
+| | Before | After |
+|---|---|---|
+| EN | 🧠 Bring your own brain Add your own Gemini, Groq, Claude or OpenAI key and double-click to chat; Gemini and Groq have free tiers, with limits. Some of its unprompted lines are then written by the model too, within a daily limit (60 chat turns and 6 unprompted lines); when Peak has talked enough it says so in its own words. It answers in the language you write in, and each answer comes with a feeling the pet acts out. Your key stays on your computer. (86 words) | Bring your own brain (optional) Add your own Gemini, Groq, Claude or OpenAI key and double-click to chat. Gemini and Groq have free tiers. Your key stays on your computer. (30 words) |
+| VI | 🧠 Mang bộ não của riêng bạn Thêm khóa Gemini, Groq, Claude hoặc OpenAI của riêng bạn rồi bấm đúp để trò chuyện; Gemini và Groq có gói miễn phí, có giới hạn. Một số câu Peak tự nói khi bạn không làm gì cũng do mô hình viết, trong một giới hạn mỗi ngày (60 lượt trò chuyện và 6 câu tự nói); khi đã nói đủ, Peak tự nói điều đó bằng lời của mình. Nó trả lời bằng ngôn ngữ bạn viết, và mỗi câu trả lời đi kèm một cảm xúc mà thú cưng diễn ra. Khóa của bạn chỉ nằm trên máy bạn. (108 words) | Mang bộ não của riêng bạn (tùy chọn) Thêm khóa Gemini, Groq, Claude hoặc OpenAI của bạn rồi bấm đúp để trò chuyện. Gemini và Groq có gói miễn phí. Khóa chỉ nằm trên máy bạn. (36 words) |
+| JA | 🧠 自分の「頭脳」を持ち込む 自分のGemini、Groq、Claude、OpenAIのキーを追加して、ダブルクリックでおしゃべりできます。GeminiとGroqには無料枠があります（上限あり）。話しかけなくてもPeakが言うセリフの一部もモデルが書くようになりますが、1日の上限（チャット60回、自発的なひとこと6回）があり、話し足りたらPeakが自分の言葉でそう伝えます。あなたが書いた言語で答え、答えごとにペットが演じる感情が付きます。キーはあなたのコンピューターの中だけにあります。 (224 chars) | 自分の「頭脳」を持ち込む（任意） 自分のGemini、Groq、Claude、OpenAIのキーを追加して、ダブルクリックでおしゃべり。GeminiとGroqには無料枠があります。キーはあなたのコンピューターの中だけにあります。 (102 chars) |
+
+**One FAQ answer** ("Does Peak read what I type or what is on my screen?"; the answer stays complete about what it notices, so it does not claim a shorter list than the truth):
+| | Before | After |
+|---|---|---|
+| EN | No. To stay out of your way Peak notices only when you last used the keyboard or the mouse, where the pointer is, and whether the primary mouse button (the one you click with) is pressed. Since 0.3.1 it also asks the system what kind of thing is just under its feet (the bare desktop, the taskbar or a window), only to notice when the window it stands on is closed, minimized or dragged away; it keeps an opaque number for that in memory only. It does not read what you type or which keys you press, and it does not look at your screen, window titles or app names. Where it thinks your text is heading is a guess from where you last clicked and how long you have typed, and the guess can be wrong. (137 words) | No. It never reads what you type, your screen, window titles or app names. To stay out of your way it notices only plain signals: when you last used the keyboard or mouse, whether the primary button is pressed, where the pointer is, and what kind of thing is under its feet. The exact list is on the privacy page. (60 words) |
+| VI | Không. Để không cản đường bạn, Peak chỉ biết lần cuối bạn dùng bàn phím hoặc chuột là khi nào, con trỏ đang ở đâu, và nút chuột chính (nút bạn dùng để bấm) có đang được nhấn hay không. Từ 0.3.1 nó còn hỏi hệ thống xem dưới chân nó là loại gì (màn hình nền trống, thanh tác vụ hay một cửa sổ), chỉ để biết khi cửa sổ nó đứng bị đóng, thu nhỏ hay kéo đi; nó giữ một con số vô danh cho việc đó, chỉ trong bộ nhớ. Nó không đọc bạn gõ gì hay nhấn phím nào, và không nhìn màn hình, tiêu đề cửa sổ hay tên ứng dụng. Chỗ nó nghĩ chữ của bạn đang chạy tới chỉ là một phỏng đoán từ chỗ bạn bấm gần nhất và thời gian bạn đã gõ, và phỏng đoán đó có thể sai. (150 words) | Không. Nó không bao giờ đọc bạn gõ gì, màn hình, tiêu đề cửa sổ hay tên ứng dụng. Để tránh đường bạn, nó chỉ biết vài tín hiệu đơn giản: lần cuối bạn dùng bàn phím hoặc chuột, nút chuột chính có đang nhấn không, con trỏ ở đâu, và dưới chân nó là loại gì. Danh sách đầy đủ nằm ở trang Riêng tư. (66 words) |
+| JA | いいえ。じゃまにならないよう、Peakが把握するのは、最後にキーボードやマウスを使った時刻、ポインターの位置、マウスのメインボタン（クリックに使うほう）が押されているかどうかだけです。0.3.1からは、足元にあるものの種類（何もないデスクトップ、タスクバー、ウィンドウ）もシステムに尋ねますが、それは立っているウィンドウが閉じられた、最小化された、移動されたことに気づくためだけで、そのための中身のない番号をメモリ内にだけ保持します。入力した内容や押したキーは読まず、画面、ウィンドウのタイトル、アプリ名も見ません。入力中の文字がどこへ向かうかは、最後にクリックした位置と入力していた時間からの推測で、外れることがあります。 (285 chars) | いいえ。入力内容、画面、ウィンドウのタイトル、アプリ名は決して読みません。じゃまにならないよう、把握するのは単純な手がかりだけです：最後にキーボードやマウスを使った時刻、メインボタンが押されているか、ポインターの位置、足元にあるものの種類。正確な一覧はプライバシーのページにあります。 (130 chars) |
+
+The site's own manners: nothing moves by itself except the tour (one round, then still; it pauses on hover, focus, when hidden or off screen; the Pause button; nothing moves with `prefers-reduced-motion`), no pop-ups, no banners, nothing that interrupts the reading. A check could count the number of moving parts, but I would not add one yet.
+
+### 14.4 My assessment of the charter on the website
+I agree with the app session's recommendation, with two changes. **Yes, a distilled form:** four short promises (five when CH-2 and CH-3 are released), in Peak's voice, on the home page and as the opening of the privacy page, with one link to `docs/charter.md` on GitHub as the proof. It builds trust faster than a long privacy page, replaces three feature lists ("out of your way", "polite", "light") and gives answer engines one sentence to quote. **Two changes:** (1) the promise "it keeps quiet while you work" is held back until the faults of the audit (spec 11 section 6, epic E15) are fixed and released, and the opt-in screen picture is not mentioned; (2) each promise gets a check in the build (a matching sentence in the README or the charter, and the link to the charter must resolve), so a promise cannot outlive the behaviour behind it. I would not use the word "manners" in a slogan yet, for the same reason: it is a promise about the whole behaviour, and the audit is still open. **Where it is not safe:** a full charter page (long, stiff next to a playful cat, three languages to keep true), and publishing the "few settings" article or the manners (they are for the people who build Peak).
+
+### 14.5 Not verified
+The word counts are from my own script (visible text of the main area; the Japanese is counted in characters without spaces and punctuation), not from a standard tool. The "after" texts are proposals: the Vietnamese and Japanese have no native reader. How search engines and the assistants react to a shorter home page is unknown; measure it with the fixed question set of section 7 after the crawlers have visited (section 12 is the baseline). The audit's faults against article 2 are the app session's (E15); the site cannot check them. Nothing in this section is built.
