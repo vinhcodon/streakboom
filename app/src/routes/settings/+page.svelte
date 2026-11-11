@@ -581,7 +581,6 @@
       </div>
       {#if snap.memory.days > 0 || snap.memory.marks.length > 0}
         <div class="row"><span class="lbl">{ui.memDays}</span><b>{snap.memory.days}</b></div>
-        <div class="row"><span class="lbl">{ui.memStreak}</span><b>{snap.memory.bestStreak}</b></div>
         {#if snap.memory.usualPart}
           <div class="row"><span class="lbl">{ui.memUsual}</span><b>{ui.memParts[snap.memory.usualPart]}</b></div>
         {/if}

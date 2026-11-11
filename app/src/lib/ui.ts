@@ -69,7 +69,6 @@ export interface UiStrings {
   memNone: string;
   memSave: string;
   memDays: string;
-  memStreak: string;
   memUsual: string;
   memParts: { morning: string; afternoon: string; evening: string; night: string };
   memTouches: string;
@@ -235,7 +234,6 @@ export const UI: Record<Lang, UiStrings> = {
     memNone: "(not set)",
     memSave: "Save",
     memDays: "Days together",
-    memStreak: "Longest streak",
     memUsual: "Usually around",
     memParts: { morning: "the morning", afternoon: "the afternoon", evening: "the evening", night: "the night" },
     memTouches: "Pokes and scratches / chats",
@@ -470,7 +468,6 @@ export const UI: Record<Lang, UiStrings> = {
     memNone: "(chưa đặt)",
     memSave: "Lưu",
     memDays: "Số ngày bên nhau",
-    memStreak: "Chuỗi ngày dài nhất",
     memUsual: "Thường vào khoảng",
     memParts: { morning: "buổi sáng", afternoon: "buổi chiều", evening: "buổi tối", night: "ban đêm" },
     memTouches: "Chọc và gãi / trò chuyện",
@@ -705,7 +702,6 @@ export const UI: Record<Lang, UiStrings> = {
     memNone: "（未設定）",
     memSave: "保存",
     memDays: "一緒にいた日数",
-    memStreak: "最長の連続日数",
     memUsual: "いつもの時間帯",
     memParts: { morning: "朝", afternoon: "昼", evening: "夕方", night: "夜" },
     memTouches: "つつく・なでる回数 / おしゃべり",

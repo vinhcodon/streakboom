@@ -19,7 +19,7 @@ Peak is the name of the character in this project. Your own copy can be given an
 The short version of [`docs/charter.md`](docs/charter.md), which ranks what Peak is for:
 - **It never reads what you type or what is on your screen.** It senses only activity (when you last used the keyboard or the mouse, never which keys) and the shape of the screen (where windows are, never what is written in them), in memory, and nothing is sent anywhere.
 - **It keeps out of your way.** It is a guest in the corner of a working screen: while you work it stays still and quiet and leaves when it is in the way. It walks, hops, climbs and speaks on its own only when you have stopped for a while, or while you play with it. A fall is rare and always has a cause (you pushed it or let go of it, or the window it sat on went away).
-- **It never dies or starves, and it never guilts you.** Neglect only makes it a little lonely.
+- **It never dies or starves, and it never guilts you.** Your absence costs nothing: it sleeps while you are away and is glad when you are back.
 - **It is alive without any AI, and the key is yours.** Everything lovable works with no brain connected; a brain is optional, billed by the provider you choose with your own key.
 - **It is a companion, not an assistant.** It remembers, grows and has its own tastes; it does not draft, summarise, search or fix.
 

@@ -26,8 +26,6 @@ export interface Memory {
   sessions: number;
   days: number; // distinct days the pet was opened
   lastDay: string;
-  bestStreak: number;
-  longestAwayDays: number;
   touches: { poke: number; scratch: number; chat: number };
   marks: { id: string; t: number }[]; // milestones shared with the user
   said: Record<string, number>; // memory line kind -> last time spoken, for cooldowns
@@ -50,8 +48,6 @@ export const defaultMemory = (): Memory => ({
   sessions: 0,
   days: 0,
   lastDay: "",
-  bestStreak: 0,
-  longestAwayDays: 0,
   touches: { poke: 0, scratch: 0, chat: 0 },
   marks: [],
   said: {},
@@ -103,8 +99,6 @@ function parseRaw(json: string | null | undefined): Memory {
       sessions: num(o.sessions),
       days: num(o.days),
       lastDay: typeof o.lastDay === "string" ? o.lastDay.slice(0, 12) : "",
-      bestStreak: num(o.bestStreak, 0, 99999),
-      longestAwayDays: num(o.longestAwayDays, 0, 99999),
       touches: { poke: num(o.touches?.poke), scratch: num(o.touches?.scratch), chat: num(o.touches?.chat) },
       marks: Array.isArray(o.marks)
         ? o.marks
@@ -130,8 +124,8 @@ function parseRaw(json: string | null | undefined): Memory {
 }
 
 // ------------------------------------------------------------------ recording
-/** A session started (the app opened). `streak` and `absentMs` come from the pet state. */
-export function recordSession(m: Memory, now: number, streak: number, absentMs: number): Memory {
+/** A session started (the app opened). No streak and no record of absences are kept (spec 12). */
+export function recordSession(m: Memory, now: number): Memory {
   if (!m.learn) return m;
   const d = new Date(now);
   const hours = [...m.hours];
@@ -146,8 +140,6 @@ export function recordSession(m: Memory, now: number, streak: number, absentMs: 
     sessions: m.sessions + 1,
     days: m.lastDay === today ? m.days : m.days + 1,
     lastDay: today,
-    bestStreak: Math.max(m.bestStreak, streak),
-    longestAwayDays: Math.max(m.longestAwayDays, Math.floor(absentMs / DAY)),
   };
 }
 

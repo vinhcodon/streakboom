@@ -20,7 +20,6 @@ export const USES_PER_WEEK: Partial<Record<Trigger, number>> = {
   long: 10,
   idle: 50,
   how: 15,
-  milestone: 1,
   brainhint: 3,
   hint: 3,
   hintbelly: 2,
@@ -45,7 +44,7 @@ export interface ReportRow {
   toAdd: number;
 }
 
-const BANDS: Band[] = ["sleepy", "content", "playful", "bored", "lonely"];
+const BANDS: Band[] = ["sleepy", "content", "playful", "bored"];
 
 export function lineReport(lines: Line[] = LINES, uses: Partial<Record<Trigger, number>> = USES_PER_WEEK): ReportRow[] {
   const rows: ReportRow[] = [];
@@ -56,7 +55,7 @@ export function lineReport(lines: Line[] = LINES, uses: Partial<Record<Trigger, 
       for (const tier of [1, 2, 3, 4])
         for (const band of BANDS)
           for (const gentle of [false, true]) {
-            const n = candidates(trigger, { lang, tier, band, hour: trigger === "night" ? 0 : 12, gentle, days: trigger === "milestone" ? 7 : undefined }, lines).length;
+            const n = candidates(trigger, { lang, tier, band, hour: trigger === "night" ? 0 : 12, gentle }, lines).length;
             // a context with no line at all is one where the trigger is not spoken by design (brain hints below tier 3)
             if (n > 0) smallest = Math.min(smallest, n);
             largest = Math.max(largest, n);

@@ -14,7 +14,7 @@ test("the request holds the character, the situation and the existing lines, and
 });
 
 test("the situation of a mood band and of a tier is filled in", () => {
-  assert.match(buildPrompt({ lang: "en", trigger: "idle", count: 5, existing: [], band: "lonely", voice: "x" }), /mood band: lonely/);
+  assert.match(buildPrompt({ lang: "en", trigger: "idle", count: 5, existing: [], band: "bored", voice: "x" }), /mood band: bored/);
   assert.match(buildPrompt({ lang: "en", trigger: "greeting", count: 5, existing: [], tier: 3, voice: "x" }), /tier 3/);
   for (const t of ["click", "pet", "belly", "idle", "greeting", "how", "return"] as const) assert.ok(SITUATION[t], t);
 });

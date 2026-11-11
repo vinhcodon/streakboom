@@ -1,6 +1,6 @@
 # 12. Aligning Peak to the foundation (0.4.0)
 
-**Status:** proposed 2026-11-11; **waits for the author at gate 3. Nothing here is built.** Decisions: ADR-0056 (18+), ADR-0057 (the mission), ADR-0058 (the foundation), ADR-0059 (what changes). The findings behind it: `docs/plans/foundation-review.md`. The plan and the stories: `docs/plans/release-0.4.0.md`.
+**Status:** approved by the author at gate 3 (2026-11-11), with Q9. **Built so far (not released): sections 1 and 2 and the charter's article 7 (FA-1, FA-2, FA-3), to be seen on a test build; the rest is not built.** Decisions: ADR-0056 (18+), ADR-0057 (the mission), ADR-0058 (the foundation), ADR-0059 (what changes). The findings behind it: `docs/plans/foundation-review.md`. The plan and the stories: `docs/plans/release-0.4.0.md`.
 
 This spec describes what will be **different** from 0.3.2. Everything not named stays as specs 01 to 11 say. When it is built, the sections below move into the specs they change (03, 05, 09) and this file keeps only the rules and their tests.
 

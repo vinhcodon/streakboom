@@ -10,7 +10,7 @@ What was **decided**, why, and what was rejected. One short file per decision (a
 
 | ADR | Decision | Status | Date |
 |---|---|---|---|
-| [0059](0059-foundation-alignment-absence-streak-age-and-crisis.md) | Aligning Peak to the foundation: absence costs nothing, no streak, 18+ self-declared, an honest crisis rule, the name stays (Q1 to Q8 of the review; Q9 open) | accepted as the direction; **not built** (0.4.0) | 2026-11-11 |
+| [0059](0059-foundation-alignment-absence-streak-age-and-crisis.md) | Aligning Peak to the foundation: absence costs nothing, no streak, 18+ self-declared, an honest crisis rule, the name stays (Q1 to Q9 of the review) | accepted (Q1 to Q9); points 1, 2 and Q9 built on the branch, the rest not built (0.4.0) | 2026-11-11 |
 | [0058](0058-foundation-as-evidence-home-and-v0-4-0-alignment.md) | `docs/foundation/` is the home of evidence; the charter is aligned to it by new ADRs after a review; 0.4.0 is proposed as the alignment release | **proposed** (direction agreed; scope waits for the review) | 2026-11-11 |
 | [0057](0057-mission-wording-no-health-claims.md) | The mission is "a small friend that makes the workday lighter"; no healing or health claims anywhere public | accepted | 2026-11-11 |
 | [0056](0056-scope-18-plus.md) | Streakboom is for people aged 18 and over (the age gate itself is open, waits for a lawyer) | accepted | 2026-11-11 |

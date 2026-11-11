@@ -164,7 +164,6 @@
   let updateVersion = $state(""); // the version the update offer is about
   let history: Turn[] = [];
 
-  let lonely = false;
   const sessionStart = Date.now();
   let lastClickSay = 0;
 
@@ -225,7 +224,7 @@
     return {
       lang,
       tier: tierOf(data.closeness),
-      band: bandOf(data, hour, lonely),
+      band: bandOf(data, hour),
       hour,
       gentle: data.settings.gentle,
       days: extra.days,
@@ -1782,7 +1781,6 @@
   let rubsSinceHuff = 0;
   let lastHuff = 0;
   function onBellyRub() {
-    lonely = false;
     const now = Date.now();
     stopTimers();
     data = recordRub(data);
@@ -1809,7 +1807,6 @@
     scratch = { ...scratch, pts: [] };
   }
   function onHeadScratch() {
-    lonely = false;
     stopTimers();
     const r = startReflex("scratched");
     data = recordScratch(interact(data, "pet", Date.now()));
@@ -1937,7 +1934,6 @@
     data = recordAi(data, "chat", Date.now());
     count("chat"); // a message that passed the usage gate and goes to the model
     busy = true;
-    lonely = false;
     data = interact(data, "how", Date.now());
     touch("chat");
     history = [...history, { role: "user" as const, text }].slice(-8);
@@ -2084,7 +2080,6 @@
       callMe: mem.callMe,
       days: mem.days,
       sessions: mem.sessions,
-      bestStreak: mem.bestStreak,
       usualPart: usualPart(mem),
       touches: { ...mem.touches },
       marks: mem.marks.map((m) => m.id),
@@ -2275,7 +2270,7 @@
   }
 
   async function aiProactive(trigger: Trigger, hour: number): Promise<boolean> {
-    const mood = bandOf(data, hour, lonely);
+    const mood = bandOf(data, hour);
     const prompt =
       lang === "vi"
         ? `Bây giờ là ${hour} giờ. Tâm trạng của bạn: ${mood}. Tình huống: ${trigger}. Hãy tự nói một câu ngắn với mình, không cần mình trả lời.`
@@ -2429,12 +2424,12 @@
       } catch {
         /* nothing remembered yet */
       }
-      mem = recordSession(mem, now, s.data.streak, s.absentMs);
-      lonely = s.lonely;
+      mem = recordSession(mem, now);
       if (isNew) track("first_launch"); // dropped unless already opted in; backfilled on consent
       if (!isNew && !data.tour.done) data = finishTour(data); // an existing user never gets the tour unasked
-      if (data.streak >= 3) track("active_d3");
-      if (data.streak >= 7) track("active_d7");
+      // "Days together reached 3 / 7" (different days, never reset; spec 12: there is no streak). Each once per install.
+      if (mem.days >= 3) track("active_d3");
+      if (mem.days >= 7) track("active_d7");
       save();
 
       // The "also count per-day numbers" card, once or twice, for people who agreed to the first wording.
@@ -2480,7 +2475,6 @@
         }, 1500);
         setTimeout(shareNextMark, 25_000);
         if (isNew && !data.tour.done) setTimeout(startTour, 4000);
-        if (s.milestone) sayWhenCalm(() => say("milestone", { days: s.milestone! }), 8000);
       }
       scheduleProactive();
       groundLoop = setInterval(groundTick, GROUND_POLL_MS);

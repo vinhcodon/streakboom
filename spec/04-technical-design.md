@@ -82,7 +82,7 @@ The brains are offered in this order: Gemini, Groq, Claude, OpenAI (ADR-0037).
 ## 5. Data and privacy
 Files in `%APPDATA%\com.streakboom.app\`:
 - `state.json`: window position, Quiet mode, the active provider and the chosen model per provider.
-- `pet.json`: mood, closeness, streak, settings (including the update mode), recent lines, AI usage, gesture, startup, tour and update bookkeeping, telemetry consent and queue. Written atomically (temp file, then rename).
+- `pet.json`: mood, closeness, settings (including the update mode), recent lines, AI usage, gesture, startup, tour and update bookkeeping, telemetry consent and queue. Written atomically (temp file, then rename).
 - `memory.json`: the pet's name and what to call the user, coarse habit counts, touch counts, shared milestones, noted facts, and the memory settings. Written atomically; the user can see, edit and delete all of it in Settings > Memory.
 - API keys: Windows Credential Manager, one entry per provider (`gemini-api-key`, `groq-api-key`, `claude-api-key`, `openai-api-key`, service `streakboom`).
 - Chat history: in memory only, never persisted. The facts noted from chats are persisted (see above) and are sent to the active provider with later chats the user starts.

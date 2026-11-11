@@ -1,6 +1,8 @@
 # Peak's charter
 
-One page. It ranks what Peak is for, so that when two good ideas pull against each other the higher one wins. It does not repeat the decisions behind it: each article names them. It changes only by a new decision record (ADR), like everything else here. Adopted by ADR-0047.
+One page. It ranks what Peak is for, so that when two good ideas pull against each other the higher one wins. It does not repeat the decisions behind it: each article names them. It changes only by a new decision record (ADR), like everything else here. Adopted by ADR-0047; article 7 changed by ADR-0059.
+
+**What Peak is for** (ADR-0057): a small friend who makes the workday lighter and leads you back to real life. It is for adults (ADR-0056). It makes no claim about health, and it has succeeded when the person lives well and needs it less.
 
 ## The ranking (highest first)
 
@@ -15,7 +17,7 @@ One page. It ranks what Peak is for, so that when two good ideas pull against ea
 5. **A companion, not an assistant.** It remembers, grows and has its own tastes; it does not draft, summarise, search or fix. (ADR-0021)
    *Test: could the person get this from another assistant? Then it does not belong.*
 6. **It works without AI, and the key is theirs.** Everything lovable survives with no brain connected. (ADR-0001, ADR-0007)
-7. **It never dies and never lies about itself.** Neglect makes it a little lonely. It does not pretend to be a person or a tool.
+7. **It never dies and never lies about itself.** Your absence costs nothing: it sleeps while you are away and is glad when you are back. It does not pretend to be a person or a tool. (ADR-0013, changed by ADR-0059)
 8. **Alive, within all of the above.** Inside articles 1 to 7 it is free to surprise. That is what the corner of a screen is for.
 
 ## Few settings

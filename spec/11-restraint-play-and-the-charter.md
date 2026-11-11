@@ -69,7 +69,7 @@ Rules that follow: spontaneous behaviour is picked from tiers 0 and 1; a tier-2 
 4. **It knows shapes, not meaning.** It senses activity and the layout of the screen, never what is written on it, unless the person has switched on a sense in the open, and then only in memory. *Test: what exactly does this sense keep, and where?*
 5. **A companion, not an assistant.** It remembers, it grows, it has its own tastes; it does not draft, summarise, search or fix. *Test: could the person get this from another assistant? then it does not belong.*
 6. **It works without AI and the key is theirs.** Everything lovable survives with no brain connected.
-7. **It never dies and never lies about itself.** Neglect makes it a little lonely; it does not pretend to be a person or a tool.
+7. **It never dies and never lies about itself.** (As adopted: "Neglect makes it a little lonely"; changed by ADR-0059 to "your absence costs nothing".) It does not pretend to be a person or a tool.
 8. **Alive, within all of the above.** Within articles 1 to 7 it is free to surprise: that is what the corner of a screen is for.
 
 **Where it lives and what changes.** `docs/charter.md` (or `spec/00-charter.md`), adopted by an ADR; the three-question filter of spec 06 section 1.6 moves into it; the README gets a short "What Peak promises" from articles 1 to 4; the website session is told at the next release. Each new story in the backlog gets one line naming the article it serves or the article it spends (a fall spends article 3, and says so).
