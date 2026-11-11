@@ -391,3 +391,20 @@ Khi xong: cập nhật docs/handoff/website-stickers.md mục 2 (đường dẫn
 When the set is ready the author tells the website session; it then builds `/stickers/`, `/vi/stickers/` and `/ja/stickers/` from the manifest (title, description, `ImageGallery` with `ImageObject` items carrying the CC BY 4.0 licence and Streakboom as creator, alt text, the sitemap, `llms.txt`, `llms-full.txt`, hreflang), the four-item menu and the footer, and the daily history of the ledger.
 
 **Built (2026-11-11, after the sticker session delivered `set-v1`):** the three sticker pages, the four-item menu with the footer, the daily history of the ledger, all described in [ADR-0053](../decisions/0053-a-four-item-menu-per-language-stickers-and-a-daily-download-history.md). Decided with the author: the note that the English and Japanese words were written by an AI shows on those pages until the manifest says `reviewed: true`. **What a measurement of arrivals can and cannot tell** is in the ADR: the daily history of downloads, no source, no installs. Not built, on purpose: Download buttons, a ZIP, a copy icon, any counting of copies or shares, a link that carries where a visitor came from.
+
+## 16. After 0.3.2 (2026-11-11, ADR-0054)
+**Done:** the retired settings are out of the site (the "Polite" card says at night, 23:00 to 07:00 by the clock, and Peak decides; the sleeping scene's caption and the first card lose "quiet hours"); the privacy text and the How it works page follow the README (the window picture, on by default; the covered check; the short remark after a fall); the fifth promise (second in the block: "While you work it keeps still and quiet. It wanders or speaks up on its own only when you have stopped for a while."); a tenth feature card for the climbing; one new question ("Does Peak get in the way when I work?"); the unused strings removed. The build confirms: `node scripts/build-site.mjs` passes with 0.3.2, the README numbers and sentences it checks are unchanged, and the phrase that backs the fifth promise is "stays still and quiet" (the app session keeps it).
+
+**Proposals (section 2 of the release prompt), answered by Vinh on 2026-11-11:**
+
+| Proposal | Answer |
+|---|---|
+| An image sitemap for the 60 sticker pictures | **Yes** (built) |
+| A social picture for the sticker pages (the sticker collage) | **Yes**, `preview_440.png` as a site asset (built) |
+| "What Peak notices" once, on the privacy page; short on How it works | **Yes** (built) |
+| When to ask the AI assistants again | **2026-12-01** |
+| A tour scene for climbing or a look over an edge | **No** |
+
+**Not done on purpose:** a comparison page; a scene in the tour; promising that Peak never moves (it makes way, hops out from under the Start menu and falls when its window goes); the opt-in screen picture (not built).
+
+**Not verified:** the app's behaviour against what the site now says (the README and the CHANGELOG were read, the app was not run); the Vietnamese and Japanese texts have no native reader; the Lighthouse numbers of the sticker pages and the new texts (to measure after the deploy); how the sticker preview looks when a link is sent in Zalo, Telegram or Messenger; whether Search Console and Bing accept the image sitemap.
