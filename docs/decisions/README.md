@@ -10,9 +10,12 @@ What was **decided**, why, and what was rejected. One short file per decision (a
 
 | ADR | Decision | Status | Date |
 |---|---|---|---|
+| [0053](0053-a-four-item-menu-per-language-stickers-and-a-daily-download-history.md) | A four-item menu, the sticker page waits for per-language sets, and a daily history of downloads (the website session's record; its row was missing from this index) | accepted, built | 2026-11-11 |
+| [0052](0052-a-download-counter-from-github-with-a-ledger.md) | A download counter on the website, read from GitHub and kept in a ledger (the website session's record; its row was missing from this index) | accepted, built and live | 2026-11-11 |
 | [0051](0051-sticker-web-gallery-and-cc-by.md) | The stickers go on the website first (Copy, Share, Download, as images), under CC BY 4.0; nothing is submitted to Zalo, Telegram or LINE for now; the website session builds it | accepted | 2026-11-11 |
 | [0050](0050-sticker-second-pass-sarcasm-lounging-and-mochi-sleep.md) | Sticker second pass: about 29% of the set teases (5 of 17), sticker 3 is a lounging cat with crossed legs, sticker 9 a curled-up mochi sleeper | accepted (drawn as a first pass) | 2026-11-11 |
 | [0049](0049-sticker-test-on-zalo-decisions.md) | The sticker test on Zalo: the set is "Peak"; sticker 6 says the sample line with `sad`; no sarcasm in the first set; belly-request sticker kept as sticker-only art; no "hungry"; stills drawn outside the app; no download numbers needed; stop under 20 installs from stickers | accepted | 2026-11-10 |
+| [0048](0048-a-short-gentle-website-with-the-charters-promises.md) | A short, gentle website: a short home, details behind links, the charter's promises, one round of the tour (the website session's record; its row was missing from this index) | accepted, built | 2026-11-10 |
 | [0047](0047-the-charter-modes-falls-and-few-settings.md) | A charter ranks Peak's principles; three attention modes (Work, Free, Play; assume Work when unsure); a fall only by the person's push or a lost seat; few settings | accepted | 2026-11-10 |
 | [0046](0046-peak-gets-out-from-under-what-covers-it.md) | Peak gets out from under a window it cannot be raised over (the Start menu, Search): it asks Rust about five points of its body, and hops to the nearest free place | accepted | 2026-11-10 |
 | [0045](0045-vertical-terrain-falls-to-the-plane-below-and-the-screen-picture.md) | Peak climbs vertical surfaces and falls only to the plane below; the screen picture sense is allowed as an opt-in | accepted (decisions; being built) | 2026-11-10 |
