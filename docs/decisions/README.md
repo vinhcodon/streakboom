@@ -10,6 +10,7 @@ What was **decided**, why, and what was rejected. One short file per decision (a
 
 | ADR | Decision | Status | Date |
 |---|---|---|---|
+| [0051](0051-sticker-web-gallery-and-cc-by.md) | The stickers go on the website first (Copy, Share, Download, as images), under CC BY 4.0; nothing is submitted to Zalo, Telegram or LINE for now; the website session builds it | accepted | 2026-11-11 |
 | [0050](0050-sticker-second-pass-sarcasm-lounging-and-mochi-sleep.md) | Sticker second pass: about 29% of the set teases (5 of 17), sticker 3 is a lounging cat with crossed legs, sticker 9 a curled-up mochi sleeper | accepted (drawn as a first pass) | 2026-11-11 |
 | [0049](0049-sticker-test-on-zalo-decisions.md) | The sticker test on Zalo: the set is "Peak"; sticker 6 says the sample line with `sad`; no sarcasm in the first set; belly-request sticker kept as sticker-only art; no "hungry"; stills drawn outside the app; no download numbers needed; stop under 20 installs from stickers | accepted | 2026-11-10 |
 | [0047](0047-the-charter-modes-falls-and-few-settings.md) | A charter ranks Peak's principles; three attention modes (Work, Free, Play; assume Work when unsure); a fall only by the person's push or a lost seat; few settings | accepted | 2026-11-10 |
