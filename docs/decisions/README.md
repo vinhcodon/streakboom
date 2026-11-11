@@ -10,6 +10,7 @@ What was **decided**, why, and what was rejected. One short file per decision (a
 
 | ADR | Decision | Status | Date |
 |---|---|---|---|
+| [0060](0060-0-4-0-release-flow-website-after-the-release.md) | How 0.4.0 reaches `main`: the old flow (merge commit, push `main`, release, then the website session), a short red site build accepted, two gates (the Vietnamese lines read, the chat tried with a real key), no new CPU measurement | accepted; not yet carried out | 2026-11-12 |
 | [0059](0059-foundation-alignment-absence-streak-age-and-crisis.md) | Aligning Peak to the foundation: absence costs nothing, no streak, 18+ self-declared, an honest crisis rule, the name stays (Q1 to Q9 of the review) | accepted (Q1 to Q9); points 1, 2 and Q9 built on the branch, the rest not built (0.4.0) | 2026-11-11 |
 | [0058](0058-foundation-as-evidence-home-and-v0-4-0-alignment.md) | `docs/foundation/` is the home of evidence; the charter is aligned to it by new ADRs after a review; 0.4.0 is proposed as the alignment release | **proposed** (direction agreed; scope waits for the review) | 2026-11-11 |
 | [0057](0057-mission-wording-no-health-claims.md) | The mission is "a small friend that makes the workday lighter"; no healing or health claims anywhere public | accepted | 2026-11-11 |

@@ -46,8 +46,8 @@ See spec 12 section 11. Sizes are estimates; no code was tried.
 
 ## Preparation (2026-11-12) and what is left to publish
 Done on the branch: the line report (the same two pools are under the limit as before the work, idle 9 instead of 8: "idle" gained the lines of the old lonely band; click is unchanged at 21), the versions (`tauri.conf.json`, `Cargo.toml`, `Cargo.lock`, `package.json`), the CHANGELOG entry, the README status and roadmap, the test counts (250 JS, 73 Rust), and `docs/handoff/website-release-prompt.md` for 0.4.0.
-To publish, in this order (nothing is done until the author orders "Phát hành 0.4.0"):
-1. The author reads the Vietnamese lines (V-103, V-105) and tries the chat rules with a real key (V-104).
-2. The website session makes `node scripts/build-site.mjs` pass against the branch (the prompt is ready to paste).
-3. Merge the branch into `main` (the author decides how), push `main` **before** releasing (the tag goes on the head of the default branch at publish time).
-4. `scripts/release.ps1 -Repo vinhcodon/streakboom -Notes ... -Publish` from a clean tree; then the routine of ADR-0033 (audit, README and icon, the name, the debt list).
+To publish, in this order (ADR-0060; nothing is done until the author orders "Phát hành 0.4.0"):
+1. The author reads the Vietnamese lines (`vi-lines-0.4.0.md`; V-103, V-105) and tries the chat rules with a real key on one brain (V-104).
+2. Merge `foundation/alignment` into `main` with a merge commit; push `main` **before** releasing (the tag goes on the head of the default branch at publish time). The site build will fail from this push until the website session follows; that is accepted.
+3. `scripts/release.ps1 -Repo vinhcodon/streakboom -Notes ... -Publish` from a clean tree (the key stays at `~\.tauri\streakboom-updater.key`, never shown); then the routine of ADR-0033 (audit, README and icon, the name, the debt list).
+4. **Then** hand the website session its prompt (`docs/handoff/website-release-prompt.md`): the site is updated after the release. Record the answer in the debt list.
