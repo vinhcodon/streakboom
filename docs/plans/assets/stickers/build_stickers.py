@@ -241,14 +241,13 @@ def wrap(inner, x, y, s):
 
 # ---- sticker-only art (not in the app): the lounging cat (3), the curled-up sleeper (9), the rain (10), confetti (7) ----
 def thought_bubble():
-    """A hazy thought bubble (a cloud with two small trailing circles and a wavy line inside): vague, drifting thoughts."""
+    """A thought bubble drawn as three round bubbles that grow as they rise from the head, a wavy line in the biggest one:
+    vague, drifting thoughts."""
     grey, white = "#b8c2cc", "#ffffff"
-    parts = ((40, 26, 10, 8), (52, 20, 11, 9), (64, 26, 10, 8), (52, 29, 18, 8))
-    o = "".join(f'<ellipse cx="{x}" cy="{y}" rx="{rx + 1.3}" ry="{ry + 1.3}" fill="{grey}"/>' for x, y, rx, ry in parts)
-    o += f'<circle cx="46" cy="44" r="4.8" fill="{grey}"/><circle cx="40" cy="53" r="3.5" fill="{grey}"/>'
-    o += "".join(f'<ellipse cx="{x}" cy="{y}" rx="{rx}" ry="{ry}" fill="{white}"/>' for x, y, rx, ry in parts)
-    o += f'<circle cx="46" cy="44" r="3.5" fill="{white}"/><circle cx="40" cy="53" r="2.2" fill="{white}"/>'
-    o += stroke_path("M41 26 q3 -6 6 0 t6 0 t6 0", "#9aa7b5", 1.9)
+    circles = ((38, 52, 3.2), (44, 41, 5.6), (56, 25, 12.5))
+    o = "".join(f'<circle cx="{x}" cy="{y}" r="{r + 1.3}" fill="{grey}"/>' for x, y, r in circles)
+    o += "".join(f'<circle cx="{x}" cy="{y}" r="{r}" fill="{white}"/>' for x, y, r in circles)
+    o += stroke_path("M49 25 q3.5 -6 7 0 t7 0", "#9aa7b5", 1.9)
     return o
 
 
@@ -537,7 +536,7 @@ V1 = [
     # (title vi, title en, title ja), (scene vi, scene en, scene ja), (text en, text ja)
     (("Chào buổi sáng", "Good morning", "おはよう"), ("vươn vai và ngáp", "stretches and yawns", "のびをしてあくびをしている"), ("Good morning!", "おはよう！")),
     (("Sướng quá", "Bliss", "きもちいい"), ("nhắm mắt sung sướng, được gãi đầu", "eyes shut in bliss, being scratched", "うっとり目を閉じて頭をなでられている"), ("So good~", "きもちいい〜")),
-    (("Cuộc sống mà", "That's life", "そういうもの"), ("nằm ngửa vắt chân, vẻ thản nhiên, bong bóng suy nghĩ mông lung", "lies back with crossed legs, deadpan, a hazy thought bubble above", "足を組んで寝転び、すました顔で、ぼんやりした考えの吹き出しが浮かんでいる"), ("That's life.", "そういうもの。")),
+    (("Cuộc sống mà", "Life, you know", "人生ってさ"), ("nằm ngửa vắt chân, vẻ thản nhiên, bong bóng suy nghĩ mông lung", "lies back with crossed legs, deadpan, a hazy thought bubble above", "足を組んで寝転び、すました顔で、ぼんやりした考えの吹き出しが浮かんでいる"), ("Life, you know.", "人生ってさ。")),
     (("Buồn ngủ", "Sleepy", "ねむい"), ("gật gù buồn ngủ, có chữ z bay lên", "nods off with a floating z", "うとうとして「z」が浮かんでいる"), ("Sleepy…", "ねむい…")),
     (("Hừm", "Hmph", "むっ"), ("ngồi lườm hờn, thở ra mấy làn khói nhỏ", "sulks with a half-lidded glare and little puffs", "半目でむっとして、小さく息をはいている"), ("Hmph.", "むっ。")),
     (("Quá sức mèo rồi", "Too much for a cat", "ねこには無理"), ("mắt buồn, tai cụp, quá sức", "looks overwhelmed, ears down", "耳をたたんで、手に負えない様子"), ("Too much for a cat.", "ねこには無理！")),

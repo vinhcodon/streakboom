@@ -31,6 +31,8 @@ All 15 stickers, the icon, the preview and the 9 banners exist as PNG in [`asset
 
 **Third pass (2026-11-11):** the six stickers that looked alike at 120 px now differ by silhouette or gesture: 05 sits and puffs, 08 beckons with a raised paw, 14 rests a paw on the chin under a thought bubble, 15 giggles behind a paw, 16 claps slowly, 17 turns side-on (see [`six_distinct.png`](assets/stickers/direction-v1/six_distinct.png)); 03 lost its thought dots. The paws and arcs are sticker art, not rig poses.
 
+**Sticker 03, again (2026-11-11, the author):** the bubble is three round bubbles that grow as they rise, with a wavy line in the biggest (not a cloud), and the English and Japanese texts are "Life, you know." and "人生ってさ。".
+
 **Sticker 03 (2026-11-11, the author):** the Vietnamese text is now "Cuộc sống mà." and the cat has a hazy thought bubble (a cloud with a wavy line inside); `set-v1` was rebuilt.
 
 **Per-language set (2026-11-11, asked by the website session after the author's decision, ADR-0053):** `set-v1` in `assets/stickers/set-v1/` has the same 20 stickers with the text in Vietnamese, English and Japanese (folders `vi`, `en`, `ja`) and a `manifest.json` (text, title, alt, reviewed, font credits). Japanese is set in M PLUS Rounded 1c (SIL OFL). English and Japanese are AI-written and unreviewed (V-99). `build_stickers.py` writes `set-v1` next to `set-v0`. `set-v0` stays until the website has moved over.
