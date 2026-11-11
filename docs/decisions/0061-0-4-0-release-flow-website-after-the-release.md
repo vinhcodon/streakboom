@@ -1,4 +1,4 @@
-# ADR-0060: How 0.4.0 reaches `main` and the world: the old flow, the website after the release
+# ADR-0061: How 0.4.0 reaches `main` and the world: the old flow, the website after the release
 
 - **Status:** accepted (answered by the author on 2026-11-12); not yet carried out
 - **Date:** 2026-11-12

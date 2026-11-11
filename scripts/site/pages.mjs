@@ -413,6 +413,10 @@ export function stickersPage(lang, ctx) {
       <p class="lead">${s("st_lead")}</p>
       <p id="sticker-hint" class="hint" hidden>${s("st_hint")}</p>
       <noscript><p class="note">${s("st_nojs")}</p></noscript>
+      <div id="sticker-recent" class="sticker-recent" hidden>
+        <h2>${s("st_recent")} <button id="sticker-recent-clear" class="linklike" type="button">${s("st_recent_clear")}</button></h2>
+        <ul id="sticker-recent-list" class="sticker-grid recent-grid"></ul>
+      </div>
       <ul class="sticker-grid">
 ${items}
       </ul>
