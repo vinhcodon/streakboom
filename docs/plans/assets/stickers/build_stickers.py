@@ -128,6 +128,8 @@ LOOK = {
 def eye_svg(e, look):
     if e["rx"] < 0.3 or e["a"] ** 3 < 0.02:
         return ""
+    if look.get("wink") and e["x"] > 60:
+        look = dict(look, happy=1, lid=1)
     x, y, rx, ry = e["x"] + look["gx"] * 0.75, e["y"] + look["gy"] * 0.75, e["rx"], e["ry"]
     s = rx / 7.5
     hp = max(0, min(1, 1.6 * look["happy"] - 0.6))
@@ -305,6 +307,47 @@ def thumbs_up(x, y):
     return o
 
 
+def sweat():
+    return '<path d="M99 30 Q104 37 99 41 Q94 37 99 30" fill="#8ecae6"/>'
+
+
+def tears():
+    t = "".join(stroke_path(d, "#8ecae6", 4.2) for d in ("M43 77 Q40 88 42 98", "M77 77 Q80 88 78 98"))
+    return t + '<path d="M52 87 Q60 79 68 87" fill="none" stroke="#7a4b3a" stroke-width="2.2" stroke-linecap="round"/>'
+
+
+def joy_tears():
+    o = ""
+    for x, y, r in ((22, 62, -30), (98, 62, 30), (14, 74, -20), (106, 74, 20)):
+        o += f'<path transform="translate({x},{y}) rotate({r})" d="M0 -5 Q4 1 0 4 Q-4 1 0 -5" fill="#8ecae6"/>'
+    return o
+
+
+def arm(d, w=10):
+    """A fur arm with a thin darker edge, so it shows against the cream belly or the fur of the body."""
+    return stroke_path(d, DARK, w + 2.4) + stroke_path(d, FUR, w)
+
+
+def arms_up():
+    return arm("M40 96 L10 58") + arm("M80 96 L110 58")
+
+
+def ok_sign(x, y):
+    """A paw making the 'ok' ring, three fingers up (sticker art)."""
+    o = f'<g transform="translate({f(x)},{f(y)}) scale(1.35) translate({f(-x)},{f(-y)})">' + arm(f"M76 98 L{f(x - 3)} {f(y + 6)}", 9)
+    o += f'<ellipse cx="{f(x)}" cy="{f(y)}" rx="9" ry="8" fill="{FUR}" stroke="{DARK}" stroke-width="1.1"/>'
+    for dx, dy, r in ((6, -9, 12), (11, -5, 40), (12, 1, 65)):
+        o += f'<ellipse cx="{f(x + dx)}" cy="{f(y + dy)}" rx="3.3" ry="6" fill="{FUR}" stroke="{DARK}" stroke-width="1.1" transform="rotate({r} {f(x + dx)} {f(y + dy)})"/>'
+    o += f'<circle cx="{f(x - 5)}" cy="{f(y - 5)}" r="4.6" fill="{BELLY}" stroke="{DARK}" stroke-width="1.6"/>' + "</g>"
+    return o
+
+
+def crossed_arms():
+    o = arm("M34 90 L82 110") + arm("M86 90 L38 110")
+    o += paw(84, 111, 7, 6.5, 70) + paw(36, 111, 7, 6.5, -70)
+    return o
+
+
 def arcs(*specs):
     return "".join(stroke_path(d, "#b9a98f", 1.8, 0.9) for d in specs)
 
@@ -384,14 +427,18 @@ STICKERS = [
     ("06", "Quá sức mèo rồi.", lambda: cat(STAND_F, LOOK["sad"])),
     ("08", "Làm chung nhé?", lambda: cat(STAND_F, dict(LOOK["curious"], roll=12, wide=0.6, cheek=0.7)) + stroke_path("M38 98 L22 74", FUR, 10) + paw(20, 66, 8, 10, -12, True) + arcs("M8 60 q-5 6 -1 13", "M4 52 q-7 8 -2 18")),
     ("09", "Ngủ ngon.", curled_up, dict(scale=2.7, dy=-14)),
-    ("10", "Trời mưa rồi.", lambda: cat(SIT_F, dict(LOOK["curious"], roll=-4, gx=0, gy=2, wide=0.2)) + wrap(cloud_and_rain(), 18, -16, 0.8), dict(scale=1.9, dy=40)),
-    ("11", "Xin lỗi nhé.", lambda: cat(STAND_F, dict(LOOK["sad"], roll=-8, dy=6, lid=0.08))),
-    ("12", "Cảm ơn nha!", lambda: hearts() + cat(STAND_F, dict(LOOK["purr"], roll=-3, dy=0))),
+    ("18", "Haha!", lambda: joy_tears() + cat(STAND_F, dict(LOOK["happy"], mouth="yawn", roll=8, dy=-2, cheek=0.95)) + paw(58, 104, 7, 6.5, 40)),
+    ("11", "Xin lỗi nhé.", lambda: cat(STAND_F, dict(LOOK["sad"], roll=-6, dy=5, lid=1, wide=0.9, cheek=0.3, droop=1)) + sweat()),
+    ("12", "Cảm ơn nha!", lambda: hearts() + cat(STAND_F, dict(LOOK["purr"], roll=-4, dy=6)) + paw(54, 94, 6.5, 9, 14, True) + paw(66, 94, 6.5, 9, -14, True)),
     ("13", "Ơ!", lambda: cat(STAND_F, LOOK["gasp"])),
     ("14", "Để mình nghĩ…", lambda: cat(STAND_F, dict(LOOK["think"], roll=6, dots=0)) + paw(70, 90, 7, 8.5, 22) + ell(88, 32, 2.8, 2.8, "#8a8a8a") + ell(97, 25, 3.8, 3.8, "#8a8a8a") + ell(108, 16, 5, 5, "#8a8a8a", 0, 0.9)),
     ("15", "Hì hì.", lambda: cat(STAND_F, dict(LOOK["purr"], roll=8, dy=0, mouth="smile", cheek=1.0)) + paw(66, 86, 7.5, 9.5, 28) + arcs("M96 52 q6 -3 7 -10", "M102 62 q7 -2 9 -9")),
     ("16", "Giỏi quá.", lambda: cat(STAND_F, dict(LOOK["smirk"], lid=0.5, gx=-4, roll=3, mouth="flat", cheek=0.4)) + thumbs_up(96, 86)),
     ("17", "Ai đợi đâu.", lambda: cat(STAND_S, dict(LOOK["rest"], lid=0.7, roll=-6, mouth="smile", cheek=1.0, gx=-3))),
+    ("19", "Huhu…", lambda: cat(STAND_F, dict(LOOK["sad"], roll=0, dy=0, lid=1, wide=1, cheek=0.5, droop=1, mouth="none")) + tears()),
+    ("20", "Hoan hô!", lambda: confetti() + arms_up() + cat(STAND_F, dict(LOOK["happy"], dy=0)) + paw(9, 52, 8, 10, -20, True) + paw(111, 52, 8, 10, 20, True)),
+    ("21", "Ok nè!", lambda: cat(STAND_F, dict(LOOK["rest"], wink=1, mouth="smile", cheek=0.8, roll=4)) + ok_sign(98, 80)),
+    ("22", "Không nha.", lambda: cat(STAND_F, dict(LOOK["rest"], lid=0.8, mouth="flat", cheek=0.3, roll=0)) + crossed_arms() + arcs("M8 62 q-5 6 -1 13", "M112 62 q5 6 1 13")),
 ]
 
 S = 2.45
