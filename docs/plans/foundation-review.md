@@ -151,3 +151,7 @@ The author approved this review and the eight recommendations of section 7 (Q1 t
 6. A search for the banned words of ADR-0057 is added to `scripts/audit-docs.mjs` (README and the app's strings; the site is the website session's), so rule 10 stays true without a reviewer.
 
 **Not verified:** the link counts are from a search, not from a trial move; whether the sticker and website sessions are working in the tree right now.
+
+## 12. Gate 2 (2026-11-11)
+
+The author chose option A: nothing is moved; `plans/README.md` is grouped into sections. The six side proposals of section 11 were not answered and are not done.
