@@ -2,26 +2,30 @@
 // llms.txt files are plain Markdown summaries of the same facts as the pages, never a different story.
 import { STRINGS } from "../../site/strings.mjs";
 import { AUTHOR, ORIGIN, RELEASES_URL, REPO_URL, fmtDate } from "./facts.mjs";
-import { PATHS, alternatesFor, esc, faqPairs, fill } from "./pages.mjs";
+import { FEATURE_IDS } from "../../site/strings.mjs";
+import { PATHS, PROMISES, alternatesFor, esc, faqPairs, fill } from "./pages.mjs";
+import { stickerUrl } from "./stickers.mjs";
 import { LANGS } from "../../site/strings.mjs";
 
 /** Every indexable page: path, and the languages it exists in (for hreflang). */
-export function pageList() {
+export function pageList(ctx = null) {
   return [
     ...LANGS.map((l) => ({ path: PATHS[l].home, alternates: alternatesFor("home") })),
     ...LANGS.map((l) => ({ path: PATHS[l].how, alternates: alternatesFor("how") })),
-    ...LANGS.map((l) => ({ path: PATHS[l].stickers, alternates: alternatesFor("stickers") })),
+    // the sticker pages list their pictures in the sitemap (only the location: search engines ignore the rest)
+    ...LANGS.map((l) => ({ path: PATHS[l].stickers, alternates: alternatesFor("stickers"), images: ctx && ctx.stickers ? ctx.stickers.stickers.map((st) => ORIGIN + stickerUrl(l, st.id)) : [] })),
     ...LANGS.map((l) => ({ path: PATHS[l].privacy, alternates: alternatesFor("privacy") })),
     { path: PATHS.changelog, alternates: [] },
   ];
 }
 
 export function sitemap(ctx) {
-  const urls = pageList().map((p) => {
+  const urls = pageList(ctx).map((p) => {
     const alts = p.alternates.map((a) => `    <xhtml:link rel="alternate" hreflang="${a.hreflang}" href="${ORIGIN}${a.path}"/>`).join("\n");
-    return `  <url>\n    <loc>${ORIGIN}${p.path}</loc>\n    <lastmod>${ctx.date}</lastmod>\n${alts ? alts + "\n" : ""}  </url>`;
+    const imgs = (p.images || []).map((u) => `    <image:image><image:loc>${u}</image:loc></image:image>`).join("\n");
+    return `  <url>\n    <loc>${ORIGIN}${p.path}</loc>\n    <lastmod>${ctx.date}</lastmod>\n${alts ? alts + "\n" : ""}${imgs ? imgs + "\n" : ""}  </url>`;
   }).join("\n");
-  return `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:xhtml="http://www.w3.org/1999/xhtml">\n${urls}\n</urlset>\n`;
+  return `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:xhtml="http://www.w3.org/1999/xhtml" xmlns:image="http://www.google.com/schemas/sitemap-image/1.1">\n${urls}\n</urlset>\n`;
 }
 
 /** The changelog as an Atom feed, generated from CHANGELOG.md like the changelog page (an entry without a date takes the feed's date). */
@@ -108,6 +112,12 @@ Source of truth: ${ORIGIN}/ (English) and ${ORIGIN}/vi/ (Vietnamese); the code a
 
 ${bullets(STRINGS.en.glance, ctx)}
 
+## What Peak promises
+
+${PROMISES.map((k) => `- ${en(k, ctx)}`).join("\n")}
+
+The charter behind them: ${REPO_URL}/blob/main/docs/charter.md
+
 ## What Streakboom is not
 
 ${bullets(STRINGS.en.not_items, ctx)}
@@ -116,7 +126,7 @@ ${FACTS}
 
 ## Features
 
-${[1, 2, 3, 4, 5, 6, 7, 8, 9].map((i) => `- **${en("f" + i + "_h", ctx)}**: ${en("f" + i + "_p", ctx)}`).join("\n")}
+${FEATURE_IDS.map((i) => `- **${en("f" + i + "_h", ctx)}**: ${en("f" + i + "_p", ctx)}`).join("\n")}
 
 ## Stickers
 

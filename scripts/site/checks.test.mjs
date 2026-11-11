@@ -3,8 +3,11 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { build } from "../build-site.mjs";
 import { check } from "./checks.mjs";
-import { parseChangelog } from "./facts.mjs";
-import { STRINGS } from "../../site/strings.mjs";
+import { ROOT, parseChangelog } from "./facts.mjs";
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
+import { FEATURE_IDS, STRINGS } from "../../site/strings.mjs";
+import { HOW_FAQ } from "./pages.mjs";
 
 const PATHS_HOME = { en: "/", vi: "/vi/", ja: "/ja/" };
 const r = build();
@@ -234,11 +237,11 @@ test("the home page is short: four feature lines, five questions, one update, no
     assert.ok(main.split(/\s+/).filter(Boolean).length < words, `${path}: under ${words} words`);
   }
 });
-test("the How it works page carries all nine features, the gestures and the other four questions", () => {
+test("the How it works page carries every feature, the gestures and its questions", () => {
   const c = clone();
   for (const path of ["/how-it-works/", "/vi/how-it-works/", "/ja/how-it-works/"]) {
     const h = page(c, path).html;
-    assert.equal((h.match(/<h3>/g) || []).length, 9 + 4, `${path}: nine features and four questions`);
+    assert.equal((h.match(/<h3>/g) || []).length, FEATURE_IDS.length + HOW_FAQ.length, `${path}: every feature and its questions`);
     assert.ok(h.includes('<table class="gestures">'), `${path}: the gestures`);
     assert.ok(h.includes('"@type":"FAQPage"'), `${path}: its own FAQPage`);
   }
@@ -262,3 +265,56 @@ test("a FAQ answer that is not short", () => fails((c) => {
   p.html = html;
   // the JSON-LD must still say the same, so it fails on length first and on the mismatch too
 }, /keep FAQ answers short/));
+
+// ADR-0054: the site follows 0.3.2
+test("the fifth promise is on the home page, the top of the privacy page and in llms-full.txt, in every language", () => {
+  const c = clone();
+  for (const [path, word] of [["/", "keeps still and quiet"], ["/privacy/", "keeps still and quiet"], ["/vi/", "đứng yên và im lặng"], ["/vi/privacy/", "đứng yên và im lặng"], ["/ja/", "じっとして静かにしています。自分から"], ["/ja/privacy/", "じっとして静かにしています。自分から"]]) {
+    assert.ok(page(c, path).html.includes(word), `${path} has the promise`);
+  }
+  assert.match(page(c, "/").html, /Five things you can count on/);
+  assert.match(c.files["llms-full.txt"], /## What Peak promises[\s\S]*keeps still and quiet[\s\S]*## What Streakboom is not/);
+  // the promise is second, in the order of the charter
+  const items = [...page(c, "/").html.matchAll(/<section id="promises"[\s\S]*?<ul class="checks">([\s\S]*?)<\/ul>/g)][0][1].match(/<li>/g);
+  assert.equal(items.length, 5);
+});
+test("climbing is a feature card, and the structured data lists every card", () => {
+  const c = clone();
+  const how = page(c, "/how-it-works/").html;
+  assert.match(how, /<h3>🧗 Climbs on your windows<\/h3>/);
+  const ld = JSON.parse(page(c, "/").html.match(/<script type="application\/ld\+json">(.*?)<\/script>/s)[1].replace(/\u003c/g, "<"));
+  const app = ld["@graph"].find((n) => n["@type"] === "SoftwareApplication");
+  assert.equal(app.featureList.length, FEATURE_IDS.length);
+  assert.ok(app.featureList.includes("Climbs on your windows"));
+});
+test("the question about getting in the way is on the How it works page and in the structured data", () => {
+  const c = clone();
+  assert.match(page(c, "/how-it-works/").html, /Does Peak get in the way when I work\?/);
+  assert.match(page(c, "/vi/how-it-works/").html, /Peak có làm phiền khi tôi làm việc không\?/);
+  assert.match(page(c, "/ja/how-it-works/").html, /作業のじゃまになりませんか？/);
+  assert.match(c.files["llms-full.txt"], /Does Peak get in the way when I work\?/);
+});
+test("the settings 0.3.2 retired cannot come back", () => {
+  fails((c) => { const p = page(c, "/"); p.html = p.html.replace("</main>", "<p>Peak is quiet during quiet hours.</p></main>"); }, /quiet hours/);
+  fails((c) => { const p = page(c, "/vi/how-it-works/"); p.html = p.html.replace("</main>", "<p>Trong giờ yên tĩnh Peak im lặng.</p></main>"); }, /quiet hours/);
+  fails((c) => { const p = page(c, "/ja/"); p.html = p.html.replace("</main>", "<p>静かな時間帯は静かです。</p></main>"); }, /quiet hours/);
+  fails((c) => { c.files["llms-full.txt"] = c.files["llms-full.txt"].replace("## Install", "Set the chattiness in Settings.\n\n## Install"); }, /chattiness/);
+  // the night rule is on the site
+  assert.match(page(clone(), "/how-it-works/").html, /at night \(23:00 to 07:00 by the clock\)/);
+});
+test("the privacy text says the window picture, the covered check and the short remark, and never that Peak sees the screen", () => {
+  const c = clone();
+  for (const [path, words] of [["/privacy/", ["coarse picture of where windows are", "on by default", "covered or not", "five numbers"]], ["/vi/privacy/", ["bức tranh thô về vị trí các cửa sổ", "bật sẵn", "bị che hay không", "năm con số"]], ["/ja/privacy/", ["ウィンドウがどこにあるかの大まかな図", "初期設定でオン", "覆われているかどうか", "5つの数値"]], ["/how-it-works/", ["coarse picture of where windows are", "under its feet"]]]) {
+    for (const w of words) assert.ok(page(c, path).html.includes(w), `${path}: ${w}`);
+  }
+  assert.doesNotMatch(page(c, "/privacy/").html, /Peak sees/i);
+});
+test("a string that nothing uses stops the build", () => {
+  for (const l of ["en", "vi", "ja"]) STRINGS[l].orphan_probe = "x";
+  try {
+    assert.throws(() => check(clone()), /"orphan_probe" is not used by any page or script/);
+  } finally {
+    for (const l of ["en", "vi", "ja"]) delete STRINGS[l].orphan_probe;
+  }
+  assert.doesNotThrow(() => check(clone()));
+});

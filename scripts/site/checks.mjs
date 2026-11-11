@@ -8,7 +8,7 @@ import { formatCount } from "./downloads.mjs";
 import { CC_URL, fontNames, needsReviewNote, stickerUrl } from "./stickers.mjs";
 import { pageList } from "./files.mjs";
 import { CHARTER_URL, HOME_FAQ, HOW_FAQ, PROMISES, PATHS, esc } from "./pages.mjs";
-import { STRINGS, EN_ONLY, HTML_KEYS, LANGS, UI_KEYS } from "../../site/strings.mjs";
+import { STRINGS, EN_ONLY, FEATURE_IDS, HTML_KEYS, LANGS, UI_KEYS } from "../../site/strings.mjs";
 import { SCENES } from "../../site/scenes.js";
 
 /** The size budget (ADR-0040 N5): what the browser must download to show a page stays small. Limits are in bytes. */
@@ -57,6 +57,7 @@ const BANNED = [
 const OUTDATED = [
   [/the left mouse button|nút trái chuột|マウスの左ボタン/, "'the left mouse button' (since 0.3.0 the app reads the primary button, the one you click with)"],
   [/(are|is) in English and Vietnamese(?! and)|are in English and Vietnamese only|bằng tiếng Anh và tiếng Việt\.|英語とベトナム語です/, "'English and Vietnamese only' (the app has spoken Japanese since 0.3.0)"],
+  [/quiet hours|chattiness|giờ yên tĩnh|mức nói nhiều|静かな時間帯|おしゃべり度/i, "'quiet hours' or 'chattiness' (0.3.2 removed both settings: Peak decides, and it is quiet at night)"],
   [/(Gemini, Claude (or|and) OpenAI)|(Gemini、Claude、OpenAI)|(Gemini, Claude hoặc OpenAI)|(three (AI )?brains)/i, "three brains (Groq is the fourth since 0.3.0)"],
   [/first official release|bản phát hành chính thức đầu tiên|正式リリース第1弾/i, "'first official release (0.2)' (the app is at a later version; the notice states the current one)"],
 ];
@@ -114,7 +115,7 @@ export function check({ ctx, pages, files, out }) {
     const app = ld.flatMap((d) => d["@graph"] || []).find((n) => n["@type"] === "SoftwareApplication");
     if (!app) continue;
     const visibleText = unesc(p.html.replace(/<script[\s\S]*?<\/script>/g, "") + byPath.get(PATHS[lang].how).html.replace(/<script[\s\S]*?<\/script>/g, ""));
-    if (!Array.isArray(app.featureList) || app.featureList.length !== 9) bad(`${p.path}: featureList does not have the nine feature titles`);
+    if (!Array.isArray(app.featureList) || app.featureList.length !== FEATURE_IDS.length) bad(`${p.path}: featureList does not have the ${FEATURE_IDS.length} feature titles`);
     else for (const f of app.featureList) if (!visibleText.includes(f)) bad(`${p.path}: featureList entry "${f}" is not on the page`);
     if (!app.softwareRequirements || !/WebView2/.test(app.softwareRequirements) || !/WebView2/.test(unesc(p.html)) || !/64/.test(unesc(p.html))) bad(`${p.path}: softwareRequirements is missing or not backed by the visible text`);
     if (app.releaseNotes !== ORIGIN + "/changelog/" || !p.html.includes('href="/changelog/"')) bad(`${p.path}: releaseNotes does not point at the linked changelog`);
@@ -160,6 +161,7 @@ export function check({ ctx, pages, files, out }) {
     pr2: [/never dies or starves/i, "README.md: 'never dies or starves'"],
     pr3: [/alive without any AI/i, "README.md: 'alive without any AI'"],
     pr4: [/companion, not an assistant/i, "README.md: 'a companion, not an assistant'"],
+    pr5: [/stays still and quiet/i, "README.md: 'stays still and quiet'"],
   };
   for (const k of PROMISES) {
     const [re, what] = BACKING[k] || [];
@@ -253,6 +255,16 @@ export function check({ ctx, pages, files, out }) {
     const css = readFileSync(join(out, "style.css"), "utf8");
     for (const m of css.matchAll(/([^{}]*\.sticker[^{}]*)\{([^}]*)\}/g)) {
       if (/touch-callout:\s*none|user-select:\s*none|pointer-events:\s*none/.test(m[2]) && !/\.paw/.test(m[1]) && !/\.sticker-status/.test(m[1])) bad(`style.css: the rule "${m[1].trim()}" blocks the system menu on a sticker (touch-callout, user-select or pointer-events none)`);
+    }
+    // the sitemap lists every picture of each sticker page, and the pages share their own preview picture
+    for (const lang of LANGS) {
+      const block = (files["sitemap.xml"].split("<url>").find((u) => u.includes(`<loc>${ORIGIN}${PATHS[lang].stickers}</loc>`)) || "");
+      const listed = [...block.matchAll(/<image:loc>([^<]*)<\/image:loc>/g)].map((m) => m[1]);
+      const want = set.stickers.map((st) => ORIGIN + stickerUrl(lang, st.id));
+      if (JSON.stringify(listed) !== JSON.stringify(want)) bad(`sitemap.xml: the pictures of ${PATHS[lang].stickers} are ${listed.length}, the manifest has ${want.length} (or they differ)`);
+      const html = byPath.get(PATHS[lang].stickers).html;
+      if (!html.includes(`<meta property="og:image" content="${ORIGIN}/assets/sticker-preview.png">`)) bad(`${PATHS[lang].stickers}: the share picture is not the sticker preview`);
+      if (!existsSync(join(out, "assets", "sticker-preview.png"))) bad("the sticker preview picture was not built");
     }
     // the crawler files know about the set
     if (!files["llms.txt"].includes("/stickers/")) bad("llms.txt does not mention the sticker page");
@@ -356,6 +368,18 @@ export function check({ ctx, pages, files, out }) {
       // placeholders must survive translation
       const ph = (x) => (JSON.stringify(x).match(/\{(version|date|exe|n)\}/g) || []).sort().join();
       if (ph(a) !== ph(b)) bad(`strings: ${k} has different placeholders in English and ${lang}`);
+    }
+  }
+
+  // 8a. no string without a user: a hidden copy of a text (for example of the privacy text) is how a site drifts from the app
+  {
+    const sources = [...readdirSync(join(ROOT, "scripts", "site")).filter((f) => f.endsWith(".mjs") && f !== "checks.mjs" && !f.endsWith(".test.mjs")).map((f) => join(ROOT, "scripts", "site", f)),
+      join(ROOT, "scripts", "build-site.mjs"), ...readdirSync(join(ROOT, "site")).filter((f) => f.endsWith(".js")).map((f) => join(ROOT, "site", f))];
+    const code = sources.map((f) => readFileSync(f, "utf8")).join("\n");
+    const DYNAMIC = [/^f\d+_[hp]$/, /^fl\d+$/, /^g\d+_[ab]$/, /^[qa]\d+$/, /^pose_/, /^cap_/, /^hw_/, /^pv_/, /^cl_/, /^nf_/];
+    for (const k of Object.keys(STRINGS.en)) {
+      if (DYNAMIC.some((re) => re.test(k))) continue;
+      if (!code.includes(`"${k}"`) && !code.includes(`.${k}`) && !code.includes(`\`${k}\``) && !code.includes(`'${k}'`) && !UI_KEYS.includes(k)) bad(`strings: "${k}" is not used by any page or script (delete it, or it will go stale)`);
     }
   }
 

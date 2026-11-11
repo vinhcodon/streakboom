@@ -1,6 +1,6 @@
 // The pages of the website as functions of (language, release facts). Output is plain static HTML that GitHub Pages
 // serves as it is; nothing here runs in the visitor's browser. Text comes from site/strings.mjs, facts from facts.mjs.
-import { STRINGS, HTML_KEYS, STICKER_UI_KEYS, UI_KEYS, LANGS } from "../../site/strings.mjs";
+import { STRINGS, FEATURE_IDS, HTML_KEYS, STICKER_UI_KEYS, UI_KEYS, LANGS } from "../../site/strings.mjs";
 import { SCENES } from "../../site/scenes.js";
 import { AUTHOR, ORIGIN, RELEASES_URL, REPO_URL, fmtDate } from "./facts.mjs";
 import { formatCount } from "./downloads.mjs";
@@ -40,7 +40,10 @@ export const tx = (lang, key, ctx) => (HTML_KEYS.has(key) ? raw(lang, key, ctx) 
 
 const json = (o) => JSON.stringify(o).replace(/</g, "\\u003c");
 
-function head({ lang, ctx, path, title, description, alternates, jsonld = [], noindex = false, feed = false, uiExtra = [] }) {
+/** The picture that chat apps and social sites show for a link: the site's own, unless a page brings another (the sticker pages do). */
+const SHARE_IMAGE = { url: `${ORIGIN}/assets/og-image.jpg`, width: 1200, height: 630, alt: "Peak, a golden chibi cat, next to the text Streakboom", card: "summary_large_image" };
+
+function head({ lang, ctx, path, title, description, alternates, jsonld = [], noindex = false, feed = false, uiExtra = [], image = SHARE_IMAGE }) {
   const url = ORIGIN + path;
   const locale = LANG_INFO[lang].locale;
   const alt = (alternates || []).map((a) => `  <link rel="alternate" hreflang="${a.hreflang}" href="${ORIGIN}${a.path}">`).join("\n");
@@ -63,14 +66,14 @@ ${feed ? `  <link rel="alternate" type="application/atom+xml" title="Streakboom 
   <meta property="og:description" content="${esc(description)}">
   <meta property="og:url" content="${url}">
   <meta property="og:locale" content="${locale}">
-${ogAlt ? ogAlt + "\n" : ""}  <meta property="og:image" content="${ORIGIN}/assets/og-image.jpg">
-  <meta property="og:image:width" content="1200">
-  <meta property="og:image:height" content="630">
-  <meta property="og:image:alt" content="Peak, a golden chibi cat, next to the text Streakboom">
-  <meta name="twitter:card" content="summary_large_image">
+${ogAlt ? ogAlt + "\n" : ""}  <meta property="og:image" content="${image.url}">
+  <meta property="og:image:width" content="${image.width}">
+  <meta property="og:image:height" content="${image.height}">
+  <meta property="og:image:alt" content="${esc(image.alt)}">
+  <meta name="twitter:card" content="${image.card}">
   <meta name="twitter:title" content="${esc(title)}">
   <meta name="twitter:description" content="${esc(description)}">
-  <meta name="twitter:image" content="${ORIGIN}/assets/og-image.jpg">
+  <meta name="twitter:image" content="${image.url}">
   <link rel="stylesheet" href="/style.css">
   <script>document.documentElement.classList.toggle("not-windows", !(/windows/i.test((navigator.userAgentData && navigator.userAgentData.platform) || navigator.userAgent) && !/phone|mobile/i.test(navigator.userAgent)));</script>
 ${jsonld.map((o) => `  <script type="application/ld+json">${json(o)}</script>`).join("\n")}
@@ -125,15 +128,18 @@ ${script ? `\n  <script type="module" src="${script === true ? "/app.js" : scrip
 }
 
 /** One release as a card; `level` is the heading level (3 on the home page, 2 on the changelog page). */
-export function entryHtml(e, lang, level, maxItems = Infinity) {
+/** The first sentence of a line (a short form for the home page; the changelog page has the whole line). */
+const firstSentence = (text) => (text.match(/^.*?[.!?。](?=\s|$)/s) || [text])[0];
+
+export function entryHtml(e, lang, level, maxItems = Infinity, short = false) {
   const when = e.date ? `<time datetime="${esc(e.date)}">${esc(fmtDate(e.date, lang))}</time>` : "";
   const sub = [when, e.title ? esc(e.title) : ""].filter(Boolean).join(" · ");
-  return `<li${level === 2 ? ` id="v${esc(e.version)}"` : ""}><h${level}>Streakboom ${esc(e.version)}</h${level}><div class="meta">${sub}</div><ul>${e.items.slice(0, maxItems).map((i) => `<li>${esc(i)}</li>`).join("")}</ul></li>`;
+  return `<li${level === 2 ? ` id="v${esc(e.version)}"` : ""}><h${level}>Streakboom ${esc(e.version)}</h${level}><div class="meta">${sub}</div><ul>${e.items.slice(0, maxItems).map((i) => `<li>${esc(short ? firstSentence(i) : i)}</li>`).join("")}</ul></li>`;
 }
 
 /** The questions of the home page and of the How it works page (numbers of the q/a keys); together they are all of them. */
 export const HOME_FAQ = [1, 10, 2, 8, 4];
-export const HOW_FAQ = [5, 6, 7, 9];
+export const HOW_FAQ = [5, 6, 7, 9, 11];
 
 /** Question and answer pairs: those with the given numbers, or all of them in order. */
 export function faqPairs(lang, ctx, ids = null) {
@@ -153,11 +159,11 @@ const faqNode = (lang, ctx, path, ids) => ({
 /** The charter of Peak on GitHub: the proof behind the promises (docs/charter.md; the build checks that the file exists). */
 export const CHARTER_URL = `${REPO_URL}/blob/main/docs/charter.md`;
 /** The four promises of the home page and the privacy page (keys pr1 to pr4); the build checks each against the README. */
-export const PROMISES = ["pr1", "pr2", "pr3", "pr4"];
+export const PROMISES = ["pr1", "pr5", "pr2", "pr3", "pr4"]; // the order of the charter and the README; pr5 was added in 0.3.2
 
-/** The titles of the nine feature cards without their leading emoji: the `featureList` of the structured data. */
+/** The titles of the feature cards without their leading emoji: the `featureList` of the structured data. */
 export function featureTitles(lang, ctx) {
-  return [1, 2, 3, 4, 5, 6, 7, 8, 9].map((i) => raw(lang, `f${i}_h`, ctx).replace(/^[^\p{L}\p{N}]+/u, "").trim());
+  return FEATURE_IDS.map((i) => raw(lang, `f${i}_h`, ctx).replace(/^[^\p{L}\p{N}]+/u, "").trim());
 }
 
 export function homeJsonLd(lang, ctx) {
@@ -212,7 +218,7 @@ export function homePage(lang, ctx) {
   const faq = faqHtml(faqPairs(lang, ctx, HOME_FAQ));
   // the scene chips are in the HTML (the script only binds them): no shift when it starts, labels readable without it
   const chips = SCENES.map((sc, i) => `          <button class="chip" type="button" data-scene="${i}" aria-pressed="${i === 0}">${s("pose_" + sc.id)}</button>`).join("\n");
-  const recent = ctx.entries.slice(0, 1).map((e) => "        " + entryHtml(e, lang, 3, 1)).join("\n");
+  const recent = ctx.entries.slice(0, 1).map((e) => "        " + entryHtml(e, lang, 3, 1, true)).join("\n");
 
   const main = `
     <!-- HERO -->
@@ -313,7 +319,7 @@ ${recent}
 export function howPage(lang, ctx) {
   const s = (k) => tx(lang, k, ctx);
   const path = PATHS[lang].how;
-  const features = [1, 2, 3, 4, 5, 6, 7, 8, 9]
+  const features = FEATURE_IDS
     .map((i) => `        <h3>${s(`f${i}_h`)}</h3>\n        <p>${s(`f${i}_p`)}</p>`).join("\n");
   const gestures = [1, 2, 3, 4, 5, 7, 6]
     .map((i) => `          <tr><th>${s(`g${i}_a`)}</th><td>${s(`g${i}_b`)}</td></tr>`).join("\n");
@@ -434,6 +440,7 @@ ${items}
     headArgs: {
       path, title: raw(lang, "st_page_title", ctx), description: raw(lang, "st_desc", ctx),
       alternates: alternatesFor("stickers"), jsonld: stickersJsonLd(lang, ctx), uiExtra: STICKER_UI_KEYS,
+      image: { url: `${ORIGIN}/assets/sticker-preview.png`, width: 440, height: 440, alt: raw(lang, "st_preview_alt", ctx), card: "summary" },
     },
     main, script: "/stickers.js",
   });

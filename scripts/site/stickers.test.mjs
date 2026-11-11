@@ -153,3 +153,22 @@ test("the page script records nothing, and no rule blocks the system menu on a p
   }
   assert.doesNotThrow(run);
 });
+
+test("the sitemap lists every picture of each sticker page, and the sticker pages share their own preview picture", () => {
+  const c = clone();
+  for (const lang of ["en", "vi", "ja"]) {
+    const path = { en: "/stickers/", vi: "/vi/stickers/", ja: "/ja/stickers/" }[lang];
+    const block = c.files["sitemap.xml"].split("<url>").find((u) => u.includes(`<loc>https://streakboom.com${path}</loc>`));
+    const listed = [...block.matchAll(/<image:loc>([^<]*)<\/image:loc>/g)].map((m) => m[1]);
+    assert.deepEqual(listed, real.stickers.map((s) => `https://streakboom.com${stickerUrl(lang, s.id)}`));
+    const html = page(c, path).html;
+    assert.match(html, /<meta property="og:image" content="https:\/\/streakboom\.com\/assets\/sticker-preview\.png">/);
+    assert.match(html, /<meta name="twitter:card" content="summary">/);
+  }
+  assert.match(c.files["sitemap.xml"], /xmlns:image=/);
+  assert.match(page(c, "/").html, /og:image" content="https:\/\/streakboom\.com\/assets\/og-image\.jpg"/); // the other pages keep the site's picture
+  assert.match(page(c, "/").html, /twitter:card" content="summary_large_image"/);
+});
+test("a sitemap that forgets a sticker picture", () => fails((c) => {
+  c.files["sitemap.xml"] = c.files["sitemap.xml"].replace(/<image:image><image:loc>[^<]*\/assets\/stickers\/vi\/[^<]*<\/image:loc><\/image:image>\n/, "");
+}, /the pictures of \/vi\/stickers\//));
