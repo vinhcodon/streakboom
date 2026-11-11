@@ -105,7 +105,7 @@
   import { believe, responseFor, startBelief, type Belief } from "$lib/perception";
   import { choosePerch, PERCH_LIMITS } from "$lib/perch";
   import { bodyPoints, escapePlaces } from "$lib/escape";
-  import { BRUISE_FALL_PX, BRUISE_MS, dropFalls, isBruised, pushDirection, pushesTowardEdge, teeterEnds } from "$lib/push";
+  import { BRUISE_FALL_PX, BRUISE_MS, dropFalls, isBruised, shoveDirection, shoveKind, teeterEnds } from "$lib/push";
   import { initialAttention, mayAct, mayChatter, silentReaction, stepAttention, touched as attnTouched, type Mode } from "$lib/attention";
   import { EVENTS, type EventId } from "$lib/events";
   import { escapeRow, initialLane, stepLane, type LaneOut } from "$lib/lane";
@@ -1020,19 +1020,30 @@
     } else enter("idle");
   }
 
-  /** A poke that is a push toward the end of the seat it sits on; false when it is only a poke. */
-  async function tryPush(): Promise<boolean> {
-    if (quiet || flying || !perchSeat) return false;
-    if (!(pose === "idle" || pose === "look" || pose === "peek" || pose === "ledge")) return false;
-    await probeFocus();
-    const dir = pushDirection(lastPointer ? lastPointer.dx : null);
-    if (dir === null || !pushesTowardEdge(await seatRoom(), EDGE_MARGIN, dir)) return false;
-    data = interact(data, "click", Date.now());
+  /**
+   * The right click is a push (ADR-0055): away from the pointer. Near the end of the seat it sits on, Peak teeters (and may
+   * fall); anywhere else it staggers a little and huffs. A sleeper is only poked. `pointerDx`: the pointer from the cat's
+   * middle, logical px.
+   */
+  let lastShove = 0;
+  async function shove(pointerDx: number) {
+    const now = Date.now();
+    if (quiet || flying || panel !== null || pose === "held" || now - lastShove < 2500) return;
+    if (isDozing(pose)) return pokeNormal();
+    if (!(pose === "idle" || pose === "look" || pose === "peek" || pose === "ledge")) return;
+    lastShove = now;
+    const way = shoveDirection(pointerDx, dir);
+    const kind = shoveKind(perchSeat ? await seatRoom() : null, EDGE_MARGIN, way);
+    data = interact(data, "click", now);
     touch("poke");
     count("poke");
     engage();
-    void doTeeter(dir);
-    return true;
+    if (kind === "teeter") return void doTeeter(way);
+    stopTimers();
+    clearTimeout(oneShotTimer);
+    note(`push ${way > 0 ? "right" : "left"}: stagger`);
+    await wobble(way, 450);
+    enter("huff");
   }
 
   /** Let go of Peak: on a ledge it keeps it as a seat; high above the floor it falls (to the ledge below, if there is one); nearly on the floor it just lands. */
@@ -1614,9 +1625,7 @@
   }
 
   function singleClick() {
-    void (async () => {
-      if (!(await tryPush())) pokeNormal();
-    })();
+    pokeNormal(); // a left click is always a poke; the push is the right click
   }
 
   function pokeNormal() {
@@ -1814,10 +1823,11 @@
     scheduleSave();
   }
 
-  // Right-click: a small native menu (the only menu the pet has besides the tray).
+  // Right-click: no menu (the only menu is the tray's, ADR-0055). It is a push away from the pointer (see `shove`).
   function onPetMenu(e: MouseEvent) {
     e.preventDefault();
-    invoke("show_pet_menu", { labels: [ui.menuSettings, ui.menuQuiet, ui.menuQuit] }).catch(() => {});
+    const r = (e.currentTarget as HTMLElement).getBoundingClientRect();
+    void shove(e.clientX - (r.left + r.width / 2));
   }
 
   // ----------------------------------------------------------------- brain
@@ -2513,7 +2523,7 @@
   });
 </script>
 
-<!-- No browser menu anywhere; the pet has its own small native menu (see onPetMenu). -->
+<!-- No browser menu anywhere; a right click on the pet is a push (see onPetMenu). -->
 <svelte:window oncontextmenu={(e) => e.preventDefault()} />
 
 <main>

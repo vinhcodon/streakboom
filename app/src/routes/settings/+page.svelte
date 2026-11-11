@@ -1,5 +1,5 @@
 <script lang="ts">
-  // The settings window: a normal window opened from the tray or the pet's right-click menu.
+  // The settings window: a normal window opened from the tray menu.
   // It holds no pet state: it shows the snapshot the pet window sends and sends changes back.
   // The API key is typed here, goes straight to Rust (brain_connect) and the OS credential
   // store, and is never sent to the pet window.

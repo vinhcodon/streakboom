@@ -43,3 +43,16 @@ export function dropFalls(downPx: number, onSeat: boolean): boolean {
 
 /** Is it wary now? */
 export const isBruised = (bruisedUntil: number, now: number): boolean => now < bruisedUntil;
+
+/**
+ * A push (the right click, ADR-0055) always has a direction: away from the pointer, or the way the cat faces when the
+ * pointer is over its middle.
+ */
+export function shoveDirection(pointerDx: number | null, facing: 1 | -1): 1 | -1 {
+  return pushDirection(pointerDx) ?? facing;
+}
+
+/** What a push does: near the end of a seat in that direction it teeters (and may fall); anywhere else it only staggers. */
+export function shoveKind(room: { left: number; right: number } | null, margin: number, dir: 1 | -1): "teeter" | "stagger" {
+  return pushesTowardEdge(room, margin, dir) ? "teeter" : "stagger";
+}

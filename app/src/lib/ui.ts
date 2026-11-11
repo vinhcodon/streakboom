@@ -150,9 +150,6 @@ export interface UiStrings {
   updateText: string; // contains {v}
   updateYes: string;
   updateLater: string;
-  menuSettings: string;
-  menuQuiet: string;
-  menuQuit: string;
   slowChat: string;
   sectionGeneral: string;
   sectionBrain: string;
@@ -345,7 +342,7 @@ export const UI: Record<Lang, UiStrings> = {
       "Hi! I'm your desktop pet. Drag me anywhere you like; I'll always stay on your screen.",
       "Click me to poke me. Double-click me to open a chat bubble.",
       "Try stroking my head or my belly with your mouse, back and forth. One of them can be a trap.",
-      "Want me to talk for real? Add your own Gemini key in Settings (tray icon, or right-click me). I work without it too, with fewer words.",
+      "Want me to talk for real? Add your own Gemini key in Settings (from the tray icon). I work without it too, with fewer words.",
     ],
     tourNext: "Next",
     tourDone: "Got it",
@@ -377,9 +374,6 @@ export const UI: Record<Lang, UiStrings> = {
     updateText: "There is a new version of me ({v}). Update now? I will restart.",
     updateYes: "Update",
     updateLater: "Later",
-    menuSettings: "Settings…",
-    menuQuiet: "Quiet mode",
-    menuQuit: "Quit",
     slowChat: "Google is slow right now. Still thinking…",
     sectionGeneral: "General",
     sectionBrain: "Brain (AI)",
@@ -583,7 +577,7 @@ export const UI: Record<Lang, UiStrings> = {
       "Chào bạn! Mình là thú cưng trên màn hình của bạn. Kéo mình đi đâu cũng được, mình luôn ở lại trong màn hình.",
       "Bấm vào mình để chọc mình. Bấm đúp để mở khung trò chuyện.",
       "Thử vuốt đầu hoặc bụng mình bằng chuột, qua lại. Một trong hai chỗ có thể là bẫy.",
-      "Muốn mình nói chuyện thật? Thêm khóa Gemini của bạn trong Cài đặt (biểu tượng khay hoặc bấm chuột phải vào mình). Không có khóa mình vẫn chạy, nhưng ít lời hơn.",
+      "Muốn mình nói chuyện thật? Thêm khóa Gemini của bạn trong Cài đặt (từ biểu tượng khay). Không có khóa mình vẫn chạy, nhưng ít lời hơn.",
     ],
     tourNext: "Tiếp",
     tourDone: "Hiểu rồi",
@@ -615,9 +609,6 @@ export const UI: Record<Lang, UiStrings> = {
     updateText: "Có bản mới của mình ({v}). Cập nhật nhé? Mình sẽ khởi động lại.",
     updateYes: "Cập nhật",
     updateLater: "Để sau",
-    menuSettings: "Cài đặt…",
-    menuQuiet: "Chế độ yên lặng",
-    menuQuit: "Thoát",
     slowChat: "Google đang chậm. Mình vẫn đang nghĩ…",
     sectionGeneral: "Chung",
     sectionBrain: "Bộ não (AI)",
@@ -821,7 +812,7 @@ export const UI: Record<Lang, UiStrings> = {
       "やあ！わたしはデスクトップペットだよ。好きなところにドラッグしてね。ずっと画面の中にいるからね。",
       "クリックするとつつかれるよ。ダブルクリックするとおしゃべりの吹き出しが開くよ。",
       "マウスでわたしの頭やおなかを左右になでてみて。どちらか片方はわなかもしれないよ。",
-      "ちゃんと話してほしい？設定（トレイのアイコン、または右クリック）で、自分のGeminiキーを入れてね。なくても動くよ、言葉は少ないけど。",
+      "ちゃんと話してほしい？設定（トレイのアイコンから）で、自分のGeminiキーを入れてね。なくても動くよ、言葉は少ないけど。",
     ],
     tourNext: "次へ",
     tourDone: "わかった",
@@ -853,9 +844,6 @@ export const UI: Record<Lang, UiStrings> = {
     updateText: "新しいバージョンのわたし（{v}）があるよ。いまアップデートする？再起動するね。",
     updateYes: "アップデート",
     updateLater: "あとで",
-    menuSettings: "設定…",
-    menuQuiet: "静かモード",
-    menuQuit: "終了",
     slowChat: "いまGoogleが遅いみたい。まだ考え中…",
     sectionGeneral: "一般",
     sectionBrain: "脳みそ（AI）",
