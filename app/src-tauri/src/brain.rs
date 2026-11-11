@@ -631,8 +631,8 @@ mod tests {
     #[test]
     fn the_persona_is_made_of_layer_files_and_its_words_did_not_change() {
         // RX-5 moved the persona into persona/*.md; this fingerprint is the persona as it was before (every language, tier
-        // and tone). Changing a persona file is a decision: change this number with it.
-        assert_eq!(persona_fingerprint(), 17175291708226297689);
+        // and tone). Changing a persona file is a decision: change this number with it. Changed by ADR-0059 (spec 12 section 3).
+        assert_eq!(persona_fingerprint(), 11250909298575782921);
     }
 
     #[test]
@@ -648,6 +648,15 @@ mod tests {
         }
         let core = persona_layers("en", 2, false).into_iter().find(|l| l.name == "core").unwrap();
         assert!(core.text.contains("never claim to be human") && core.text.contains("passwords, API keys"));
+        // spec 12 section 3 (ADR-0059): a clean goodbye, the crisis rule and "not a substitute for people" are in the locked core,
+        // so every language, tier and tone carries them and an editable voice can never remove them.
+        for (lang, tier, gentle) in [("en", 0u8, false), ("vi", 2, true), ("ja", 4, false), ("xx", 3, true)] {
+            let p = persona(lang, tier, gentle);
+            assert!(p.contains("answer with one short line and nothing else"), "goodbye rule");
+            assert!(p.contains("speaks of harming themselves") && p.contains("never act as a therapist"), "crisis rule");
+            assert!(p.contains("not a substitute for people"), "outward rule");
+            assert!(!p.contains("well-being") && !p.contains("close friends"));
+        }
         let mood = persona_layers("en", 2, false).into_iter().find(|l| l.name == "mood").unwrap();
         assert!(MOODS.iter().all(|m| mood.text.contains(&format!("[{m}]"))));
     }

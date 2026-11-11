@@ -30,6 +30,14 @@ What we **believe but have not proven**, and how we would find out. A hypothesis
 | H16 | Drawing the stickers forces the cat's character to be fixed (proportions, eyes, expressions) and so checks the character bible (the handoff's H3). | untested | The note written at plan step 4: what the drawing made us decide | spec/06 section 7, plan step 4 |
 | H13 | A short public charter, shown to visitors as a few promises in Peak's voice, raises the trust of a visitor who is deciding to download a program that senses the screen. | untested | Compare the visits that reach the download after the change (the site counts none, so by interviews and the author's judgment) | `docs/handoff/website-restructure-request.md` |
 
+### Read against the foundation (2026-11-11, ADR-0058, `../plans/foundation-review.md`)
+The hypotheses stay as written; this says how the evidence in `../foundation/` changes what each may be used for.
+- **H1** (people install it "because they feel isolated and screen-tired"): the *because* is weakened. Research on real pets shows weak and mixed effects on loneliness, and nothing exists for a pet on a screen. H1 may still predict installs; it must never become the pitch (ADR-0057), and "relieves isolation" is not something we may claim or assume.
+- **H4** (the pet without AI is kept for 7 days) and **H5** (Bond Days predicts keeping the pet): both measure keeping. The mission says Peak has succeeded when the person lives well and needs it less, so each needs a counter-measure read beside it: chat share (already recorded), and, when they exist, the share of use at night and the long tail of active minutes. A rise in Bond Days together with a worse counter-measure is a failure, not a success (the foundation's stop rule). Bond Days also counts a reaction to an unprompted line, so Peak speaking more can raise it: the number of unprompted lines per day is fixed by rule (spec 11), not tuned to the metric.
+- **H6** (remembering makes the pet feel more like theirs): the largest trial of chatbots found that people who trusted and bonded more were also more dependent (a correlation, read as a summary). Remembering stays, but "feels more like theirs" is not purely good; it is watched with the same counter-measures.
+- **H3, H7** (chat, a paid smarter brain): chat is where the risk of heavy use lives; the cap of 60 chats a day stays and chat never counts for Bond Days.
+- No hypothesis is settled by the foundation: it is other people's research, mostly read as abstracts, about other products.
+
 ### H3 versus the companion positioning (resolved 2026-11-08)
 H3 says the pet is useful because chat is convenient. The positioning decision (ADR-0021) says the pet is not an assistant, and the north star excludes chat. Vinh decided to **keep H3 as a secondary hypothesis**: chat stays a watch metric (chat share) and does not steer the product; H5 (Bond Days) is the primary hypothesis.
 

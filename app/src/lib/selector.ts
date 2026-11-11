@@ -7,7 +7,6 @@ export interface Ctx {
   band: Band;
   hour: number; // local hour 0..23
   gentle: boolean; // drop spicy lines
-  days?: number; // streak milestone, for the "milestone" trigger
   stage?: number; // escalation stage of a repeated action (1 = the ordinary pool), LN-2
   vars?: Partial<Record<TokenName, string>>; // values for the {tokens} of lines, LN-3; a line is eligible only if all are known
 }
@@ -41,7 +40,6 @@ export function candidates(trigger: Trigger, ctx: Ctx, lines: Line[] = LINES): L
       (!l.tiers || l.tiers.includes(ctx.tier)) &&
       (!l.bands || l.bands.includes(ctx.band)) &&
       (!l.hours || hourIn(ctx.hour, l.hours)) &&
-      (l.days === undefined || l.days === ctx.days) &&
       (l.stage ?? 1) === (ctx.stage ?? 1) &&
       tokensOf(l.text).every((k) => !!(ctx.vars as Record<string, string | undefined> | undefined)?.[k]) &&
       !(ctx.gentle && l.spicy)

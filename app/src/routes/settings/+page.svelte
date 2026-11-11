@@ -1,5 +1,5 @@
 <script lang="ts">
-  // The settings window: a normal window opened from the tray or the pet's right-click menu.
+  // The settings window: a normal window opened from the tray menu.
   // It holds no pet state: it shows the snapshot the pet window sends and sends changes back.
   // The API key is typed here, goes straight to Rust (brain_connect) and the OS credential
   // store, and is never sent to the pet window.
@@ -469,6 +469,7 @@
     {#if page === "brain"}
     <section id="sec-brain" class="card">
       <h2>{ui.sectionBrain}</h2>
+      <p class="muted">{ui.brainAdult}</p>
       {#if snap.hasKey}
         <p class="activeline">{ui.activeLine.replace("{name}", ui.providers[snap.provider].name).replace("{model}", activeModel || "…")}</p>
         <p class="muted">{usageLine}</p>
@@ -581,7 +582,6 @@
       </div>
       {#if snap.memory.days > 0 || snap.memory.marks.length > 0}
         <div class="row"><span class="lbl">{ui.memDays}</span><b>{snap.memory.days}</b></div>
-        <div class="row"><span class="lbl">{ui.memStreak}</span><b>{snap.memory.bestStreak}</b></div>
         {#if snap.memory.usualPart}
           <div class="row"><span class="lbl">{ui.memUsual}</span><b>{ui.memParts[snap.memory.usualPart]}</b></div>
         {/if}
@@ -660,6 +660,9 @@
       <div class="row">
         <button class="seg" onclick={() => invoke("open_website").catch(() => {})}>{ui.openWebsite}</button>
       </div>
+      <!-- spec 12 section 4: always reachable, static, no numbers and no country -->
+      <h3 class="help">{ui.helpTitle}</h3>
+      <p class="muted help">{ui.helpText}</p>
       {#if !updatesOn}
         <p class="muted">{ui.updatesOff}</p>
       {:else}
@@ -774,6 +777,14 @@
     margin: 0;
     font-size: 12.5px;
     color: #777;
+  }
+  h3.help {
+    margin: 8px 0 0;
+    font-size: 13px;
+    font-weight: 600;
+  }
+  .muted.help {
+    user-select: text;
   }
   .err {
     color: #b3261e;

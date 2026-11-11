@@ -65,7 +65,7 @@ Chat and plain pokes are outside `care`. A belly rub counts even when it turns o
 | Reciprocity | Ignored lines | `shown - engaged` (never negative: a line is counted engaged at most once) | derived, not stored |
 | Continuity | D3, D7, D30 | present (`min >= 5`) on some date in `[n, n+1]` calendar days after the first-launch date | `first_launch` event time (it is back-filled with `firstSeen` at consent) plus `days`; D30 is readable while the 60-day window still covers it |
 | Continuity | Closeness tier 2 and 3 reached; pet named | once-only events `tier_2`, `tier_3`, `pet_named` | new funnel events through the existing `recordEvent` (3.5) |
-| Continuity | Streak reached 3 / 7 | `active_d3`, `active_d7`, unchanged | `streak`; keep the events, but call them "streak reached", not retention |
+| Continuity | Streak reached 3 / 7 | `active_d3`, `active_d7`, unchanged | Since spec 12 (ADR-0059) there is no streak: the two events are recorded when **days together** (different days, never reset) reach 3 and 7, once per install. They are not retention |
 | Character | Gentle tone on | share of installs with `settings.gentle` at export time | new `config` object in the export (3.5) |
 
 Dropped from the handoff: **repeated-line rate**. The line picker (`pick`) avoids the last 24 lines by construction, and `recent` holds only 24 ids, so the rate is close to 0 and cannot be measured over time without a counter that would add nothing. If lines are found repeating, that is a content-pool bug to fix, not a metric.

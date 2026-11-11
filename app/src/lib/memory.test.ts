@@ -22,7 +22,7 @@ const at = (y: number, mo: number, d: number, h: number) => new Date(y, mo - 1, 
 const ctx = (over = {}) => ({ lang: "en" as const, gentle: false, hour: 20, ...over });
 
 function sessions(m: Memory, hours: number[]): Memory {
-  hours.forEach((h, i) => (m = recordSession(m, at(2026, 11, 1 + i, h), 1, 0)));
+  hours.forEach((h, i) => (m = recordSession(m, at(2026, 11, 1 + i, h))));
   return m;
 }
 
@@ -49,18 +49,17 @@ test("round trip keeps everything", () => {
 });
 
 test("sessions count distinct days once", () => {
-  let m = recordSession(defaultMemory(), at(2026, 11, 1, 9), 1, 0);
-  m = recordSession(m, at(2026, 11, 1, 20), 1, 0);
-  m = recordSession(m, at(2026, 11, 2, 9), 2, 3 * 24 * 3_600_000);
+  let m = recordSession(defaultMemory(), at(2026, 11, 1, 9));
+  m = recordSession(m, at(2026, 11, 1, 20));
+  m = recordSession(m, at(2026, 11, 2, 9));
   assert.equal(m.sessions, 3);
   assert.equal(m.days, 2);
-  assert.equal(m.bestStreak, 2);
-  assert.equal(m.longestAwayDays, 3);
+  assert.ok(!("bestStreak" in m) && !("longestAwayDays" in m), "no streak and no record of absences are kept (spec 12)");
 });
 
 test("with learning off nothing is recorded", () => {
   const off = { ...defaultMemory(), learn: false };
-  assert.deepEqual(recordSession(off, Date.now(), 5, 0), off);
+  assert.deepEqual(recordSession(off, Date.now()), off);
   assert.deepEqual(recordTouch(off, "poke"), off);
   assert.equal(nextMark({ ...off, days: 500, touches: { poke: 999, scratch: 0, chat: 99 } }), null);
 });
@@ -236,4 +235,10 @@ test("an old store is tidied when loaded: no USER-format facts, no repeats", () 
   });
   assert.deepEqual(parseMemory(raw).facts.map((f) => f.id), ["1", "4"]);
   assert.deepEqual(tidyFacts([]), []);
+});
+
+test("an old memory file with a streak and a longest absence loads without them (spec 12)", () => {
+  const old = JSON.stringify({ ...defaultMemory(), bestStreak: 9, longestAwayDays: 40 });
+  const m = parseMemory(old) as unknown as Record<string, unknown>;
+  assert.ok(!("bestStreak" in m) && !("longestAwayDays" in m));
 });

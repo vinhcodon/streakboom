@@ -45,3 +45,13 @@ test("Japanese interface strings are written in Japanese", () => {
   assert.equal(UI.ja.capHit.length, UI.en.capHit.length);
   assert.equal(UI.ja.tourSteps.length, UI.en.tourSteps.length);
 });
+
+test("18+ and the help card exist in every language (spec 12 sections 4 and 5)", () => {
+  for (const lang of ["en", "vi", "ja"] as const) {
+    const u = UI[lang];
+    assert.match(u.tourSteps[0], /18/, `${lang}: the first tour card says 18+`);
+    assert.match(u.brainAdult, /18/);
+    assert.ok(u.helpTitle.length > 5 && u.helpText.length > 60);
+    assert.ok(!/\d{3,}/.test(u.helpText), `${lang}: no phone number is compiled in`);
+  }
+});

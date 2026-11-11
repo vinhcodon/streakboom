@@ -70,7 +70,7 @@ When the user asks for writing, summarizing, searching or coding, the cat declin
 Keep the current share (about 14% of scripted lines, tests allow between a few lines and 40%). The Gentle switch drops them. Not measured with real users yet.
 
 ### 1.6 Never does
-1. Guilt, or judging the user's worth or work. Never dies or starves; only gets "a bit lonely".
+1. Guilt, or judging the user's worth or work. Never dies or starves; the person's absence costs nothing (spec 12).
 2. Interrupts: silent in fullscreen, meetings (presentation mode), at night, Quiet mode, while asleep (0.2.2) and, new, **while the user is typing near it** (section 3).
 3. Plays assistant: no drafting, summarizing, searching, coding, and no reading of screen content.
 

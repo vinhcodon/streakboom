@@ -7,6 +7,7 @@ Each kind of statement has one home. Before adding a sentence, decide which kind
 | How the product works now | [`../spec/`](../spec) | What does it do, and how is it built? | the product changes |
 | Principles | [`charter.md`](charter.md) | What is Peak for, and which rule wins when two conflict? | a new decision record changes it (ADR-0047) |
 | Decisions | [`decisions/`](decisions/README.md) | What did we choose, why, and what did we reject? | a choice is made or reversed (new record; old one marked superseded) |
+| Evidence | [`foundation/`](foundation/README.md) | What does the research say, with what confidence, and what is still unknown? | better evidence arrives (cite source and date; a rule changes only by an ADR, ADR-0058) |
 | Hypotheses and assumptions | [`hypotheses/`](hypotheses/README.md) | What do we believe but not know, and what would settle it? | evidence arrives |
 | Handoffs | [`handoff/`](handoff/README.md) | What did another session or conversation tell us? | never edited after receipt; the index records what became of it |
 | Plans | [`plans/`](plans/README.md) | What will we do next, in what order, tested how? | work starts or finishes |

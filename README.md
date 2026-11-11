@@ -6,7 +6,9 @@
 
 An open-source desktop pet for Windows. Meet **Peak**, a cheerful golden chibi cat inspired by the soft, squishy look of mochi illustrations. Peak lives on top of your screen, reacts to being stroked, poked and carried, says short lines in Vietnamese, English or Japanese (Japanese is a beta: written by Claude and not yet read by a native speaker), and keeps you company. It is a companion, not an assistant: it is lovable with no AI at all, and if you give it your own API key (Gemini, Groq, Claude or OpenAI) it can also chat and remember a few things about you.
 
-> **Status: first official release line (v0.3.2), Windows 10/11 only.** Earlier 0.1.x builds were development builds and have been withdrawn. The installer is not code-signed yet, so Windows SmartScreen will warn when you run it. The Groq, Claude and OpenAI brains have not yet been tried with real keys (Gemini has).
+> **Status: first official release line (v0.4.0), Windows 10/11 only.** Earlier 0.1.x builds were development builds and have been withdrawn. The installer is not code-signed yet, so Windows SmartScreen will warn when you run it. The Groq, Claude and OpenAI brains have not yet been tried with real keys (Gemini has).
+
+Streakboom is made for adults (18+). Peak is a small friend that makes the workday lighter; it is not a health product and makes no claim to treat or heal anything. If you need help now, please reach your local emergency number or a person you trust.
 
 🌐 **Website:** [streakboom.com](https://streakboom.com), with the latest download and release notes (Vietnamese and English).
 
@@ -19,13 +21,13 @@ Peak is the name of the character in this project. Your own copy can be given an
 The short version of [`docs/charter.md`](docs/charter.md), which ranks what Peak is for:
 - **It never reads what you type or what is on your screen.** It senses only activity (when you last used the keyboard or the mouse, never which keys) and the shape of the screen (where windows are, never what is written in them), in memory, and nothing is sent anywhere.
 - **It keeps out of your way.** It is a guest in the corner of a working screen: while you work it stays still and quiet and leaves when it is in the way. It walks, hops, climbs and speaks on its own only when you have stopped for a while, or while you play with it. A fall is rare and always has a cause (you pushed it or let go of it, or the window it sat on went away).
-- **It never dies or starves, and it never guilts you.** Neglect only makes it a little lonely.
+- **It never dies or starves, and it never guilts you.** Your absence costs nothing: it sleeps while you are away and is glad when you are back.
 - **It is alive without any AI, and the key is yours.** Everything lovable works with no brain connected; a brain is optional, billed by the provider you choose with your own key.
 - **It is a companion, not an assistant.** It remembers, grows and has its own tastes; it does not draft, summarise, search or fix.
 
 ## What it does ✨
 
-- 🐈 **A pet that is alive without any AI.** A mood and closeness model, 267 hand-written lines per language, with stages when you keep poking it (sarcastic ones can be turned off with "gentle tone"), a sleepy night (from 23:00 to 07:00 by the clock it dozes and says nothing on its own), and no guilt: the pet never dies or starves, it only gets "a bit lonely".
+- 🐈 **A pet that is alive without any AI.** A mood and closeness model, 263 hand-written lines per language, with stages when you keep poking it (sarcastic ones can be turned off with "gentle tone"), a sleepy night (from 23:00 to 07:00 by the clock it dozes and says nothing on its own), and no guilt: the pet never dies or starves, it only gets "a bit lonely".
 - 👆 **Gestures instead of buttons.** Sweep the cursor over its head to scratch it, over its belly to rub it (it usually loves it; sometimes it is a trap), click to poke, drag to carry it (it hangs by the scruff and leans with your cursor). Its eyes follow your cursor when it is over the pet. It wanders on its own (walking, and since 0.2.5 hopping between rows), always stays on screen, and moves like one animal, not a set of pictures.
 - 🧠 **Bring your own brain.** Add your own key and double-click the pet to chat. Gemini and Groq have free tiers (with limits); Claude and OpenAI are paid (a Claude Pro/Team or ChatGPT Plus subscription does not include API access). The brains are offered in this order: Gemini, Groq, Claude, OpenAI. Some of its unprompted lines are then written by the model, within a daily cap (60 chat turns and 6 unprompted lines a day; when it has talked enough, Peak says so in its own words and the count resets at midnight), and each answer comes with a feeling the pet acts out. It answers in the language you write in. Your key stays on your computer.
 - 💭 **It remembers a little, and you control it.** A name for the pet, what to call you, a usual part of the day, milestones, and (with a brain, on by default, switchable) a few short facts from your chats. Settings > Memory shows all of it and can forget any part.
@@ -44,7 +46,7 @@ To use it, follow [Install](#install). To build it or change it, follow [Develop
 
 1. Download `Streakboom_<version>_x64-setup.exe` from the [latest release](https://github.com/vinhcodon/streakboom/releases/latest).
 2. Run it. If SmartScreen says "Windows protected your PC", choose **More info**, then **Run anyway**. It installs for the current user only (no administrator rights) into `%LOCALAPPDATA%\Streakboom`.
-3. Uninstall from Windows Settings, Apps.
+3. Uninstall from Windows Settings, Apps. To remove everything: first use Settings, Brain, **Remove key** (keys live in Windows Credential Manager, which an uninstaller does not touch); in the uninstaller tick **Delete the application data** (it removes `%APPDATA%\com.streakboom.app`: the pet's state, its memory and the settings), or delete that folder yourself afterwards.
 
 GitHub keeps only the latest two releases; the release notes of every version are in [CHANGELOG.md](CHANGELOG.md).
 
@@ -60,13 +62,14 @@ Windows needs the WebView2 runtime; the installer downloads it if it is missing.
 | Drag | carry it; it lands with a little squash |
 | Double-click | open the chat bubble (a scripted "how are you" until it has a brain) |
 | Type or click near it | it stays still and quiet, then makes way (walks away) or hops to another row out of the path of your text |
-| Right-click the pet, or the tray icon | Settings, Quiet mode, Quit |
+| The tray icon (click: show or hide; right-click: menu) | Settings, Quiet mode, Quit, Show / Hide |
+| Right-click the pet | a push away from the pointer: it staggers and huffs; near the end of a ledge it wobbles and may fall |
 
 On a fresh install the pet shows a four-card tour (replay it in Settings, About).
 
 **Giving it a brain:** try to chat, or click the disabled text box, and the pet asks. Choose "Get a free brain" and follow the steps on the Brain page of Settings: pick Gemini, Claude or OpenAI, open the provider's console, create an API key, paste it, tick "I am 18 or older" and connect. You can pick the model there. Claude and OpenAI need credit on the provider's side; set a low monthly spend limit there. With keys for several brains you choose which one answers.
 
-**Settings** (General, Personality, Brain, Memory, Privacy, About: few, on purpose; how lively Peak is, it decides itself) open from the tray icon or the pet's right-click menu.
+**Settings** (General, Personality, Brain, Memory, Privacy, About: few, on purpose; how lively Peak is, it decides itself) open from the tray icon menu.
 
 ## Privacy and your data 🔒
 
@@ -117,7 +120,7 @@ npm run tauri dev          # run the app with hot reload
 ```
 
 ```powershell
-npm test                   # Node tests for the pure logic (src/lib/*.test.ts), 245 tests
+npm test                   # Node tests for the pure logic (src/lib/*.test.ts), 250 tests
 npm run check              # svelte-check (types)
 cd src-tauri; cargo test   # Rust tests (the four brain clients against a mock server, window and monitor geometry, the focus probe, the ground sense, the persona layers and reaction cards, the activity and monitor events), 73 tests
 ```
@@ -182,7 +185,7 @@ The documents are split by the kind of statement they make, so each fact has one
 
 ## Roadmap 🧭
 
-**Shipped.** 0.2.0: the naive pet, the key flow, three brains, memory, gestures, emotional reactions, opt-in stats with Copy stats and the Bond Days counters, the installer and signed auto-update with fallbacks. 0.2.1 to 0.2.3: the daily chat cap in the pet's own voice, a much lighter redraw (the median processor use fell from about 17% to about 9% of one core). 0.2.4: focus-safety (Peak keeps still and quiet while you work and makes way), a real wake-up stretch, a cat-like gait. 0.2.5: hops between rows and the typing lane (Peak leaves the path of your text). 0.3.0: Japanese (a beta, the third language), Groq as the fourth brain, and Peak notices before it makes way (it looks toward your work, ears up). 0.3.1: Peak no longer drops by itself, it startles and falls when the window it stands on goes, its words follow its body, repeated pokes and rubs go through stages, more varied lines, and Settings shows what Peak is told. 0.3.2: Peak perches on the edges of windows (by hopping, or by walking to the wall and climbing, and climbs down), looks over an edge and never walks off it, falls to the window below and not always to the floor, hops out from under the Start menu and Search, can be teased at an edge (a wobble, then it catches itself or is knocked off) and falls if you let go of it in the air; it is calmer while you work (walks, perches and lines wait until you have stopped for about 45 seconds, or you play with it) and sleepy from 23:00 to 07:00; **Settings lost Chattiness and Quiet hours** (Peak decides; if you had chosen Quiet it stays silent on its own); the ground map is on by default; the model can add one remark after a fall.
+**Shipped.** 0.2.0: the naive pet, the key flow, three brains, memory, gestures, emotional reactions, opt-in stats with Copy stats and the Bond Days counters, the installer and signed auto-update with fallbacks. 0.2.1 to 0.2.3: the daily chat cap in the pet's own voice, a much lighter redraw (the median processor use fell from about 17% to about 9% of one core). 0.2.4: focus-safety (Peak keeps still and quiet while you work and makes way), a real wake-up stretch, a cat-like gait. 0.2.5: hops between rows and the typing lane (Peak leaves the path of your text). 0.3.0: Japanese (a beta, the third language), Groq as the fourth brain, and Peak notices before it makes way (it looks toward your work, ears up). 0.3.1: Peak no longer drops by itself, it startles and falls when the window it stands on goes, its words follow its body, repeated pokes and rubs go through stages, more varied lines, and Settings shows what Peak is told. 0.3.2: Peak perches on the edges of windows (by hopping, or by walking to the wall and climbing, and climbs down), looks over an edge and never walks off it, falls to the window below and not always to the floor, hops out from under the Start menu and Search, can be teased at an edge (a wobble, then it catches itself or is knocked off) and falls if you let go of it in the air; it is calmer while you work (walks, perches and lines wait until you have stopped for about 45 seconds, or you play with it) and sleepy from 23:00 to 07:00; **Settings lost Chattiness and Quiet hours** (Peak decides; if you had chosen Quiet it stays silent on its own); the ground map is on by default; the model can add one remark after a fall. 0.4.0: Peak is aligned to the research in `docs/foundation/`: your absence costs nothing, no streak, a right click pushes it, for adults (18+), safety rules in the chat prompt and a help text (it makes no health claim).
 
 **Next.** More lines and a way to draft them (the line factory is built; the author runs it), an editable voice, a native reader for the Japanese and English text (the beta label comes off after that), and the checks that need other machines or people: the Groq, Claude and OpenAI brains with real keys, a second and a lower-end computer, several monitors and display scales, and a handful of observed first-time users. **Open:** a lower processor target (the floor is about 4% with software drawing), a place to send stats (or keep Copy stats), code signing, crash reporting without content, and a macOS port. The ordered plan is in [`docs/plans/roadmap.md`](docs/plans/roadmap.md), the stories in [`docs/plans/backlog.md`](docs/plans/backlog.md), and everything built but not yet checked in [`docs/plans/verification-debt.md`](docs/plans/verification-debt.md).
 

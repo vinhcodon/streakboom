@@ -2,6 +2,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { LINES } from "./lines.ts";
+import { allMemTexts } from "./memlines.ts";
 import type { Band, Lang, Trigger } from "./lines.ts";
 import { candidates, pick, remember, resolveLang } from "./selector.ts";
 import type { Ctx } from "./selector.ts";
@@ -43,7 +44,7 @@ const DAY = 24 * HOUR;
 const T0 = new Date(2026, 10, 7, 12, 0, 0).getTime();
 
 const LANGS: Lang[] = ["vi", "en", "ja"];
-const BANDS: Band[] = ["sleepy", "content", "playful", "bored", "lonely"];
+const BANDS: Band[] = ["sleepy", "content", "playful", "bored"];
 const ctx = (over: Partial<Ctx> = {}): Ctx => ({ lang: "en", tier: 1, band: "content", hour: 12, gentle: false, ...over });
 
 test("every core trigger has a line for every language, tier, band and tone", () => {
@@ -56,14 +57,12 @@ test("every core trigger has a line for every language, tier, band and tone", ()
             assert.ok(candidates(t, ctx({ lang, tier, band, gentle })).length > 0, `${lang} ${t} tier${tier} ${band} gentle=${gentle}`);
 });
 
-test("night lines exist at night hours, brain hints for tier 3+, milestones for 3/7/30", () => {
+test("night lines exist at night hours, brain hints for tier 3+", () => {
   for (const lang of LANGS) {
     for (const hour of [23, 0, 3, 4]) assert.ok(candidates("night", ctx({ lang, hour })).length > 0);
     assert.equal(candidates("night", ctx({ lang, hour: 12 })).length, 0);
     assert.equal(candidates("brainhint", ctx({ lang, tier: 1 })).length, 0);
     assert.ok(candidates("brainhint", ctx({ lang, tier: 3 })).length > 0);
-    for (const days of [3, 7, 30]) assert.ok(candidates("milestone", ctx({ lang, days })).length > 0);
-    assert.equal(candidates("milestone", ctx({ lang, days: 5 })).length, 0);
   }
 });
 
@@ -131,36 +130,55 @@ test("tiers", () => {
   assert.deepEqual([0, 19, 20, 49, 50, 79, 80, 100].map(tierOf), [1, 1, 2, 2, 3, 3, 4, 4]);
 });
 
-test("new user: no return, first check-in gives closeness and streak 1", () => {
+test("new user: no return; opening the app pays no closeness (spec 12)", () => {
   const r = startSession(defaultData(T0), T0);
   assert.equal(r.returned, false);
   assert.equal(r.checkedIn, true);
-  assert.equal(r.data.streak, 1);
-  assert.equal(r.data.closeness, 13);
+  assert.equal(r.data.closeness, defaultData(T0).closeness);
 });
 
-test("streak continues on consecutive days, resets after a gap, milestones fire once", () => {
-  let d = startSession(defaultData(T0), T0).data;
-  d = startSession(d, T0 + DAY).data;
-  const third = startSession(d, T0 + 2 * DAY);
-  assert.equal(third.data.streak, 3);
-  assert.equal(third.milestone, 3);
-  const sameDay = startSession(third.data, T0 + 2 * DAY + HOUR);
+test("there is no streak: days in a row and days with gaps give the same state (spec 12, rule 2)", () => {
+  let row = startSession(defaultData(T0), T0).data;
+  let gaps = startSession(defaultData(T0), T0).data;
+  for (let i = 1; i < 30; i++) {
+    row = startSession(row, T0 + i * DAY).data;
+    gaps = startSession(gaps, T0 + i * 3 * DAY).data;
+  }
+  assert.equal(row.closeness, gaps.closeness);
+  assert.ok(!("streak" in row) && !("milestones" in row));
+  const sameDay = startSession(row, T0 + 29 * DAY + HOUR);
   assert.equal(sameDay.checkedIn, false);
-  assert.equal(sameDay.milestone, null);
-  const gap = startSession(sameDay.data, T0 + 5 * DAY);
-  assert.equal(gap.data.streak, 1);
 });
 
-test("absence: returned after 3h, lonely after 24h, mood floor 25, closeness floor 10", () => {
-  let d = { ...defaultData(T0), lastCheckIn: dayKey(T0), closeness: 12, mood: 60 };
+test("an old state file with a streak loads without it", () => {
+  const old = JSON.stringify({ ...defaultData(T0), streak: 12, milestones: [3, 7] });
+  const d = parse(old, T0) as unknown as Record<string, unknown>;
+  assert.ok(!("streak" in d) && !("milestones" in d));
+});
+
+test("absence costs nothing: mood and closeness never fall, however long (spec 12, rule 1)", () => {
+  const d = { ...defaultData(T0), lastCheckIn: dayKey(T0), closeness: 62, mood: 60 };
   const short = startSession(d, T0 + 4 * HOUR);
   assert.equal(short.returned, true);
-  assert.equal(short.lonely, false);
-  const long = startSession(d, T0 + 30 * DAY);
-  assert.equal(long.lonely, true);
-  assert.ok(long.data.mood >= 25);
-  assert.ok(long.data.closeness >= 10);
+  for (const days of [0, 1, 2, 7, 30, 100, 400]) {
+    const r = startSession(d, T0 + days * DAY + HOUR);
+    assert.ok(r.data.mood >= d.mood, `mood after ${days} days`);
+    assert.equal(r.data.closeness, d.closeness, `closeness after ${days} days`);
+    assert.ok(!("lonely" in r));
+  }
+});
+
+// What no line may say (spec 12 sections 1 and 2, ADR-0059): a count of days away, missing the person, loneliness, a
+// streak, or asking the person for attention out of boredom.
+const BANNED: Record<Lang, RegExp[]> = {
+  en: [/miss(ed)? you/i, /\bmiss\b/i, /lonel/i, /without you/i, /totally fine/i, /in a row/i, /days? running/i, /streak/i, /entertain me/i, /not even a/i, /remembered i exist/i, /took you long/i],
+  vi: [/nhớ bạn/i, /cô đơn/i, /buồn quá/i, /buồn lắm/i, /hoàn toàn ổn/i, /liên tục/i, /ngày liền/i, /giải trí cho mình/i, /nhớ ra là mình/i, /lâu thật/i, /không có \{me\}/i],
+  ja: [/さびしが/, /さびしかったよ/, /さびしくなんか/, /さみしが/, /恋しい/, /ぜんぜん平気/, /連続/, /相手して/, /思い出したんだ/, /遅かったね/, /日ぶり/],
+};
+test("no line counts an absence, misses the person, is lonely, keeps a streak or begs for attention", () => {
+  const all: { lang: Lang; text: string }[] = LINES.map((l) => ({ lang: l.lang, text: l.text }));
+  for (const lang of LANGS) for (const text of allMemTexts(lang)) all.push({ lang, text });
+  for (const { lang, text } of all) for (const re of BANNED[lang]) assert.ok(!re.test(text), `${lang}: "${text}" matches ${re}`);
 });
 
 test("mood relaxes toward 50 from above and sinks slowly toward 25 from below", () => {

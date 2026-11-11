@@ -1,5 +1,4 @@
 import { bumpDays, parseDays, type DayCounter, type DayStat } from "./bond.ts";
-import { MILESTONE_DAYS } from "./lines.ts";
 import type { Band, Lang } from "./lines.ts";
 
 export interface Settings {
@@ -260,14 +259,12 @@ export interface PetData {
   firstSeen: number;
   lastSeen: number;
   lastCheckIn: string; // local day key of the last daily check-in
-  streak: number;
   gainDay: string;
   gainToday: number; // closeness gained from interactions today (capped)
   recent: string[];
   /** The shuffle bag per trigger (and stage): the ids said in the current round (LN-1). */
   bags: Record<string, string[]>;
   said: Record<string, number>; // trigger -> last time spoken (ms)
-  milestones: number[];
   /** Chose "Quiet" at the retired setting of how talkative Peak is (ADR-0047): it keeps from saying anything unprompted, as they chose. Read once from the old setting, kept here. */
   hush: boolean;
   settings: Settings;
@@ -302,13 +299,11 @@ export function defaultData(now: number): PetData {
     firstSeen: now,
     lastSeen: now,
     lastCheckIn: "",
-    streak: 0,
     gainDay: "",
     gainToday: 0,
     recent: [],
     bags: {},
     said: {},
-    milestones: [],
     hush: false,
     settings: { ...DEFAULT_SETTINGS },
     brain: { asks: 0, snoozeUntil: 0, menuOpens: 0, chatTries: 0, connectedAt: 0 },
@@ -347,13 +342,11 @@ export function parse(json: string | null | undefined, now: number): PetData {
       firstSeen: num(o.firstSeen, now),
       lastSeen: num(o.lastSeen, now),
       lastCheckIn: typeof o.lastCheckIn === "string" ? o.lastCheckIn : "",
-      streak: Math.max(0, Math.floor(num(o.streak, 0))),
       gainDay: typeof o.gainDay === "string" ? o.gainDay : "",
       gainToday: Math.max(0, num(o.gainToday, 0)),
       recent: Array.isArray(o.recent) ? o.recent.filter((x: unknown) => typeof x === "string").slice(-24) : [],
       bags: parseBags(o.bags),
       said: o.said && typeof o.said === "object" ? { ...o.said } : {},
-      milestones: Array.isArray(o.milestones) ? o.milestones.filter((x: unknown) => typeof x === "number") : [],
       hush: typeof o.hush === "boolean" ? o.hush : (s as { freq?: unknown }).freq === "quiet",
       settings: {
         lang: s.lang === "vi" || s.lang === "en" || s.lang === "ja" ? s.lang : "auto",
@@ -415,9 +408,9 @@ export function tierOf(closeness: number): 1 | 2 | 3 | 4 {
   return 1;
 }
 
-export function bandOf(d: PetData, hour: number, lonely: boolean): Band {
+/** The mood band that chooses the lines. Absence never changes it (spec 12, ADR-0059: there is no "lonely"). */
+export function bandOf(d: PetData, hour: number): Band {
   if (hour >= 23 || hour < 5) return "sleepy";
-  if (lonely) return "lonely";
   if (d.mood >= 65) return "playful";
   if (d.mood <= 35) return "bored";
   return "content";
@@ -450,44 +443,31 @@ export interface SessionStart {
   data: PetData;
   absentMs: number;
   returned: boolean; // away for 3+ hours
-  lonely: boolean; // away for 24+ hours
   checkedIn: boolean; // first launch of a new day
-  milestone: number | null;
 }
 
-/** Apply absence effects and the daily check-in when the app starts. */
+/**
+ * The app starts. Absence costs nothing (spec 12, ADR-0059): being away never lowers mood or closeness, there is no
+ * count of days in a row and opening the app pays nothing; coming back after a few hours only makes it a little glad.
+ */
 export function startSession(prev: PetData, now: number): SessionStart {
-  const d: PetData = { ...prev, said: { ...prev.said }, milestones: [...prev.milestones] };
+  const d: PetData = { ...prev, said: { ...prev.said } };
   const isNew = prev.lastCheckIn === "";
   const absentMs = Math.max(0, now - prev.lastSeen);
   const returned = !isNew && absentMs >= 3 * HOUR;
-  const lonely = !isNew && absentMs >= DAY;
-
-  if (lonely) {
-    const days = Math.floor(absentMs / DAY);
-    d.mood = clamp(d.mood - Math.min(25, days * 5), 25, 100);
-    d.closeness = clamp(d.closeness - Math.floor(days / 3), 10, 100); // very slow, floor 10
-  }
 
   const today = dayKey(now);
   let checkedIn = false;
-  let milestone: number | null = null;
   if (d.lastCheckIn !== today) {
     checkedIn = true;
-    d.streak = d.lastCheckIn === dayKey(now - DAY) ? d.streak + 1 : 1;
-    d.closeness = clamp(d.closeness + 3, 10, 100);
     d.gainDay = today;
     d.gainToday = 0;
     d.lastCheckIn = today;
-    if (MILESTONE_DAYS.includes(d.streak) && !d.milestones.includes(d.streak)) {
-      milestone = d.streak;
-      d.milestones.push(d.streak);
-    }
   }
 
   if (returned) d.mood = clamp(d.mood + 15, 25, 100);
   d.lastSeen = now;
-  return { data: d, absentMs, returned, lonely, checkedIn, milestone };
+  return { data: d, absentMs, returned, checkedIn };
 }
 
 /**

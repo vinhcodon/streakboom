@@ -59,7 +59,6 @@ export interface MemoryView {
   callMe: string;
   days: number;
   sessions: number;
-  bestStreak: number;
   usualPart: "morning" | "afternoon" | "evening" | "night" | null;
   touches: { poke: number; scratch: number; chat: number };
   marks: string[]; // ids of shared milestones

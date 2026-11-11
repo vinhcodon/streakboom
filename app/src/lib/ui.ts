@@ -69,7 +69,6 @@ export interface UiStrings {
   memNone: string;
   memSave: string;
   memDays: string;
-  memStreak: string;
   memUsual: string;
   memParts: { morning: string; afternoon: string; evening: string; night: string };
   memTouches: string;
@@ -138,6 +137,11 @@ export interface UiStrings {
   memNotice: string;
   sectionAbout: string;
   openWebsite: string;
+  /** "If you need help now" (spec 12 section 4): a static card, no numbers, no country. */
+  helpTitle: string;
+  helpText: string;
+  /** The brain providers want an adult key holder (spec 12 section 5, ADR-0056). */
+  brainAdult: string;
   versionLabel: string;
   checkUpdates: string;
   checkingUpdates: string;
@@ -150,9 +154,6 @@ export interface UiStrings {
   updateText: string; // contains {v}
   updateYes: string;
   updateLater: string;
-  menuSettings: string;
-  menuQuiet: string;
-  menuQuit: string;
   slowChat: string;
   sectionGeneral: string;
   sectionBrain: string;
@@ -238,7 +239,6 @@ export const UI: Record<Lang, UiStrings> = {
     memNone: "(not set)",
     memSave: "Save",
     memDays: "Days together",
-    memStreak: "Longest streak",
     memUsual: "Usually around",
     memParts: { morning: "the morning", afternoon: "the afternoon", evening: "the evening", night: "the night" },
     memTouches: "Pokes and scratches / chats",
@@ -342,10 +342,10 @@ export const UI: Record<Lang, UiStrings> = {
     updatesNoteOff: "No automatic checks. You can still check by hand in About.",
     updatingNow: "A new version is out ({v}). Updating now; I'll be right back.",
     tourSteps: [
-      "Hi! I'm your desktop pet. Drag me anywhere you like; I'll always stay on your screen.",
+      "Hi! I'm your desktop pet. Drag me anywhere you like; I'll always stay on your screen. (Streakboom is made for adults, 18+.)",
       "Click me to poke me. Double-click me to open a chat bubble.",
       "Try stroking my head or my belly with your mouse, back and forth. One of them can be a trap.",
-      "Want me to talk for real? Add your own Gemini key in Settings (tray icon, or right-click me). I work without it too, with fewer words.",
+      "Want me to talk for real? Add your own Gemini key in Settings (from the tray icon). I work without it too, with fewer words.",
     ],
     tourNext: "Next",
     tourDone: "Got it",
@@ -365,6 +365,9 @@ export const UI: Record<Lang, UiStrings> = {
     memNotice: "I jotted down something you told me. It's in Settings > What the pet remembers, where you can edit or delete it, and it goes to {company} with our chats. You can turn it off there.",
     sectionAbout: "About",
     openWebsite: "Open the website (streakboom.com)",
+    helpTitle: "If you need help now",
+    helpText: "Peak is a small program, not a helper in a crisis. If you are in danger or thinking of harming yourself, please contact your local emergency number or a person you trust now. A directory of crisis lines by country: findahelpline.com",
+    brainAdult: "The brain providers' terms require the key holder to be an adult (18+).",
     versionLabel: "Version",
     checkUpdates: "Check for updates",
     checkingUpdates: "Checking…",
@@ -377,9 +380,6 @@ export const UI: Record<Lang, UiStrings> = {
     updateText: "There is a new version of me ({v}). Update now? I will restart.",
     updateYes: "Update",
     updateLater: "Later",
-    menuSettings: "Settings…",
-    menuQuiet: "Quiet mode",
-    menuQuit: "Quit",
     slowChat: "Google is slow right now. Still thinking…",
     sectionGeneral: "General",
     sectionBrain: "Brain (AI)",
@@ -476,7 +476,6 @@ export const UI: Record<Lang, UiStrings> = {
     memNone: "(chưa đặt)",
     memSave: "Lưu",
     memDays: "Số ngày bên nhau",
-    memStreak: "Chuỗi ngày dài nhất",
     memUsual: "Thường vào khoảng",
     memParts: { morning: "buổi sáng", afternoon: "buổi chiều", evening: "buổi tối", night: "ban đêm" },
     memTouches: "Chọc và gãi / trò chuyện",
@@ -580,10 +579,10 @@ export const UI: Record<Lang, UiStrings> = {
     updatesNoteOff: "Không kiểm tra tự động. Bạn vẫn kiểm tra tay được trong mục Về app.",
     updatingNow: "Có bản mới ({v}). Mình cập nhật ngay, quay lại liền nhé.",
     tourSteps: [
-      "Chào bạn! Mình là thú cưng trên màn hình của bạn. Kéo mình đi đâu cũng được, mình luôn ở lại trong màn hình.",
+      "Chào bạn! Mình là thú cưng trên màn hình của bạn. Kéo mình đi đâu cũng được, mình luôn ở lại trong màn hình. (Streakboom dành cho người lớn, 18+.)",
       "Bấm vào mình để chọc mình. Bấm đúp để mở khung trò chuyện.",
       "Thử vuốt đầu hoặc bụng mình bằng chuột, qua lại. Một trong hai chỗ có thể là bẫy.",
-      "Muốn mình nói chuyện thật? Thêm khóa Gemini của bạn trong Cài đặt (biểu tượng khay hoặc bấm chuột phải vào mình). Không có khóa mình vẫn chạy, nhưng ít lời hơn.",
+      "Muốn mình nói chuyện thật? Thêm khóa Gemini của bạn trong Cài đặt (từ biểu tượng khay). Không có khóa mình vẫn chạy, nhưng ít lời hơn.",
     ],
     tourNext: "Tiếp",
     tourDone: "Hiểu rồi",
@@ -603,6 +602,9 @@ export const UI: Record<Lang, UiStrings> = {
     memNotice: "Mình vừa ghi lại điều bạn kể. Nó nằm ở Cài đặt > Pet nhớ gì, bạn sửa hoặc xóa được, và nó được gửi cho {company} cùng các cuộc trò chuyện. Bạn tắt được ở đó.",
     sectionAbout: "Về app",
     openWebsite: "Mở trang web (streakboom.com)",
+    helpTitle: "Nếu bạn cần giúp ngay",
+    helpText: "Peak chỉ là một chương trình nhỏ, không giúp được khi bạn gặp khủng hoảng. Nếu bạn đang gặp nguy hiểm hoặc nghĩ đến việc tự làm hại mình, hãy gọi ngay số khẩn cấp ở nơi bạn sống hoặc liên lạc với một người bạn tin tưởng. Danh bạ đường dây hỗ trợ theo quốc gia: findahelpline.com",
+    brainAdult: "Điều khoản của các nhà cung cấp bộ não yêu cầu người giữ khóa là người lớn (18+).",
     versionLabel: "Phiên bản",
     checkUpdates: "Kiểm tra cập nhật",
     checkingUpdates: "Đang kiểm tra…",
@@ -615,9 +617,6 @@ export const UI: Record<Lang, UiStrings> = {
     updateText: "Có bản mới của mình ({v}). Cập nhật nhé? Mình sẽ khởi động lại.",
     updateYes: "Cập nhật",
     updateLater: "Để sau",
-    menuSettings: "Cài đặt…",
-    menuQuiet: "Chế độ yên lặng",
-    menuQuit: "Thoát",
     slowChat: "Google đang chậm. Mình vẫn đang nghĩ…",
     sectionGeneral: "Chung",
     sectionBrain: "Bộ não (AI)",
@@ -714,7 +713,6 @@ export const UI: Record<Lang, UiStrings> = {
     memNone: "（未設定）",
     memSave: "保存",
     memDays: "一緒にいた日数",
-    memStreak: "最長の連続日数",
     memUsual: "いつもの時間帯",
     memParts: { morning: "朝", afternoon: "昼", evening: "夕方", night: "夜" },
     memTouches: "つつく・なでる回数 / おしゃべり",
@@ -818,10 +816,10 @@ export const UI: Record<Lang, UiStrings> = {
     updatesNoteOff: "自動では確認しないよ。「アプリ情報」から手動で確認できるよ。",
     updatingNow: "新しいバージョン（{v}）が出たよ。いまアップデート中、すぐ戻るね。",
     tourSteps: [
-      "やあ！わたしはデスクトップペットだよ。好きなところにドラッグしてね。ずっと画面の中にいるからね。",
+      "やあ！わたしはデスクトップペットだよ。好きなところにドラッグしてね。ずっと画面の中にいるからね。（Streakboomは大人、18歳以上向けだよ。）",
       "クリックするとつつかれるよ。ダブルクリックするとおしゃべりの吹き出しが開くよ。",
       "マウスでわたしの頭やおなかを左右になでてみて。どちらか片方はわなかもしれないよ。",
-      "ちゃんと話してほしい？設定（トレイのアイコン、または右クリック）で、自分のGeminiキーを入れてね。なくても動くよ、言葉は少ないけど。",
+      "ちゃんと話してほしい？設定（トレイのアイコンから）で、自分のGeminiキーを入れてね。なくても動くよ、言葉は少ないけど。",
     ],
     tourNext: "次へ",
     tourDone: "わかった",
@@ -841,6 +839,9 @@ export const UI: Record<Lang, UiStrings> = {
     memNotice: "教えてもらったことをメモしたよ。設定の「ペットの記憶」にあって、直したり消したりできるし、おしゃべりのときに{company}にも送られるよ。そこでオフにもできるよ。",
     sectionAbout: "アプリ情報",
     openWebsite: "ウェブサイトを開く（streakboom.com）",
+    helpTitle: "いますぐ助けが必要なとき",
+    helpText: "Peakは小さなプログラムで、危機のときの助けにはなれません。危険を感じているとき、自分を傷つけたい気持ちがあるときは、いますぐお住まいの地域の緊急番号か、信頼できる人に連絡してください。国ごとの相談窓口の一覧：findahelpline.com",
+    brainAdult: "脳のプロバイダーの利用規約では、キーの持ち主が成人（18歳以上）であることが必要です。",
     versionLabel: "バージョン",
     checkUpdates: "アップデートを確認",
     checkingUpdates: "確認中…",
@@ -853,9 +854,6 @@ export const UI: Record<Lang, UiStrings> = {
     updateText: "新しいバージョンのわたし（{v}）があるよ。いまアップデートする？再起動するね。",
     updateYes: "アップデート",
     updateLater: "あとで",
-    menuSettings: "設定…",
-    menuQuiet: "静かモード",
-    menuQuit: "終了",
     slowChat: "いまGoogleが遅いみたい。まだ考え中…",
     sectionGeneral: "一般",
     sectionBrain: "脳みそ（AI）",

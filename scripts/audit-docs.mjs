@@ -7,7 +7,8 @@
 // file in docs/handoff, docs/plans and docs/hypotheses is in the README of its folder; (4) the version in the README status line
 // and the "as of" lines of the specs match tauri.conf.json, package.json and Cargo.toml; (5) the newest CHANGELOG entry is the
 // current version; (6) no retired name appears (see RETIRED below); (7) test counts quoted in the README and spec/04 match the
-// counts the tests report if you pass them (--js 155 --rust 53).
+// counts the tests report if you pass them (--js 155 --rust 53); (8) no health claim word in the README and the texts the app
+// shows (ADR-0057).
 
 import { execFileSync } from "node:child_process";
 import { existsSync, readFileSync } from "node:fs";
@@ -94,7 +95,25 @@ if (js && !text("spec/04-technical-design.md").includes(`${js} tests`)) bad(`spe
 if (rust && !text("README.md").includes(`${rust} tests`)) bad(`README.md does not say "${rust} tests" (Rust)`);
 if (rust && !text("spec/04-technical-design.md").includes(`${rust} tests`)) bad(`spec/04 does not say "${rust} tests" (Rust)`);
 
+// 8. no health claim (ADR-0057; spec 12 section 7): the README and the texts the app shows never say that Peak heals, treats
+// or reduces a condition. A line that denies such a claim ("makes no claim to...") is allowed. The website is reported only.
+const CLAIMS = [/\bheal(s|ed|ing)?\b/i, /\btherap(y|ies|eutic)\b/i, /clinically/i, /\banxiety\b/i, /\bdepression\b/i, /\bADHD\b/, /reduc\w+ (your )?(stress|loneliness)/i, /chữa lành/i, /trị liệu/i, /trầm cảm/i, /lo âu/i, /癒/, /うつ/, /治療/];
+const DENIES = /no claim|not a health|never claims/i;
+const claimsIn = (f) =>
+  text(f)
+    .split("\n")
+    .filter((l) => !DENIES.test(l) && CLAIMS.some((re) => re.test(l)))
+    .map((l) => l.trim().slice(0, 80));
+for (const f of ["README.md", "app/src/lib/ui.ts", "app/src/lib/lines.ts", "app/src/lib/memlines.ts"]) {
+  for (const l of claimsIn(f)) bad(`a health claim word in ${f}: "${l}"`);
+}
+const claimsInSite = [];
+for (const f of files.filter((f) => f.startsWith("site/") && /\.(html|mjs|js|json|md|txt)$/.test(f))) {
+  if (claimsIn(f).length) claimsInSite.push(f);
+}
+
 console.log(`version ${conf}; ${mds.length} markdown files checked.`);
+if (claimsInSite.length) console.log(`Tell the website session: health claim words (ADR-0057) in ${claimsInSite.join(", ")}`);
 if (inSite.length) console.log(`Tell the website session (site/ is not checked or edited here): retired names in ${inSite.join(", ")}`);
 if (problems.length) {
   console.log(`\n${problems.length} problem(s):`);

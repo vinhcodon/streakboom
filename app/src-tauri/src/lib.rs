@@ -744,6 +744,11 @@ fn bubble_fit(app: AppHandle, state: State<AppState>, w: f64, h: f64, interactiv
     let Some(bubble) = app.get_webview_window("bubble") else {
         return;
     };
+    // The bubble belongs to the pet: while the pet is hidden (tray Show / Hide) nothing is shown.
+    if !app.get_webview_window("main").is_some_and(|m| m.is_visible().unwrap_or(false)) {
+        bubble_hide(app.clone(), state);
+        return;
+    }
     let was_visible = {
         let mut b = state.bubble.lock().unwrap();
         let v = b.visible;
@@ -825,19 +830,7 @@ fn open_settings_async(app: &AppHandle) {
     tauri::async_runtime::spawn(async move { open_settings_window(&app, None) });
 }
 
-/// Right-click menu on the pet. Labels come from the frontend so they follow the language.
-#[tauri::command]
-fn show_pet_menu(app: AppHandle, window: WebviewWindow, state: State<AppState>, labels: Vec<String>) -> Result<(), String> {
-    let quiet = state.prefs.lock().unwrap().quiet;
-    let label = |i: usize, d: &str| labels.get(i).cloned().unwrap_or_else(|| d.to_string());
-    let settings = MenuItem::with_id(&app, "pm_settings", label(0, "Settings…"), true, None::<&str>).map_err(|e| e.to_string())?;
-    let quiet_item = CheckMenuItem::with_id(&app, "pm_quiet", label(1, "Quiet mode"), true, quiet, None::<&str>).map_err(|e| e.to_string())?;
-    let quit = MenuItem::with_id(&app, "pm_quit", label(2, "Quit"), true, None::<&str>).map_err(|e| e.to_string())?;
-    let menu = Menu::with_items(&app, &[&settings, &quiet_item, &quit]).map_err(|e| e.to_string())?;
-    window.popup_menu(&menu).map_err(|e| e.to_string())
-}
-
-/// Switch quiet mode (tray or pet menu): persist, tell the frontend, sync the tray check mark.
+/// Switch quiet mode (tray menu): persist, tell the frontend, sync the tray check mark.
 fn set_quiet(app: &AppHandle, q: bool) {
     let state = app.state::<AppState>();
     state.prefs.lock().unwrap().quiet = q;
@@ -1530,15 +1523,6 @@ pub fn run() {
             spawn_hit_test(app.handle().clone(), win);
             Ok(())
         })
-        .on_menu_event(|app, event| match event.id.as_ref() {
-            "pm_settings" => open_settings_async(app),
-            "pm_quiet" => {
-                let q = app.state::<AppState>().prefs.lock().unwrap().quiet;
-                set_quiet(app, !q);
-            }
-            "pm_quit" => quit_app(app),
-            _ => {}
-        })
         .on_window_event(|window, event| {
             if window.label() != "main" {
                 return;
@@ -1570,7 +1554,6 @@ pub fn run() {
             updater::update_check,
             updater::update_install,
             take_settings_section,
-            show_pet_menu,
             load_pet,
             save_pet,
             load_memory,

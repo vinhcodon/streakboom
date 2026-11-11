@@ -1,6 +1,6 @@
 # Technical Design
 
-The stable design of the app as of 0.3.2. What was built and measured, round by round (including the early spikes and the numbers behind the decisions), is in [`../docs/engineering-log.md`](../docs/engineering-log.md). The reasons behind the choices are in [`../docs/decisions/`](../docs/decisions/README.md); the unverified assumptions are in [`../docs/hypotheses/`](../docs/hypotheses/README.md).
+The stable design of the app as of 0.4.0. What was built and measured, round by round (including the early spikes and the numbers behind the decisions), is in [`../docs/engineering-log.md`](../docs/engineering-log.md). The reasons behind the choices are in [`../docs/decisions/`](../docs/decisions/README.md); the unverified assumptions are in [`../docs/hypotheses/`](../docs/hypotheses/README.md).
 
 ## 1. Stack
 - **Shell:** Tauri 2 (Rust core plus the system webview), Windows 10/11 with WebView2 first (ADR-0003, ADR-0004).
@@ -22,7 +22,7 @@ Three windows. The pet window owns all state and logic; the others are views (AD
         +---------- events (src/lib/bus.ts), plain JSON, always via the pet window ------+
 
  Rust core: drag + clamp to the work area, bubble placement (above/below/right/left, always on screen),
-            hit-test thread (click-through except over the pet), tray + right-click menu,
+            hit-test thread (click-through except over the pet), tray menu,
             credential store, brain clients (four providers), updater, autostart,
             atomic save of pet.json, memory.json and state.json,
             focus probe (idle time, pointer, primary mouse button) in the hit-test thread,
@@ -82,7 +82,7 @@ The brains are offered in this order: Gemini, Groq, Claude, OpenAI (ADR-0037).
 ## 5. Data and privacy
 Files in `%APPDATA%\com.streakboom.app\`:
 - `state.json`: window position, Quiet mode, the active provider and the chosen model per provider.
-- `pet.json`: mood, closeness, streak, settings (including the update mode), recent lines, AI usage, gesture, startup, tour and update bookkeeping, telemetry consent and queue. Written atomically (temp file, then rename).
+- `pet.json`: mood, closeness, settings (including the update mode), recent lines, AI usage, gesture, startup, tour and update bookkeeping, telemetry consent and queue. Written atomically (temp file, then rename).
 - `memory.json`: the pet's name and what to call the user, coarse habit counts, touch counts, shared milestones, noted facts, and the memory settings. Written atomically; the user can see, edit and delete all of it in Settings > Memory.
 - API keys: Windows Credential Manager, one entry per provider (`gemini-api-key`, `groq-api-key`, `claude-api-key`, `openai-api-key`, service `streakboom`).
 - Chat history: in memory only, never persisted. The facts noted from chats are persisted (see above) and are sent to the active provider with later chats the user starts.
@@ -90,7 +90,7 @@ Files in `%APPDATA%\com.streakboom.app\`:
 - Logs: none that contain keys or message content.
 
 ## 6. Testing
-- **Node** (`node --test`, 245 tests): state model and decay, line selection and coverage, gestures, reveal rhythm, telemetry and per-day counter rules (bond.ts), update snoozing, start-with-Windows and tour rules, the rig (key schema, springs, continuity, poses, the redraw rates, and that its files can be copied to the website by erasing types), focus-safety decisions (`focus.ts`), the walk easing (`gait.ts`), hops, falls and crawls (`hop.ts`), the typing lane (`lane.ts`), the belief (`perception.ts`), reactions (`beats.ts`, `events.ts`, `choose.ts`, `reactions.ts`, `escalation.ts`), the ground map and the terrain (`groundmap.ts`, `terrain.ts`, `perch.ts`, `escape.ts`), the line factory, memory rules and lines.
+- **Node** (`node --test`, 250 tests): state model and decay, line selection and coverage, gestures, reveal rhythm, telemetry and per-day counter rules (bond.ts), update snoozing, start-with-Windows and tour rules, the rig (key schema, springs, continuity, poses, the redraw rates, and that its files can be copied to the website by erasing types), focus-safety decisions (`focus.ts`), the walk easing (`gait.ts`), hops, falls and crawls (`hop.ts`), the typing lane (`lane.ts`), the belief (`perception.ts`), reactions (`beats.ts`, `events.ts`, `choose.ts`, `reactions.ts`, `escalation.ts`), the ground map and the terrain (`groundmap.ts`, `terrain.ts`, `perch.ts`, `escape.ts`), the line factory, memory rules and lines.
 - **Rust** (`cargo test`, 73 tests): the four clients against a one-shot mock HTTP server, error mapping, model ordering, mood tags, fact filtering, language rule, window and monitor geometry (clamping across monitors and scales, the room to an edge), the idle-time arithmetic, the pointer offset, the button reading the poll triggers, the ground sense (kinds, points under the feet, majority) and the persona (its layers join into the prompt, the safety and format layers are locked, a fingerprint fixes its words).
 - **Static:** `svelte-check`.
 - **Manual matrix still to run:** Windows 10 and 11, a second and a lower-end machine, multi-monitor, 100%, 125% and 150% DPI, fullscreen video, screen sharing, an 8-hour soak test, a reboot with start with Windows, and real Claude and OpenAI keys.

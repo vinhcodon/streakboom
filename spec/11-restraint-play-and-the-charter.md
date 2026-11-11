@@ -8,6 +8,8 @@ A fall is fear plus a bump. It is the loudest thing Peak can do, so it is treate
 
 **What was built (CH-5, 2026-11-10):** a poke on the side of the cat toward which it would be pushed (away from the pointer), when it sits within 100 px of the end of its seat, is the push; **letting go of a dragged cat above the floor and off a ledge makes it fall** (a deliberate change: before, it stayed where it was let go; the threshold is 90 px, `DROP_MIN_PX` in `push.ts`), and let go on a ledge it keeps the ledge as its seat. The flick of a fast pointer is not built; the poke is the push.
 
+**Changed on 2026-11-11 (ADR-0055):** the push moved from the left click to the **right click**. A left click is always a poke. A right click pushes Peak away from the pointer: near the end of its seat it teeters as above; anywhere else (also on the floor) it staggers for a moment and huffs; a sleeper is only poked. The pet's right-click menu is gone (the tray menu is the only menu).
+
 **Who may cause one.**
 | Cause | Allowed | Notes |
 |---|---|---|
@@ -67,7 +69,7 @@ Rules that follow: spontaneous behaviour is picked from tiers 0 and 1; a tier-2 
 4. **It knows shapes, not meaning.** It senses activity and the layout of the screen, never what is written on it, unless the person has switched on a sense in the open, and then only in memory. *Test: what exactly does this sense keep, and where?*
 5. **A companion, not an assistant.** It remembers, it grows, it has its own tastes; it does not draft, summarise, search or fix. *Test: could the person get this from another assistant? then it does not belong.*
 6. **It works without AI and the key is theirs.** Everything lovable survives with no brain connected.
-7. **It never dies and never lies about itself.** Neglect makes it a little lonely; it does not pretend to be a person or a tool.
+7. **It never dies and never lies about itself.** (As adopted: "Neglect makes it a little lonely"; changed by ADR-0059 to "your absence costs nothing".) It does not pretend to be a person or a tool.
 8. **Alive, within all of the above.** Within articles 1 to 7 it is free to surprise: that is what the corner of a screen is for.
 
 **Where it lives and what changes.** `docs/charter.md` (or `spec/00-charter.md`), adopted by an ADR; the three-question filter of spec 06 section 1.6 moves into it; the README gets a short "What Peak promises" from articles 1 to 4; the website session is told at the next release. Each new story in the backlog gets one line naming the article it serves or the article it spends (a fall spends article 3, and says so).

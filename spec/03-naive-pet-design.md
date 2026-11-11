@@ -1,29 +1,29 @@
 # Naive Pet Design
 
-Goal: a pet with no AI that is charming enough to keep for 7 days (hypothesis H4) and that builds the attachment which makes users willing to give it a "brain" (H2b). Hypotheses: [`../docs/hypotheses/`](../docs/hypotheses/README.md). Decisions: [`../docs/decisions/`](../docs/decisions/README.md) (ADR-0011 character and gestures, ADR-0012 motion, ADR-0013 tone, ADR-0014 memory). "Built" below means it exists in the 0.3.2 code; "not built" is stated explicitly.
+Goal: a pet with no AI that is charming enough to keep for 7 days (hypothesis H4) and that builds the attachment which makes users willing to give it a "brain" (H2b). Hypotheses: [`../docs/hypotheses/`](../docs/hypotheses/README.md). Decisions: [`../docs/decisions/`](../docs/decisions/README.md) (ADR-0011 character and gestures, ADR-0012 motion, ADR-0013 tone, ADR-0014 memory). "Built" below means it exists in the 0.4.0 code; "not built" is stated explicitly.
 
 ## Decisions
 - **Character:** a round 2D "mochi cat" (ADR-0011).
 - **Personality:** playful, mischievous, mildly sarcastic. Teasing never targets the user's worth or work quality; it targets the situation (the clock, the coffee, the pile of tabs). A Gentle tone setting drops the sarcastic lines (ADR-0013).
 - **Languages:** Vietnamese, English and Japanese line pools (Japanese is a beta, ADR-0038: warm casual voice, no cat-speak), chosen by system language (`vi`, `ja`; anything else English), switchable in Settings.
-- **No guilt:** the pet never dies, starves or gets sick. Neglect only makes it "a bit lonely", and it is delighted when the user returns.
+- **No guilt:** the pet never dies, starves or gets sick. The user's absence costs nothing (spec 12, ADR-0059): it sleeps while they are away and is glad when they return; no line counts the days or says it missed them.
 - **Naive is not dumb:** it does not pretend to understand free text. Free-text input is disabled with an in-character hint until a brain is connected.
 
 ## State model
-Two values plus a streak, stored locally in `pet.json`, small and cheap.
+Two values, stored locally in `pet.json`, small and cheap.
 
 | State | Range | Moves up when | Moves down when |
 |---|---|---|---|
 | Mood | 25 to 100 | Interactions (pet, snack, play, how), returning after absence | Slow decay toward about 50; never below 25 |
-| Closeness | 10 to 100 | A daily check-in (first launch of a day), a streak of days, gestures (capped per day) | Very slow decay after long absence; floor at 10; never resets |
+| Closeness | 10 to 100 | Gestures (capped per day); opening the app pays nothing and there is no streak (spec 12) | Never falls: absence costs nothing; floor at 10 |
 
-Derived mood bands: Sleepy (late night), Content, Playful, Bored, Lonely-but-hopeful. Mood chooses the line pool; closeness unlocks lines.
+Derived mood bands: Sleepy (late night), Content, Playful, Bored (there is no lonely band since spec 12; the bored lines never ask the person for attention). Mood chooses the line pool; closeness unlocks lines.
 
 ## Closeness tiers
 1. **Stranger (0 to 19):** shy, short lines. Built (lines by tier).
 2. **Acquaintance (20 to 49):** teasing starts. Built as lines. The belly-rub "trap" starts here. "Follows the cursor briefly": not built as such; the eyes follow the cursor while it is over the pet at every tier.
 3. **Friend (50 to 79):** inside jokes and rare "brain" hints. Built as lines. Remembering the user's name and a usual part of the day comes from memory (below), not from the tier.
-4. **Close (80 to 100):** warmer lines and milestone reactions (streak days 3, 7 and 30, and shared memory milestones). "Richer animations": not built.
+4. **Close (80 to 100):** warmer lines and the shared memory milestones (days together, never a streak). "Richer animations": not built.
 
 The brain request (spec/02) is more natural at tier 2 or 3, but it is triggered by behavior, not by tier alone.
 
@@ -36,17 +36,17 @@ The brain request (spec/02) is more natural at tier 2 or 3, but it is triggered 
   - Sweep the cursor back and forth over the head: scratch (mood and closeness up; a daily cap on closeness still applies).
   - Over the belly (the lower 45% of the sprite): a rub. Usually liked (`purr`, a "belly" line). Sometimes a trap (`huff`, a "huff" line, no gain): only from tier 2, after at least 2 rubs since the last trap, at least 3 minutes apart, then a 35% chance.
   - Eyes follow the cursor while it is over the pet and the cat is calm. Chasing the cursor across the screen: not wanted, not built.
-  - Settings: tray menu, right-click menu on the pet, and the gear in the chat bubble.
+  - Settings: tray menu and the gear in the chat bubble.
   - Hints: one gesture at a time (head scratch, then belly rub), at least 20 hours apart, until the user has done it.
 - **Reactive to the system (no content reading):** time of day, session length and idle time (a timer). Built. Weekday versus weekend, battery low, lid open after absence and holidays: **not built**. No window titles or screen content are read. The whole model of what Peak can sense and how it reacts, with the proposed senses for the space around and below it, is in [`08-perception.md`](08-perception.md).
 - **Polite:** nothing is said in fullscreen or presentation mode, at night (23:00 to 07:00 by the clock), in Quiet mode, while dragging, while another bubble is open, or while the pet is asleep or dozing off (an unprompted line waits and is tried again 2 minutes later; the pet also does not doze off while a bubble is showing).
 
 ## Line system
 *Draft, not built (spec/09): the pools below become the offline source of **slots** of events (`event.slot`), keeping every line id; why the lines feel repeated and how to grow and vary them is in spec/09 section 11 (epic E13); reactions to new situations are described by an appraisal and a beat rather than a new trigger and a new `if` in the page.*
-- **Line pools by trigger:** greeting, return, morning, night, long session, idle, click, pet, how, milestone, brain hint, gesture hint, belly hint, belly, huff. The "snack" and "play" pools exist and are unused (no buttons any more; reserved for future gestures).
+- **Line pools by trigger:** greeting, return, morning, night, long session, idle, click, pet, how, brain hint, gesture hint, belly hint, belly, huff. The "snack" and "play" pools exist and are unused (no buttons any more; reserved for future gestures).
 - **Each line has tags:** language, mood band, closeness tier, hours, trigger. Lines marked `~` are sarcastic and hidden in the Gentle tone.
 - **Selection:** filter by tags, exclude recently used (a rolling window of 24), weighted random.
-- **Size today:** 267 lines per language (182 ordinary, 48 added to the smallest pools, 27 for repeated pokes, scratches and belly rubs, 10 that use the name, time or weekday) (about 14% sarcastic), written by hand. Tests check that the three languages match (the Japanese lines are translated one to one, with the same ids, tiers, bands and sarcasm marks, in the casual voice), that no text repeats, that lines fit a bubble (110 characters), that sarcasm stays between a few lines and 40%, and that every tier and mood has gentle-tone coverage.
+- **Size today:** 263 lines per language, counted from the pools on 2026-11-11 after spec 12 (the 12 streak lines removed, 3 outward lines added, the 14 lines of the old lonely band rewritten as calm lines; before that the README said 267 while the pools held 272) (about 14% sarcastic), written by hand. Tests check that the three languages match (the Japanese lines are translated one to one, with the same ids, tiers, bands and sarcasm marks, in the casual voice), that no text repeats, that lines fit a bubble (110 characters), that sarcasm stays between a few lines and 40%, and that every tier and mood has gentle-tone coverage.
 - **Rate limits:** one proactive bubble every 10 to 15 minutes, fixed (the settings of chattiness and quiet hours were retired, ADR-0047; people who had chosen Quiet stay hushed); never at night (23:00 to 07:00), while the person is working (the attention mode of spec/11), in Quiet mode or in fullscreen and presentation.
 
 ## Memory (ADR-0014)
@@ -71,7 +71,7 @@ Separate from the mood state, in `memory.json`, owned by the pet window.
 - Belly trap (EN): "It was a trap! You fell for the oldest trick in the book."
 
 ## Persistence and privacy
-- Local files only: `pet.json` (mood, closeness, streak, settings, used-line history, AI usage, gesture and update bookkeeping, telemetry consent and queue), `memory.json` (the memory above), `state.json` (window position, Quiet mode, chosen provider and models). Chat history is in memory only.
+- Local files only: `pet.json` (mood, closeness, settings, used-line history, AI usage, gesture and update bookkeeping, telemetry consent and queue), `memory.json` (the memory above), `state.json` (window position, Quiet mode, chosen provider and models). Chat history is in memory only.
 - No chat content is stored in naive mode. With a brain, the short facts noted from chats are stored and listed in Settings (see ADR-0014). Telemetry is opt-in and carries funnel event names today (spec/05 proposes per-day counts under a new consent).
 
 ## Success metrics
