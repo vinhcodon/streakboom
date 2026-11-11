@@ -8,6 +8,8 @@ An open-source desktop pet for Windows. Meet **Peak**, a cheerful golden chibi c
 
 > **Status: first official release line (v0.3.2), Windows 10/11 only.** Earlier 0.1.x builds were development builds and have been withdrawn. The installer is not code-signed yet, so Windows SmartScreen will warn when you run it. The Groq, Claude and OpenAI brains have not yet been tried with real keys (Gemini has).
 
+Streakboom is made for adults (18+). Peak is a small friend that makes the workday lighter; it is not a health product and makes no claim to treat or heal anything. If you need help now, please reach your local emergency number or a person you trust.
+
 🌐 **Website:** [streakboom.com](https://streakboom.com), with the latest download and release notes (Vietnamese and English).
 
 ## Meet Peak 🐱

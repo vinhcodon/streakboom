@@ -1,6 +1,6 @@
 # Release 0.4.0: the alignment release (a plan; nothing is built)
 
-**Status:** approved by the author at gate 3 (2026-11-11), with Q9. **FA-1, FA-2 and FA-3 are built (not committed to `main`, not released); FA-4 to FA-11 are open.** Spec: [`../../spec/12-foundation-alignment.md`](../../spec/12-foundation-alignment.md). Decisions: ADR-0056 to ADR-0059. No code before the author approves, and then story by story.
+**Status:** approved by the author at gate 3 (2026-11-11), with Q9. **FA-1 to FA-6 are built on the branch (not on `main`, not released); FA-7 to FA-11 are open.** Spec: [`../../spec/12-foundation-alignment.md`](../../spec/12-foundation-alignment.md). Decisions: ADR-0056 to ADR-0059. No code before the author approves, and then story by story.
 
 ## Stories (epic E17, "Foundation alignment"; they enter `backlog.md` when approved)
 

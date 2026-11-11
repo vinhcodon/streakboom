@@ -469,6 +469,7 @@
     {#if page === "brain"}
     <section id="sec-brain" class="card">
       <h2>{ui.sectionBrain}</h2>
+      <p class="muted">{ui.brainAdult}</p>
       {#if snap.hasKey}
         <p class="activeline">{ui.activeLine.replace("{name}", ui.providers[snap.provider].name).replace("{model}", activeModel || "…")}</p>
         <p class="muted">{usageLine}</p>
@@ -659,6 +660,9 @@
       <div class="row">
         <button class="seg" onclick={() => invoke("open_website").catch(() => {})}>{ui.openWebsite}</button>
       </div>
+      <!-- spec 12 section 4: always reachable, static, no numbers and no country -->
+      <h3 class="help">{ui.helpTitle}</h3>
+      <p class="muted help">{ui.helpText}</p>
       {#if !updatesOn}
         <p class="muted">{ui.updatesOff}</p>
       {:else}
@@ -773,6 +777,14 @@
     margin: 0;
     font-size: 12.5px;
     color: #777;
+  }
+  h3.help {
+    margin: 8px 0 0;
+    font-size: 13px;
+    font-weight: 600;
+  }
+  .muted.help {
+    user-select: text;
   }
   .err {
     color: #b3261e;
