@@ -282,11 +282,16 @@ def cat_head_only(k, look):
     return o + tri(n[0], n[1], n[2], "#e8828a") + mouth_svg(k, look) + "</g>"
 
 
-def paw(x, y, rx=8, ry=7, rot=0):
-    """A front paw in front of the body, with a pink pad (sticker art for gestures the rig does not draw)."""
-    r = f' transform="rotate({f(rot)} {f(x)} {f(y)})"' if rot else ""
-    outline = f'<ellipse cx="{f(x)}" cy="{f(y)}" rx="{f(rx)}" ry="{f(ry)}" fill="{FUR}" stroke="{DARK}" stroke-width="1.6"{r}/>'  # an outline, so a paw shows against the fur
-    return outline + ell(x, y + ry * 0.25, rx * 0.4, ry * 0.3, PINK, rot)
+def paw(x, y, rx=8, ry=7, rot=0, pad=False):
+    """A front paw (sticker art for gestures the rig does not draw): a rounded paw with three toe lines at the top and, if the palm
+    faces us, a pink pad. A thin darker edge makes it show against fur of the same colour."""
+    g = f'<g transform="translate({f(x)},{f(y)}) rotate({f(rot)})">'
+    g += f'<ellipse rx="{f(rx)}" ry="{f(ry)}" fill="{FUR}" stroke="{DARK}" stroke-width="1.1"/>'
+    for dx in (-0.45, 0, 0.45):
+        g += f'<path d="M{f(dx * rx)} {f(-ry * 0.95)} L{f(dx * rx)} {f(-ry * 0.45)}" stroke="{DARK}" stroke-width="1.1" stroke-linecap="round"/>'
+    if pad:
+        g += f'<ellipse cy="{f(ry * 0.3)}" rx="{f(rx * 0.45)}" ry="{f(ry * 0.35)}" fill="{PINK}"/>'
+    return g + "</g>"
 
 
 def arcs(*specs):
@@ -298,11 +303,11 @@ def puffs():
 
 
 def cloud_and_rain():
-    c = "#cfd8e3"
+    c = "#9fb3c8"
     cl = ell(40, 18, 22, 14, c) + ell(62, 12, 20, 15, c) + ell(82, 18, 22, 14, c) + ell(62, 24, 38, 12, c)
     drops = ""
     for x, y in ((30, 44), (52, 50), (74, 44), (94, 52), (40, 66), (84, 70)):
-        drops += f'<path d="M{x} {y} q3 5 0 8 q-3 -3 0 -8z" fill="#8ecae6"/>'
+        drops += f'<path d="M{x} {y} q3 5 0 8 q-3 -3 0 -8z" fill="#5aa9d6"/>'
     return cl + drops
 
 
@@ -360,23 +365,23 @@ def png_from(svg_inner, size, text=None, path=None, bg=None, text_y=None):
 
 STICKERS = [
     # file, text, svg of the cat (rig units; wrapped below), extras in rig units
-    ("01", "Chào buổi sáng!", lambda: cat(STRETCH_S, LOOK["wake"])),
+    ("01", "Chào buổi sáng!", lambda: cat(STRETCH_S, LOOK["wake"]), dict(scale=2.8, dy=-14)),
     ("02", "Sướng quá~", lambda: cat(STAND_F, LOOK["purr"])),
-    ("03", "Đời là thế.", lounging, dict(scale=2.15, dx=4, dy=14)),
+    ("03", "Đời là thế.", lounging, dict(scale=2.5, dx=2, dy=0)),
     ("04", "Buồn ngủ…", lambda: cat(SIT_F, LOOK["drowsy"])),
     ("05", "Hừm.", lambda: cat(SIT_F, LOOK["huff"]) + puffs()),
     ("06", "Quá sức mèo rồi.", lambda: cat(STAND_F, LOOK["sad"])),
     ("07", "Giỏi quá!", lambda: confetti() + cat(STAND_F, LOOK["happy"])),
-    ("08", "Làm chung nhé?", lambda: cat(STAND_F, dict(LOOK["curious"], roll=12, wide=0.6, cheek=0.7)) + stroke_path("M38 98 L22 74", FUR, 10) + paw(20, 68, 8, 9, -15) + arcs("M8 60 q-5 6 -1 13", "M4 52 q-7 8 -2 18")),
-    ("09", "Ngủ ngon.", curled_up, dict(scale=2.3, dy=6)),
+    ("08", "Làm chung nhé?", lambda: cat(STAND_F, dict(LOOK["curious"], roll=12, wide=0.6, cheek=0.7)) + stroke_path("M38 98 L22 74", FUR, 10) + paw(20, 66, 8, 10, -12, True) + arcs("M8 60 q-5 6 -1 13", "M4 52 q-7 8 -2 18")),
+    ("09", "Ngủ ngon.", curled_up, dict(scale=2.7, dy=-14)),
     ("10", "Trời mưa rồi.", lambda: cat(SIT_F, dict(LOOK["curious"], roll=-4, gx=0, gy=2, wide=0.2)) + wrap(cloud_and_rain(), 18, -16, 0.8), dict(scale=2.1, dy=22)),
-    ("11", "Xin lỗi nhé.", lambda: cat(STAND_F, dict(LOOK["sad"], roll=-12, dy=8, lid=0.08))),
+    ("11", "Xin lỗi nhé.", lambda: cat(STAND_F, dict(LOOK["sad"], roll=-8, dy=6, lid=0.08))),
     ("12", "Cảm ơn nha!", lambda: hearts() + cat(STAND_F, dict(LOOK["purr"], roll=-3, dy=0))),
     ("13", "Ơ!", lambda: cat(STAND_F, LOOK["gasp"])),
-    ("14", "Để mình nghĩ…", lambda: cat(STAND_F, dict(LOOK["think"], roll=6, dots=0)) + paw(68, 94, 8, 6, 20) + ell(88, 32, 2.8, 2.8, "#8a8a8a") + ell(97, 25, 3.8, 3.8, "#8a8a8a") + ell(108, 16, 5, 5, "#8a8a8a", 0, 0.9)),
-    ("15", "Hì hì.", lambda: cat(STAND_F, dict(LOOK["purr"], roll=8, dy=0, mouth="smile", cheek=1.0)) + paw(70, 86, 9, 7, 25) + arcs("M96 52 q6 -3 7 -10", "M102 62 q7 -2 9 -9")),
-    ("16", "Ừ, giỏi lắm.", lambda: cat(STAND_F, dict(LOOK["smirk"], lid=0.5, gx=-4, roll=3, mouth="flat", cheek=0.4)) + paw(52, 100, 7.5, 6.5, 15) + paw(68, 100, 7.5, 6.5, -15) + arcs("M38 88 q-5 5 -1 11", "M82 88 q5 5 1 11")),
-    ("17", "Ai đợi đâu.", lambda: cat(STAND_S, dict(LOOK["rest"], lid=0.7, roll=-6, mouth="flat", cheek=1.0, gx=-3))),
+    ("14", "Để mình nghĩ…", lambda: cat(STAND_F, dict(LOOK["think"], roll=6, dots=0)) + paw(70, 90, 7, 8.5, 22) + ell(88, 32, 2.8, 2.8, "#8a8a8a") + ell(97, 25, 3.8, 3.8, "#8a8a8a") + ell(108, 16, 5, 5, "#8a8a8a", 0, 0.9)),
+    ("15", "Hì hì.", lambda: cat(STAND_F, dict(LOOK["purr"], roll=8, dy=0, mouth="smile", cheek=1.0)) + paw(66, 86, 7.5, 9.5, 28) + arcs("M96 52 q6 -3 7 -10", "M102 62 q7 -2 9 -9")),
+    ("16", "Ừ, giỏi lắm.", lambda: cat(STAND_F, dict(LOOK["smirk"], lid=0.5, gx=-4, roll=3, mouth="flat", cheek=0.4)) + paw(52, 102, 7, 8.5, 12, True) + paw(68, 102, 7, 8.5, -12, True) + arcs("M38 88 q-5 5 -1 11", "M82 88 q5 5 1 11")),
+    ("17", "Ai đợi đâu.", lambda: cat(STAND_S, dict(LOOK["rest"], lid=0.7, roll=-6, mouth="smile", cheek=1.0, gx=-3))),
 ]
 
 S = 2.45
