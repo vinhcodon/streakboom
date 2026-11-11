@@ -1,6 +1,6 @@
 # ADR-0052: A download counter on the website, read from GitHub and kept in a ledger
 
-- **Status:** accepted (decisions answered by the author on 2026-11-11); **built on 2026-11-11** (committed; the live behaviour is checked after the first deploy)
+- **Status:** accepted (decisions answered by the author on 2026-11-11); **built and live on 2026-11-11**
 - **Date:** 2026-11-11
 - **Decided by:** Vinh (author), with Claude (the website session), after the author asked for counters of downloads and installs shown on the site
 
@@ -25,6 +25,9 @@ The author wants a counter of downloads and installs on the website. What can be
 `scripts/site/downloads.mjs` (the API, the ledger, the merge, the number's format), `scripts/build-site.mjs` (the `downloads` option and `STREAKBOOM_DOWNLOADS=live`), the line `dl_count` under the install steps of the three home pages (strings `dl_count`, placeholder `{n}`), `downloads.json` in the site, the checks of `scripts/site/checks.mjs`, `.github/workflows/pages.yml` (a daily schedule at 03:17 UTC, the counter on, and a copy of `downloads.json` as the workflow artifact `downloads-ledger`). 13 new tests (71 in `scripts/site/`): the merge keeps a deleted release and never goes down, a 404 starts a ledger and every other failure stops the build, a ledger of a wrong shape stops the build, the page shows the ledger's total in each language's own grouping, and a line that says installs or users fails. `buildRig` now writes a file only when its content changed, so test files that build in parallel do not rewrite the same files.
 
 A real run on 2026-11-11 with the counter on (`STREAKBOOM_DOWNLOADS=live node scripts/build-site.mjs`, outside Actions, no token) read the two releases, found no ledger on the live site (404) and wrote a ledger of 4 downloads (v0.3.1: 3, v0.3.0: 1), the same as `gh api repos/vinhcodon/streakboom/releases`, and the pages show "GitHub downloads so far: 4 (counts downloads, including updates, not people)." in English, Vietnamese and Japanese.
+
+## Live (2026-11-11)
+The app session pushed the checkout, so the counter deployed with the next push: the first run in Actions found no ledger (404), wrote 4 downloads and published `downloads.json`; the site shows "GitHub downloads so far: 4 ..." in the three languages. **One fault found and fixed:** a manual run failed in `deploy-pages` ("No artifacts named github-pages were found") because the ledger copy was uploaded as a second artifact before the deployment; the upload now comes after it (commit `ee67e1c`). After the fix the push run and two manual runs in a row succeeded, each reading the ledger from the live site, building 4 downloads, deploying and uploading the artifact `downloads-ledger`; the live `downloads.json` is the same.
 
 ## Alternatives considered
 A private script for the author only (a number that is never shown; safe while the number is small, but not what was asked); an opt-in ping in the app (counts people who agree, needs a server and app work, and weighs on the promise that nothing is sent by itself); a badge or a counter from a third-party service (a request to a third party for every visitor, and it forgets deleted releases); reading the counter from the visitor's browser at page load (a request to the GitHub API from every visitor, and the same loss); a threshold before showing the number (declined: the author prefers to show it from the start); the number of the current version only (declined: it falls to 0 at every release).
