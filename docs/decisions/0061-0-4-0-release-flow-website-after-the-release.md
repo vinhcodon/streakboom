@@ -1,6 +1,6 @@
 # ADR-0061: How 0.4.0 reaches `main` and the world: the old flow, the website after the release
 
-- **Status:** accepted (answered by the author on 2026-11-12); not yet carried out
+- **Status:** accepted (answered by the author on 2026-11-12); **carried out on 2026-11-12** (merge commit 9065445, `main` pushed, then the release; the site build is red until the website session follows)
 - **Date:** 2026-11-12
 - **Decided by:** Vinh (author), with Claude (the app session)
 

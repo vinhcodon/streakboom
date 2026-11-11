@@ -1,6 +1,6 @@
-# Release 0.4.0: the alignment release (a plan; nothing is built)
+# Release 0.4.0: the alignment release (published 2026-11-12)
 
-**Status:** approved by the author at gate 3 (2026-11-11), with Q9. **FA-1 to FA-11 are built on the branch `foundation/alignment`; the release is prepared (version 0.4.0 in the four files, the CHANGELOG entry, the README, the prompt for the website session) but NOT published and not on `main`.** Spec: [`../../spec/12-foundation-alignment.md`](../../spec/12-foundation-alignment.md). Decisions: ADR-0056 to ADR-0059. No code before the author approves, and then story by story.
+**Status: published on 2026-11-12 at the author's order** (tag `v0.4.0` on the merge commit 9065445 of `main`; the manifest commit b5d7ca8; v0.3.1 deleted, v0.3.2 kept as the way back). Approved by the author at gate 3 (2026-11-11), with Q9. **FA-1 to FA-11 are built on the branch `foundation/alignment`; the release is prepared (version 0.4.0 in the four files, the CHANGELOG entry, the README, the prompt for the website session) but NOT published and not on `main`.** Spec: [`../../spec/12-foundation-alignment.md`](../../spec/12-foundation-alignment.md). Decisions: ADR-0056 to ADR-0059. No code before the author approves, and then story by story.
 
 ## Stories (epic E17, "Foundation alignment"; they enter `backlog.md` when approved)
 
@@ -51,3 +51,7 @@ To publish, in this order (ADR-0061; nothing is done until the author orders "Ph
 2. Merge `foundation/alignment` into `main` with a merge commit; push `main` **before** releasing (the tag goes on the head of the default branch at publish time). The site build will fail from this push until the website session follows; that is accepted.
 3. `scripts/release.ps1 -Repo vinhcodon/streakboom -Notes ... -Publish` from a clean tree (the key stays at `~\.tauri\streakboom-updater.key`, never shown); then the routine of ADR-0033 (audit, README and icon, the name, the debt list).
 4. **Then** hand the website session its prompt (`docs/handoff/website-release-prompt.md`): the site is updated after the release. Record the answer in the debt list.
+
+## Published (2026-11-12) and checked
+The first run of `release.ps1` stopped before publishing: the release notes had double quotes, which Windows PowerShell 5.1 breaks when it hands the text to `gh`; nothing had been created (checked with `gh release list`). Run again with notes without double quotes, it published. Checked afterwards: the published installer is byte for byte the one built (SHA-256 278B25CF...7340, 2,669,595 bytes, product version 0.4.0); the release is not a draft and is the latest; the tag `v0.4.0` points at 9065445; `updates/latest.json` on `main` says 0.4.0 with a signature. **Not checked:** the update offer on an installed 0.3.x (the author's installed Peak is 0.3.1: V-107), a clean install, Windows 11, several monitors.
+Lesson for the next release: write the notes without double quotes (or in a file), and check the notes before the build.
