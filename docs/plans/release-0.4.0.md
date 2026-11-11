@@ -1,6 +1,6 @@
 # Release 0.4.0: the alignment release (a plan; nothing is built)
 
-**Status:** approved by the author at gate 3 (2026-11-11), with Q9. **FA-1 to FA-11 are built on the branch `foundation/alignment` (not on `main`, not released).** Spec: [`../../spec/12-foundation-alignment.md`](../../spec/12-foundation-alignment.md). Decisions: ADR-0056 to ADR-0059. No code before the author approves, and then story by story.
+**Status:** approved by the author at gate 3 (2026-11-11), with Q9. **FA-1 to FA-11 are built on the branch `foundation/alignment`; the release is prepared (version 0.4.0 in the four files, the CHANGELOG entry, the README, the prompt for the website session) but NOT published and not on `main`.** Spec: [`../../spec/12-foundation-alignment.md`](../../spec/12-foundation-alignment.md). Decisions: ADR-0056 to ADR-0059. No code before the author approves, and then story by story.
 
 ## Stories (epic E17, "Foundation alignment"; they enter `backlog.md` when approved)
 
@@ -43,3 +43,11 @@ See spec 12 section 11. Sizes are estimates; no code was tried.
 ## What the data checks found (FA-10, 2026-11-11)
 - **Gemini free tier:** the terms (opened 2026-11-11, effective 2026-03-23) say that with unpaid use Google uses prompts and responses to improve its products and that human reviewers may read them; with paid use it does not. The app already says so on the Brain page and in the README. The same page says API users must be 18 or older, and that the service may not be used in an app directed at or likely to be accessed by people under 18.
 - **Uninstalling:** keys are in Windows Credential Manager and are not removed by an uninstaller; the README now says how to remove everything. Whether the uninstaller offers to delete the data folder was **not checked** on a real uninstall.
+
+## Preparation (2026-11-12) and what is left to publish
+Done on the branch: the line report (the same two pools are under the limit as before the work, idle 9 instead of 8: "idle" gained the lines of the old lonely band; click is unchanged at 21), the versions (`tauri.conf.json`, `Cargo.toml`, `Cargo.lock`, `package.json`), the CHANGELOG entry, the README status and roadmap, the test counts (250 JS, 73 Rust), and `docs/handoff/website-release-prompt.md` for 0.4.0.
+To publish, in this order (nothing is done until the author orders "Phát hành 0.4.0"):
+1. The author reads the Vietnamese lines (V-103, V-105) and tries the chat rules with a real key (V-104).
+2. The website session makes `node scripts/build-site.mjs` pass against the branch (the prompt is ready to paste).
+3. Merge the branch into `main` (the author decides how), push `main` **before** releasing (the tag goes on the head of the default branch at publish time).
+4. `scripts/release.ps1 -Repo vinhcodon/streakboom -Notes ... -Publish` from a clean tree; then the routine of ADR-0033 (audit, README and icon, the name, the debt list).
