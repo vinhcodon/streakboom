@@ -5,6 +5,7 @@ import { gzipSync } from "node:zlib";
 import { join } from "node:path";
 import { ORIGIN, ROOT, fmtDate } from "./facts.mjs";
 import { formatCount } from "./downloads.mjs";
+import { CC_URL, fontNames, needsReviewNote, stickerUrl } from "./stickers.mjs";
 import { pageList } from "./files.mjs";
 import { CHARTER_URL, HOME_FAQ, HOW_FAQ, PROMISES, PATHS, esc } from "./pages.mjs";
 import { STRINGS, EN_ONLY, HTML_KEYS, LANGS, UI_KEYS } from "../../site/strings.mjs";
@@ -44,6 +45,7 @@ const BANNED = [
   [/Peak (sees|watches) (what )?you/i, "Peak 'sees' what you do (ADR-0031: it perceives activity, never meaning)"],
   [/(?<!never )reads what you type(?!, which keys)/i, "'reads what you type' without a negation"],
   [/macOS (version|port)? ?(is coming|will|soon)|sắp có (bản )?macOS/i, "a macOS promise"],
+  [/\b(zalo|telegram|line)\s+stickers?\b|stickers?\s+(of|for|của|cho)\s+(zalo|telegram)|(zalo|telegram)\s*のステッカー/i, "a Zalo or Telegram sticker claim (the set is in no store; it is sent as pictures)"],
   [/will be code-signed|sẽ được ký số/i, "a code-signing promise"],
   [/100%\s*無料|完全無料/, "'100% free' in Japanese"],
   [/手描き|手書きの(?!セリフ)/, "'hand-drawn' in Japanese"],
@@ -182,6 +184,7 @@ export function check({ ctx, pages, files, out }) {
     const d = ctx.downloads;
     const sum = Object.values(d.perTag || {}).reduce((a, b) => a + b, 0);
     if (!Number.isInteger(d.total) || d.total !== sum) bad(`downloads: the total ${d.total} is not the sum of the ledger (${sum})`);
+    if (!Array.isArray(d.history) || !d.history.length || d.history.at(-1).total !== d.total || d.history.at(-1).date !== d.updated) bad("downloads: the last entry of the daily history is not today's total");
     if (!files["downloads.json"] || JSON.stringify(JSON.parse(files["downloads.json"])) !== JSON.stringify(d)) bad("downloads.json is missing or is not the ledger the pages show");
     for (const lang of LANGS) {
       const html = byPath.get(PATHS[lang].home).html;
@@ -193,6 +196,67 @@ export function check({ ctx, pages, files, out }) {
   } else {
     for (const p of pages) if (p.html.includes('class="sub downloads"')) bad(`${p.path}: a download line without a ledger`);
     if (files["downloads.json"]) bad("downloads.json without a ledger");
+  }
+
+  // the menu stays short (ADR-0053): four links in the header, the rest in the footer
+  for (const p of pages) {
+    const nav = (p.html.match(/<nav aria-label="Main">([\s\S]*?)<\/nav>/) || [])[1];
+    if (nav === undefined) { if (p.path !== "/404.html") bad(`${p.path}: no main menu`); continue; }
+    const n = (nav.match(/<a /g) || []).length;
+    if (n > 4) bad(`${p.path}: the menu has ${n} links (at most four; the rest belongs in the footer)`);
+  }
+
+  // the sticker pages (ADR-0051, ADR-0053): the set comes from the manifest; the picture is the button; nothing is recorded or downloaded
+  if (!ctx.stickers) bad("the sticker set was not loaded");
+  else {
+    const set = ctx.stickers;
+    for (const lang of LANGS) {
+      const p = byPath.get(PATHS[lang].stickers);
+      if (!p) { bad(`no sticker page for ${lang}`); continue; }
+      const html = p.html;
+      const buttons = [...html.matchAll(/<button class="sticker"[^>]*data-id="([^"]*)"[^>]*aria-label="([^"]*)"><img src="([^"]*)" width="(\d+)" height="(\d+)" alt="([^"]*)"/g)];
+      if (buttons.length !== set.stickers.length) bad(`${p.path}: ${buttons.length} sticker buttons, the manifest has ${set.stickers.length}`);
+      set.stickers.forEach((st, i) => {
+        const b = buttons[i];
+        if (!b) return;
+        if (b[1] !== st.id) bad(`${p.path}: sticker ${i + 1} is ${b[1]}, the manifest order says ${st.id}`);
+        if (b[3] !== stickerUrl(lang, st.id)) bad(`${p.path}: sticker ${st.id} shows ${b[3]}, not the image of its language`);
+        if (b[4] !== "360" || b[5] !== "360") bad(`${p.path}: sticker ${st.id} has no width and height of 360`);
+        if (unesc(b[6]) !== st.alt[lang]) bad(`${p.path}: the alt text of sticker ${st.id} is not the manifest's`);
+        if (!unesc(b[2]).includes(st.title[lang])) bad(`${p.path}: the label of the button ${st.id} does not carry its title`);
+        if (!html.includes(`<span class="sticker-title">${esc(st.title[lang])}</span>`)) bad(`${p.path}: the title of sticker ${st.id} is not text on the page`);
+      });
+      // the licence, the creator and the fonts are on the page and in the structured data
+      if (!html.includes(`<a href="${CC_URL}">CC BY 4.0</a>`)) bad(`${p.path}: no link to the CC BY 4.0 licence`);
+      if (!unesc(html).includes(fontNames(set, lang).split(" · ")[0])) bad(`${p.path}: the font credit is missing`);
+      if (needsReviewNote(set, lang) !== html.includes(STRINGS[lang].st_ai_note)) bad(`${p.path}: the note that the words were written by an AI must show exactly while the manifest says reviewed is not true`);
+      const ld = [...html.matchAll(/<script type="application\/ld\+json">(.*?)<\/script>/gs)].map((m) => JSON.parse(m[1].replace(/\\u003c/g, "<")));
+      const gallery = ld.flatMap((d) => d["@graph"] || []).find((n) => n["@type"] === "ImageGallery");
+      if (!gallery) bad(`${p.path}: no ImageGallery structured data`);
+      else {
+        if (gallery.hasPart.length !== set.stickers.length) bad(`${p.path}: the ImageGallery lists ${gallery.hasPart.length} images, the page has ${set.stickers.length}`);
+        for (const o of gallery.hasPart) {
+          if (o.license !== CC_URL || !o.creator || o.creator.name !== set.creator) bad(`${p.path}: an ImageObject without the licence or the creator`);
+          if (!existsSync(join(out, o.contentUrl.replace(ORIGIN, "")))) bad(`${p.path}: the image ${o.contentUrl} was not built`);
+        }
+      }
+      // what the author does not want: a Download button per sticker, a ZIP, a copy icon of two squares
+      if (/<a [^>]*\bdownload\b|\.zip["' ]|\bzip\b/i.test(html.replace(/<script[\s\S]*?<\/script>/g, ""))) bad(`${p.path}: a download or a ZIP of the stickers (the author does not want them)`);
+      // no third-party script or tracker
+      for (const m of html.matchAll(/<script[^>]*\ssrc="([^"]*)"/g)) if (!m[1].startsWith("/")) bad(`${p.path}: a script from outside the site: ${m[1]}`);
+    }
+    // the page script records nothing and stores nothing
+    const js = existsSync(join(out, "stickers.js")) ? readFileSync(join(out, "stickers.js"), "utf8") : "";
+    if (!js) bad("stickers.js was not built");
+    for (const word of ["cookie", "localStorage", "sessionStorage", "sendBeacon", "XMLHttpRequest", "analytics", "indexedDB"]) if (js.includes(word)) bad(`stickers.js mentions ${word}: the page must record nothing`);
+    // the pictures stay real images that the system menu can act on (a long press, a right click)
+    const css = readFileSync(join(out, "style.css"), "utf8");
+    for (const m of css.matchAll(/([^{}]*\.sticker[^{}]*)\{([^}]*)\}/g)) {
+      if (/touch-callout:\s*none|user-select:\s*none|pointer-events:\s*none/.test(m[2]) && !/\.paw/.test(m[1]) && !/\.sticker-status/.test(m[1])) bad(`style.css: the rule "${m[1].trim()}" blocks the system menu on a sticker (touch-callout, user-select or pointer-events none)`);
+    }
+    // the crawler files know about the set
+    if (!files["llms.txt"].includes("/stickers/")) bad("llms.txt does not mention the sticker page");
+    if (!files["llms-full.txt"].includes(`${set.stickers.length} free stickers`)) bad("llms-full.txt does not state the number of stickers");
   }
 
   // the Atom feed of the changelog: it lists every version of CHANGELOG.md, newest first, and is linked from the changelog page

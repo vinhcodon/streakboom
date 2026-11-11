@@ -23,10 +23,24 @@ export function installerCounts(releases) {
   return out;
 }
 
+/** The daily history: one {date, total} per day, dates rising, totals never falling. A ledger from before the history has none. */
+export function historyOk(history) {
+  if (!Array.isArray(history)) return false;
+  let last = null;
+  for (const h of history) {
+    if (!h || !/^\d{4}-\d\d-\d\d$/.test(h.date || "") || !Number.isInteger(h.total) || h.total < 0) return false;
+    if (last && (h.date <= last.date || h.total < last.total)) return false;
+    last = h;
+  }
+  return true;
+}
+const HISTORY_DAYS = 400;
+
 /** Check the shape of a ledger read from the live site; returns it, or throws. */
 export function checkLedger(ledger) {
   const ok = ledger && typeof ledger === "object" && ledger.perTag && typeof ledger.perTag === "object"
-    && Object.values(ledger.perTag).every((n) => Number.isInteger(n) && n >= 0);
+    && Object.values(ledger.perTag).every((n) => Number.isInteger(n) && n >= 0)
+    && (ledger.history === undefined || historyOk(ledger.history));
   if (!ok) throw new Error("downloads: the previous ledger has an unexpected shape; not publishing a total that may have lost its history");
   return ledger;
 }
@@ -40,7 +54,10 @@ export function mergeLedger(previous, current, today) {
   const total = Object.values(sorted).reduce((sum, n) => sum + n, 0);
   const before = previous ? Object.values(previous.perTag).reduce((sum, n) => sum + n, 0) : 0;
   if (total < before) throw new Error(`downloads: the new total ${total} is lower than the previous ${before}`);
-  return { updated: today, total, perTag: sorted };
+  // one entry per day: today's replaces an earlier one of the same day; the last 400 days are kept
+  const history = [...((previous && previous.history) || []).filter((h) => h.date !== today), { date: today, total }].slice(-HISTORY_DAYS);
+  if (!historyOk(history)) throw new Error("downloads: the history would not be in order (a date went back or a total fell)");
+  return { updated: today, total, perTag: sorted, history };
 }
 
 const get = async (url, headers, fetchFn) => {

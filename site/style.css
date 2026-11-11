@@ -184,7 +184,7 @@ summary h3 { display: inline; font-size: inherit; font-weight: 600; margin: 0; }
 @media (max-width: 760px) {
   body { font-size: 16px; }
   .nav { padding: 8px 16px; }
-  .nav .nav-extra { display: none; }   /* GitHub is in the footer */
+  .nav nav a { padding: 8px 7px; }   /* four items fit a 375 px phone in every language (ADR-0053) */
   main, .footer { padding-left: 16px; padding-right: 16px; }
   .section, .section.alt { padding-top: 40px; padding-bottom: 40px; }
 
@@ -206,3 +206,37 @@ summary h3 { display: inline; font-size: inherit; font-weight: 600; margin: 0; }
 :lang(ja) body, body:lang(ja) { font-family: "Yu Gothic UI", "Hiragino Sans", "Meiryo", system-ui, -apple-system, "Segoe UI", sans-serif; }
 :lang(ja) { line-height: 1.8; line-break: strict; }
 :lang(ja) h1, :lang(ja) h2, :lang(ja) h3 { line-height: 1.35; }
+
+/* ---- the sticker page (ADR-0053). The picture is the button; it stays a real <img> so a long press or a right click still shows the
+   system menu: nothing here blocks the callout, selecting or dragging (no touch-callout none, no user-select none, no pointer-events none). */
+.stickers-page .hint { font-weight: 600; margin: 0 0 18px; }
+.sticker-grid { list-style: none; padding: 0; margin: 0 0 24px; display: grid; gap: 14px; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); }
+.sticker-item { display: flex; flex-direction: column; align-items: center; gap: 6px; }
+.sticker {
+  position: relative; display: block; width: 100%; padding: 8px; margin: 0;
+  border: 1px solid var(--line); border-radius: var(--radius); background: var(--card);
+  cursor: pointer; font: inherit; color: inherit; -webkit-tap-highlight-color: transparent;
+  -webkit-user-select: auto; user-select: auto; -webkit-touch-callout: default;   /* a button may not select its picture by default on iOS: allow it */
+}
+.sticker img { display: block; width: 100%; height: auto; -webkit-touch-callout: default; -webkit-user-select: auto; user-select: auto; pointer-events: auto; }
+.sticker:hover { background: var(--bg-alt); }
+.sticker-title { font-size: .95rem; color: var(--muted); text-align: center; }
+.sticker .paw {
+  position: absolute; right: 8px; bottom: 8px; width: 28px; height: 28px; opacity: 0; pointer-events: none;
+  transition: opacity .15s; background: center / contain no-repeat url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cg fill='%23d98f2b'%3E%3Cellipse cx='16' cy='21' rx='8' ry='6.5'/%3E%3Cellipse cx='6.5' cy='13' rx='3' ry='3.8'/%3E%3Cellipse cx='12.5' cy='7.5' rx='3' ry='3.8'/%3E%3Cellipse cx='19.5' cy='7.5' rx='3' ry='3.8'/%3E%3Cellipse cx='25.5' cy='13' rx='3' ry='3.8'/%3E%3C/g%3E%3C/svg%3E");
+}
+.sticker:hover .paw, .sticker:focus-visible .paw { opacity: .5; }
+.sticker.copied { animation: sticker-bounce .45s ease-out; }
+.sticker.copied .paw { opacity: 1; width: 40px; height: 40px; animation: paw-pop .45s ease-out; }
+@keyframes sticker-bounce { 0% { transform: scale(1); } 35% { transform: scale(1.07); } 70% { transform: scale(.98); } 100% { transform: scale(1); } }
+@keyframes paw-pop { from { transform: scale(.3); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { .sticker.copied, .sticker.copied .paw { animation: none; } .sticker .paw { transition: none; } }
+.sticker-status {
+  position: fixed; left: 50%; bottom: 16px; transform: translateX(-50%); z-index: 30;
+  width: max-content; max-width: min(92vw, 520px); margin: 0; padding: 10px 16px; border-radius: 14px;
+  background: var(--ink); color: var(--bg); font-size: .95rem; box-shadow: 0 6px 20px rgba(0, 0, 0, .25);
+  opacity: 0; pointer-events: none; transition: opacity .2s;
+}
+.sticker-status[data-on="1"] { opacity: 1; pointer-events: auto; }
+.sticker-share { margin-left: 8px; font: inherit; font-weight: 700; color: inherit; background: transparent; border: 1px solid currentColor; border-radius: 999px; padding: 2px 14px; cursor: pointer; }
+.licence { font-weight: 600; }

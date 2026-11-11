@@ -10,6 +10,7 @@ export function pageList() {
   return [
     ...LANGS.map((l) => ({ path: PATHS[l].home, alternates: alternatesFor("home") })),
     ...LANGS.map((l) => ({ path: PATHS[l].how, alternates: alternatesFor("how") })),
+    ...LANGS.map((l) => ({ path: PATHS[l].stickers, alternates: alternatesFor("stickers") })),
     ...LANGS.map((l) => ({ path: PATHS[l].privacy, alternates: alternatesFor("privacy") })),
     { path: PATHS.changelog, alternates: [] },
   ];
@@ -60,6 +61,13 @@ const FACTS = `## Languages and AI brains
 const en = (key, ctx) => fill(STRINGS.en[key], ctx, "en");
 const bullets = (list, ctx) => list.map((t) => `- ${fill(t, ctx, "en")}`).join("\n");
 
+/** The stickers in plain text for assistants: the count and the titles come from the manifest, nothing is hard-coded. */
+function stickerSection(ctx) {
+  const set = ctx.stickers;
+  const titles = set.stickers.map((st) => st.title.en).join(", ");
+  return `Peak stickers (${ORIGIN}/stickers/, also in Vietnamese and Japanese): ${set.stickers.length} free stickers of Peak as PNG pictures, with the text on the image in the language of the page. Licence ${set.license}: free to use and share, also commercially, as long as you credit ${set.creator}. On the page you tap a sticker to copy it and paste it into a chat box (on a phone that supports it, Share sends it to a chat app). They are sent as pictures, not as sticker packs, and the set is not offered as a pack in any store. Nothing is recorded when a sticker is copied or shared. The stickers: ${titles}.`;
+}
+
 export function llms(ctx) {
   return `# Streakboom
 
@@ -72,6 +80,7 @@ ${FACTS}
 - [Streakboom, trang chủ (Tiếng Việt)](${ORIGIN}/vi/): the same in Vietnamese
 - [Streakboom ホーム（日本語）](${ORIGIN}/ja/): the same in Japanese (the app speaks Japanese as a beta)
 - [How it works](${ORIGIN}/how-it-works/): Peak with no AI, adding your own AI key, what is stored, what is free, how updates work (also in /vi/ and /ja/)
+- [Peak stickers](${ORIGIN}/stickers/): free stickers of Peak as pictures to copy into a chat, CC BY 4.0 (also /vi/stickers/ and /ja/stickers/)
 - [Privacy](${ORIGIN}/privacy/): what Streakboom keeps, what it sends and to whom, what Peak notices around it
 - [Changelog](${ORIGIN}/changelog/): release notes of every version
 - [Changelog feed (Atom)](${ORIGIN}${PATHS.feed}): the same notes as a feed, newest first
@@ -108,6 +117,10 @@ ${FACTS}
 ## Features
 
 ${[1, 2, 3, 4, 5, 6, 7, 8, 9].map((i) => `- **${en("f" + i + "_h", ctx)}**: ${en("f" + i + "_p", ctx)}`).join("\n")}
+
+## Stickers
+
+${stickerSection(ctx)}
 
 ## Install
 

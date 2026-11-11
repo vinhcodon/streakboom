@@ -22,7 +22,7 @@ test("only the installer counts, not latest.json", () => {
 
 test("the ledger keeps a deleted release and never goes down", () => {
   const first = mergeLedger(null, { "v0.3.1": 3, "v0.3.0": 1 }, "2026-11-11");
-  assert.deepEqual(first, { updated: "2026-11-11", total: 4, perTag: { "v0.3.0": 1, "v0.3.1": 3 } });
+  assert.deepEqual(first, { updated: "2026-11-11", total: 4, perTag: { "v0.3.0": 1, "v0.3.1": 3 }, history: [{ date: "2026-11-11", total: 4 }] });
   // v0.3.0 is deleted by a release, v0.3.2 appears, v0.3.1 grows
   const next = mergeLedger(first, { "v0.3.2": 2, "v0.3.1": 5 }, "2026-11-20");
   assert.equal(next.total, 1 + 5 + 2);
@@ -30,13 +30,31 @@ test("the ledger keeps a deleted release and never goes down", () => {
   // GitHub shows a smaller number than the ledger (it must not): the ledger's number stays
   assert.equal(mergeLedger(next, { "v0.3.2": 0, "v0.3.1": 1 }, "2026-11-21").total, 8);
   // versions sort as numbers, not as text
-  assert.deepEqual(Object.keys(mergeLedger(null, { "v0.10.0": 1, "v0.9.0": 1 }, "d").perTag), ["v0.9.0", "v0.10.0"]);
+  assert.deepEqual(Object.keys(mergeLedger(null, { "v0.10.0": 1, "v0.9.0": 1 }, "2026-01-01").perTag), ["v0.9.0", "v0.10.0"]);
+});
+
+test("the daily history: one entry per day, the same day replaces, a ledger without history starts one", () => {
+  const a = mergeLedger({ total: 4, perTag: { v1: 4 } }, { v1: 4 }, "2026-11-11"); // a ledger from before the history
+  assert.deepEqual(a.history, [{ date: "2026-11-11", total: 4 }]);
+  const b = mergeLedger(a, { v1: 5 }, "2026-11-11"); // the same day again: replaced, not added
+  assert.deepEqual(b.history, [{ date: "2026-11-11", total: 5 }]);
+  const c = mergeLedger(b, { v1: 9 }, "2026-11-12");
+  assert.deepEqual(c.history, [{ date: "2026-11-11", total: 5 }, { date: "2026-11-12", total: 9 }]);
+  // at most 400 days are kept
+  let l = null;
+  for (let i = 0; i < 405; i++) l = mergeLedger(l, { v1: i }, new Date(Date.UTC(2026, 0, 1 + i)).toISOString().slice(0, 10));
+  assert.equal(l.history.length, 400);
+  assert.equal(l.history.at(-1).total, 404);
+  // a date that goes back stops the build
+  assert.throws(() => mergeLedger(c, { v1: 9 }, "2026-11-10"), /not be in order/);
 });
 
 test("a ledger of an unexpected shape stops the build", () => {
   assert.throws(() => checkLedger(null), /unexpected shape/);
   assert.throws(() => checkLedger({ perTag: { v1: -1 } }), /unexpected shape/);
   assert.throws(() => checkLedger({ perTag: { v1: "3" } }), /unexpected shape/);
+  assert.throws(() => checkLedger({ perTag: { v1: 3 }, history: [{ date: "2026-11-11", total: 3 }, { date: "2026-11-10", total: 4 }] }), /unexpected shape/);
+  assert.throws(() => checkLedger({ perTag: { v1: 3 }, history: [{ date: "2026-11-10", total: 5 }, { date: "2026-11-11", total: 4 }] }), /unexpected shape/);
   assert.deepEqual(checkLedger({ perTag: { v1: 3 } }).perTag, { v1: 3 });
 });
 
@@ -64,7 +82,7 @@ test("the number is written in each language's own grouping", () => {
 });
 
 // ---- the pages with a ledger (a build in a temporary folder, so _site is left alone)
-const ledger = { updated: "2026-11-11", total: 1234, perTag: { "v0.3.0": 234, "v0.3.1": 1000 } };
+const ledger = { updated: "2026-11-11", total: 1234, perTag: { "v0.3.0": 234, "v0.3.1": 1000 }, history: [{ date: "2026-11-10", total: 1100 }, { date: "2026-11-11", total: 1234 }] };
 const withCounter = (() => {
   const out = join(mkdtempSync(join(tmpdir(), "sb-dl-")), "_site");
   return build({ out, downloads: ledger });

@@ -11,7 +11,8 @@ import { cpSync, existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } fr
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { ROOT, context } from "./site/facts.mjs";
-import { PATHS, changelogPage, homePage, howPage, notFoundPage, privacyPage } from "./site/pages.mjs";
+import { PATHS, changelogPage, homePage, howPage, notFoundPage, privacyPage, stickersPage } from "./site/pages.mjs";
+import { loadStickers } from "./site/stickers.mjs";
 import { LANGS } from "../site/strings.mjs";
 import { changelogFeed, llms, llmsFull, robots, sitemap } from "./site/files.mjs";
 import { check } from "./site/checks.mjs";
@@ -40,21 +41,28 @@ const write = (out, rel, text) => {
 };
 
 /** `downloads` is the ledger of the download counter (ADR-0052) or null: no number on the pages, no downloads.json. */
-export function build({ out = OUT, downloads = null } = {}) {
+export function build({ out = OUT, downloads = null, stickerDir } = {}) {
   buildRig();
   rmSync(out, { recursive: true, force: true });
   mkdirSync(out, { recursive: true });
   // what the browser loads
-  for (const f of ["style.css", "app.js", "peak.js", "ui.js", "scenes.js", "tour.js"]) cpSync(join(SITE, f), join(out, f));
+  for (const f of ["style.css", "app.js", "peak.js", "ui.js", "scenes.js", "tour.js", "stickers.js"]) cpSync(join(SITE, f), join(out, f));
   cpSync(join(SITE, "assets"), join(out, "assets"), { recursive: true });
   cpSync(join(SITE, "peak"), join(out, "peak"), { recursive: true });
 
   const ctx = context();
   ctx.downloads = downloads;
+  // the Peak stickers: one folder of the repository, read at build time (ADR-0053); the manifest decides the count and the order
+  ctx.stickers = loadStickers(stickerDir);
+  for (const lang of LANGS) {
+    mkdirSync(join(out, "assets", "stickers", lang), { recursive: true });
+    for (const st of ctx.stickers.stickers) cpSync(join(ctx.stickers.dir, lang, `${st.id}.png`), join(out, "assets", "stickers", lang, `${st.id}.png`));
+  }
   const fileOf = (path) => `${path.replace(/^\//, "")}index.html`;
   const pages = [
     ...LANGS.map((l) => ({ path: PATHS[l].home, file: fileOf(PATHS[l].home), lang: l, html: homePage(l, ctx) })),
     ...LANGS.map((l) => ({ path: PATHS[l].how, file: fileOf(PATHS[l].how), lang: l, html: howPage(l, ctx) })),
+    ...LANGS.map((l) => ({ path: PATHS[l].stickers, file: fileOf(PATHS[l].stickers), lang: l, html: stickersPage(l, ctx) })),
     ...LANGS.map((l) => ({ path: PATHS[l].privacy, file: fileOf(PATHS[l].privacy), lang: l, html: privacyPage(l, ctx) })),
     { path: PATHS.changelog, file: "changelog/index.html", lang: "en", html: changelogPage(ctx) },
     { path: "/404.html", file: "404.html", lang: "en", html: notFoundPage(ctx) },

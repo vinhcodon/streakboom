@@ -1,14 +1,15 @@
 // The pages of the website as functions of (language, release facts). Output is plain static HTML that GitHub Pages
 // serves as it is; nothing here runs in the visitor's browser. Text comes from site/strings.mjs, facts from facts.mjs.
-import { STRINGS, HTML_KEYS, UI_KEYS, LANGS } from "../../site/strings.mjs";
+import { STRINGS, HTML_KEYS, STICKER_UI_KEYS, UI_KEYS, LANGS } from "../../site/strings.mjs";
 import { SCENES } from "../../site/scenes.js";
 import { AUTHOR, ORIGIN, RELEASES_URL, REPO_URL, fmtDate } from "./facts.mjs";
 import { formatCount } from "./downloads.mjs";
+import { CC_URL, fontNames, needsReviewNote, stickerUrl } from "./stickers.mjs";
 
 export const PATHS = {
-  en: { home: "/", privacy: "/privacy/", how: "/how-it-works/" },
-  vi: { home: "/vi/", privacy: "/vi/privacy/", how: "/vi/how-it-works/" },
-  ja: { home: "/ja/", privacy: "/ja/privacy/", how: "/ja/how-it-works/" },
+  en: { home: "/", privacy: "/privacy/", how: "/how-it-works/", stickers: "/stickers/" },
+  vi: { home: "/vi/", privacy: "/vi/privacy/", how: "/vi/how-it-works/", stickers: "/vi/stickers/" },
+  ja: { home: "/ja/", privacy: "/ja/privacy/", how: "/ja/how-it-works/", stickers: "/ja/stickers/" },
   changelog: "/changelog/",
   feed: "/changelog.xml",
 };
@@ -39,13 +40,13 @@ export const tx = (lang, key, ctx) => (HTML_KEYS.has(key) ? raw(lang, key, ctx) 
 
 const json = (o) => JSON.stringify(o).replace(/</g, "\\u003c");
 
-function head({ lang, ctx, path, title, description, alternates, jsonld = [], noindex = false, feed = false }) {
+function head({ lang, ctx, path, title, description, alternates, jsonld = [], noindex = false, feed = false, uiExtra = [] }) {
   const url = ORIGIN + path;
   const locale = LANG_INFO[lang].locale;
   const alt = (alternates || []).map((a) => `  <link rel="alternate" hreflang="${a.hreflang}" href="${ORIGIN}${a.path}">`).join("\n");
   const ogAlt = (alternates || []).filter((a) => a.hreflang !== "x-default" && a.hreflang !== lang)
     .map((a) => `  <meta property="og:locale:alternate" content="${LANG_INFO[a.hreflang].locale}">`).join("\n");
-  const ui = Object.fromEntries(UI_KEYS.map((k) => [k, STRINGS[lang][k] ?? STRINGS.en[k]]));
+  const ui = Object.fromEntries([...UI_KEYS, ...uiExtra].map((k) => [k, STRINGS[lang][k] ?? STRINGS.en[k]]));
   return `<head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -89,13 +90,10 @@ function header({ lang, ctx, switchTo }) {
       ${links}
     </span>
     <nav aria-label="Main">
-      <a href="${home}#features">${s("nav_features")}</a>
       <a href="${home}#install">${s("nav_install")}</a>
       <a href="${PATHS[lang].how}">${s("nav_how")}</a>
       <a href="${PATHS[lang].privacy}">${s("nav_privacy")}</a>
-      <a href="${home}#faq">${s("nav_faq")}</a>
-      <a href="${PATHS.changelog}">${s("nav_changelog")}</a>
-      <a class="nav-extra" href="${REPO_URL}">GitHub</a>
+      <a href="${PATHS[lang].stickers}">${s("nav_stickers")}</a>
     </nav>
   </header>`;
 }
@@ -104,7 +102,7 @@ function footer({ lang, ctx }) {
   const s = (k) => tx(lang, k, ctx);
   return `<footer class="footer">
     <p>${s("foot_a")}</p>
-    <p><a href="${REPO_URL}">Source</a> · <a href="${REPO_URL}/issues">${s("foot_bug")}</a> · <a href="${PATHS[lang].how}">${s("nav_how")}</a> · <a href="${PATHS[lang].privacy}">${s("nav_privacy")}</a> · <a href="${PATHS.changelog}">${s("nav_changelog")}</a></p>
+    <p><a href="${REPO_URL}">GitHub</a> · <a href="${PATHS[lang].home}#faq">${s("nav_faq")}</a> · <a href="${PATHS.changelog}">${s("nav_changelog")}</a> · <a href="${REPO_URL}/issues">${s("foot_bug")}</a> · <a href="${PATHS.feed}">Atom</a></p>
   </footer>`;
 }
 
@@ -121,7 +119,7 @@ ${main}
   </main>
 
   ${footer({ lang, ctx })}
-${script ? '\n  <script type="module" src="/app.js"></script>\n' : ""}</body>
+${script ? `\n  <script type="module" src="${script === true ? "/app.js" : script}"></script>\n` : ""}</body>
 </html>
 `;
 }
@@ -352,6 +350,92 @@ ${faqHtml(faqPairs(lang, ctx, HOW_FAQ))}
     lang, ctx, switchTo: Object.fromEntries(LANGS.map((l) => [l, PATHS[l].how])),
     headArgs: { path, title: raw(lang, "hw_page_title", ctx), description: raw(lang, "hw_desc", ctx), alternates: alternatesFor("how"), jsonld: howJsonLd(lang, ctx) },
     main, script: false,
+  });
+}
+
+/** Structured data of a sticker page: an ImageGallery of ImageObjects with the licence and the creator (ADR-0051). */
+export function stickersJsonLd(lang, ctx) {
+  const set = ctx.stickers;
+  const path = PATHS[lang].stickers;
+  const creator = { "@type": "Organization", name: set.creator, url: ORIGIN };
+  return [{
+    "@context": "https://schema.org",
+    "@graph": [{
+      "@type": "ImageGallery",
+      "@id": `${ORIGIN}${path}#gallery`,
+      name: raw(lang, "st_title", ctx),
+      description: raw(lang, "st_desc", ctx),
+      url: ORIGIN + path,
+      inLanguage: lang,
+      license: CC_URL,
+      creator,
+      creditText: `Peak stickers by ${set.creator}, ${set.license}`,
+      isPartOf: { "@id": `${ORIGIN}/#site` },
+      hasPart: set.stickers.map((st) => ({
+        "@type": "ImageObject",
+        contentUrl: ORIGIN + stickerUrl(lang, st.id),
+        name: st.title[lang],
+        description: st.alt[lang],
+        encodingFormat: "image/png",
+        width: 360,
+        height: 360,
+        license: CC_URL,
+        creator,
+        creditText: `Peak stickers by ${set.creator}, ${set.license}`,
+        acquireLicensePage: ORIGIN + path,
+      })),
+    }],
+  }];
+}
+
+/** The sticker page: the picture itself is the button (tap to copy; site/stickers.js); the pictures are real <img> elements, so a
+ *  long press or a right click still shows the system menu, and with scripts off they are still there. */
+export function stickersPage(lang, ctx) {
+  const s = (k) => tx(lang, k, ctx);
+  const set = ctx.stickers;
+  const path = PATHS[lang].stickers;
+  const items = set.stickers.map((st, i) => {
+    const title = st.title[lang];
+    const label = raw(lang, "st_aria", ctx).replace("{title}", title);
+    return `        <li class="sticker-item"><button class="sticker" type="button" data-id="${esc(st.id)}" data-title="${esc(title)}" aria-label="${esc(label)}"><img src="${stickerUrl(lang, st.id)}" width="360" height="360" alt="${esc(st.alt[lang])}"${i < 6 ? "" : ' loading="lazy"'}><span class="paw" aria-hidden="true"></span></button><span class="sticker-title">${esc(title)}</span></li>`;
+  }).join("\n");
+  const fonts = esc(raw(lang, "st_fonts", ctx).replace("{fonts}", fontNames(set, lang)));
+  const aiNote = needsReviewNote(set, lang) ? `\n      <p class="note">${s("st_ai_note")}</p>` : "";
+  const main = `
+    <section class="section stickers-page">
+      <h1>${s("st_title")}</h1>
+      <p class="lead">${s("st_lead")}</p>
+      <p id="sticker-hint" class="hint" hidden>${s("st_hint")}</p>
+      <noscript><p class="note">${s("st_nojs")}</p></noscript>
+      <ul class="sticker-grid">
+${items}
+      </ul>
+      <p id="sticker-status" class="sticker-status" role="status" aria-live="polite"></p>
+    </section>
+
+    <section class="section alt">
+      <h2>${s("st_how_title")}</h2>
+      <ol class="steps">
+        <li>${s("st_how1")}</li>
+        <li>${s("st_how2")}</li>
+      </ol>
+      <p class="licence">${s("st_license")}</p>
+      <p class="note">${fonts}</p>${aiNote}
+      <p class="note">${s("st_privacy")}</p>
+    </section>
+
+    <section class="section">
+      <p>${s("st_cta")}</p>
+      <p class="cta"><a class="btn primary" href="${RELEASES_URL}">${s("download")}</a> <a class="btn ghost" href="${PATHS[lang].home}">${s("see_more")}</a></p>
+    </section>
+`;
+  return htmlDoc({
+    lang, ctx, switchTo: Object.fromEntries(LANGS.map((l) => [l, PATHS[l].stickers])),
+    headArgs: {
+      path, title: raw(lang, "st_page_title", ctx), description: raw(lang, "st_desc", ctx),
+      alternates: alternatesFor("stickers"), jsonld: stickersJsonLd(lang, ctx), uiExtra: STICKER_UI_KEYS,
+    },
+    main, script: "/stickers.js",
   });
 }
 

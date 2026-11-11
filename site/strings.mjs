@@ -5,8 +5,7 @@ import { SCENES } from "./scenes.js";
 
 export const STRINGS = {
   en: {
-    title: "Streakboom: meet Peak, a desktop pet cat for Windows",
-    nav_features: "Features", nav_install: "Install", nav_privacy: "Privacy", nav_faq: "FAQ", nav_updates: "Updates",
+    title: "Streakboom: meet Peak, a desktop pet cat for Windows", nav_install: "Install", nav_privacy: "Privacy", nav_faq: "FAQ", nav_updates: "Updates",
     hero_title: "Streakboom: meet Peak, a little cat on your screen",
     hero_lead: "<strong>Peak</strong> keeps you company, says a few words, and makes way when you work next to it. Free, open source, for Windows.",
     download: "Download for Windows", latest_release: "latest release", see_more: "See what it does",
@@ -134,10 +133,28 @@ export const STRINGS = {
     hw_feat_title: "What it does",
     hw_faq_title: "More questions",
     dl_count: "GitHub downloads so far: {n} (counts downloads, including updates, not people).",
+    nav_stickers: "Stickers",
+    st_page_title: "Peak stickers: free cat stickers for your chats",
+    st_desc: "Free stickers of Peak, the cat from Streakboom. Tap one to copy it, then paste it into Zalo, Telegram, Messenger or any chat. CC BY 4.0.",
+    st_title: "Peak stickers",
+    st_lead: "Little Peak moods for your chats. Free to use.",
+    st_hint: "Tap a sticker to copy it.",
+    st_nojs: "Without scripts: press and hold a picture, or right-click it, to copy or save it.",
+    st_how_title: "How to use",
+    st_how1: "Tap a sticker to copy it, then paste it into the chat box. On a phone, Share sends it straight to a chat app.",
+    st_how2: "They are sent as pictures, not as sticker packs, so they look larger and cannot be tapped to add a pack. A real sticker pack is not offered yet.",
+    st_copied: "Copied. Paste it into the chat box.",
+    st_copy_failed: "Your browser did not allow copying. Press and hold the picture (or right-click it) to copy or save it.",
+    st_share: "Share",
+    st_aria: "Copy sticker {title}",
+    st_license: "Peak stickers by Streakboom, <a href=\"https://creativecommons.org/licenses/by/4.0/\">CC BY 4.0</a>. Free to use and share, also commercially, as long as you credit Streakboom.",
+    st_fonts: "The text on the images is set in {fonts} (SIL Open Font License).",
+    st_ai_note: "The words on these stickers were written by an AI and have not been read by a native speaker, so some lines may sound odd.",
+    st_cta: "Peak is a little cat that lives on your screen.",
+    st_privacy: "Nothing is recorded when you copy or share a sticker.",
   },
   vi: {
-    title: "Streakboom: gặp Peak, chú mèo thú cưng cho màn hình Windows",
-    nav_features: "Tính năng", nav_install: "Cài đặt", nav_privacy: "Riêng tư", nav_faq: "Hỏi đáp", nav_updates: "Cập nhật",
+    title: "Streakboom: gặp Peak, chú mèo thú cưng cho màn hình Windows", nav_install: "Cài đặt", nav_privacy: "Riêng tư", nav_faq: "Hỏi đáp", nav_updates: "Cập nhật",
     hero_title: "Streakboom: gặp Peak, chú mèo nhỏ trên màn hình của bạn",
     hero_lead: "<strong>Peak</strong> ở bên bạn, thỉnh thoảng nói vài câu, và nhường chỗ khi bạn làm việc ngay cạnh nó. Miễn phí, mã nguồn mở, dành cho Windows.",
     download: "Tải về cho Windows", latest_release: "bản mới nhất", see_more: "Xem Peak làm được gì",
@@ -264,10 +281,28 @@ export const STRINGS = {
     hw_feat_title: "Nó làm được gì",
     hw_faq_title: "Thêm vài câu hỏi",
     dl_count: "Lượt tải từ GitHub đến nay: {n} (đếm lượt tải, gồm cả cập nhật, không phải số người).",
+    nav_stickers: "Sticker",
+    st_page_title: "Sticker Peak: sticker mèo miễn phí cho cuộc trò chuyện của bạn",
+    st_desc: "Sticker miễn phí của Peak, chú mèo của Streakboom. Bấm vào một sticker để chép, rồi dán vào Zalo, Telegram, Messenger hay bất kỳ khung chat nào. CC BY 4.0.",
+    st_title: "Sticker Peak",
+    st_lead: "Những tâm trạng nhỏ của Peak cho cuộc trò chuyện của bạn. Dùng miễn phí.",
+    st_hint: "Bấm vào sticker để chép.",
+    st_nojs: "Khi không có script: nhấn giữ ảnh hoặc bấm chuột phải để chép hoặc lưu.",
+    st_how_title: "Cách dùng",
+    st_how1: "Bấm vào sticker để chép, rồi dán vào khung chat. Trên điện thoại, Chia sẻ gửi thẳng vào ứng dụng chat.",
+    st_how2: "Gửi đi là ảnh, không phải gói sticker, nên trông lớn hơn và người nhận không thể bấm để thêm gói. Gói sticker thật chưa có.",
+    st_copied: "Đã chép. Dán vào khung chat nhé.",
+    st_copy_failed: "Trình duyệt không cho chép. Nhấn giữ ảnh (hoặc bấm chuột phải) để chép hoặc lưu.",
+    st_share: "Chia sẻ",
+    st_aria: "Chép sticker {title}",
+    st_license: "Sticker Peak của Streakboom, <a href=\"https://creativecommons.org/licenses/by/4.0/\">CC BY 4.0</a>. Dùng và chia sẻ miễn phí, kể cả thương mại, miễn là ghi công Streakboom.",
+    st_fonts: "Chữ trên ảnh dùng {fonts} (SIL Open Font License).",
+    st_ai_note: "Chữ trên các sticker này do AI viết và chưa có người bản ngữ đọc, nên có câu nghe có thể lạ.",
+    st_cta: "Peak là chú mèo nhỏ sống trên màn hình của bạn.",
+    st_privacy: "Không có gì được ghi lại khi bạn chép hay chia sẻ sticker.",
   },
   ja: {
     title: "Streakboom: Windows用デスクトップペット、ネコのPeakと出会おう",
-    nav_features: "機能",
     nav_install: "インストール",
     nav_privacy: "プライバシー",
     nav_faq: "よくある質問",
@@ -419,6 +454,25 @@ export const STRINGS = {
     hw_feat_title: "できること",
     hw_faq_title: "ほかのよくある質問",
     dl_count: "GitHubでのダウンロード数（これまで）：{n}（人数ではなく、更新を含むダウンロード回数です）。",
+    nav_stickers: "ステッカー",
+    st_page_title: "Peakのステッカー：チャットで使える無料のネコステッカー",
+    st_desc: "StreakboomのネコPeakの無料ステッカー。タップしてコピーし、Zalo、Telegram、Messengerなどのチャットに貼り付けるだけ。CC BY 4.0。",
+    st_title: "Peakのステッカー",
+    st_lead: "チャットで使える、Peakのいろいろな気分。無料で使えます。",
+    st_hint: "ステッカーをタップしてコピー。",
+    st_nojs: "スクリプトが使えないとき：画像を長押し（または右クリック）して、コピーまたは保存してください。",
+    st_how_title: "使い方",
+    st_how1: "ステッカーをタップしてコピーし、チャット欄に貼り付けます。スマートフォンでは「共有」でチャットアプリに直接送れます。",
+    st_how2: "送られるのは画像で、ステッカーパックではありません。そのため大きく表示され、相手がタップしてパックを追加することはできません。本物のステッカーパックはまだありません。",
+    st_copied: "コピーしました。チャット欄に貼り付けてください。",
+    st_copy_failed: "ブラウザーがコピーを許可しませんでした。画像を長押し（または右クリック）して、コピーまたは保存してください。",
+    st_share: "共有",
+    st_aria: "ステッカー「{title}」をコピー",
+    st_license: "StreakboomのPeakステッカー、<a href=\"https://creativecommons.org/licenses/by/4.0/\">CC BY 4.0</a>。Streakboomのクレジットを表示すれば、商用を含め自由に使えて共有できます。",
+    st_fonts: "画像の文字には{fonts}を使っています（SIL Open Font License）。",
+    st_ai_note: "このステッカーの文字はAIが書いたもので、日本語を母語とする人にはまだ読んでもらっていないため、不自然な文が混ざっているかもしれません。",
+    st_cta: "Peakは、画面に住む小さなネコです。",
+    st_privacy: "ステッカーをコピーまたは共有しても、何も記録されません。",
   },
 };
 
@@ -426,7 +480,9 @@ export const STRINGS = {
 export const LANGS = ["en", "vi", "ja"];
 
 /** Keys whose value is HTML written by us (everything else is plain text and is escaped). */
-export const HTML_KEYS = new Set(["hero_lead", "alpha_note", "s1", "s2", "s3", "upd_sub"]);
+export const HTML_KEYS = new Set(["hero_lead", "alpha_note", "s1", "s2", "s3", "upd_sub", "st_license"]);
+/** The strings the sticker page script needs, besides UI_KEYS (written into that page only). */
+export const STICKER_UI_KEYS = ["st_copied", "st_copy_failed", "st_share"];
 /** Keys that exist in English only: the changelog and the 404 page are not translated. */
 export const EN_ONLY = new Set(["cl_feed", "cl_page_title", "cl_desc", "cl_title", "cl_intro", "nf_title", "nf_text"]);
 /** The keys the page scripts need (share button, copy note, pose labels); the build puts them in each page. */
