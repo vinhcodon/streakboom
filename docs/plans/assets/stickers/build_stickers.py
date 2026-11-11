@@ -241,13 +241,12 @@ def wrap(inner, x, y, s):
 
 # ---- sticker-only art (not in the app): the lounging cat (3), the curled-up sleeper (9), the rain (10), confetti (7) ----
 def thought_bubble():
-    """A thought bubble drawn as three round bubbles that grow as they rise from the head, a wavy line in the biggest one:
-    vague, drifting thoughts."""
+    """A thought bubble drawn as three round bubbles that grow as they rise from the head, with a clear gap between them:
+    vague, drifting thoughts (the biggest one is left empty)."""
     grey, white = "#b8c2cc", "#ffffff"
-    circles = ((38, 52, 3.2), (44, 41, 5.6), (56, 25, 12.5))
+    circles = ((35, 55, 2.6), (41, 45, 4.4), (51, 31, 7.5))
     o = "".join(f'<circle cx="{x}" cy="{y}" r="{r + 1.3}" fill="{grey}"/>' for x, y, r in circles)
     o += "".join(f'<circle cx="{x}" cy="{y}" r="{r}" fill="{white}"/>' for x, y, r in circles)
-    o += stroke_path("M49 25 q3.5 -6 7 0 t7 0", "#9aa7b5", 1.9)
     return o
 
 

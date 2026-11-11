@@ -38,6 +38,9 @@ The text of sticker 03 changed from "Đời là thế." to **"Cuộc sống mà.
 ## Later the same day (8)
 The thought bubble of sticker 03 is drawn as **three round bubbles growing as they rise from the head, with a wavy line in the biggest** (not a cloud). The English and Japanese lines were changed to match the Vietnamese "Cuộc sống mà.": **"Life, you know."** and **"人生ってさ。"** (AI-written, not read by a native speaker: V-99).
 
+## Later the same day (9)
+The three bubbles of sticker 03 were made smaller with a clear gap between them (the biggest was too large and touched the middle one), and the wavy line inside was removed (it meant nothing to the author); the biggest bubble is left empty.
+
 ## Consequences
 - Spec 06 section 7 and the set list are updated: 16 are in the app (matched to a state) and the sticker-only art is now 03, 09 and the cloud of 10; the set is 17 stickers.
 - The sarcasm texts have not been through the author's ear for Vietnamese banter (backlog E3).
