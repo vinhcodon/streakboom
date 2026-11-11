@@ -14,6 +14,9 @@ The author found sticker 3 (belly) and 9 (good night, side-on loaf) unnatural, a
 3. **Sticker 09 "Ngủ ngon."** becomes a cat curled into a round loaf like a mochi, head on its paws, tail wrapped round the front. Sticker-only art (the app has the loaf, not the curl).
 4. Not taken: the belly-up dare "Gãi đi, dám không?", the sweet sit-up belly, the front loaf for sleep, and the extra sarcastic ones "Rồi sao nữa?", "Đang bận ngủ.", "Biết ngay.", "Hứ." (kept in the direction document as ideas for a later pack).
 
+## Later the same day
+The author found the cat lying back with crossed legs not relaxed enough, three softer poses were drawn (`docs/plans/assets/stickers/direction-v1/03_options.png`), and he judged all three harder to read than the first, so **the crossed-leg version stays** as sticker 03 ("Đời là thế."). The three options are kept only as a record.
+
 ## Consequences
 - Spec 06 section 7 and the set list are updated: 16 are in the app (matched to a state) and the sticker-only art is now 03, 09 and the cloud of 10; the set is 17 stickers.
 - The sarcasm texts have not been through the author's ear for Vietnamese banter (backlog E3).
