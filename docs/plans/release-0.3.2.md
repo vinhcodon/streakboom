@@ -1,6 +1,6 @@
 # Release 0.3.2: the draft (nothing is published; the author orders the release)
 
-**Status:** prepared 2026-11-11. The website session finished the Stickers page and said the app session may release; the CHANGELOG entry, the README (a section "What Peak promises", Roadmap, status line), the version files (0.3.2) and the website prompt (`docs/handoff/website-release-prompt.md`) were filled the same day and committed as "Prepare 0.3.2". **Nothing is published until the author orders it** (`scripts/release.ps1 ... -Publish`).
+**Status:** prepared 2026-11-11. The website session finished the Stickers page and said the app session may release; the CHANGELOG entry, the README (a section "What Peak promises", Roadmap, status line), the version files (0.3.2) and the website prompt (`docs/handoff/website-release-prompt.md`) were filled the same day and committed as "Prepare 0.3.2". **Published on 2026-11-11 at the author's order** (tag `v0.3.2` on the release commit 42305b4; the manifest commit 3a68cce; v0.3.0 deleted, v0.3.1 kept as the way back).
 
 ## What is in it
 Everything committed since 0.3.1: epic E14 (the desktop as terrain, version 2), epic E15 (restraint, play and the charter), the model's remark after a reflex and the percept events (E12, E10), and the line factory (an author tool, nothing for the user). The documents behind it: `spec/10`, `spec/11`, `docs/charter.md`, ADR-0043 to ADR-0047.
