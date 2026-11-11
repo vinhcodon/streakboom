@@ -8,14 +8,14 @@
 The author wants to publish the 20 stickers on the website so that people can use them in their chats at once, and does **not** want to submit anything to Zalo, Telegram or any store for now. Zalo's registration page offers no way for a user to add a set that is not in its store (see `docs/plans/sticker-test.md`); a Telegram pack could be made without the author submitting to a store (Telegram's page says nothing about review) but needs the author's account and a side of exactly 512 px.
 
 ## Decision
-1. **A gallery page on the website** with, per sticker, **Copy** (a computer: paste into the chat), **Share** (a phone: the system share sheet) and **Download**, and **Download all** as a ZIP. The stickers travel as **images, not as store stickers**, and the page says so.
+1. **A gallery page on the website** with one button per sticker, **Copy** (paste it into the chat box), and nothing else for now: **no Share, no per-sticker Download and no ZIP** (the author, 2026-11-11, after the first version listed them; a Share button is the first to add back if phones turn out to need it). The stickers travel as **images, not as store stickers**, and the page says so.
 2. **The website session builds it** from a handoff (`docs/handoff/website-stickers.md`); the app session does not edit the site.
 3. **Licence: CC BY 4.0** (free to use and share, also commercially, with credit to Streakboom).
 4. **No submission** to Zalo, Telegram or LINE for now; a Telegram pack stays an option for later.
 5. **Privacy as in the app:** no cookies, no per-person counting; the effect on installs is counted in aggregate (the website session proposes how).
 
 ## Alternatives considered
-A Telegram sticker pack as well (later); a ZIP download only (too little use); a static demo page built by the app session (declined: the website has its own session); a custom licence of free personal use without resale (declined in favour of CC BY).
+A Telegram sticker pack as well (later); a ZIP download only, or Share and Download buttons (the author chose Copy only, to keep the page simple); a static demo page built by the app session (declined: the website has its own session); a custom licence of free personal use without resale (declined in favour of CC BY).
 
 ## Consequences
 - **CC BY is hard to take back:** anyone may reuse, remix and sell the artwork with credit. The author keeps the copyright and may still submit his own set to Zalo or LINE later, but cannot stop others from reusing what was published. Zalo's terms ask the submitter to be the owner of the set; that stays true.

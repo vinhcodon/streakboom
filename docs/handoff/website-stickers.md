@@ -35,16 +35,16 @@ Copy these from the app repository: `docs/plans/assets/stickers/set-v0/01.png` t
 
 The numbering is by position in the set. Please also give each sticker a short English and Vietnamese title for the page (the English column is a starting point). The app's name is not on the images; the page carries it.
 
-## 3. What each sticker offers
-1. **Copy** (the main button on a computer): put the PNG on the clipboard (`navigator.clipboard.write` with a `ClipboardItem` of type `image/png`) so the person can paste it with Ctrl+V into Zalo, Telegram, Messenger, Discord and so on. Show "Copied" for a moment; if the browser refuses, fall back to Download and say why in a plain line.
-2. **Share** (the main button on a phone): `navigator.share({ files: [file] })` when `navigator.canShare({ files })` is true, so the system share sheet opens and the person picks Zalo or Telegram. Hide the button where it is not supported.
-3. **Download** one PNG (a plain `<a download>`), and **Download all** (one ZIP built at site build time; the name `peak-stickers.zip`).
+## 3. What each sticker offers: **Copy only** (the author's call, 2026-11-11)
+One button per sticker: **Copy**. It puts the PNG on the clipboard (`navigator.clipboard.write` with a `ClipboardItem` of type `image/png`) so the person can paste it with Ctrl+V (or a long press and Paste on a phone) into the chat box of Zalo, Telegram, Messenger, Discord and so on. Show "Copied" for a moment. If the browser refuses (no permission, or no clipboard support), say so in one plain line and leave the picture itself as a real `<img>`, so the browser's own "save image" or "copy image" menu still works.
 
-Buttons are real `<button>`s with labels for screen readers and work from the keyboard. With scripts off the images and the download links still appear.
+**Not offered for now:** a Share button, a Download button per sticker and the ZIP of the whole set. The author may add them later (a Share button would be the first one: on a phone `navigator.share({ files })` is the easiest way into Zalo or Telegram, and a phone browser may not allow a pasted image in every chat app, so check this when the page is tested). Do not add them without asking.
+
+The Copy button is a real `<button>` with a label for screen readers and works from the keyboard. With scripts off the pictures still appear (and can be saved with the browser's own menu).
 
 ## 4. Words on the page (the author edits; this is the shape)
 - A short intro in Peak's voice: what the set is, free to use in chats.
-- **How to use**, three lines: on a computer press Copy and paste into the chat; on a phone press Share and choose the chat app (or save the picture); **they are sent as pictures, not as sticker packs** (so they look larger and cannot be tapped to add a pack; a real sticker pack is not offered yet).
+- **How to use**, two lines: press Copy under a sticker, then paste it into the chat box; **they are sent as pictures, not as sticker packs** (so they look larger and cannot be tapped to add a pack; a real sticker pack is not offered yet).
 - **Licence line, visible near the buttons:** "Peak stickers by Streakboom, CC BY 4.0", linking to `https://creativecommons.org/licenses/by/4.0/`, and a sentence: free to use and share, including commercially, as long as you credit Streakboom. Put the same in the structured data (section 5).
 - A gentle call to action: Peak, a small cat that lives on your screen, with the download link of the app. No "Zalo sticker" or "Telegram sticker" claim anywhere: the set is **not** in any store, and Zalo and Telegram are named only as places where you can paste.
 - A courtesy credit line: the image text is set in Be Vietnam Pro (SIL Open Font License).
@@ -57,7 +57,7 @@ No cookies, no third-party scripts, no fingerprinting, nothing per person. **Cop
 
 ## 7. Checks (the author or the website session; the app session cannot do these)
 - Copy, then paste into Zalo on a computer, Telegram Desktop and Messenger on the web: the image arrives with a transparent background and a readable size.
-- Share from an Android phone and an iPhone: the sheet opens and Zalo and Telegram appear.
+- Copy on an Android phone and an iPhone, then paste into the Zalo and Telegram apps: does it paste as an image? (If not, the Share button above is the next step.)
 - The fall-backs when the clipboard or sharing is not allowed.
 - The page in the dark theme (the stickers are drawn to read on light and dark chat backgrounds; check both).
 - The licence line and the structured data validate.
