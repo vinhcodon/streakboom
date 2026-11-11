@@ -139,7 +139,11 @@ test("the page script records nothing, and no rule blocks the system menu on a p
   const css0 = readFileSync(css, "utf8");
   try {
     writeFileSync(js, js0 + "\nlocalStorage.setItem('x', 1);\n");
-    assert.throws(run, /stickers\.js mentions localStorage/);
+    assert.throws(run, /localStorage is only for the recent-stickers list/);
+    writeFileSync(js, js0 + "\nsessionStorage.setItem('x', 1);\n");
+    assert.throws(run, /stickers\.js mentions sessionStorage/);
+    writeFileSync(js, js0.replace("COPY_PX = 180", "COPY_PX = 360"));
+    assert.throws(run, /no longer 180 px/);
     writeFileSync(js, js0);
     writeFileSync(css, css0 + "\n.sticker img { -webkit-touch-callout: none; }\n");
     assert.throws(run, /blocks the system menu on a sticker/);
