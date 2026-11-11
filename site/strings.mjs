@@ -133,6 +133,7 @@ export const STRINGS = {
     fl9: "Keeps still while you work, and walks away or hops aside when you work next to it.",
     hw_feat_title: "What it does",
     hw_faq_title: "More questions",
+    dl_count: "GitHub downloads so far: {n} (counts downloads, including updates, not people).",
   },
   vi: {
     title: "Streakboom: gặp Peak, chú mèo thú cưng cho màn hình Windows",
@@ -262,6 +263,7 @@ export const STRINGS = {
     fl9: "Đứng yên khi bạn làm việc, và đi chỗ khác hoặc nhảy sang bên khi bạn làm việc ngay cạnh nó.",
     hw_feat_title: "Nó làm được gì",
     hw_faq_title: "Thêm vài câu hỏi",
+    dl_count: "Lượt tải từ GitHub đến nay: {n} (đếm lượt tải, gồm cả cập nhật, không phải số người).",
   },
   ja: {
     title: "Streakboom: Windows用デスクトップペット、ネコのPeakと出会おう",
@@ -416,6 +418,7 @@ export const STRINGS = {
     fl9: "作業中はじっとしていて、すぐ隣で作業すると、歩いて離れるか、ぴょんと脇へ跳びます。",
     hw_feat_title: "できること",
     hw_faq_title: "ほかのよくある質問",
+    dl_count: "GitHubでのダウンロード数（これまで）：{n}（人数ではなく、更新を含むダウンロード回数です）。",
   },
 };
 

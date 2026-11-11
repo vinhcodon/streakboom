@@ -7,7 +7,7 @@
 // 3. Checks (scripts/site/checks.mjs): version, FAQ against JSON-LD, hreflang, canonical, headings, alt text, links,
 //    static facts, banned claims. A failed check throws: the deploy does not happen.
 import { stripTypeScriptTypes } from "node:module";
-import { cpSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { cpSync, existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { ROOT, context } from "./site/facts.mjs";
@@ -15,6 +15,7 @@ import { PATHS, changelogPage, homePage, howPage, notFoundPage, privacyPage } fr
 import { LANGS } from "../site/strings.mjs";
 import { changelogFeed, llms, llmsFull, robots, sitemap } from "./site/files.mjs";
 import { check } from "./site/checks.mjs";
+import { liveLedger } from "./site/downloads.mjs";
 
 export const OUT = join(ROOT, "_site");
 const SITE = join(ROOT, "site");
@@ -27,7 +28,8 @@ export function buildRig() {
   for (const name of ["keys", "engine", "draw"]) {
     const ts = readFileSync(join(src, `${name}.ts`), "utf8");
     const js = stripTypeScriptTypes(ts, { mode: "strip" }).replace(/(from\s+["']\.\/\w+)\.ts(["'])/g, "$1.js$2");
-    writeFileSync(join(out, `${name}.js`), js);
+    const target = join(out, `${name}.js`);
+    if (!existsSync(target) || readFileSync(target, "utf8") !== js) writeFileSync(target, js); // unchanged files are left alone (tests build in parallel)
   }
 }
 
@@ -37,7 +39,8 @@ const write = (out, rel, text) => {
   writeFileSync(file, text);
 };
 
-export function build({ out = OUT } = {}) {
+/** `downloads` is the ledger of the download counter (ADR-0052) or null: no number on the pages, no downloads.json. */
+export function build({ out = OUT, downloads = null } = {}) {
   buildRig();
   rmSync(out, { recursive: true, force: true });
   mkdirSync(out, { recursive: true });
@@ -47,6 +50,7 @@ export function build({ out = OUT } = {}) {
   cpSync(join(SITE, "peak"), join(out, "peak"), { recursive: true });
 
   const ctx = context();
+  ctx.downloads = downloads;
   const fileOf = (path) => `${path.replace(/^\//, "")}index.html`;
   const pages = [
     ...LANGS.map((l) => ({ path: PATHS[l].home, file: fileOf(PATHS[l].home), lang: l, html: homePage(l, ctx) })),
@@ -56,6 +60,7 @@ export function build({ out = OUT } = {}) {
     { path: "/404.html", file: "404.html", lang: "en", html: notFoundPage(ctx) },
   ];
   const files = { "sitemap.xml": sitemap(ctx), "robots.txt": robots(), "llms.txt": llms(ctx), "llms-full.txt": llmsFull(ctx), "changelog.xml": changelogFeed(ctx) };
+  if (downloads) files["downloads.json"] = JSON.stringify(downloads, null, 2) + "\n";
   for (const p of pages) write(out, p.file, p.html);
   for (const [name, text] of Object.entries(files)) write(out, name, text);
 
@@ -65,8 +70,12 @@ export function build({ out = OUT } = {}) {
 
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
   try {
-    const r = build();
-    console.log(`site built in ${r.out}: version ${r.ctx.version} (${r.ctx.date}), ${r.pages.length} pages, ${Object.keys(r.files).length} files; all checks passed`);
+    // the counter reads GitHub and the live site, so it runs only where asked to (the Pages workflow), never in a local build
+    const downloads = process.env.STREAKBOOM_DOWNLOADS === "live"
+      ? await liveLedger({ today: new Date().toISOString().slice(0, 10), token: process.env.GITHUB_TOKEN || "" })
+      : null;
+    const r = build({ downloads });
+    console.log(`site built in ${r.out}: version ${r.ctx.version} (${r.ctx.date}), ${r.pages.length} pages, ${Object.keys(r.files).length} files${downloads ? `, ${downloads.total} downloads` : ""}; all checks passed`);
   } catch (e) {
     console.error(e.message);
     process.exit(1);

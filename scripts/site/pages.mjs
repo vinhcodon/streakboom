@@ -3,6 +3,7 @@
 import { STRINGS, HTML_KEYS, UI_KEYS, LANGS } from "../../site/strings.mjs";
 import { SCENES } from "../../site/scenes.js";
 import { AUTHOR, ORIGIN, RELEASES_URL, REPO_URL, fmtDate } from "./facts.mjs";
+import { formatCount } from "./downloads.mjs";
 
 export const PATHS = {
   en: { home: "/", privacy: "/privacy/", how: "/how-it-works/" },
@@ -26,9 +27,10 @@ export function alternatesFor(kind) {
 
 export const esc = (s) => String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 
-/** Fill the placeholders {version} {date} {exe} of a string. */
+/** Fill the placeholders {version} {date} {exe} and {n} (the downloads; only when the counter is on) of a string. */
 export function fill(s, ctx, lang) {
-  return s.replaceAll("{version}", ctx.version).replaceAll("{date}", fmtDate(ctx.date, lang)).replaceAll("{exe}", ctx.exe);
+  return s.replaceAll("{version}", ctx.version).replaceAll("{date}", fmtDate(ctx.date, lang)).replaceAll("{exe}", ctx.exe)
+    .replaceAll("{n}", ctx.downloads ? formatCount(ctx.downloads.total, lang) : "");
 }
 /** The raw (unescaped) text of a key. */
 export const raw = (lang, key, ctx) => fill(STRINGS[lang][key], ctx, lang);
@@ -277,7 +279,8 @@ ${teasers}
         <li>${s("s2")}</li>
         <li>${s("s3")}</li>
       </ol>
-      <p class="sub">${s("inst_note")}</p>
+      <p class="sub">${s("inst_note")}</p>${ctx.downloads ? `
+      <p class="sub downloads">${s("dl_count")}</p>` : ""}
     </section>
 
     <!-- FAQ: five answers of one or two sentences; the rest is on the How it works page -->

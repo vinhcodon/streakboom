@@ -14,6 +14,9 @@ on:
       - "CHANGELOG.md"
       - "updates/latest.json"
       - ".github/workflows/pages.yml"
+  # once a day, so the download counter (ADR-0052) follows the downloads without anyone doing anything
+  schedule:
+    - cron: "17 3 * * *"
   workflow_dispatch:
 
 permissions:
@@ -40,6 +43,16 @@ jobs:
       # nothing is deployed and the site stays as it was
       - name: Build and check the site (_site/)
         run: node scripts/build-site.mjs
+        env:
+          # the download counter reads the releases from GitHub and the previous ledger from the live site (ADR-0052);
+          # if either cannot be read the build fails and the site stays as it was
+          STREAKBOOM_DOWNLOADS: live
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      # a second copy of the ledger (the first is published with the site), kept by Actions for 90 days
+      - uses: actions/upload-artifact@v4
+        with:
+          name: downloads-ledger
+          path: _site/downloads.json
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:

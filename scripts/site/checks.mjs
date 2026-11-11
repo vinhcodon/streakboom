@@ -4,6 +4,7 @@ import { existsSync, readFileSync, readdirSync } from "node:fs";
 import { gzipSync } from "node:zlib";
 import { join } from "node:path";
 import { ORIGIN, ROOT, fmtDate } from "./facts.mjs";
+import { formatCount } from "./downloads.mjs";
 import { pageList } from "./files.mjs";
 import { CHARTER_URL, HOME_FAQ, HOW_FAQ, PROMISES, PATHS, esc } from "./pages.mjs";
 import { STRINGS, EN_ONLY, HTML_KEYS, LANGS, UI_KEYS } from "../../site/strings.mjs";
@@ -175,6 +176,25 @@ export function check({ ctx, pages, files, out }) {
     }
   }
 
+  // the download counter (ADR-0052): off in local builds; when on, the number on every home page is the ledger's total, in the
+  // language's own grouping, the ledger is published, and the sentence says downloads (never installs or people)
+  if (ctx.downloads) {
+    const d = ctx.downloads;
+    const sum = Object.values(d.perTag || {}).reduce((a, b) => a + b, 0);
+    if (!Number.isInteger(d.total) || d.total !== sum) bad(`downloads: the total ${d.total} is not the sum of the ledger (${sum})`);
+    if (!files["downloads.json"] || JSON.stringify(JSON.parse(files["downloads.json"])) !== JSON.stringify(d)) bad("downloads.json is missing or is not the ledger the pages show");
+    for (const lang of LANGS) {
+      const html = byPath.get(PATHS[lang].home).html;
+      const m = html.match(/<p class="sub downloads">([^<]*)<\/p>/);
+      if (!m) { bad(`${PATHS[lang].home}: the download counter is on but the page does not show it`); continue; }
+      if (!m[1].includes(formatCount(d.total, lang))) bad(`${PATHS[lang].home}: the download line does not show ${formatCount(d.total, lang)}`);
+      if (/\binstalls?\b|\busers?\b|\bpeople who\b|người dùng|lượt cài|インストール数|ユーザー数/i.test(m[1].replace(/not people|không phải số người|人数ではなく/g, ""))) bad(`${PATHS[lang].home}: the download line talks about installs or users; it counts downloads`);
+    }
+  } else {
+    for (const p of pages) if (p.html.includes('class="sub downloads"')) bad(`${p.path}: a download line without a ledger`);
+    if (files["downloads.json"]) bad("downloads.json without a ledger");
+  }
+
   // the Atom feed of the changelog: it lists every version of CHANGELOG.md, newest first, and is linked from the changelog page
   const feed = files["changelog.xml"] || "";
   const feedEntries = [...feed.matchAll(/<entry>[\s\S]*?<title>Streakboom ([^<:]+)/g)].map((m) => m[1]);
@@ -270,7 +290,7 @@ export function check({ ctx, pages, files, out }) {
       if (EN_ONLY.has(k) || b === undefined) continue;
       if (Array.isArray(a) && Array.isArray(b) && a.length !== b.length) bad(`strings: ${k} has ${a.length} items in English and ${b.length} in ${lang}`);
       // placeholders must survive translation
-      const ph = (x) => (JSON.stringify(x).match(/\{(version|date|exe)\}/g) || []).sort().join();
+      const ph = (x) => (JSON.stringify(x).match(/\{(version|date|exe|n)\}/g) || []).sort().join();
       if (ph(a) !== ph(b)) bad(`strings: ${k} has different placeholders in English and ${lang}`);
     }
   }
