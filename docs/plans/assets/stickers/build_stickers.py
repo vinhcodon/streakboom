@@ -2,8 +2,7 @@
 # The cat is drawn from the numbers of app/src/lib/rig/keys.ts and draw.ts (a port to SVG, not the app's own renderer),
 # so it matches docs/plans/assets/sticker-character-sheet.svg. No app code is touched.
 #
-# Run (needs PyMuPDF: pip install pymupdf; the font is Windows' Segoe UI Bold, a system font; see the notes in
-# docs/plans/sticker-set-v0.md about swapping it for an open font before publishing):
+# Run (needs PyMuPDF: pip install pymupdf; the font is Be Vietnam Pro Bold (SIL OFL), in fonts/):
 #   python build_stickers.py <output folder>
 import math
 import os
@@ -11,7 +10,7 @@ import sys
 
 import fitz  # PyMuPDF
 
-FONT = "C:/Windows/Fonts/segoeuib.ttf"
+FONT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "fonts", "BeVietnamPro-Bold.ttf")  # SIL Open Font License, see fonts/OFL.txt
 FUR, DARK, BELLY, PINK, INK, MOUTH = "#f6c26b", "#e9a94a", "#fff1d6", "#f4a7a7", "#2b2220", "#7a4b3a"
 OUT = sys.argv[1] if len(sys.argv) > 1 else "out"
 os.makedirs(OUT, exist_ok=True)

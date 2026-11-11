@@ -23,7 +23,7 @@ How the agent checks on the real machine: run from the author's Terminal panel (
 | V-90 | The sticker expression table (spec/06 7.2) was matched by reading `sprites.ts` and `engine.ts`, not by looking at the poses | look at the 12 to 20 stills next to the cat in the app | Vinh | 2026-11-10 |
 | V-91 | That a sticker set brings any installs at all (H14), and that the sticker cohort bonds as well (H15; no baseline of mean Bond Days exists yet) | the run of ST-6 against the thresholds in the plan | Vinh | 2026-11-10 |
 | V-92 | The character sheet (ST-2) was drawn from the numbers in `keys.ts` and `draw.ts`, not from a screenshot of the running cat | put the sheet next to the live cat and compare proportions and colors | Vinh | 2026-11-10 |
-| V-93 | The sticker set's text font is Segoe UI Bold, a Windows system font; whether rendering it into images that are published is allowed, and the open font to use instead (for example a rounded one with Vietnamese letters) | read the font's licence; pick an open font; rebuild with `build_stickers.py` | Vinh | 2026-11-10 |
+| V-93 | ~~The sticker set's text font was Segoe UI Bold, a Windows system font~~ **Done 2026-11-11:** the set is rebuilt with Be Vietnam Pro Bold (SIL OFL, all the Vietnamese letters present; the file and `OFL.txt` are in `docs/plans/assets/stickers/fonts/`) | | Claude | 2026-11-10 |
 | V-94 | The first-pass stickers were checked by script (sizes, alpha) and by looking at a contact sheet, **not in Zalo's own preview or in a chat on a phone** (legibility at the real size, dark chat themes, the 4-word limit as Zalo counts it, banner backgrounds) | upload to the registration form's preview or send the PNGs to a Zalo chat | Vinh | 2026-11-10 |
 
 ## B. The agent can check these
