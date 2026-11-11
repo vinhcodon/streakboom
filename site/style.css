@@ -210,6 +210,8 @@ summary h3 { display: inline; font-size: inherit; font-weight: 600; margin: 0; }
 /* ---- the sticker page (ADR-0053). The picture is the button; it stays a real <img> so a long press or a right click still shows the
    system menu: nothing here blocks the callout, selecting or dragging (no touch-callout none, no user-select none, no pointer-events none). */
 .stickers-page .hint { font-weight: 600; margin: 0 0 18px; }
+/* the hint says "tap", true only with the script: its line is reserved while hidden, so showing it moves nothing (layout shift 0) */
+.stickers-page .hint[hidden] { display: block; visibility: hidden; }
 .sticker-grid { list-style: none; padding: 0; margin: 0 0 24px; display: grid; gap: 14px; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); }
 .sticker-item { display: flex; flex-direction: column; align-items: center; gap: 6px; }
 .sticker {
