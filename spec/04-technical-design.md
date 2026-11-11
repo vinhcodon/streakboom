@@ -22,7 +22,7 @@ Three windows. The pet window owns all state and logic; the others are views (AD
         +---------- events (src/lib/bus.ts), plain JSON, always via the pet window ------+
 
  Rust core: drag + clamp to the work area, bubble placement (above/below/right/left, always on screen),
-            hit-test thread (click-through except over the pet), tray + right-click menu,
+            hit-test thread (click-through except over the pet), tray menu,
             credential store, brain clients (four providers), updater, autostart,
             atomic save of pet.json, memory.json and state.json,
             focus probe (idle time, pointer, primary mouse button) in the hit-test thread,

@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { DROP_MIN_PX, PUSH_REACH_PX, RECOVER_ODDS, dropFalls, isBruised, pushDirection, pushesTowardEdge, teeterEnds } from "./push.ts";
+import { DROP_MIN_PX, PUSH_REACH_PX, RECOVER_ODDS, dropFalls, isBruised, pushDirection, pushesTowardEdge, shoveDirection, shoveKind, teeterEnds } from "./push.ts";
 
 test("a poke pushes away from the pointer; over the middle it is only a poke", () => {
   assert.equal(pushDirection(40), -1, "the pointer on the right pushes it left");
@@ -37,4 +37,13 @@ test("bruised until a time", () => {
   assert.equal(isBruised(1000, 999), true);
   assert.equal(isBruised(1000, 1000), false);
   assert.equal(isBruised(0, 5), false);
+});
+
+test("a right-click push always has a direction, and only teeters near the end of a seat", () => {
+  assert.equal(shoveDirection(40, 1), -1, "away from the pointer");
+  assert.equal(shoveDirection(2, -1), -1, "over the middle: the way it faces");
+  assert.equal(shoveDirection(null, 1), 1);
+  assert.equal(shoveKind({ left: 200, right: 30 }, 44, 1), "teeter");
+  assert.equal(shoveKind({ left: 200, right: 30 }, 44, -1), "stagger", "the end is far that way");
+  assert.equal(shoveKind(null, 44, 1), "stagger", "on the floor it only staggers");
 });

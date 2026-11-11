@@ -10,6 +10,7 @@ What was **decided**, why, and what was rejected. One short file per decision (a
 
 | ADR | Decision | Status | Date |
 |---|---|---|---|
+| [0055](0055-the-pet-has-no-menu-right-click-is-a-push.md) | The pet has no menu; the right click is a push | accepted | 2026-11-11 |
 | [0053](0053-a-four-item-menu-per-language-stickers-and-a-daily-download-history.md) | A four-item menu, the sticker page waits for per-language sets, and a daily history of downloads (the website session's record; its row was missing from this index) | accepted, built | 2026-11-11 |
 | [0052](0052-a-download-counter-from-github-with-a-ledger.md) | A download counter on the website, read from GitHub and kept in a ledger (the website session's record; its row was missing from this index) | accepted, built and live | 2026-11-11 |
 | [0051](0051-sticker-web-gallery-and-cc-by.md) | The stickers go on the website first (Copy, Share, Download, as images), under CC BY 4.0; nothing is submitted to Zalo, Telegram or LINE for now; the website session builds it | accepted | 2026-11-11 |

@@ -60,13 +60,14 @@ Windows needs the WebView2 runtime; the installer downloads it if it is missing.
 | Drag | carry it; it lands with a little squash |
 | Double-click | open the chat bubble (a scripted "how are you" until it has a brain) |
 | Type or click near it | it stays still and quiet, then makes way (walks away) or hops to another row out of the path of your text |
-| Right-click the pet, or the tray icon | Settings, Quiet mode, Quit |
+| The tray icon (click: show or hide; right-click: menu) | Settings, Quiet mode, Quit, Show / Hide |
+| Right-click the pet | a push away from the pointer: it staggers and huffs; near the end of a ledge it wobbles and may fall |
 
 On a fresh install the pet shows a four-card tour (replay it in Settings, About).
 
 **Giving it a brain:** try to chat, or click the disabled text box, and the pet asks. Choose "Get a free brain" and follow the steps on the Brain page of Settings: pick Gemini, Claude or OpenAI, open the provider's console, create an API key, paste it, tick "I am 18 or older" and connect. You can pick the model there. Claude and OpenAI need credit on the provider's side; set a low monthly spend limit there. With keys for several brains you choose which one answers.
 
-**Settings** (General, Personality, Brain, Memory, Privacy, About: few, on purpose; how lively Peak is, it decides itself) open from the tray icon or the pet's right-click menu.
+**Settings** (General, Personality, Brain, Memory, Privacy, About: few, on purpose; how lively Peak is, it decides itself) open from the tray icon menu.
 
 ## Privacy and your data 🔒
 

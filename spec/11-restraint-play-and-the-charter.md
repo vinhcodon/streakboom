@@ -8,6 +8,8 @@ A fall is fear plus a bump. It is the loudest thing Peak can do, so it is treate
 
 **What was built (CH-5, 2026-11-10):** a poke on the side of the cat toward which it would be pushed (away from the pointer), when it sits within 100 px of the end of its seat, is the push; **letting go of a dragged cat above the floor and off a ledge makes it fall** (a deliberate change: before, it stayed where it was let go; the threshold is 90 px, `DROP_MIN_PX` in `push.ts`), and let go on a ledge it keeps the ledge as its seat. The flick of a fast pointer is not built; the poke is the push.
 
+**Changed on 2026-11-11 (ADR-0055):** the push moved from the left click to the **right click**. A left click is always a poke. A right click pushes Peak away from the pointer: near the end of its seat it teeters as above; anywhere else (also on the floor) it staggers for a moment and huffs; a sleeper is only poked. The pet's right-click menu is gone (the tray menu is the only menu).
+
 **Who may cause one.**
 | Cause | Allowed | Notes |
 |---|---|---|
