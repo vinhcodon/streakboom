@@ -10,6 +10,10 @@ What was **decided**, why, and what was rejected. One short file per decision (a
 
 | ADR | Decision | Status | Date |
 |---|---|---|---|
+| [0058](0058-foundation-as-evidence-home-and-v0-4-0-alignment.md) | `docs/foundation/` is the home of evidence; the charter is aligned to it by new ADRs after a review; 0.4.0 is proposed as the alignment release | **proposed** (direction agreed; scope waits for the review) | 2026-11-11 |
+| [0057](0057-mission-wording-no-health-claims.md) | The mission is "a small friend that makes the workday lighter"; no healing or health claims anywhere public | accepted | 2026-11-11 |
+| [0056](0056-scope-18-plus.md) | Streakboom is for people aged 18 and over (the age gate itself is open, waits for a lawyer) | accepted | 2026-11-11 |
+| [0054](0054-the-website-follows-the-app-in-0-3-2.md) | The website follows the app in 0.3.2: the fifth promise, climbing, the retired settings, the new senses (the website session's record; its row was missing from this index) | accepted, built | 2026-11-11 |
 | [0053](0053-a-four-item-menu-per-language-stickers-and-a-daily-download-history.md) | A four-item menu, the sticker page waits for per-language sets, and a daily history of downloads (the website session's record; its row was missing from this index) | accepted, built | 2026-11-11 |
 | [0052](0052-a-download-counter-from-github-with-a-ledger.md) | A download counter on the website, read from GitHub and kept in a ledger (the website session's record; its row was missing from this index) | accepted, built and live | 2026-11-11 |
 | [0051](0051-sticker-web-gallery-and-cc-by.md) | The stickers go on the website first (Copy, Share, Download, as images), under CC BY 4.0; nothing is submitted to Zalo, Telegram or LINE for now; the website session builds it | accepted | 2026-11-11 |
