@@ -155,3 +155,7 @@ The author approved this review and the eight recommendations of section 7 (Q1 t
 ## 12. Gate 2 (2026-11-11)
 
 The author chose option A: nothing is moved; `plans/README.md` is grouped into sections. The six side proposals of section 11 were not answered and are not done.
+
+## 13. Phase 3 (2026-11-11)
+
+Written: ADR-0059 (Q1 to Q8, and Q9 open: the "bored" lines that ask for attention, which this review missed), `spec/12-foundation-alignment.md` and `release-0.4.0.md`. They wait for the author at gate 3.
