@@ -1,0 +1,486 @@
+{
+  "version": "set-v1",
+  "creator": "Streakboom",
+  "license": "CC BY 4.0",
+  "credits": [
+    {
+      "font": "Be Vietnam Pro",
+      "license": "SIL OFL 1.1",
+      "langs": [
+        "vi",
+        "en"
+      ],
+      "licenseFile": "docs/plans/assets/stickers/fonts/OFL.txt"
+    },
+    {
+      "font": "M PLUS Rounded 1c",
+      "license": "SIL OFL 1.1",
+      "langs": [
+        "ja"
+      ],
+      "licenseFile": "docs/plans/assets/stickers/fonts/OFL-MPlusRounded1c.txt"
+    }
+  ],
+  "stickers": [
+    {
+      "id": "01",
+      "text": {
+        "vi": "Chào buổi sáng!",
+        "en": "Good morning!",
+        "ja": "おはよう！"
+      },
+      "title": {
+        "vi": "Chào buổi sáng",
+        "en": "Good morning",
+        "ja": "おはよう"
+      },
+      "alt": {
+        "vi": "Peak vươn vai và ngáp. Chữ trên ảnh: “Chào buổi sáng!”",
+        "en": "Peak stretches and yawns. Text on the image: \"Good morning!\"",
+        "ja": "Peak（ねこ）がのびをしてあくびをしている。画像の文字：「おはよう！」"
+      },
+      "reviewed": {
+        "vi": true,
+        "en": false,
+        "ja": false
+      }
+    },
+    {
+      "id": "02",
+      "text": {
+        "vi": "Sướng quá~",
+        "en": "So good~",
+        "ja": "きもちいい〜"
+      },
+      "title": {
+        "vi": "Sướng quá",
+        "en": "Bliss",
+        "ja": "きもちいい"
+      },
+      "alt": {
+        "vi": "Peak nhắm mắt sung sướng, được gãi đầu. Chữ trên ảnh: “Sướng quá~”",
+        "en": "Peak eyes shut in bliss, being scratched. Text on the image: \"So good~\"",
+        "ja": "Peak（ねこ）がうっとり目を閉じて頭をなでられている。画像の文字：「きもちいい〜」"
+      },
+      "reviewed": {
+        "vi": true,
+        "en": false,
+        "ja": false
+      }
+    },
+    {
+      "id": "03",
+      "text": {
+        "vi": "Đời là thế.",
+        "en": "That's life.",
+        "ja": "そういうもの。"
+      },
+      "title": {
+        "vi": "Đời là thế",
+        "en": "That's life",
+        "ja": "そういうもの"
+      },
+      "alt": {
+        "vi": "Peak nằm ngửa vắt chân, vẻ thản nhiên. Chữ trên ảnh: “Đời là thế.”",
+        "en": "Peak lies back with crossed legs, deadpan. Text on the image: \"That's life.\"",
+        "ja": "Peak（ねこ）が足を組んで寝転び、すました顔。画像の文字：「そういうもの。」"
+      },
+      "reviewed": {
+        "vi": true,
+        "en": false,
+        "ja": false
+      }
+    },
+    {
+      "id": "04",
+      "text": {
+        "vi": "Buồn ngủ…",
+        "en": "Sleepy…",
+        "ja": "ねむい…"
+      },
+      "title": {
+        "vi": "Buồn ngủ",
+        "en": "Sleepy",
+        "ja": "ねむい"
+      },
+      "alt": {
+        "vi": "Peak gật gù buồn ngủ, có chữ z bay lên. Chữ trên ảnh: “Buồn ngủ…”",
+        "en": "Peak nods off with a floating z. Text on the image: \"Sleepy…\"",
+        "ja": "Peak（ねこ）がうとうとして「z」が浮かんでいる。画像の文字：「ねむい…」"
+      },
+      "reviewed": {
+        "vi": true,
+        "en": false,
+        "ja": false
+      }
+    },
+    {
+      "id": "05",
+      "text": {
+        "vi": "Hừm.",
+        "en": "Hmph.",
+        "ja": "むっ。"
+      },
+      "title": {
+        "vi": "Hừm",
+        "en": "Hmph",
+        "ja": "むっ"
+      },
+      "alt": {
+        "vi": "Peak ngồi lườm hờn, thở ra mấy làn khói nhỏ. Chữ trên ảnh: “Hừm.”",
+        "en": "Peak sulks with a half-lidded glare and little puffs. Text on the image: \"Hmph.\"",
+        "ja": "Peak（ねこ）が半目でむっとして、小さく息をはいている。画像の文字：「むっ。」"
+      },
+      "reviewed": {
+        "vi": true,
+        "en": false,
+        "ja": false
+      }
+    },
+    {
+      "id": "06",
+      "text": {
+        "vi": "Quá sức mèo rồi.",
+        "en": "Too much for a cat.",
+        "ja": "ねこには無理！"
+      },
+      "title": {
+        "vi": "Quá sức mèo rồi",
+        "en": "Too much for a cat",
+        "ja": "ねこには無理"
+      },
+      "alt": {
+        "vi": "Peak mắt buồn, tai cụp, quá sức. Chữ trên ảnh: “Quá sức mèo rồi.”",
+        "en": "Peak looks overwhelmed, ears down. Text on the image: \"Too much for a cat.\"",
+        "ja": "Peak（ねこ）が耳をたたんで、手に負えない様子。画像の文字：「ねこには無理！」"
+      },
+      "reviewed": {
+        "vi": true,
+        "en": false,
+        "ja": false
+      }
+    },
+    {
+      "id": "07",
+      "text": {
+        "vi": "Làm chung nhé?",
+        "en": "Work together?",
+        "ja": "いっしょにやる？"
+      },
+      "title": {
+        "vi": "Làm chung nhé",
+        "en": "Work together?",
+        "ja": "いっしょにやる？"
+      },
+      "alt": {
+        "vi": "Peak đưa một chân vẫy gọi, rủ làm cùng. Chữ trên ảnh: “Làm chung nhé?”",
+        "en": "Peak beckons with a raised paw. Text on the image: \"Work together?\"",
+        "ja": "Peak（ねこ）が片手を上げて手まねきしている。画像の文字：「いっしょにやる？」"
+      },
+      "reviewed": {
+        "vi": true,
+        "en": false,
+        "ja": false
+      }
+    },
+    {
+      "id": "08",
+      "text": {
+        "vi": "Ngủ ngon.",
+        "en": "Sweet dreams.",
+        "ja": "おやすみ。"
+      },
+      "title": {
+        "vi": "Ngủ ngon",
+        "en": "Sweet dreams",
+        "ja": "おやすみ"
+      },
+      "alt": {
+        "vi": "Peak cuộn tròn ngủ ngon, có chữ z. Chữ trên ảnh: “Ngủ ngon.”",
+        "en": "Peak curled up asleep with a z. Text on the image: \"Sweet dreams.\"",
+        "ja": "Peak（ねこ）が丸くなってぐっすり眠っている。画像の文字：「おやすみ。」"
+      },
+      "reviewed": {
+        "vi": true,
+        "en": false,
+        "ja": false
+      }
+    },
+    {
+      "id": "09",
+      "text": {
+        "vi": "Haha!",
+        "en": "Haha!",
+        "ja": "あはは！"
+      },
+      "title": {
+        "vi": "Haha",
+        "en": "Haha",
+        "ja": "あはは"
+      },
+      "alt": {
+        "vi": "Peak cười lớn, nước mắt vui. Chữ trên ảnh: “Haha!”",
+        "en": "Peak laughs out loud with tears of joy. Text on the image: \"Haha!\"",
+        "ja": "Peak（ねこ）が涙を浮かべて大笑いしている。画像の文字：「あはは！」"
+      },
+      "reviewed": {
+        "vi": true,
+        "en": false,
+        "ja": false
+      }
+    },
+    {
+      "id": "10",
+      "text": {
+        "vi": "Xin lỗi nhé.",
+        "en": "Sorry!",
+        "ja": "ごめんね。"
+      },
+      "title": {
+        "vi": "Xin lỗi",
+        "en": "Sorry",
+        "ja": "ごめんね"
+      },
+      "alt": {
+        "vi": "Peak mắt to ướt, tai cụp, giọt mồ hôi, xin lỗi. Chữ trên ảnh: “Xin lỗi nhé.”",
+        "en": "Peak big wet eyes, ears down, a sweat drop. Text on the image: \"Sorry!\"",
+        "ja": "Peak（ねこ）がうるんだ大きな目で耳をたたみ、汗をかいている。画像の文字：「ごめんね。」"
+      },
+      "reviewed": {
+        "vi": true,
+        "en": false,
+        "ja": false
+      }
+    },
+    {
+      "id": "11",
+      "text": {
+        "vi": "Cảm ơn nha!",
+        "en": "Thank you!",
+        "ja": "ありがとう！"
+      },
+      "title": {
+        "vi": "Cảm ơn",
+        "en": "Thank you",
+        "ja": "ありがとう"
+      },
+      "alt": {
+        "vi": "Peak chắp hai chân, có trái tim, cảm ơn. Chữ trên ảnh: “Cảm ơn nha!”",
+        "en": "Peak paws together with hearts. Text on the image: \"Thank you!\"",
+        "ja": "Peak（ねこ）が両手を合わせて、ハートが浮かんでいる。画像の文字：「ありがとう！」"
+      },
+      "reviewed": {
+        "vi": true,
+        "en": false,
+        "ja": false
+      }
+    },
+    {
+      "id": "12",
+      "text": {
+        "vi": "Ơ!",
+        "en": "Oh!",
+        "ja": "えっ！"
+      },
+      "title": {
+        "vi": "Ơ!",
+        "en": "Oh!",
+        "ja": "えっ"
+      },
+      "alt": {
+        "vi": "Peak mắt tròn ngạc nhiên. Chữ trên ảnh: “Ơ!”",
+        "en": "Peak round eyes, surprised. Text on the image: \"Oh!\"",
+        "ja": "Peak（ねこ）が目を丸くしておどろいている。画像の文字：「えっ！」"
+      },
+      "reviewed": {
+        "vi": true,
+        "en": false,
+        "ja": false
+      }
+    },
+    {
+      "id": "13",
+      "text": {
+        "vi": "Để mình nghĩ…",
+        "en": "Let me think…",
+        "ja": "考え中…"
+      },
+      "title": {
+        "vi": "Để mình nghĩ",
+        "en": "Let me think",
+        "ja": "考え中"
+      },
+      "alt": {
+        "vi": "Peak chống chân lên cằm, đang nghĩ. Chữ trên ảnh: “Để mình nghĩ…”",
+        "en": "Peak paw on chin, thinking. Text on the image: \"Let me think…\"",
+        "ja": "Peak（ねこ）があごに手をあてて考えている。画像の文字：「考え中…」"
+      },
+      "reviewed": {
+        "vi": true,
+        "en": false,
+        "ja": false
+      }
+    },
+    {
+      "id": "14",
+      "text": {
+        "vi": "Hì hì.",
+        "en": "Hehe.",
+        "ja": "ふふっ。"
+      },
+      "title": {
+        "vi": "Hì hì",
+        "en": "Hehe",
+        "ja": "ふふっ"
+      },
+      "alt": {
+        "vi": "Peak khúc khích sau bàn chân. Chữ trên ảnh: “Hì hì.”",
+        "en": "Peak giggles behind a paw. Text on the image: \"Hehe.\"",
+        "ja": "Peak（ねこ）が手で口をおさえてくすくす笑っている。画像の文字：「ふふっ。」"
+      },
+      "reviewed": {
+        "vi": true,
+        "en": false,
+        "ja": false
+      }
+    },
+    {
+      "id": "15",
+      "text": {
+        "vi": "Giỏi quá.",
+        "en": "Good job.",
+        "ja": "すごいすごい。"
+      },
+      "title": {
+        "vi": "Giỏi quá",
+        "en": "Good job",
+        "ja": "すごいすごい"
+      },
+      "alt": {
+        "vi": "Peak giơ ngón cái, mặt thản nhiên. Chữ trên ảnh: “Giỏi quá.”",
+        "en": "Peak gives a deadpan thumbs-up. Text on the image: \"Good job.\"",
+        "ja": "Peak（ねこ）がすました顔で親指を立てている。画像の文字：「すごいすごい。」"
+      },
+      "reviewed": {
+        "vi": true,
+        "en": false,
+        "ja": false
+      }
+    },
+    {
+      "id": "16",
+      "text": {
+        "vi": "Ai đợi đâu.",
+        "en": "Who's waiting?",
+        "ja": "待ってないし。"
+      },
+      "title": {
+        "vi": "Ai đợi đâu",
+        "en": "Who's waiting?",
+        "ja": "待ってないし"
+      },
+      "alt": {
+        "vi": "Peak đứng nghiêng, má đỏ, làm bộ không đợi. Chữ trên ảnh: “Ai đợi đâu.”",
+        "en": "Peak stands sideways, cheeks pink, pretending not to wait. Text on the image: \"Who's waiting?\"",
+        "ja": "Peak（ねこ）が横向きで頬を赤くして、待ってないふりをしている。画像の文字：「待ってないし。」"
+      },
+      "reviewed": {
+        "vi": true,
+        "en": false,
+        "ja": false
+      }
+    },
+    {
+      "id": "17",
+      "text": {
+        "vi": "Huhu…",
+        "en": "Boohoo…",
+        "ja": "うえーん…"
+      },
+      "title": {
+        "vi": "Huhu",
+        "en": "Boohoo",
+        "ja": "うえーん"
+      },
+      "alt": {
+        "vi": "Peak khóc, hai dòng nước mắt. Chữ trên ảnh: “Huhu…”",
+        "en": "Peak cries with two streams of tears. Text on the image: \"Boohoo…\"",
+        "ja": "Peak（ねこ）が二すじの涙を流して泣いている。画像の文字：「うえーん…」"
+      },
+      "reviewed": {
+        "vi": true,
+        "en": false,
+        "ja": false
+      }
+    },
+    {
+      "id": "18",
+      "text": {
+        "vi": "Ok nè!",
+        "en": "OK!",
+        "ja": "オッケー！"
+      },
+      "title": {
+        "vi": "Ok nè",
+        "en": "OK",
+        "ja": "オッケー"
+      },
+      "alt": {
+        "vi": "Peak nháy mắt, làm dấu ok. Chữ trên ảnh: “Ok nè!”",
+        "en": "Peak winks and makes an OK sign. Text on the image: \"OK!\"",
+        "ja": "Peak（ねこ）がウインクしてオッケーサインをしている。画像の文字：「オッケー！」"
+      },
+      "reviewed": {
+        "vi": true,
+        "en": false,
+        "ja": false
+      }
+    },
+    {
+      "id": "19",
+      "text": {
+        "vi": "Hoan hô!",
+        "en": "Hooray!",
+        "ja": "やったー！"
+      },
+      "title": {
+        "vi": "Hoan hô",
+        "en": "Hooray",
+        "ja": "やったー"
+      },
+      "alt": {
+        "vi": "Peak nhảy lên vui mừng, lấp lánh. Chữ trên ảnh: “Hoan hô!”",
+        "en": "Peak hops for joy with sparkles. Text on the image: \"Hooray!\"",
+        "ja": "Peak（ねこ）が喜んでジャンプし、きらきら光っている。画像の文字：「やったー！」"
+      },
+      "reviewed": {
+        "vi": true,
+        "en": false,
+        "ja": false
+      }
+    },
+    {
+      "id": "20",
+      "text": {
+        "vi": "Không nha.",
+        "en": "Nope.",
+        "ja": "だめだよ。"
+      },
+      "title": {
+        "vi": "Không nha",
+        "en": "Nope",
+        "ja": "だめだよ"
+      },
+      "alt": {
+        "vi": "Peak cầm biển cấm đi ngược chiều. Chữ trên ảnh: “Không nha.”",
+        "en": "Peak holds a no-entry road sign. Text on the image: \"Nope.\"",
+        "ja": "Peak（ねこ）が進入禁止の標識を持っている。画像の文字：「だめだよ。」"
+      },
+      "reviewed": {
+        "vi": true,
+        "en": false,
+        "ja": false
+      }
+    }
+  ]
+}

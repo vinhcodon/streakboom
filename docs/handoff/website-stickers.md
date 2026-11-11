@@ -7,33 +7,14 @@ A page where anyone can **use the Peak stickers in their own chat right away**, 
 
 Suggested URLs: `/stickers/` (English) and `/vi/stickers/` (Vietnamese). The Japanese page is the website session's call (the stickers carry Vietnamese text, so it may only need a short page that points to the Vietnamese one).
 
-## 2. The assets
-Copy these from the app repository: `docs/plans/assets/stickers/set-v0/01.png` to `20.png` (PNG 360 x 360, transparent background, about 15 to 20 KB each). Not for the page: `contact_sheet.png`, the banners, `icon_124.png`, `preview_440.png` (the preview or the icon could serve as the page's social image; ask the author). The set is still a draft and the author may change stickers: take the files from one folder at build time and do not hard-code the count or the order. `docs/plans/assets/stickers/build_stickers.py` regenerates them.
-
-| File | Text on it (Vietnamese) | Meaning (English, for `alt` and structured data) |
-|---|---|---|
-| 01 | Chào buổi sáng! | Good morning: the cat stretches and yawns |
-| 02 | Sướng quá~ | Bliss: eyes closed, head scratched |
-| 03 | Đời là thế. | "That is life": a cat lying back with crossed legs, deadpan |
-| 04 | Buồn ngủ… | Sleepy: nodding off with a "z" |
-| 05 | Hừm. | A sulk: half-lidded glare, little puffs |
-| 06 | Quá sức mèo rồi. | "Too much for a cat": overwhelmed |
-| 07 | Làm chung nhé? | "Shall we work together?": a beckoning paw |
-| 08 | Ngủ ngon. | Good night: curled up asleep |
-| 09 | Haha! | Laughing out loud, tears of joy |
-| 10 | Xin lỗi nhé. | Sorry: big wet eyes, a sweat drop |
-| 11 | Cảm ơn nha! | Thanks: paws together, hearts |
-| 12 | Ơ! | Surprise |
-| 13 | Để mình nghĩ… | Thinking: a paw on the chin |
-| 14 | Hì hì. | A giggle behind a paw |
-| 15 | Giỏi quá. | A deadpan thumbs-up |
-| 16 | Ai đợi đâu. | "Who was waiting?": proud but secretly glad |
-| 17 | Huhu… | Crying |
-| 18 | Ok nè! | A wink and an "ok" sign |
-| 19 | Hoan hô! | Hooray: a hop for joy with sparkles |
-| 20 | Không nha. | "No": holding a no-entry road sign |
-
-The numbering is by position in the set. Please also give each sticker a short English and Vietnamese title for the page (the English column is a starting point). The app's name is not on the images; the page carries it.
+## 2. The assets: `set-v1`, one set per language (2026-11-11)
+Take everything from `docs/plans/assets/stickers/set-v1/` at build time:
+- `vi/01.png` to `20.png`, `en/01.png` to `20.png`, `ja/01.png` to `20.png`: the **same 20 stickers** (same numbers, the same cat and expressions) with the text on the image in the language of the page. PNG 360 x 360, transparent background, 25 KB or less each (the largest is 23 KB). File names are the same in the three languages.
+- `manifest.json`: **the single source** of the text on each image, the short title for the page, the `alt` text and a `reviewed` flag per language, plus `creator`, `license` and the **font credits** to show on the page (Be Vietnam Pro for Vietnamese and English, M PLUS Rounded 1c for Japanese, both SIL OFL 1.1, with the licence files named in the manifest). The order of `stickers` is the order on the page; do not hard-code the count.
+- **The English and Japanese lines were written by an AI and no native speaker has read them** (`"reviewed": false`; V-99 in the debt list). Do not present them as checked; whether the page shows a "text by AI, not yet reviewed" note for those languages is the author's decision (ask).
+- Layout notes: in English, sticker 06 ("Too much for a cat.") is set in a smaller size to fit the width; the Japanese texts use full-width marks, so they look wider than the Vietnamese ones.
+- `set-v0/` (Vietnamese only) stays until the page has moved to `set-v1`, then it can be retired.
+- Not for the page: `contact_sheet.png` and `direction-v1/` (review sheets), the banners, `icon_124.png` and `preview_440.png` (the icon or preview could serve as the social image; ask the author). `docs/plans/assets/stickers/build_stickers.py` regenerates everything in one command (`python build_stickers.py <folder>/set-v0` also writes `set-v1` next to it).
 
 ## 3. What each sticker offers (the author's calls, 2026-11-11)
 **The sticker itself is the button.** There is no separate "copy" icon (the author dislikes the usual two-squares icon).

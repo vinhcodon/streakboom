@@ -10,7 +10,9 @@ import sys
 
 import fitz  # PyMuPDF
 
-FONT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "fonts", "BeVietnamPro-Bold.ttf")  # SIL Open Font License, see fonts/OFL.txt
+HERE = os.path.dirname(os.path.abspath(__file__))
+FONT = os.path.join(HERE, "fonts", "BeVietnamPro-Bold.ttf")  # SIL Open Font License, see fonts/OFL.txt (Vietnamese and English)
+FONT_JA = os.path.join(HERE, "fonts", "MPLUSRounded1c-Bold.ttf")  # SIL Open Font License, see fonts/OFL-MPlusRounded1c.txt (Japanese)
 FUR, DARK, BELLY, PINK, INK, MOUTH = "#f6c26b", "#e9a94a", "#fff1d6", "#f4a7a7", "#2b2220", "#7a4b3a"
 OUT = sys.argv[1] if len(sys.argv) > 1 else "out"
 os.makedirs(OUT, exist_ok=True)
@@ -390,32 +392,44 @@ def confetti():
 
 
 # ---- text and composition ---------------------------------------------------------------------------------------------
-_FONT = fitz.Font(fontfile=FONT)
+_FONTS = {}
 
 
-def outline(page, pt, text, fs, r=3.4):
+def _font_obj(path):
+    if path not in _FONTS:
+        _FONTS[path] = fitz.Font(fontfile=path)
+    return _FONTS[path]
+
+
+_FONT = _font_obj(FONT)
+
+
+def outline(page, pt, text, fs, r=3.4, font=FONT):
     """A white outline made of the text drawn in a ring of offsets (a stroked glyph gives spikes in this library)."""
-    page.insert_font(fontname="sg", fontfile=FONT)
+    name = "f" + str(abs(hash(font)) % 100000)
+    page.insert_font(fontname=name, fontfile=font)
     for i in range(16):
         a = i * math.pi / 8
-        page.insert_text(fitz.Point(pt.x + r * math.cos(a), pt.y + r * math.sin(a)), text, fontname="sg", fontsize=fs, color=(1, 1, 1), fill=(1, 1, 1))
+        page.insert_text(fitz.Point(pt.x + r * math.cos(a), pt.y + r * math.sin(a)), text, fontname=name, fontsize=fs, color=(1, 1, 1), fill=(1, 1, 1))
 
 
-def png_from(svg_inner, size, text=None, path=None, bg=None, text_y=None):
+def png_from(svg_inner, size, text=None, path=None, bg=None, text_y=None, font=FONT):
     w, h = size
     svg = f'<svg xmlns="http://www.w3.org/2000/svg" width="{w}" height="{h}" viewBox="0 0 {w} {h}">{svg_inner}</svg>'
     sdoc = fitz.open(stream=svg.encode(), filetype="svg")
     pdf = fitz.open("pdf", sdoc.convert_to_pdf())
     page = pdf[0]
     if text:
+        fo = _font_obj(font)
+        name = "f" + str(abs(hash(font)) % 100000)
         fs = 44.0
-        while _FONT.text_length(text, fontsize=fs) > w - 24:
+        while fo.text_length(text, fontsize=fs) > w - 24:
             fs -= 1
-        tw = _FONT.text_length(text, fontsize=fs)
+        tw = fo.text_length(text, fontsize=fs)
         pt = fitz.Point((w - tw) / 2, text_y or 52)
-        page.insert_font(fontname="sg", fontfile=FONT)
-        outline(page, pt, text, fs)
-        page.insert_text(pt, text, fontname="sg", fontsize=fs, color=(0.169, 0.133, 0.125), fill=(0.169, 0.133, 0.125))
+        page.insert_font(fontname=name, fontfile=font)
+        outline(page, pt, text, fs, font=font)
+        page.insert_text(pt, text, fontname=name, fontsize=fs, color=(0.169, 0.133, 0.125), fill=(0.169, 0.133, 0.125))
     pix = page.get_pixmap(alpha=True, dpi=72)
     if path:
         pix.save(path)
@@ -504,4 +518,72 @@ for i, p in enumerate(made):
     sp.draw_rect(r, color=(0.85, 0.85, 0.85), fill=(0.97, 0.97, 0.97))
     sp.insert_image(r, filename=p)
 sp.get_pixmap(dpi=72).save(os.path.join(OUT, "contact_sheet.png"))
+# ---- set-v1: the same 20 stickers with the text in Vietnamese, English and Japanese, and a manifest --------------------------
+# One entry per file position (01 to 20): titles, a short scene (for the alt text) and the English and Japanese text on the image.
+# The English and Japanese lines were written by an AI and have not been read by a native speaker: "reviewed" is false in the manifest.
+V1 = [
+    # (title vi, title en, title ja), (scene vi, scene en, scene ja), (text en, text ja)
+    (("Chào buổi sáng", "Good morning", "おはよう"), ("vươn vai và ngáp", "stretches and yawns", "のびをしてあくびをしている"), ("Good morning!", "おはよう！")),
+    (("Sướng quá", "Bliss", "きもちいい"), ("nhắm mắt sung sướng, được gãi đầu", "eyes shut in bliss, being scratched", "うっとり目を閉じて頭をなでられている"), ("So good~", "きもちいい〜")),
+    (("Đời là thế", "That's life", "そういうもの"), ("nằm ngửa vắt chân, vẻ thản nhiên", "lies back with crossed legs, deadpan", "足を組んで寝転び、すました顔"), ("That's life.", "そういうもの。")),
+    (("Buồn ngủ", "Sleepy", "ねむい"), ("gật gù buồn ngủ, có chữ z bay lên", "nods off with a floating z", "うとうとして「z」が浮かんでいる"), ("Sleepy…", "ねむい…")),
+    (("Hừm", "Hmph", "むっ"), ("ngồi lườm hờn, thở ra mấy làn khói nhỏ", "sulks with a half-lidded glare and little puffs", "半目でむっとして、小さく息をはいている"), ("Hmph.", "むっ。")),
+    (("Quá sức mèo rồi", "Too much for a cat", "ねこには無理"), ("mắt buồn, tai cụp, quá sức", "looks overwhelmed, ears down", "耳をたたんで、手に負えない様子"), ("Too much for a cat.", "ねこには無理！")),
+    (("Làm chung nhé", "Work together?", "いっしょにやる？"), ("đưa một chân vẫy gọi, rủ làm cùng", "beckons with a raised paw", "片手を上げて手まねきしている"), ("Work together?", "いっしょにやる？")),
+    (("Ngủ ngon", "Sweet dreams", "おやすみ"), ("cuộn tròn ngủ ngon, có chữ z", "curled up asleep with a z", "丸くなってぐっすり眠っている"), ("Sweet dreams.", "おやすみ。")),
+    (("Haha", "Haha", "あはは"), ("cười lớn, nước mắt vui", "laughs out loud with tears of joy", "涙を浮かべて大笑いしている"), ("Haha!", "あはは！")),
+    (("Xin lỗi", "Sorry", "ごめんね"), ("mắt to ướt, tai cụp, giọt mồ hôi, xin lỗi", "big wet eyes, ears down, a sweat drop", "うるんだ大きな目で耳をたたみ、汗をかいている"), ("Sorry!", "ごめんね。")),
+    (("Cảm ơn", "Thank you", "ありがとう"), ("chắp hai chân, có trái tim, cảm ơn", "paws together with hearts", "両手を合わせて、ハートが浮かんでいる"), ("Thank you!", "ありがとう！")),
+    (("Ơ!", "Oh!", "えっ"), ("mắt tròn ngạc nhiên", "round eyes, surprised", "目を丸くしておどろいている"), ("Oh!", "えっ！")),
+    (("Để mình nghĩ", "Let me think", "考え中"), ("chống chân lên cằm, đang nghĩ", "paw on chin, thinking", "あごに手をあてて考えている"), ("Let me think…", "考え中…")),
+    (("Hì hì", "Hehe", "ふふっ"), ("khúc khích sau bàn chân", "giggles behind a paw", "手で口をおさえてくすくす笑っている"), ("Hehe.", "ふふっ。")),
+    (("Giỏi quá", "Good job", "すごいすごい"), ("giơ ngón cái, mặt thản nhiên", "gives a deadpan thumbs-up", "すました顔で親指を立てている"), ("Good job.", "すごいすごい。")),
+    (("Ai đợi đâu", "Who's waiting?", "待ってないし"), ("đứng nghiêng, má đỏ, làm bộ không đợi", "stands sideways, cheeks pink, pretending not to wait", "横向きで頬を赤くして、待ってないふりをしている"), ("Who's waiting?", "待ってないし。")),
+    (("Huhu", "Boohoo", "うえーん"), ("khóc, hai dòng nước mắt", "cries with two streams of tears", "二すじの涙を流して泣いている"), ("Boohoo…", "うえーん…")),
+    (("Ok nè", "OK", "オッケー"), ("nháy mắt, làm dấu ok", "winks and makes an OK sign", "ウインクしてオッケーサインをしている"), ("OK!", "オッケー！")),
+    (("Hoan hô", "Hooray", "やったー"), ("nhảy lên vui mừng, lấp lánh", "hops for joy with sparkles", "喜んでジャンプし、きらきら光っている"), ("Hooray!", "やったー！")),
+    (("Không nha", "Nope", "だめだよ"), ("cầm biển cấm đi ngược chiều", "holds a no-entry road sign", "進入禁止の標識を持っている"), ("Nope.", "だめだよ。")),
+]
+assert len(V1) == len(STICKERS), (len(V1), len(STICKERS))
+LANGS = ("vi", "en", "ja")
+LANG_FONT = {"vi": FONT, "en": FONT, "ja": FONT_JA}
+V1_DIR = os.path.join(os.path.dirname(os.path.abspath(OUT)), "set-v1")
+import json  # noqa: E402
+
+stickers_json = []
+for pos, ((ident, text_vi, art, *opt), (titles, scenes, texts_new)) in enumerate(zip(STICKERS, V1), 1):
+    o = opt[0] if opt else {}
+    sc = o.get("scale", S)
+    inner = wrap(art(), (360 - 120 * sc) / 2 + o.get("dx", 0), 82 - 20 * sc + 8 + o.get("dy", 0), sc)
+    texts = {"vi": text_vi, "en": texts_new[0], "ja": texts_new[1]}
+    for li, lang in enumerate(LANGS):
+        os.makedirs(os.path.join(V1_DIR, lang), exist_ok=True)
+        png_from(inner, (360, 360), texts[lang], os.path.join(V1_DIR, lang, f"{pos:02d}.png"), font=LANG_FONT[lang])
+    alts = {
+        "vi": f"Peak {scenes[0]}. Chữ trên ảnh: “{texts['vi']}”",
+        "en": f"Peak {scenes[1]}. Text on the image: \"{texts['en']}\"",
+        "ja": f"Peak（ねこ）が{scenes[2]}。画像の文字：「{texts['ja']}」",
+    }
+    stickers_json.append({
+        "id": f"{pos:02d}",
+        "text": texts,
+        "title": {"vi": titles[0], "en": titles[1], "ja": titles[2]},
+        "alt": alts,
+        "reviewed": {"vi": True, "en": False, "ja": False},
+    })
+manifest = {
+    "version": "set-v1",
+    "creator": "Streakboom",
+    "license": "CC BY 4.0",
+    "credits": [
+        {"font": "Be Vietnam Pro", "license": "SIL OFL 1.1", "langs": ["vi", "en"], "licenseFile": "docs/plans/assets/stickers/fonts/OFL.txt"},
+        {"font": "M PLUS Rounded 1c", "license": "SIL OFL 1.1", "langs": ["ja"], "licenseFile": "docs/plans/assets/stickers/fonts/OFL-MPlusRounded1c.txt"},
+    ],
+    "stickers": stickers_json,
+}
+with open(os.path.join(V1_DIR, "manifest.json"), "w", encoding="utf-8", newline="\n") as fh:
+    json.dump(manifest, fh, ensure_ascii=False, indent=2)
+    fh.write("\n")
+print("set-v1:", len(stickers_json), "stickers x", len(LANGS), "languages in", V1_DIR)
+
 print("done", len(made), "stickers in", OUT)
