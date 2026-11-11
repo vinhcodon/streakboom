@@ -17,6 +17,9 @@ The author found sticker 3 (belly) and 9 (good night, side-on loaf) unnatural, a
 ## Later the same day
 The author found the cat lying back with crossed legs not relaxed enough, three softer poses were drawn (`docs/plans/assets/stickers/direction-v1/03_options.png`), and he judged all three harder to read than the first, so **the crossed-leg version stays** as sticker 03 ("Đời là thế."). The three options are kept only as a record.
 
+## Later the same day (2)
+After looking at the set the author asked for: 04 "Buồn ngủ…" to look sleepy (now closed eyes, a small yawn, a tipped head and a "z"); 10 "Trời mưa rồi." with the cloud no longer under the text; 07 "Giỏi quá!" with the paws clapping; and 16 "Ừ, giỏi lắm." changed to **"Giỏi quá."** with a thumbs-up. 16 keeps its half-lidded, flat-mouthed face, so it still teases (a deadpan thumbs-up); if that does not read as dry at phone size, the sarcasm share is 4 of 17 (about 24%). 07 and 16 now carry nearly the same words ("Giỏi quá!" with a clap, "Giỏi quá." with a thumbs-up): a point to look at again.
+
 ## Consequences
 - Spec 06 section 7 and the set list are updated: 16 are in the app (matched to a state) and the sticker-only art is now 03, 09 and the cloud of 10; the set is 17 stickers.
 - The sarcasm texts have not been through the author's ear for Vietnamese banter (backlog E3).

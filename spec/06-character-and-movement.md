@@ -170,7 +170,7 @@ Rule: an expression is **"in the app"** only when a state already draws it. Wher
 | 1 | Good morning | `wake` (stretch, eyes shut, yawning); or `happy` for a bright face | `stretch` side / `stand` front | **Exact** for the stretch; a front-facing greeting is `happy` |
 | 2 | Head rub / being scratched | `purr` (eyes closed in bliss, head rolled, slow sway) | `stand` front | **Exact** (the head-scratch reaction; quirk 2) |
 | 3 | A cat at ease, "thinking about life" (replaces the belly request, ADR-0050) | none (the app cat never lies back with its legs crossed) | none | **Sticker-only art**, text "Đời là thế." |
-| 4 | Dozing off | `drowsy` (sits, lid half down, yawn); `sleep` when fully asleep | `sit` front / `loaf` | **Exact**: `drowsy` for a nod-off, `sleep` for asleep with the "z" |
+| 4 | Dozing off | `drowsy` (sits, lid half down, yawn); `sleep` when fully asleep | `sit` front / `loaf` | **Exact body; the face is the `sleep` face** (closed eyes, a small yawn, a "z") because the half-lidded `drowsy` eyes did not read as sleepy at sticker size (the author, 2026-11-11) |
 | 5 | The glare when teased | `huff` (the belly-trap flinch: half-lidded, flat mouth, head tilted) | `stand` front | **Exact** for the look; `smirk` is the playful, not cross, variant |
 | 6 | "Too big for me" | none dedicated. The refusal (section 1.4) is a spoken line with a mood tag; the nearest faces are `sad` (ears down) or `huff` | `stand` front | **Partial.** Pose and wording are open (questions 2 and B) |
 | 7 | Celebrating a streak | `happy` (eyes closed in a big smile, open mouth); a milestone line | `stand` front | **Exact** for the face; any confetti is sticker-only art |

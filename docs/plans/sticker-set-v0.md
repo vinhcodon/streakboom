@@ -31,6 +31,8 @@ All 15 stickers, the icon, the preview and the 9 banners exist as PNG in [`asset
 
 **Third pass (2026-11-11):** the six stickers that looked alike at 120 px now differ by silhouette or gesture: 05 sits and puffs, 08 beckons with a raised paw, 14 rests a paw on the chin under a thought bubble, 15 giggles behind a paw, 16 claps slowly, 17 turns side-on (see [`six_distinct.png`](assets/stickers/direction-v1/six_distinct.png)); 03 lost its thought dots. The paws and arcs are sticker art, not rig poses.
 
+**Fifth pass (2026-11-11, the author's notes):** 04 is sleepy (closed eyes, a small yawn, head tipped, "z"); 10 has the cloud below the text; 07 claps; 16 is "Giỏi quá." with a thumbs-up and the deadpan face (ADR-0050). The thumbs-up and the clap are sticker art.
+
 **Fourth pass (2026-11-11), the weak points of the third:** the paws are now rounded paws with three toe lines (a pink pad where the palm faces us: 08, 16) instead of outlined rings; 14's paw sits at the chin; 17's mouth is a small smile (the flat line stuck out of the side face); 01, 03 and 09 are drawn larger; the rain cloud in 10 is darker with stronger drops; 11 is bowed less so the body shows. Still weak: the paws are still simple shapes, the sad ears (06) fold sideways, and nothing has been seen on a phone yet (V-94).
 
 ## Also required by Zalo (ST-3 and ST-5)
