@@ -125,3 +125,29 @@ Block and fix items above come to roughly: rules 1, 2, 6a in one change to `stat
 - The backlog (273 lines), the debt list and the engineering log were searched by keyword for the rules, not read line by line (as the handoff asked).
 - Which ADR `charter-alignment.md` meant by "0055".
 - The lonely band's effect on the drawn cat (poses): I checked the lines and the state, not whether a pose changes.
+
+## 10. Gate 1 (2026-11-11)
+
+The author approved this review and the eight recommendations of section 7 (Q1 to Q8) as the direction. They become decision records, and the amendment of the charter, when the spec of 0.4.0 is written (phase 3); until then nothing in the charter, the code or the public texts changes.
+
+## 11. Phase 2: how to group the documents (a proposal; nothing is moved until the author agrees)
+
+**What I found.** `docs/plans/` has 14 files. Six belong to other sessions (four sticker plans, the website plan) or are a finished release. The real weight is not the number of files but three long ones: the engineering log (172 KB), the debt list (56 KB, 72 rows, few closed) and the backlog (50 KB, 148 stories, 78 done).
+
+**A fact that changes the handoff's suggestion.** `docs/plans/assets/stickers/` is not only a document folder: the website build reads it (`scripts/site/stickers.mjs`, `.github/workflows/pages.yml`, the manifest inside it). Moving `assets/` breaks the live site's build unless the website session changes its scripts in the same commit. And the sticker and website sessions keep writing to the present paths.
+
+| Option | What moves | Links to fix | Risk | My view |
+|---|---|---|---|---|
+| **A. Group in the index only** | Nothing. `plans/README.md` gets sections (Now, Product, Stickers, Website, Releases, Done); finished plans are marked done; `roadmap.md` is marked superseded when the new one exists; the handoff index gets the same sections | none | none | **recommended now** |
+| B. Move the markdown, leave `assets/` | `plans/stickers/` (4 files), `plans/website/` (1), `plans/releases/` (1) by `git mv` | about 30 relative links in 15 files, and the sticker plans' links to `assets/` | other sessions write to the old paths from memory; a broken link is caught by `audit-docs` | reasonable, but best done when the sticker and website sessions are idle, and told to both by a handoff note |
+| C. As the handoff says, with `assets/` | B plus `assets/` under `plans/stickers/` | B plus the site build script, the workflow and the manifest | breaks the website build if not done together with the website session | not now |
+
+**Besides the folders (any option):**
+1. `foundation/evidence/` is created when the first extra study arrives, not before (an empty folder is noise).
+2. `requirements-draft-v0.4.md` stays as it is; its index row will say what became of each part once the 0.4.0 spec exists (section 5 here is the mapping).
+3. The debt list: move the rows that are checked into a second file `verification-debt-closed.md` at each release, so the open list is what one reads. (8 rows today; small, but it keeps the list honest.)
+4. The backlog: move the epics that are fully done into `backlog-done.md` (history kept, the working file about half as long).
+5. The engineering log is history and is not touched; a new file per quarter can start in 2027.
+6. A search for the banned words of ADR-0057 is added to `scripts/audit-docs.mjs` (README and the app's strings; the site is the website session's), so rule 10 stays true without a reviewer.
+
+**Not verified:** the link counts are from a search, not from a trial move; whether the sticker and website sessions are working in the tree right now.
