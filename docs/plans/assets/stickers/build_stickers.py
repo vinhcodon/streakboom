@@ -333,6 +333,28 @@ def ok_sign(x, y):
     return o
 
 
+def star(x, y, r, col):
+    """A four-point sparkle (sticker art)."""
+    return f'<path transform="translate({x},{y})" d="M0 {-r} Q{r * 0.18} {-r * 0.18} {r} 0 Q{r * 0.18} {r * 0.18} 0 {r} Q{-r * 0.18} {r * 0.18} {-r} 0 Q{-r * 0.18} {-r * 0.18} 0 {-r}Z" fill="{col}"/>'
+
+
+def hop_for_joy():
+    """The cat in the air with a small shadow below, three motion ticks and sparkles: cheering without arms."""
+    k = dict(STAND_F, shadow=(60, 115, 0, 0))
+    o = ell(60, 116, 22, 3.2, "#000", op=0.08)
+    for x, y in ((44, 114), (60, 116), (76, 114)):
+        o += stroke_path(f"M{x} {y} l0 -5", "#b9a98f", 1.8)
+    o += wrap(cat(k, dict(LOOK["happy"], dy=0, cheek=0.9)), 0, -10, 1)
+    return o + star(14, 42, 6, "#ffd166") + star(108, 34, 7, "#f4a7a7") + star(102, 72, 4, "#8ecae6") + star(18, 76, 4, "#c9b8f0")
+
+
+def no_entry_sign():
+    """The cat holds a 'no entry' road sign (a red disc with a white bar) in front of its belly: a gentle, cute 'no'."""
+    sign = (f'<circle cx="60" cy="102" r="16" fill="#e5484d" stroke="#c93a40" stroke-width="1.2"/>'
+            f'<rect x="49.5" y="99.3" width="21" height="5.4" rx="1.6" fill="#fff"/>')
+    return cat(STAND_F, dict(LOOK["rest"], lid=0.9, mouth="smile", cheek=0.7, roll=0)) + sign + paw(41, 104, 6, 6.5, -20) + paw(79, 104, 6, 6.5, 20)
+
+
 def arcs(*specs):
     return "".join(stroke_path(d, "#b9a98f", 1.8, 0.9) for d in specs)
 
@@ -422,6 +444,8 @@ STICKERS = [
     ("17", "Ai đợi đâu.", lambda: cat(STAND_S, dict(LOOK["rest"], lid=0.7, roll=-6, mouth="smile", cheek=1.0, gx=-3))),
     ("19", "Huhu…", lambda: cat(STAND_F, dict(LOOK["sad"], roll=0, dy=0, lid=1, wide=1, cheek=0.5, droop=1, mouth="none")) + tears()),
     ("21", "Ok nè!", lambda: cat(STAND_F, dict(LOOK["rest"], wink=1, mouth="smile", cheek=0.8, roll=4)) + ok_sign(98, 80)),
+    ("20", "Hoan hô!", hop_for_joy),
+    ("22", "Không nha.", no_entry_sign),
 ]
 
 S = 2.45
