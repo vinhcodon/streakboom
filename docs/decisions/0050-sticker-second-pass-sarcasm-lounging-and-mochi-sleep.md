@@ -44,6 +44,9 @@ The three bubbles of sticker 03 were made smaller with a clear gap between them 
 ## Later the same day (10)
 The bubble of sticker 03 holds a **heartbeat line** (the symbol of life, with its ups and downs) in the biggest of three growing round bubbles. Four ideas were sketched (`docs/plans/assets/stickers/direction-v1/bubble_options.png`: heartbeat, sun and moon, a fish, a question mark) and the author chose the heartbeat. The manifest's alt text says so.
 
+## Later the same day (11)
+The author changed his mind: the bubble of sticker 03 holds **a little fish** (a cat's idea of life), not the heartbeat line. The manifest's alt text says so.
+
 ## Consequences
 - Spec 06 section 7 and the set list are updated: 16 are in the app (matched to a state) and the sticker-only art is now 03, 09 and the cloud of 10; the set is 17 stickers.
 - The sarcasm texts have not been through the author's ear for Vietnamese banter (backlog E3).

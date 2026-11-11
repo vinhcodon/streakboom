@@ -241,12 +241,13 @@ def wrap(inner, x, y, s):
 
 # ---- sticker-only art (not in the app): the lounging cat (3), the curled-up sleeper (9), the rain (10), confetti (7) ----
 def thought_bubble():
-    """Three round bubbles that grow as they rise from the head, the biggest holding a heartbeat line: "life" (its ups and downs)."""
+    """Three round bubbles that grow as they rise from the head, the biggest holding a little fish: a cat's idea of "life"."""
     grey, white = "#b8c2cc", "#ffffff"
     circles = ((33, 57, 2.4), (38, 48, 3.8), (50, 30, 11.5))
     o = "".join(f'<circle cx="{x}" cy="{y}" r="{r + 1.3}" fill="{grey}"/>' for x, y, r in circles)
     o += "".join(f'<circle cx="{x}" cy="{y}" r="{r}" fill="{white}"/>' for x, y, r in circles)
-    return o + stroke_path("M41 31 h4 l2 -7 l3.5 13 l3 -9 l2 3 h5", "#ef6f7e", 2)
+    return o + ('<ellipse cx="49" cy="30" rx="6" ry="3.8" fill="#8ecae6"/><path d="M54 30 l5 -4 v8z" fill="#8ecae6"/>'
+                '<circle cx="46" cy="29" r="0.9" fill="#2b2220"/>')
 
 
 def lounging():
@@ -534,7 +535,7 @@ V1 = [
     # (title vi, title en, title ja), (scene vi, scene en, scene ja), (text en, text ja)
     (("Chào buổi sáng", "Good morning", "おはよう"), ("vươn vai và ngáp", "stretches and yawns", "のびをしてあくびをしている"), ("Good morning!", "おはよう！")),
     (("Sướng quá", "Bliss", "きもちいい"), ("nhắm mắt sung sướng, được gãi đầu", "eyes shut in bliss, being scratched", "うっとり目を閉じて頭をなでられている"), ("So good~", "きもちいい〜")),
-    (("Cuộc sống mà", "Life, you know", "人生ってさ"), ("nằm ngửa vắt chân, vẻ thản nhiên, bong bóng suy nghĩ có đường nhịp tim, tượng trưng cho cuộc sống", "lies back with crossed legs, deadpan, a thought bubble above with a heartbeat line, standing for life", "足を組んで寝転び、すました顔で、心電図の線が入った考えの吹き出しが浮かんでいる（人生を表す）"), ("Life, you know.", "人生ってさ。")),
+    (("Cuộc sống mà", "Life, you know", "人生ってさ"), ("nằm ngửa vắt chân, vẻ thản nhiên, bong bóng suy nghĩ có một con cá nhỏ, cuộc sống theo kiểu mèo", "lies back with crossed legs, deadpan, a thought bubble above with a little fish, a cat's idea of life", "足を組んで寝転び、すました顔で、小さな魚が入った考えの吹き出しが浮かんでいる（ねこの人生）"), ("Life, you know.", "人生ってさ。")),
     (("Buồn ngủ", "Sleepy", "ねむい"), ("gật gù buồn ngủ, có chữ z bay lên", "nods off with a floating z", "うとうとして「z」が浮かんでいる"), ("Sleepy…", "ねむい…")),
     (("Hừm", "Hmph", "むっ"), ("ngồi lườm hờn, thở ra mấy làn khói nhỏ", "sulks with a half-lidded glare and little puffs", "半目でむっとして、小さく息をはいている"), ("Hmph.", "むっ。")),
     (("Quá sức mèo rồi", "Too much for a cat", "ねこには無理"), ("mắt buồn, tai cụp, quá sức", "looks overwhelmed, ears down", "耳をたたんで、手に負えない様子"), ("Too much for a cat.", "ねこには無理！")),
