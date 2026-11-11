@@ -23,6 +23,7 @@ Status: **proposed 2026-11-08, asked by Vinh to be carried out story by story.**
 | E8 | Focus-safety and places | 6 / 13 | FS-0 to FS-4 and PL-0 done; FS-5 and FS-6 left; PL-1 and PL-7 merged into E9 |
 | E9 | The desktop as terrain | 8 / 16 | Spec 07 and ADR-0030; the Rust `monitors_info` and `move_to`, the lane (TE-12, TE-13), hops and falls (TE-7, TE-15), the hop out of the typing lane (TE-14) and the perches (TE-10) are built; the cost field (TE-1, TE-4 to TE-6, TE-8) is unbuilt and its place was taken in part by E14 |
 | E10 | Perception | 8 / 9 | Spec 08 and ADR-0031, ADR-0045: PC-1 to PC-7 built (the belief, the percept events, the ground map, the ground watch and the fall); the slow senses (PC-8) later |
+| E16 | The sticker test on Zalo (spec/06 section 7, plan `sticker-test.md`, ADR-0049) | 1 / 6 | Decisions answered 2026-11-10 (name, wording, expressions, 12 to 20 stickers, threshold); the public Zalo rules read; ST-2 (the character sheet) approved; next: the account-only checks (ST-1) and drawing the stickers (ST-3); no app code |
 | E15 | Restraint, play and the charter (spec/11, ADR-0047) | 3 / 6 | The charter is written (CH-1), the edge check and the attention modes are built (CH-2, CH-3, not released); next: the edge ladder with its poses (CH-4), the person's push (CH-5), the shoo and the retirement of the settings that are amounts (CH-6, waits for the author) |
 | E14 | The desktop as terrain, version 2 (spec/10) | 7 / 16 | Spec 10, ADR-0044, ADR-0045, ADR-0046: the ground map with window numbers, the overlay, the fall to the plane below, walls, climbing and the climb pose, getting out from under the Start menu (TT-0 to TT-3 partly, TT-9, TT-12, TT-14, TT-15) are built and committed, not released; knocks (TT-13), the screen picture sense (TT-10) and content surfaces (TT-11) are next in that track |
 | E13 | Fresh words: more variety in the scripted lines | 5 / 9 | Lines more varied: the shuffle bag, tokens, the smallest pools raised (LN-1 to LN-3, LN-5 partly, 0.3.1); the line factory script is built and waits for the author to run it (LN-4); rare lines blocked; the brain's top-up declined for now |
@@ -258,3 +259,14 @@ Why: the author asked for rare, strong falls, slow actions first, no distraction
 | CH-5 | The person's push: a drop in the air and a flick at an edge, the teeter and the fall, wariness and the bruise after a fall | M | ready | CH-3, CH-4 |
 | CH-6 | The shoo (quieter for the rest of the day after the person moves Peak away or puts it to sleep; memory only) and the retirement of the settings that are amounts (Chattiness, Quiet hours) with a one-time migration | M | waits for the author's go-ahead | CH-3 |
 
+
+## E16. The sticker test on Zalo (spec/06 section 7, plan `sticker-test.md`, ADR-0049)
+Why: an off-app test of whether a free sticker set of Peak brings installs (H14) of the same quality (H15) and fixes the character (H16). No app code, no telemetry change. Thresholds are in the plan (section 5) and are written down before the run.
+| ID | Story | Size | Status | Depends on |
+|---|---|---|---|---|
+| ST-1 | Verify with a Zalo account: download counts, links or the app name in the description, review time; record the dates and sources (the public pages are done: sizes and terms) | S | public part done 2026-11-10; the account part waits for the author | |
+| ST-2 | The character sheet (front and side stills, colors, face rules) and the author's sign-off | S | done 2026-11-10 (front and side views approved by the author; `docs/plans/assets/sticker-character-sheet.svg` v0.2; sit, stretch and loaf bodies not drawn) | |
+| ST-3 | Draw 12 to 20 stickers 360 x 360 (spec/06 7.2 and 7.3), the icon 124, the preview 440, the 9 promote banners; compare each with the sheet | L | list of 15 with texts approved 2026-11-10 (`docs/plans/sticker-set-v0.md`); first pass drawn 2026-11-10 (15 stickers, icon, preview, 9 banners in `docs/plans/assets/stickers/set-v0/`, built by `build_stickers.py`); waits for the author to look and for a second pass | ST-2 |
+| ST-4 | The consistency review and the note on what the drawing made us decide (H16) | S | ready after ST-3 | ST-3 |
+| ST-5 | Short links and the date of each channel; thresholds written and dated; package and submit | S | ready after ST-4 and ST-1 | ST-1, ST-4 |
+| ST-6 | The run of 4 to 6 weeks, the reading against the thresholds (20 installs, H15 if there is a baseline), the decision and an ADR | S | waits for approval by Zalo | ST-5 |

@@ -19,6 +19,12 @@ How the agent checks on the real machine: run from the author's Terminal panel (
 | V-9 | The first-run consent card with the new wording on a fresh install | install on a clean user | Vinh | 0.2.0 |
 | V-10 | Whether the focus-safety constants feel right with a real person typing (including long pauses between bursts, keyboard-only use) and whether the typing lane's guess (H9) is good enough | use it for a week | Vinh | 0.2.4 |
 | V-11 | A fresh look at the hop (TE-7): the legs of the walk pose move in the air; would a dedicated leap pose be better? | try "Test: hop up" again after TE-15 | Vinh | 2026-11-09 |
+| V-89 | The sticker test (ADR-0049): whether Zalo shows the author a download count, whether the description may hold a link or the app name, and the review time (not on the public pages or the guideline) | register or look at the author portal once the set is approved; ask in the form | Vinh | 2026-11-10 |
+| V-90 | The sticker expression table (spec/06 7.2) was matched by reading `sprites.ts` and `engine.ts`, not by looking at the poses | look at the 12 to 20 stills next to the cat in the app | Vinh | 2026-11-10 |
+| V-91 | That a sticker set brings any installs at all (H14), and that the sticker cohort bonds as well (H15; no baseline of mean Bond Days exists yet) | the run of ST-6 against the thresholds in the plan | Vinh | 2026-11-10 |
+| V-92 | The character sheet (ST-2) was drawn from the numbers in `keys.ts` and `draw.ts`, not from a screenshot of the running cat | put the sheet next to the live cat and compare proportions and colors | Vinh | 2026-11-10 |
+| V-93 | The sticker set's text font is Segoe UI Bold, a Windows system font; whether rendering it into images that are published is allowed, and the open font to use instead (for example a rounded one with Vietnamese letters) | read the font's licence; pick an open font; rebuild with `build_stickers.py` | Vinh | 2026-11-10 |
+| V-94 | The first-pass stickers were checked by script (sizes, alpha) and by looking at a contact sheet, **not in Zalo's own preview or in a chat on a phone** (legibility at the real size, dark chat themes, the 4-word limit as Zalo counts it, banner backgrounds) | upload to the registration form's preview or send the PNGs to a Zalo chat | Vinh | 2026-11-10 |
 
 ## B. The agent can check these
 | ID | What is unchecked | How to check | Who | Since |

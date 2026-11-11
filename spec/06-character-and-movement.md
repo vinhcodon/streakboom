@@ -149,3 +149,66 @@ Priority: fullscreen/busy/Quiet mode/asleep rules stay as they are and win; a sl
 - How `idleMs` behaves for touch or pen input on a tablet.
 - Multi-monitor and mixed-DPI behavior of places (the data model is a proposal).
 - Whether people like the cat getting up and leaving (it replaced a fade the author found unnatural); the alpha has to say. The case where the text itself runs toward the cat is not solved by pointer proximity: see spec/07 section 3.1 (the typing lane).
+- Stickers (section 7): that a sticker set brings installs at all, and that the Zalo rules (sizes, review time, description, download numbers) are as the public guides say; none of it is checked yet. The expression table was matched by reading the code, not by looking at the cat.
+
+## 7. Stickers and expressions (proposal, 2026-11-10; for Vinh's approval)
+
+Source: [`../docs/handoff/sticker-test.md`](../docs/handoff/sticker-test.md). Plan and measurement: [`../docs/plans/sticker-test.md`](../docs/plans/sticker-test.md). This is an off-app marketing experiment (a static sticker set for a chat app); it changes **no app code**, adds no telemetry and no setting. This section only fixes which expressions a sticker may show, so that a sticker and the cat in the app are the same character. Charter rules (`../docs/charter.md`, section 1.6 above) bind the stickers as much as the cat: no guilt, no judging the user, nothing that makes the cat an assistant.
+
+### 7.1 Ground truth: what the cat can show today
+Checked on 2026-11-10 against `app/src/lib/sprites.ts` (`PetState`, `TIMED`, `MOODS`, `moodPose`) and `app/src/lib/rig/engine.ts` (`LOOKS`) and `rig/keys.ts` (`POSE_KEYS`).
+- **Bodies (`POSE_KEYS`):** `stand`, `sit`, `loaf`, `hang`, `stretch`, `climb`. There is **no** lying-on-the-back or rolled-over body, no jump-in-the-air body, and no sleeping pose other than `loaf` (a curled loaf with the "z" effect).
+- **Views:** front (`theta` 0) and side (`theta` 1: the walk, the stretch and the climb). No three-quarter view and no back view; the rig blends the two, and a half-way blend looks wrong (engine comment on the wake), so a sticker uses a pure front or a pure side.
+- **Face dials:** eye lid, `happy` (closed arcs), `wide`, cheek, mouth (`smile`, `open`, `flat`, `o`, `yawn`), thought dots, ears `droop` and `perk`, head roll, gaze, and the `sweat` and `z` effects.
+- **States that carry an expression** (all in `PetState`): `idle`/`look`/`land` (the rest face), `happy`, `purr`, `huff`, `smirk`, `gasp`, `notice`, `curious`, `sad`, `nod`, `think`, `drowsy`, `sleep`, `wake`, `held`. `walk`, `climb` and `cling` are movement. The chat moods map onto them in `moodPose`: neutral to `nod`, happy to `happy`, warm to `purr`, sassy to `smirk` (`nod` in the Gentle tone), surprised to `gasp`, curious to `curious`, sad to `sad`.
+
+### 7.2 The expression list, matched to the app
+Rule: an expression is **"in the app"** only when a state already draws it. Where there is no state, the table says so; that expression is **sticker-only art** (drawn outside the rig) and is not a promise that the cat will ever do it in the app. A sticker should not show something that would surprise a user who then meets the cat (a poor match is what H14 would punish).
+
+| # | Sticker (handoff section 3) | State in the app | Body, view | Match |
+|---|---|---|---|---|
+| 1 | Good morning | `wake` (stretch, eyes shut, yawning); or `happy` for a bright face | `stretch` side / `stand` front | **Exact** for the stretch; a front-facing greeting is `happy` |
+| 2 | Head rub / being scratched | `purr` (eyes closed in bliss, head rolled, slow sway) | `stand` front | **Exact** (the head-scratch reaction; quirk 2) |
+| 3 | A cat at ease, "thinking about life" (replaces the belly request, ADR-0050) | none (the app cat never lies back with its legs crossed) | none | **Sticker-only art**, text "Đời là thế." |
+| 4 | Dozing off | `drowsy` (sits, lid half down, yawn); `sleep` when fully asleep | `sit` front / `loaf` | **Exact**: `drowsy` for a nod-off, `sleep` for asleep with the "z" |
+| 5 | The glare when teased | `huff` (the belly-trap flinch: half-lidded, flat mouth, head tilted) | `stand` front | **Exact** for the look; `smirk` is the playful, not cross, variant |
+| 6 | "Too big for me" | none dedicated. The refusal (section 1.4) is a spoken line with a mood tag; the nearest faces are `sad` (ears down) or `huff` | `stand` front | **Partial.** Pose and wording are open (questions 2 and B) |
+| 7 | Celebrating a streak | `happy` (eyes closed in a big smile, open mouth); a milestone line | `stand` front | **Exact** for the face; any confetti is sticker-only art |
+| 8 | A gentle nudge to work together | no dedicated state. `notice` (ears up, eyes wider, looking toward the work) is closest but means "I see you are working", not an invitation; `curious` (head tilt) reads as "what are you doing?" | `stand` front | **Partial.** Must not read as nagging (section 1.6, rule 1); open question B |
+| 9 | Good night (curled up like a mochi, ADR-0050) and rain | the app has the loaf (`sleep`) but not the curl; none for rain (the cat does not know the weather) | `loaf`-like | **Both sticker-only art** (the face and the "z" are the app's) |
+| 10 | Hungry | none, and the charter says the cat never starves (section 1.6, rule 1) | none | **Do not draw** unless Vinh decides it is play, not need (open question B) |
+| 11 | Sorry | `sad` (ears down, eyes low) | `stand` front | **Exact** |
+| 12 | Thank you | `purr` or `happy` | `stand` front | **Exact** |
+
+Spare states a later pack could use with no new art: `gasp` (surprise), `smirk` (teasing), `think` (the dots), `curious`, `held` (hanging, eyes wide), `nod`. Not for stickers: `walk`, `land`, `look`, `idle` (rest face, nothing to say), `climb` and `cling` (wall poses that need a wall).
+
+Counted this way, of the 12 handoff stickers **7 are exact** (1, 2, 4, 5, 7, 11, 12), **2 are partial** (6, 8), **2 are not in the app** (3, and rain in 9) and **1 conflicts with the charter** (10). The core eight of the handoff are therefore 1, 2, 4, 5, 7 exact; 6 and 8 partial; 3 sticker-only.
+
+### 7.3 Consistency rules
+1. **One character sheet is the standard:** front and side, the colors and the face, taken from the rig itself (the stand, sit and stretch drawings and the face dials above). Every sticker is compared with it before it is accepted.
+2. Reject any sticker that changes the head-to-body proportion, the eye style (round with a highlight; closed arcs for happy and purr), the ear shape, the fur color or the mochi roundness.
+3. Front or side only; no invented views. No hands holding things (the cat has no such pose), no clothing.
+4. Name: the set is called after the project's character (ADR-0024 names it "Peak") with Streakboom in the author name; **Vinh confirms** (question 1).
+5. Words on a sticker follow the voice (section 1.1): first person, short, Vietnamese that does not read as translated, teases the situation and never the person. The share of sarcastic ones is **Vinh's call** (question 3); until then the draft wording carries none.
+6. No third-party characters or copyrighted marks.
+
+7. **Zalo's format rules (guideline PDF, read 2026-11-10):** 12 to 20 stickers per set, PNG 360 x 360 with transparent background, flat design (no 3D, no square-cornered background), at most 4 words of text per frame, no text about trademarks (so no app name on a sticker), icon 124 x 124, preview 440 x 440, a promote banner in 9 sizes. Animated stickers are 2 to 10 frames. Because of the 4-word limit, the sample refusal line of section 1.4 (8 words) cannot be printed on sticker 6 as it is; the answer to question 2 was revised (question F): sticker 6 says "Quá sức mèo rồi." with `sad` (the longer line stays for the spoken refusal in the app). Because of the 12-sticker minimum, 11 of the handoff's expressions are not enough once "hungry" is dropped (question E).
+
+### 7.4 What this section does not do
+- It adds no pose, state or pose key to the app.
+- It does not decide that the cat in the app will roll over, jump in the air, or react to rain.
+- It does not set animated stickers: the rig has front and side only, and an animated set would reuse `TIMED` durations (for example `purr` 2.4 s, `huff` 1.5 s, `happy` 1.2 s) as its length; that is for later (question 4).
+- Using the rig as the **source** of the stills (rendering `LOOKS` poses to transparent PNGs) would need a small tool, which is code; it needs Vinh's separate approval (plan step 3, question C).
+
+### 7.5 Questions and Vinh's answers (2026-11-10, ADR-0049; changed by ADR-0050 on 2026-11-11)
+**Changed 2026-11-11 (ADR-0050):** answer 3 (no sarcasm) is replaced by about 29% (5 of 17 stickers tease: 03, 05, 15, 16 "Ừ, giỏi lắm.", 17 "Ai đợi đâu."); answer A (belly) is replaced by the lounging cat of sticker 3; sticker 9 is a curled-up mochi. See `../docs/plans/sticker-set-v1-direction.md`. The text below is the first answers, kept for the record.
+**Answered:** 1 name = "Peak"; 2 sticker 6 says the sample line "Cái đó khó quá với một con mèo." with `sad`; 3 no sarcastic lines in the first set; 4 animated stickers decided after the static set shows results; 5 a platform without download numbers is accepted (measure by short link); A sticker 3 keeps the rolled-over cat as **sticker-only art** (so row 3 of the table stands as "sticker-only", and the set must not suggest the app does it); B sticker 8 = `curious`, "hungry" dropped; C stills drawn or generated outside the app (no render tool); D threshold = 20 installs from stickers. The table below keeps the original questions and options for the record.
+| # | Question | What is already known (facts, not answers) | Options |
+|---|---|---|---|
+| 1 | The set's official name: "Peak" or another | ADR-0024 already names "Peak" the character of the project (README, art credits, marketing); each user's own pet starts unnamed | (a) "Peak" (b) another name (c) "Peak" plus a subtitle |
+| 2 | Wording of sticker 6, "too big for me" | Section 1.4 and D3: vague, in the cat's voice, never mentioning an assistant; the sample line "Cái đó khó quá với một con mèo." is marked "not final copy" | (a) that sample as it is (b) Vinh's own line (c) several short variants, one picked |
+| 3 | Share of sarcastic lines on stickers | The app keeps about 14% of scripted lines sarcastic, revisited with alpha feedback (D4); the Gentle switch drops them | (a) none in the first set (b) about 14% (c) another figure |
+| 4 | Animated stickers in a later stage? | The rig has only front and side views; durations exist in `TIMED`; static set first | (a) no (b) decide after the static set shows results (c) yes, plan it now |
+| 5 | Accept a platform that gives no download numbers? | Unknown until plan step 1, item 1 | (a) yes, measure by short link only (b) no, use the community route or Telegram |
+
+Questions added by this section (also for Vinh): **A**, sticker 3 (belly request): redraw with an existing pose, or keep it sticker-only? **B**, stickers 6, 8 and 10: which pose, and is "hungry" allowed at all? **C**, may a small tool render the stills from the rig, or are they drawn and generated outside the app? **D**, the install threshold ("a few dozen") needs a number before the run (plan section 5).
