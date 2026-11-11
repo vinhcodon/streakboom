@@ -35,16 +35,17 @@ Copy these from the app repository: `docs/plans/assets/stickers/set-v0/01.png` t
 
 The numbering is by position in the set. Please also give each sticker a short English and Vietnamese title for the page (the English column is a starting point). The app's name is not on the images; the page carries it.
 
-## 3. What each sticker offers: **Copy only** (the author's call, 2026-11-11)
-One button per sticker: **Copy**. It puts the PNG on the clipboard (`navigator.clipboard.write` with a `ClipboardItem` of type `image/png`) so the person can paste it with Ctrl+V (or a long press and Paste on a phone) into the chat box of Zalo, Telegram, Messenger, Discord and so on. Show "Copied" for a moment. If the browser refuses (no permission, or no clipboard support), say so in one plain line and leave the picture itself as a real `<img>`, so the browser's own "save image" or "copy image" menu still works.
+## 3. What each sticker offers (the author's calls, 2026-11-11)
+**The sticker itself is the button.** There is no separate "copy" icon (the author dislikes the usual two-squares icon).
+1. **Tap or click a sticker to copy it:** put the PNG on the clipboard (`navigator.clipboard.write` with a `ClipboardItem` of type `image/png`) so the person can paste it into the chat box of Zalo, Telegram, Messenger, Discord and so on. Feedback, small and in Peak's style: the sticker bounces a little, a small paw-print tick appears on it, and a line says "Đã chép — dán vào khung chat" (and the English equivalent). A faint paw print on hover and on keyboard focus shows that a sticker can be pressed. One line at the top of the page says "Bấm vào sticker để chép" (and the English equivalent). Each sticker is a real `<button>` containing the `<img>`, with a label such as "Chép sticker Chào buổi sáng" for screen readers; it works from the keyboard.
+2. **On a phone that supports it, a Share action** (`navigator.share({ files })`, shown only where `navigator.canShare({ files })` is true and the device is a touch one): the suggested way is that tapping a sticker copies it **and** the confirmation line carries a "Chia sẻ" link that opens the system share sheet (so there are no 20 extra buttons). It is the easy way into the Zalo and Telegram apps on a phone, where a pasted picture may not be accepted everywhere. The website session may choose another placement if it is as light.
+3. **If the browser refuses to copy** (no permission or no clipboard support), say so in one plain line, and leave the picture a real `<img>` so the browser's own menu still works (a long press on a phone shows Share and Save image; do not block it with `-webkit-touch-callout: none`, `user-select: none` or `pointer-events: none` on the image; check that the long press still works with the image inside the button).
 
-**Not offered for now:** a Share button, a Download button per sticker and the ZIP of the whole set. The author may add them later (a Share button would be the first one: on a phone `navigator.share({ files })` is the easiest way into Zalo or Telegram, and a phone browser may not allow a pasted image in every chat app, so check this when the page is tested). Do not add them without asking.
-
-The Copy button is a real `<button>` with a label for screen readers and works from the keyboard. With scripts off the pictures still appear (and can be saved with the browser's own menu).
+**Not offered:** a Download button per sticker and the ZIP of the whole set (the author does not want them). Do not add them without asking. With scripts off the pictures still appear and can be saved with the browser's own menu.
 
 ## 4. Words on the page (the author edits; this is the shape)
 - A short intro in Peak's voice: what the set is, free to use in chats.
-- **How to use**, two lines: press Copy under a sticker, then paste it into the chat box; **they are sent as pictures, not as sticker packs** (so they look larger and cannot be tapped to add a pack; a real sticker pack is not offered yet).
+- **How to use**, two lines: tap a sticker to copy it, then paste it into the chat box (on a phone, "Chia sẻ" sends it straight to a chat app); **they are sent as pictures, not as sticker packs** (so they look larger and cannot be tapped to add a pack; a real sticker pack is not offered yet).
 - **Licence line, visible near the buttons:** "Peak stickers by Streakboom, CC BY 4.0", linking to `https://creativecommons.org/licenses/by/4.0/`, and a sentence: free to use and share, including commercially, as long as you credit Streakboom. Put the same in the structured data (section 5).
 - A gentle call to action: Peak, a small cat that lives on your screen, with the download link of the app. No "Zalo sticker" or "Telegram sticker" claim anywhere: the set is **not** in any store, and Zalo and Telegram are named only as places where you can paste.
 - A courtesy credit line: the image text is set in Be Vietnam Pro (SIL Open Font License).
@@ -57,7 +58,7 @@ No cookies, no third-party scripts, no fingerprinting, nothing per person. **Cop
 
 ## 7. Checks (the author or the website session; the app session cannot do these)
 - Copy, then paste into Zalo on a computer, Telegram Desktop and Messenger on the web: the image arrives with a transparent background and a readable size.
-- Copy on an Android phone and an iPhone, then paste into the Zalo and Telegram apps: does it paste as an image? (If not, the Share button above is the next step.)
+- Tap-to-copy on an Android phone and an iPhone, then paste into the Zalo and Telegram apps: does it paste as an image? And the Share sheet from the confirmation line: do Zalo and Telegram appear? And the long press on a sticker inside its button: does the system menu still appear?
 - The fall-backs when the clipboard or sharing is not allowed.
 - The page in the dark theme (the stickers are drawn to read on light and dark chat backgrounds; check both).
 - The licence line and the structured data validate.

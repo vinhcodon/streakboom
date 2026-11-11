@@ -8,7 +8,7 @@
 The author wants to publish the 20 stickers on the website so that people can use them in their chats at once, and does **not** want to submit anything to Zalo, Telegram or any store for now. Zalo's registration page offers no way for a user to add a set that is not in its store (see `docs/plans/sticker-test.md`); a Telegram pack could be made without the author submitting to a store (Telegram's page says nothing about review) but needs the author's account and a side of exactly 512 px.
 
 ## Decision
-1. **A gallery page on the website** with one button per sticker, **Copy** (paste it into the chat box), and nothing else for now: **no Share, no per-sticker Download and no ZIP** (the author, 2026-11-11, after the first version listed them; a Share button is the first to add back if phones turn out to need it). The stickers travel as **images, not as store stickers**, and the page says so.
+1. **A gallery page on the website** where **the sticker itself is the button: tap or click to copy it** (no separate copy icon; the author dislikes the usual one), with a small paw-print confirmation. **On a phone that supports it, a Share action** opens the system share sheet. **No per-sticker Download and no ZIP** (the author, 2026-11-11). The stickers travel as **images, not as store stickers**, and the page says so.
 2. **The website session builds it** from a handoff (`docs/handoff/website-stickers.md`); the app session does not edit the site.
 3. **Licence: CC BY 4.0** (free to use and share, also commercially, with credit to Streakboom).
 4. **No submission** to Zalo, Telegram or LINE for now; a Telegram pack stays an option for later.
