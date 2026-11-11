@@ -10,6 +10,8 @@
 
 You are the session that owns `site/` in the repository `vinhcodon/streakboom` (the website streakboom.com, served by GitHub Pages). The app session is about to release **version 0.4.0**, "the alignment release": it removes what made Peak a character who needs you, and adds an adults-only statement and a few safety rules. Read `CHANGELOG.md` (the 0.4.0 entry), `docs/charter.md` (article 7 and the line "What Peak is for" changed), `docs/decisions/0056` to `0059`, and `spec/12-foundation-alignment.md`. The research behind it is `docs/foundation/` (you may link to the research, but do not quote figures from it as facts: most of it was read as abstracts).
 
+**Where to work:** the app's changes are on the git branch `foundation/alignment` (not pushed, not on `main`). Work on that same branch, in the same checkout if you share it, commit only `site/` and `scripts/site/` by explicit paths (ADR-0023, never `git add -A`), and do not push or merge: the author decides when the branch goes to `main`. Run `git branch --show-current` first; if it says `main`, stop and ask the author.
+
 **The site build fails against the branch until you follow.** `node scripts/build-site.mjs` reads the README and checks the site against it. Today it stops on the number of hand-written lines. Please make the site pass before the branch goes to `main`, and tell the author when it does, so the two reach `main` in the same push.
 
 ### 1. Bring the site in line with the app (do this now)
