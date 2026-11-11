@@ -2,7 +2,7 @@
 
 **From:** the app session (Vinh and Claude)
 **To:** whoever works on `site/` (GitHub Pages)
-**Status:** a template (ADR-0033). At every release the app session fills in the version and what changed, and gives the author the text below to paste into the website session. This copy is filled for **0.4.0** (**published 2026-11-12**; ADR-0061: it is handed over after the release, as always, and the author hands it over now). The previous copies (0.2.5 to 0.3.2) were acted on by the website session: the structure of its ADR-0034 is built, the site follows 0.3.2 (ADR-0054), is short and gentle (ADR-0048, ADR-0053) and has a Stickers page.
+**Status:** a template (ADR-0033). At every release the app session fills in the version and what changed, and gives the author the text below to paste into the website session. This copy is filled for **0.4.0** (**published 2026-11-12**; ADR-0061: it is handed over after the release, as always, and the author hands it over now). The previous copies (0.2.5 to 0.3.2) were acted on by the website session: the structure of its ADR-0034 is built, the site follows 0.4.0 (ADR-0062; ADR-0063 and ADR-0064 are its research link and its right-click demo), is short and gentle (ADR-0048, ADR-0053) and has a Stickers page.
 
 ---
 

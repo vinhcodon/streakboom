@@ -97,7 +97,7 @@ if (rust && !text("spec/04-technical-design.md").includes(`${rust} tests`)) bad(
 
 // 8. no health claim (ADR-0057; spec 12 section 7): the README and the texts the app shows never say that Peak heals, treats
 // or reduces a condition. A line that denies such a claim ("makes no claim to...") is allowed. The website is reported only.
-const CLAIMS = [/\bheal(s|ed|ing)?\b/i, /\btherap(y|ies|eutic)\b/i, /clinically/i, /\banxiety\b/i, /\bdepression\b/i, /\bADHD\b/, /reduc\w+ (your )?(stress|loneliness)/i, /chữa lành/i, /trị liệu/i, /trầm cảm/i, /lo âu/i, /癒/, /うつ/, /治療/];
+const CLAIMS = [/\blonely\b/i, /\bheal(s|ed|ing)?\b/i, /\btherap(y|ies|eutic)\b/i, /clinically/i, /\banxiety\b/i, /\bdepression\b/i, /\bADHD\b/, /reduc\w+ (your )?(stress|loneliness)/i, /chữa lành/i, /trị liệu/i, /trầm cảm/i, /lo âu/i, /癒/, /うつ/, /治療/];
 const DENIES = /no claim|not a health|never claims/i;
 const claimsIn = (f) =>
   text(f)
