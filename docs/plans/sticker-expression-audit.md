@@ -10,7 +10,7 @@ Done after the author removed the clapping "Giỏi quá!" (it duplicated 16, "Gi
 |---|---|---|---|---|---|
 | 01 | Chào buổi sáng! | greeting, fresh | shut, yawning | open (yawn) | stretch |
 | 02 | Sướng quá~ | bliss | closed arcs | smile | none |
-| 03 | Đời là thế. | deadpan ease | half lid | flat | lying back, legs crossed |
+| 03 | Cuộc sống mà. | deadpan ease, hazy thoughts | half lid | flat | lying back, legs crossed |
 | 04 | Buồn ngủ… | sleepy | closed arcs | small "o" | "z" |
 | 05 | Hừm. | sulk, glare | half lid | flat | puffs of breath, sitting |
 | 06 | Quá sức mèo rồi. | overwhelmed, refusing | open, low | flat | ears down |

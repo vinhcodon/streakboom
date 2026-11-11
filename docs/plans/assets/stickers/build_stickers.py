@@ -240,6 +240,18 @@ def wrap(inner, x, y, s):
 
 
 # ---- sticker-only art (not in the app): the lounging cat (3), the curled-up sleeper (9), the rain (10), confetti (7) ----
+def thought_bubble():
+    """A hazy thought bubble (a cloud with two small trailing circles and a wavy line inside): vague, drifting thoughts."""
+    grey, white = "#b8c2cc", "#ffffff"
+    parts = ((40, 26, 10, 8), (52, 20, 11, 9), (64, 26, 10, 8), (52, 29, 18, 8))
+    o = "".join(f'<ellipse cx="{x}" cy="{y}" rx="{rx + 1.3}" ry="{ry + 1.3}" fill="{grey}"/>' for x, y, rx, ry in parts)
+    o += f'<circle cx="46" cy="44" r="4.8" fill="{grey}"/><circle cx="40" cy="53" r="3.5" fill="{grey}"/>'
+    o += "".join(f'<ellipse cx="{x}" cy="{y}" rx="{rx}" ry="{ry}" fill="{white}"/>' for x, y, rx, ry in parts)
+    o += f'<circle cx="46" cy="44" r="3.5" fill="{white}"/><circle cx="40" cy="53" r="2.2" fill="{white}"/>'
+    o += stroke_path("M41 26 q3 -6 6 0 t6 0 t6 0", "#9aa7b5", 1.9)
+    return o
+
+
 def lounging():
     """Lying back at ease with one leg crossed over the other, head propped on a paw, thinking about life."""
     o = ell(64, 115, 50, 4.5, "#000", op=0.08)
@@ -252,7 +264,7 @@ def lounging():
     k = shift(STAND_F, 0, 0)
     look = dict(LOOK["rest"], lid=0.5, roll=-13, gy=-3, gx=2, mouth="flat", cheek=0.5)
     o += f'<g transform="translate(32,84) scale(0.7) translate(-60,-64)">{cat_head_only(k, look)}</g>'
-    return o
+    return o + thought_bubble()
 
 
 def curled_up():
@@ -440,7 +452,7 @@ STICKERS = [
     # file, text, svg of the cat (rig units; wrapped below), extras in rig units
     ("01", "Chào buổi sáng!", lambda: cat(STRETCH_S, LOOK["wake"]), dict(scale=2.8, dy=-14)),
     ("02", "Sướng quá~", lambda: cat(STAND_F, LOOK["purr"])),
-    ("03", "Đời là thế.", lounging, dict(scale=2.5, dx=2, dy=0)),
+    ("03", "Cuộc sống mà.", lounging, dict(scale=2.5, dx=2, dy=0)),
     ("04", "Buồn ngủ…", lambda: cat(SIT_F, dict(LOOK["drowsy"], lid=0.06, roll=-11, dy=9, droop=0.5, mouth="o", cheek=0.8, z=1))),
     ("05", "Hừm.", lambda: cat(SIT_F, LOOK["huff"]) + puffs()),
     ("06", "Quá sức mèo rồi.", lambda: cat(STAND_F, LOOK["sad"])),
@@ -525,7 +537,7 @@ V1 = [
     # (title vi, title en, title ja), (scene vi, scene en, scene ja), (text en, text ja)
     (("Chào buổi sáng", "Good morning", "おはよう"), ("vươn vai và ngáp", "stretches and yawns", "のびをしてあくびをしている"), ("Good morning!", "おはよう！")),
     (("Sướng quá", "Bliss", "きもちいい"), ("nhắm mắt sung sướng, được gãi đầu", "eyes shut in bliss, being scratched", "うっとり目を閉じて頭をなでられている"), ("So good~", "きもちいい〜")),
-    (("Đời là thế", "That's life", "そういうもの"), ("nằm ngửa vắt chân, vẻ thản nhiên", "lies back with crossed legs, deadpan", "足を組んで寝転び、すました顔"), ("That's life.", "そういうもの。")),
+    (("Cuộc sống mà", "That's life", "そういうもの"), ("nằm ngửa vắt chân, vẻ thản nhiên, bong bóng suy nghĩ mông lung", "lies back with crossed legs, deadpan, a hazy thought bubble above", "足を組んで寝転び、すました顔で、ぼんやりした考えの吹き出しが浮かんでいる"), ("That's life.", "そういうもの。")),
     (("Buồn ngủ", "Sleepy", "ねむい"), ("gật gù buồn ngủ, có chữ z bay lên", "nods off with a floating z", "うとうとして「z」が浮かんでいる"), ("Sleepy…", "ねむい…")),
     (("Hừm", "Hmph", "むっ"), ("ngồi lườm hờn, thở ra mấy làn khói nhỏ", "sulks with a half-lidded glare and little puffs", "半目でむっとして、小さく息をはいている"), ("Hmph.", "むっ。")),
     (("Quá sức mèo rồi", "Too much for a cat", "ねこには無理"), ("mắt buồn, tai cụp, quá sức", "looks overwhelmed, ears down", "耳をたたんで、手に負えない様子"), ("Too much for a cat.", "ねこには無理！")),
