@@ -119,6 +119,7 @@ export const LOOKS: Record<PetState, Look> = {
   curious: { ...REST, roll: 8, gx: 3, gy: -3, wide: 0.45, mouth: "flat", dots: 0 },
   sad: { ...REST, roll: -6, dy: 5, gy: 2, lid: 0.7, mouth: "flat", cheek: 0.2, droop: 1 },
   peek: { ...REST, base: "peek", theta: 1, roll: 18, gy: 3, wide: 0.35, perk: 0.8, mouth: "flat", cheek: 0.4 }, // crouched at the edge, looking down
+  teeter: { ...REST, base: "teeter", wide: 1, mouth: "o", perk: 1, cheek: 0.3, gy: 4, roll: 3 }, // front view: eyes wide and looking down, ears up; the body leans toward the edge and rocks about its feet
   ledge: { ...REST, base: "ledge", theta: 1, roll: 6, gy: 2, cheek: 0.7 }, // sitting at the edge, paws over it
   climb: { ...REST, base: "climb", theta: 1, walk: 1, roll: -26, mouth: "flat", cheek: 0.4 },
   cling: { ...REST, base: "climb", theta: 1, roll: -22, mouth: "flat", cheek: 0.4 },
@@ -151,7 +152,8 @@ export interface Frame {
   mouth: Record<Mouth, number>;
   hop: number;
   sq: number;
-  tilt: number; // lean of the whole body while carried, degrees
+  tilt: number; // lean of the whole body while carried, or its rocking at the edge, degrees
+  tiltY: number; // the height in the box the body leans about: the scruff while carried, the feet while rocking
   dots: number;
   time: number;
 }
@@ -179,6 +181,7 @@ export class Rig {
   private hop = new Spring(0, 380, 0.28);
   private sq = new Spring(0, 320, 0.32);
   private tilt = new Spring(0, 130, 0.8);
+  private teet = new Spring(0, 200); // 0..1: how much of a teeter at the edge
   private mouths = Object.fromEntries(MOUTHS.map((m) => [m, new Spring(m === "smile" ? 1 : 0, 170)])) as Record<Mouth, Spring>;
   private poseT = 0; // seconds since the pose last changed
   private afterWake = false; // just out of the stretch and still turning back to face front: the eyes stay shut
@@ -190,13 +193,13 @@ export class Rig {
 
   /** The springs whose motion is big on screen: the body blend, the turn, the walk, hops, squash, being held. */
   private major(): Spring[] {
-    return [...Object.values(this.pw), this.theta, this.walk, this.hop, this.sq, this.tilt];
+    return [...Object.values(this.pw), this.theta, this.walk, this.hop, this.sq, this.tilt, this.teet];
   }
 
   private all(): Spring[] {
     return [
       ...Object.values(this.pw), this.theta, this.walk, this.roll, this.headDy, this.gx, this.gy, this.lid, this.happy,
-      this.wide, this.cheek, this.dots, this.tail, this.droop, this.perk, this.hop, this.sq, this.tilt, ...Object.values(this.mouths),
+      this.wide, this.cheek, this.dots, this.tail, this.droop, this.perk, this.hop, this.sq, this.tilt, this.teet, ...Object.values(this.mouths),
     ];
   }
 
@@ -244,6 +247,7 @@ export class Rig {
     this.perk.t = look.perk;
     for (const m of MOUTHS) this.mouths[m].t = m === look.mouth ? 1 : 0;
     this.tilt.t = pose === "held" ? tilt : 0;
+    this.teet.t = pose === "teeter" ? 1 : 0;
     if (changed || replay) this.kick(pose, changed);
   }
 
@@ -253,6 +257,7 @@ export class Rig {
     else if (pose === "purr") this.sq.v = 0.9; // a slow, soft sway
     else if (pose === "gasp") this.hop.v = -330; // a startled jump
     else if (pose === "smirk") this.twitch(); // a flick of the tail
+    else if (pose === "teeter") this.twitch(); // the tail lashes
     else if (pose === "huff") {
       this.hop.v = -260; // flinches...
       this.twitch(); // ...and flicks its tail
@@ -339,6 +344,7 @@ export class Rig {
     // Waking is slow, smooth motion (a stretch held and then a rise): 30 frames a second read fine and a full-speed
     // wake cost about 150 frames; the held part, which only breathes and sways, is painted at the soft rate.
     if (this.pose === "wake") return this.poseT > 0.5 ? "soft" : "walk";
+    if (this.pose === "teeter") return "full"; // the rocking is a steady motion that no spring is left to announce
     if (this.air || this.time < this.easeUntil) return "walk";
     if (this.major().some((s) => !s.settled)) return "full";
     if (this.walk.x > 0.01) return "walk";
@@ -452,7 +458,8 @@ export class Rig {
       mouth,
       hop: this.hop.x,
       sq: this.sq.x,
-      tilt: this.tilt.x * hang + 4 * Math.sin(this.time * 3.5) * hang,
+      tilt: this.tilt.x * hang + 4 * Math.sin(this.time * 3.5) * hang + this.teet.x * (this.dir * 8 + 12 * Math.sin(this.time * 16)), // leans toward the edge (the way it faces, `dir`) and rocks
+      tiltY: 22 + 88 * Math.max(0, Math.min(1, this.teet.x)),
       dots: Math.max(0, this.dots.x),
       time: this.time,
     };

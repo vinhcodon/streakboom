@@ -21,6 +21,7 @@ export type PetState =
   | "curious" // head tilted, eyes up
   | "sad" // ears down, eyes low: sympathy
   | "peek" // crouched at the edge of a ledge, looking down (spec/11 section 1.1)
+  | "teeter" // rocking at the edge after a push, arms out, about to fall or to recover (spec/11 section 1.2)
   | "ledge" // sitting at the edge with the front paws over it
   | "climb" // up or down a vertical surface, paws over paws (spec/10, TT-14)
   | "cling" // holds on to the wall and rests
@@ -47,6 +48,7 @@ export const TIMED: Partial<Record<PetState, TimedPose>> = {
   gasp: { ms: 1400 },
   notice: { ms: 900 }, // a safety net: the page normally moves on after about 0.4 s (NOTICE_MS in +page.svelte)
   curious: { ms: 2100 },
+  teeter: { ms: 1500 }, // a safety net: the page ends it
   ledge: { ms: 30_000 }, // a rest at the edge; then back to standing
   sad: { ms: 2800 },
 };

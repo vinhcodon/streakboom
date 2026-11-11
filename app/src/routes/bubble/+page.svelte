@@ -290,10 +290,9 @@
     gap: 6px;
     min-width: 80px;
   }
-  /* A cry (spec/09): bigger and bolder, with a small jolt as it appears */
+  /* A cry (spec/09): a little bigger, with a small jolt as it appears. Not bold: the author found bold text felt unlike Peak's ordinary voice. */
   .exclaim {
-    font-weight: 700;
-    font-size: 1.18em;
+    font-size: 1.15em;
     animation: jolt 0.38s ease-out both;
   }
   @keyframes jolt {

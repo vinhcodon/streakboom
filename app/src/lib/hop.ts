@@ -27,6 +27,8 @@ export interface Flight {
   /** How far the path rises above the straight line (0 for a fall). */
   apex: number;
   kind: "hop" | "fall" | "crawl";
+  /** A fall that goes sideways fast at first (a push off a ledge): it clears the edge before it has dropped far, then falls beside the wall. */
+  slide?: boolean;
 }
 
 const clamp = (v: number, lo: number, hi: number) => Math.min(hi, Math.max(lo, v));
@@ -65,7 +67,7 @@ export function flightAt(f: Flight, ms: number): { x: number; y: number; done: b
   if (f.durationMs <= 0 || ms >= f.durationMs) return { x: f.dx, y: f.dy, done: true };
   const t = Math.max(0, ms) / f.durationMs;
   if (f.kind === "crawl") return { x: f.dx * (ms / f.durationMs), y: f.dy * (ms / f.durationMs), done: false };
-  if (f.kind === "fall") return { x: 0, y: f.dy * t * t, done: false }; // y = g t^2 / 2 with the duration fitted to the distance
+  if (f.kind === "fall") return { x: f.slide ? f.dx * (1 - (1 - t) ** 3) : f.dx * t, y: f.dy * t * t, done: false }; // y = g t^2 / 2 with the duration fitted to the distance
   return { x: f.dx * t || 0, y: f.dy * t - 4 * f.apex * t * (1 - t) || 0, done: false }; // `|| 0` turns a -0 into 0
 }
 

@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { surfaceBelow, surfaces, wallFor } from "./terrain.ts";
+import { surfaceBelow, surfaces, surfacesBelow, wallFor } from "./terrain.ts";
 import { choosePerch } from "./perch.ts";
 import { headroomClear, ledges, regionAt, type GroundKind, type GroundMap } from "./groundmap.ts";
 
@@ -97,4 +97,12 @@ test("a fall lands on the next surface below at the same column, and on the floo
   // with two edges below, the nearer one
   const stairs = map(["wwwwwwww", "wwwwwwww", "wwwwwwww", "wwwwwwww", "wwwwwwww", "wwwwwwww"], ids(["11111111", "11111111", "11111111", "11222211", "11233211", "11233211"], { "1": 1, "2": 2, "3": 3 }));
   assert.equal(surfaceBelow(stairs, { x: 350, y: 50 })!.y, 300, "the first edge down, not the one in the middle of the stair");
+});
+
+test("all the edges under a point come nearest first, so a caller can skip the one it stands on", () => {
+  const stairs = map(["wwwwwwww", "wwwwwwww", "wwwwwwww", "wwwwwwww", "wwwwwwww", "wwwwwwww"], ids(["11111111", "11111111", "11222211", "11233211", "11233311", "11233311"], { "1": 1, "2": 2, "3": 3 }));
+  const all = surfacesBelow(stairs, { x: 350, y: 50 });
+  assert.deepEqual(all.map((u) => u.y), [200, 300]);
+  assert.deepEqual(surfacesBelow(stairs, { x: 350, y: 250 }).map((u) => u.y), [300]);
+  assert.deepEqual(surfacesBelow(stairs, { x: 5000, y: 50 }), []);
 });

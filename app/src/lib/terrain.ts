@@ -85,12 +85,15 @@ export function wallFor(m: GroundMap, col: number, row: number, feetX: number): 
  * of `feet.x`, more than `minDrop` physical px lower than the feet. Null when there is none (it then falls to the floor).
  */
 export function surfaceBelow(m: GroundMap, feet: { x: number; y: number }, minDrop = 8): { col: number; row: number; y: number } | null {
+  return surfacesBelow(m, feet, minDrop)[0] ?? null;
+}
+
+/** All the edges under a point in its column, nearest first (the edge of the cell grid: the real edge is within half a cell of it). */
+export function surfacesBelow(m: GroundMap, feet: { x: number; y: number }, minDrop = 8): { col: number; row: number; y: number }[] {
   const col = Math.floor(((feet.x - m.x) / m.w) * m.cols);
-  if (col < 0 || col >= m.cols) return null;
-  let best: { col: number; row: number; y: number } | null = null;
-  for (const l of ledges(m)) {
-    if (l.col !== col || l.y < feet.y + minDrop) continue;
-    if (best === null || l.y < best.y) best = { col: l.col, row: l.row, y: l.y };
-  }
-  return best;
+  if (col < 0 || col >= m.cols) return [];
+  return ledges(m)
+    .filter((l) => l.col === col && l.y >= feet.y + minDrop)
+    .map((l) => ({ col: l.col, row: l.row, y: l.y }))
+    .sort((a, b) => a.y - b.y);
 }

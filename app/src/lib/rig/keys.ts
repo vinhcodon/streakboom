@@ -218,6 +218,11 @@ export const LEDGE_S: Key = {
   legs: [leg(36, 96, 54, 110, 18, 8, 5, 1, 1), leg(78, 84, 96, 104, 10, 5, 4, 1, 1), leg(40, 94, 60, 110, 20, 9, 5.5, 1, 0), leg(72, 84, 92, 108, 10, 6, 4, 1, 0)],
 };
 
+// Teetering at an edge (spec/11 section 1.2): the standing front view with a drop of sweat; the engine does the rest (eyes wide and
+// looking down, ears up, the tail lashing, the body leaning toward the edge and rocking about the feet). The first version drawn
+// side-on, with the paws flailing, did not read as about to fall (the author, 2026-11-11), the rocking front view did.
+export const TEETER_F: Key = { ...STAND_F, fx: { sweat: 1, z: 0 } };
+
 /** Each pose has a front key and a side key; poses without a real side view reuse the front. */
 export const POSE_KEYS = {
   stand: { f: STAND_F, s: STAND_S },
@@ -227,6 +232,7 @@ export const POSE_KEYS = {
   stretch: { f: STRETCH_F, s: STRETCH_S },
   climb: { f: CLIMB_S, s: CLIMB_S },
   peek: { f: PEEK_S, s: PEEK_S },
+  teeter: { f: TEETER_F, s: TEETER_F },
   ledge: { f: LEDGE_S, s: LEDGE_S },
 } as const;
 export type PoseName = keyof typeof POSE_KEYS;

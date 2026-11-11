@@ -1,10 +1,12 @@
 # 11. Restraint, play, and a charter for Peak
 
-**Status:** the charter, the three modes and the fall rule are decided (ADR-0047, 2026-11-10). **Built so far (2026-11-10, not released): CH-4 (the edge ladder with the poses `peek` and `ledge`, waiting for the author to look), CH-2 (the edge check) and CH-3 (the attention modes in `attention.ts`, the thresholds, the silent fall in Work); the audit findings 1 to 5 of section 6 are fixed, 6 is by design, 7 is CH-6.** The person's push (CH-5) and the shoo (CH-6) are not built. It answers the author's message of 2026-11-10: knocks and slips should be rare and strong; slow, easy actions come first; Peak lives on the screen beside someone who is working, so it must not distract; how does it tell work from play; and does Peak need a manifesto or constitution.
+**Status:** the charter, the three modes and the fall rule are decided (ADR-0047, 2026-11-10). **Built so far (2026-11-10, not released): CH-4 (the edge ladder with the poses `peek` and `ledge`, waiting for the author to look), CH-2 (the edge check) and CH-3 (the attention modes in `attention.ts`, the thresholds, the silent fall in Work); the audit findings 1 to 5 of section 6 are fixed, 6 is by design, 7 is CH-6.** **CH-5 (the person's push and drop) is built and waits for the author to look**; the shoo (CH-6) is not built. It answers the author's message of 2026-11-10: knocks and slips should be rare and strong; slow, easy actions come first; Peak lives on the screen beside someone who is working, so it must not distract; how does it tell work from play; and does Peak need a manifesto or constitution.
 
 ## 1. Falls, knocks and slips: a strong feeling is spent rarely
 
 A fall is fear plus a bump. It is the loudest thing Peak can do, so it is treated as a **currency**, not as a behaviour: every use has to be *caused*, *proportional* and *followed by recovery and warmth*.
+
+**What was built (CH-5, 2026-11-10):** a poke on the side of the cat toward which it would be pushed (away from the pointer), when it sits within 100 px of the end of its seat, is the push; **letting go of a dragged cat above the floor and off a ledge makes it fall** (a deliberate change: before, it stayed where it was let go; the threshold is 90 px, `DROP_MIN_PX` in `push.ts`), and let go on a ledge it keeps the ledge as its seat. The flick of a fast pointer is not built; the poke is the push.
 
 **Who may cause one.**
 | Cause | Allowed | Notes |

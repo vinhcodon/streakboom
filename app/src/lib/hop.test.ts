@@ -113,3 +113,13 @@ test("a crawl is a straight line at a steady speed and ends exactly at its targe
   assert.deepEqual(flightAt(f, 2000), { x: 0, y: -210, done: true });
   assert.equal(planCrawl(0, 0, 105).durationMs, 0);
 });
+
+test("a fall that slides goes sideways fast at first: most of the way across before it has dropped far, and it ends exactly at its target", () => {
+  const f = { ...planFall(400), dx: 150, slide: true };
+  const early = flightAt(f, f.durationMs * 0.4);
+  assert.ok(early.x >= 0.75 * 150, "78% of the way across at 40% of the time");
+  assert.ok(early.y <= 0.17 * 400, "having dropped only 16%");
+  assert.deepEqual(flightAt(f, f.durationMs), { x: 150, y: 400, done: true });
+  // a plain fall with a drift is linear, as before
+  assert.equal(flightAt({ ...planFall(400), dx: 100 }, planFall(400).durationMs / 2).x, 50);
+});

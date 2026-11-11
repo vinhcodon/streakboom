@@ -101,10 +101,11 @@
   import { chooseBeat, moodBeat } from "$lib/choose";
   import { endReaction, mayReact, newGate, startReaction } from "$lib/reactions";
   import { desktopShare, ledges, summary, type GroundKind, type GroundMap } from "$lib/groundmap";
-  import { surfaceBelow, surfaces, wallFor, type Wall } from "$lib/terrain";
+  import { surfacesBelow, surfaces, wallFor, type Wall } from "$lib/terrain";
   import { believe, responseFor, startBelief, type Belief } from "$lib/perception";
   import { choosePerch, PERCH_LIMITS } from "$lib/perch";
   import { bodyPoints, escapePlaces } from "$lib/escape";
+  import { BRUISE_FALL_PX, BRUISE_MS, dropFalls, isBruised, pushDirection, pushesTowardEdge, teeterEnds } from "$lib/push";
   import { initialAttention, mayAct, mayChatter, silentReaction, stepAttention, touched as attnTouched, type Mode } from "$lib/attention";
   import { EVENTS, type EventId } from "$lib/events";
   import { escapeRow, initialLane, stepLane, type LaneOut } from "$lib/lane";
@@ -768,7 +769,7 @@
     if (perchWall && Date.now() >= perchedUntil && (pose === "idle" || pose === "look")) return void descend();
     if (perchSeat && !perchWall && Date.now() >= perchedUntil && (pose === "idle" || pose === "look")) return void hopDown();
     if (Date.now() < perchedUntil) {
-      if (perchSeat && Math.random() < 0.25 && !bubbleOn) return void tryWalk(true); // now and then it walks to the edge and looks over (the ladder, CH-4)
+      if (perchSeat && Math.random() < 0.25 && !bubbleOn && !isBruised(bruisedUntil, Date.now())) return void tryWalk(true); // (not while wary after a fall) // now and then it walks to the edge and looks over (the ladder, CH-4)
       return void (Math.random() < 0.6 ? enter("look") : enter(bubbleOn ? "look" : "drowsy"));
     }
     const r = Math.random();
@@ -812,7 +813,7 @@
       const cellH = map.h / map.rows;
       const top = map.y + row * cellH;
       const pts: [number, number][] = [];
-      for (let y = Math.round(top - cellH * 0.5); y <= Math.round(top + 4); y += 4) pts.push([colX, y]);
+      for (let y = Math.round(top - cellH * 0.5); y <= Math.round(top + cellH * 0.5); y += 4) pts.push([colX, y]); // the real edge is between the centres of the two cells
       const kinds = await invoke<string[]>("ground_at", { points: pts });
       const hit = kinds.findIndex((k) => k === "app" || k === "foreground");
       note(`edge at ${pts[Math.max(0, hit)][1]} (the cell said ${Math.round(top)})`);
@@ -832,10 +833,12 @@
     const map = await takeGroundMap();
     const at = await catFeet();
     if (!map || !at) return null;
-    const s = surfaceBelow(map, at.feet);
-    if (!s) return null;
-    const y = (await refinedEdgeY(map, s.col, s.row)) ?? s.y;
-    return Math.round((y - at.feet.y) / at.scale);
+    // the nearest edge that is really below the feet (the ledge it stands on is an edge of the grid too, but its real edge is at its feet)
+    for (const s of surfacesBelow(map, at.feet, -map.h / map.rows)) {
+      const y = (await refinedEdgeY(map, s.col, s.row)) ?? s.y;
+      if (y - at.feet.y >= 24 * at.scale) return Math.round((y - at.feet.y) / at.scale);
+    }
+    return null;
   }
 
   /** Where the cat's feet are, in physical px (the same space as the ground map), and the scale. */
@@ -931,6 +934,126 @@
     if (r < 0.85 || !perchWall) return void enter("ledge");
     enter("idle");
     void descend();
+  }
+
+  // ------------------------------------------------------------------ the person's push and drop (CH-5, spec/11 section 1)
+  let bruisedUntil = 0; // wary until then: no walks to the edge, a push only teeters
+  /** How far it falls from here: to the plane below it (a ledge, a dialog) or the floor; logical px. */
+  async function fallDistance(): Promise<number> {
+    let down = 0;
+    try {
+      down = (await invoke<{ up: number; down: number }>("vertical_room")).down;
+    } catch {
+      /* unknown */
+    }
+    const plane = await planeBelow();
+    return plane !== null ? Math.min(plane, down) : down;
+  }
+
+  /** A ledge just under the feet (the real edge asked for, a few px at a time): the ends of its run, physical px; null when there is none. */
+  async function seatUnder(): Promise<{ x0: number; x1: number } | null> {
+    const map = await takeGroundMap();
+    const at = await catFeet();
+    if (!map || !at) return null;
+    for (const u of surfaces(map)) {
+      if (at.feet.x < u.x0 || at.feet.x > u.x1 || Math.abs(u.y - at.feet.y) > (map.h / map.rows) * 1.2) continue;
+      const e = await refinedEdgeY(map, u.c0, u.row);
+      if (e !== null && Math.abs(e - at.feet.y) <= 16) return { x0: u.x0, x1: u.x1 };
+    }
+    return null;
+  }
+
+  /** After a landing or a placing: if it stands on a ledge it keeps it as its seat (it stays a while and never walks off its end). */
+  async function adoptSeatHere() {
+    await sleepMs(500);
+    if (flying || pose === "held") return;
+    const seat = await seatUnder();
+    if (!seat) return;
+    perchSeat = seat;
+    perchWall = null;
+    perchedUntil = Date.now() + 3 * 60_000;
+    note("on a ledge: it has a seat");
+  }
+
+  /** The window rocks about for `ms` (a teeter), `dir` the way of the push; ends where it began. */
+  async function wobble(dir: 1 | -1, ms: number) {
+    if (flying) return;
+    flying = true;
+    try {
+      const start = await invoke<{ x: number; y: number; scale: number }>("pet_place");
+      const points: [number, number][] = [];
+      for (let t = 0; t <= ms; t += 16) points.push([Math.round(dir * 9 * start.scale * Math.sin((2 * Math.PI * 3 * t) / ms)), 0]);
+      points.push([0, 0]);
+      await invoke<boolean>("fly_path", { points, frameMs: 16 });
+    } catch {
+      /* the window could not be moved */
+    } finally {
+      flying = false;
+    }
+  }
+
+  /** A real push at the edge: rock, then (four times in five, always when wary) recover, else be knocked off the seat. */
+  async function doTeeter(way: 1 | -1, force?: "recover" | "fall") {
+    stopTimers();
+    clearTimeout(oneShotTimer);
+    const bruised = isBruised(bruisedUntil, Date.now());
+    const ends = force ?? teeterEnds(Math.random(), bruised);
+    note(`push ${way > 0 ? "right" : "left"}: teeter, ${ends}${bruised ? " (wary)" : ""}`);
+    dir = way; // the cat faces the edge: its side shows
+    pose = "teeter";
+    poseTick++;
+    await wobble(way, 1100);
+    if (!still("teeter")) return;
+    if (ends === "recover") return void enter("huff"); // it catches itself: a flinch and a flick of the tail
+    // it goes off the end of its seat: out sideways past the edge (and its own half width) first, then down beside the wall, not through the window
+    const room = await seatRoom();
+    const toEnd = room ? (way > 0 ? room.right : room.left) + EDGE_MARGIN : 40; // from its feet to the end of the seat, logical px
+    const across = way * Math.round((toEnd + 30) * 1.2 + 30);
+    leavePerch();
+    const dist = await fallDistance();
+    say("fall", { exclaim: true });
+    if (dist >= BRUISE_FALL_PX) bruisedUntil = Date.now() + BRUISE_MS;
+    if (dist >= FALL_MIN_PX) {
+      await fly([{ ...planFall(dist), dx: across, slide: true }], "gasp");
+      void adoptSeatHere();
+    } else enter("idle");
+  }
+
+  /** A poke that is a push toward the end of the seat it sits on; false when it is only a poke. */
+  async function tryPush(): Promise<boolean> {
+    if (quiet || flying || !perchSeat) return false;
+    if (!(pose === "idle" || pose === "look" || pose === "peek" || pose === "ledge")) return false;
+    await probeFocus();
+    const dir = pushDirection(lastPointer ? lastPointer.dx : null);
+    if (dir === null || !pushesTowardEdge(await seatRoom(), EDGE_MARGIN, dir)) return false;
+    data = interact(data, "click", Date.now());
+    touch("poke");
+    count("poke");
+    engage();
+    void doTeeter(dir);
+    return true;
+  }
+
+  /** Let go of Peak: on a ledge it keeps it as a seat; high above the floor it falls (to the ledge below, if there is one); nearly on the floor it just lands. */
+  async function afterDrop() {
+    await sleepMs(350); // the landing squash first
+    if (flying || pose === "held" || quiet) return;
+    const seat = await seatUnder();
+    if (seat) {
+      perchSeat = seat;
+      perchWall = null;
+      perchedUntil = Date.now() + 3 * 60_000;
+      note("placed on a ledge: it has a seat");
+      return;
+    }
+    leavePerch();
+    const dist = await fallDistance();
+    if (!dropFalls(dist, false)) return;
+    note(`let go in the air: falls ${Math.round(dist)}`);
+    say("fall", { exclaim: true });
+    if (dist >= BRUISE_FALL_PX) bruisedUntil = Date.now() + BRUISE_MS;
+    await fly([planFall(dist)], "gasp");
+    void adoptSeatHere();
   }
 
   /** A seat reached by a hop is left by a hop: a deliberate step down with a crouch, not a fall (spec/11 section 1.1). */
@@ -1290,8 +1413,11 @@
       const plane = await planeBelow();
       const dist = plane !== null ? Math.min(plane, down) : down;
       note(`ground lost: room below ${down}, plane below ${plane === null ? "none" : plane}`);
-      if (dist >= FALL_MIN_PX) await fly([planFall(dist)], "gasp");
-      else enter("idle"); // no room to fall: it has only startled
+      if (dist >= BRUISE_FALL_PX) bruisedUntil = Date.now() + BRUISE_MS; // wary for a while after a real fall
+      if (dist >= FALL_MIN_PX) {
+        await fly([planFall(dist)], "gasp");
+        void adoptSeatHere(); // it may have landed on a ledge: then it knows its ends
+      } else enter("idle"); // no room to fall: it has only startled
     } finally {
       gate = endReaction(gate, Date.now());
     }
@@ -1486,6 +1612,12 @@
   }
 
   function singleClick() {
+    void (async () => {
+      if (!(await tryPush())) pokeNormal();
+    })();
+  }
+
+  function pokeNormal() {
     stopTimers();
     const r = startReflex("poked");
     engage();
@@ -1592,6 +1724,7 @@
       clearTimeout(tiltTimer);
       tilt = 0;
       enter(quiet ? "sleep" : "land"); // lands with a little squash, then idles
+      if (!quiet) void afterDrop(); // let go in the air: it falls (CH-5)
     }
     press = null;
   }
@@ -2343,7 +2476,7 @@
       scheduleProactive();
       groundLoop = setInterval(groundTick, GROUND_POLL_MS);
       // Test hook (like window.__cat): lets a debugger trigger the real unprompted-line path now.
-      (window as unknown as Record<string, unknown>).__pet = { proactive: () => void fireProactive(), focus: () => ({ ...focusOut, lastLeave, pose }), trail: () => trail, sleep: () => enter("drowsy"), wake: () => enter("idle"), hop: (dx: number, dy: number) => void fly(splitHop(dx, dy), "walk"), lane: () => ({ ...laneOut, state: laneState, cat: laneCat }), ground: () => invoke("ground_under_cat"), belief: () => { const b = currentBelief(); return { ...b.belief, response: b.response }; }, perch: (fake?: unknown, how?: "hop" | "climb") => void perchNow(fake as GroundMap | undefined, true, how), perchPretend: () => void perchPretend(),  descend: () => void descend(), mode: () => ({ mode, playUntil: attn.playUntil, seat: perchSeat }), play: () => playTouched(), walk: (toEdge?: boolean) => void tryWalk(toEdge === true), edge: () => void atEdge(dir), overlay: () => invoke<string>("overlay_toggle"), map: () => takeGroundMap().then((m) => (m ? { summary: summary(m), ledges: ledges(m).length } : null)), groundLost: () => void groundLost(), say: (t: Trigger, kind?: RepeatKind) => (kind ? say(t, repeatNow(kind)) : say(t)), bubble: () => bubbleText, fall: (d: number) => void fly([planFall(d)], "gasp") };
+      (window as unknown as Record<string, unknown>).__pet = { proactive: () => void fireProactive(), focus: () => ({ ...focusOut, lastLeave, pose }), trail: () => trail, sleep: () => enter("drowsy"), wake: () => enter("idle"), hop: (dx: number, dy: number) => void fly(splitHop(dx, dy), "walk"), lane: () => ({ ...laneOut, state: laneState, cat: laneCat }), ground: () => invoke("ground_under_cat"), belief: () => { const b = currentBelief(); return { ...b.belief, response: b.response }; }, perch: (fake?: unknown, how?: "hop" | "climb") => void perchNow(fake as GroundMap | undefined, true, how), perchPretend: () => void perchPretend(),  descend: () => void descend(), mode: () => ({ mode, playUntil: attn.playUntil, seat: perchSeat }), play: () => playTouched(), walk: (toEdge?: boolean) => void tryWalk(toEdge === true), push: (d: 1 | -1, ends?: "recover" | "fall") => void doTeeter(d, ends), drop: () => void afterDrop(), bruise: () => ({ until: bruisedUntil, wary: isBruised(bruisedUntil, Date.now()) }), edge: () => void atEdge(dir), overlay: () => invoke<string>("overlay_toggle"), map: () => takeGroundMap().then((m) => (m ? { summary: summary(m), ledges: ledges(m).length } : null)), groundLost: () => void groundLost(), say: (t: Trigger, kind?: RepeatKind) => (kind ? say(t, repeatNow(kind)) : say(t)), bubble: () => bubbleText, fall: (d: number) => void fly([planFall(d)], "gasp") };
       let lastTick = Date.now();
       minuteTimer = setInterval(() => {
         const now = Date.now();

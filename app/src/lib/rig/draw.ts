@@ -151,9 +151,9 @@ function scene(c: CanvasRenderingContext2D, f: Frame) {
   c.scale(1 - 0.6 * f.sq, 1 + f.sq);
   c.translate(-60, -114 + f.hop);
   if (Math.abs(f.tilt) > 0.01) {
-    c.translate(60, 22);
+    c.translate(60, f.tiltY);
     c.rotate((f.tilt * Math.PI) / 180);
-    c.translate(-60, -22);
+    c.translate(-60, -f.tiltY);
   }
 }
 

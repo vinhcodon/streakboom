@@ -446,3 +446,23 @@ test("no pose draws outside the 120 x 120 box of the cat (what is outside is cut
     assert.ok(e.x0 >= -tol && e.x1 <= 120 + tol && e.y0 >= -tol && e.y1 <= 120 + tol, `${state}: x ${e.x0.toFixed(1)}..${e.x1.toFixed(1)}, y ${e.y0.toFixed(1)}..${e.y1.toFixed(1)}`);
   }
 });
+
+test("the teeter leans toward the edge and rocks: even at its furthest lean either way the drawing stays inside the 120 box", () => {
+  const k = POSE_KEYS.teeter.f;
+  // the points of the drawing that stick out: the head all round, the ears, the nose, the paws, the tail
+  const pts: [number, number][] = [];
+  for (let a = 0; a < 360; a += 15) pts.push([k.head.x + k.head.rx * Math.cos((a * Math.PI) / 180), k.head.y + k.head.ry * Math.sin((a * Math.PI) / 180)]);
+  for (const e of [k.earL, k.earR]) pts.push(e.a, e.b, e.c);
+  pts.push(k.nose.a, k.nose.b, k.nose.c);
+  for (const l of k.legs) pts.push([l.fx + l.frx, l.fy], [l.fx, l.fy - Math.max(l.fry, l.t / 2)]);
+  for (const p of [k.tail.p0, k.tail.p1, k.tail.p2]) pts.push([p[0] - k.tail.w / 2, p[1]]);
+  const pivot = { x: 60, y: 110 }; // the feet (`tiltY` in the frame)
+  for (const lean of [20, -20]) {
+    const t = (lean * Math.PI) / 180; // 8 degrees of lean toward the edge and 12 of rocking at most, either way (engine.ts)
+    for (const [x, y] of pts) {
+      const rx = pivot.x + (x - pivot.x) * Math.cos(t) - (y - pivot.y) * Math.sin(t);
+      const ry = pivot.y + (y - pivot.y) * Math.cos(t) + (x - pivot.x) * Math.sin(t);
+      assert.ok(rx >= -1.5 && rx <= 121.5 && ry >= -1.5 && ry <= 121.5, `point ${x.toFixed(0)},${y.toFixed(0)} leaned ${lean} deg goes to ${rx.toFixed(0)},${ry.toFixed(0)}`);
+    }
+  }
+});
