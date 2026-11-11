@@ -339,11 +339,9 @@ def star(x, y, r, col):
 
 
 def hop_for_joy():
-    """The cat in the air with a small shadow below, three motion ticks and sparkles: cheering without arms."""
+    """The cat in the air with a small shadow below and sparkles: cheering without arms (the motion ticks under the feet were dropped, they confused)."""
     k = dict(STAND_F, shadow=(60, 115, 0, 0))
     o = ell(60, 116, 22, 3.2, "#000", op=0.08)
-    for x, y in ((44, 114), (60, 116), (76, 114)):
-        o += stroke_path(f"M{x} {y} l0 -5", "#b9a98f", 1.8)
     o += wrap(cat(k, dict(LOOK["happy"], dy=0, cheek=0.9)), 0, -10, 1)
     return o + star(14, 42, 6, "#ffd166") + star(108, 34, 7, "#f4a7a7") + star(102, 72, 4, "#8ecae6") + star(18, 76, 4, "#c9b8f0")
 
