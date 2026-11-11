@@ -382,7 +382,6 @@ STICKERS = [
     ("04", "Buồn ngủ…", lambda: cat(SIT_F, dict(LOOK["drowsy"], lid=0.06, roll=-11, dy=9, droop=0.5, mouth="o", cheek=0.8, z=1))),
     ("05", "Hừm.", lambda: cat(SIT_F, LOOK["huff"]) + puffs()),
     ("06", "Quá sức mèo rồi.", lambda: cat(STAND_F, LOOK["sad"])),
-    ("07", "Giỏi quá!", lambda: confetti() + cat(STAND_F, LOOK["happy"]) + paw(54, 96, 7, 8.5, 28, True) + paw(66, 96, 7, 8.5, -28, True) + arcs("M42 82 q-6 4 -3 12", "M78 82 q6 4 3 12", "M38 74 q-8 5 -4 15", "M82 74 q8 5 4 15")),
     ("08", "Làm chung nhé?", lambda: cat(STAND_F, dict(LOOK["curious"], roll=12, wide=0.6, cheek=0.7)) + stroke_path("M38 98 L22 74", FUR, 10) + paw(20, 66, 8, 10, -12, True) + arcs("M8 60 q-5 6 -1 13", "M4 52 q-7 8 -2 18")),
     ("09", "Ngủ ngon.", curled_up, dict(scale=2.7, dy=-14)),
     ("10", "Trời mưa rồi.", lambda: cat(SIT_F, dict(LOOK["curious"], roll=-4, gx=0, gy=2, wide=0.2)) + wrap(cloud_and_rain(), 18, -16, 0.8), dict(scale=1.9, dy=40)),
@@ -397,11 +396,15 @@ STICKERS = [
 
 S = 2.45
 made = []
-for num, text, art, *opt in STICKERS:
+for stale in os.listdir(OUT):  # files are numbered by position, so remove an old numbering first
+    if len(stale) == 6 and stale[:2].isdigit() and stale.endswith(".png"):
+        os.remove(os.path.join(OUT, stale))
+for pos, (ident, text, art, *opt) in enumerate(STICKERS, 1):
     o = opt[0] if opt else {}
     sc = o.get("scale", S)
     inner = wrap(art(), (360 - 120 * sc) / 2 + o.get("dx", 0), 82 - 20 * sc + 8 + o.get("dy", 0), sc)
-    p = os.path.join(OUT, f"{num}.png")
+    p = os.path.join(OUT, f"{pos:02d}.png")
+    print(f"{pos:02d}.png = list id {ident}: {text}")
     png_from(inner, (360, 360), text, p)
     made.append(p)
 

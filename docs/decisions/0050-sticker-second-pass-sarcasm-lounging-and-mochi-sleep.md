@@ -20,6 +20,9 @@ The author found the cat lying back with crossed legs not relaxed enough, three 
 ## Later the same day (2)
 After looking at the set the author asked for: 04 "Buồn ngủ…" to look sleepy (now closed eyes, a small yawn, a tipped head and a "z"); 10 "Trời mưa rồi." with the cloud no longer under the text; 07 "Giỏi quá!" with the paws clapping; and 16 "Ừ, giỏi lắm." changed to **"Giỏi quá."** with a thumbs-up. 16 keeps its half-lidded, flat-mouthed face, so it still teases (a deadpan thumbs-up); if that does not read as dry at phone size, the sarcasm share is 4 of 17 (about 24%). 07 and 16 now carry nearly the same words ("Giỏi quá!" with a clap, "Giỏi quá." with a thumbs-up): a point to look at again.
 
+## Later the same day (3)
+The clapping 07 "Giỏi quá!" was removed (it duplicated 16, the thumbs-up "Giỏi quá."). The set is 16 stickers; the sarcasm share is 5 of 16 (about 31%: 03, 05, 15 "Hì hì.", 16 "Giỏi quá.", 17 "Ai đợi đâu."). The expression audit is `docs/plans/sticker-expression-audit.md`.
+
 ## Consequences
 - Spec 06 section 7 and the set list are updated: 16 are in the app (matched to a state) and the sticker-only art is now 03, 09 and the cloud of 10; the set is 17 stickers.
 - The sarcasm texts have not been through the author's ear for Vietnamese banter (backlog E3).
