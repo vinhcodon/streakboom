@@ -241,13 +241,12 @@ def wrap(inner, x, y, s):
 
 # ---- sticker-only art (not in the app): the lounging cat (3), the curled-up sleeper (9), the rain (10), confetti (7) ----
 def thought_bubble():
-    """A thought bubble drawn as three round bubbles that grow as they rise from the head, with a clear gap between them:
-    vague, drifting thoughts (the biggest one is left empty)."""
+    """Three round bubbles that grow as they rise from the head, the biggest holding a heartbeat line: "life" (its ups and downs)."""
     grey, white = "#b8c2cc", "#ffffff"
-    circles = ((35, 55, 2.6), (41, 45, 4.4), (51, 31, 7.5))
+    circles = ((33, 57, 2.4), (38, 48, 3.8), (50, 30, 11.5))
     o = "".join(f'<circle cx="{x}" cy="{y}" r="{r + 1.3}" fill="{grey}"/>' for x, y, r in circles)
     o += "".join(f'<circle cx="{x}" cy="{y}" r="{r}" fill="{white}"/>' for x, y, r in circles)
-    return o
+    return o + stroke_path("M41 31 h4 l2 -7 l3.5 13 l3 -9 l2 3 h5", "#ef6f7e", 2)
 
 
 def lounging():
@@ -535,7 +534,7 @@ V1 = [
     # (title vi, title en, title ja), (scene vi, scene en, scene ja), (text en, text ja)
     (("Chào buổi sáng", "Good morning", "おはよう"), ("vươn vai và ngáp", "stretches and yawns", "のびをしてあくびをしている"), ("Good morning!", "おはよう！")),
     (("Sướng quá", "Bliss", "きもちいい"), ("nhắm mắt sung sướng, được gãi đầu", "eyes shut in bliss, being scratched", "うっとり目を閉じて頭をなでられている"), ("So good~", "きもちいい〜")),
-    (("Cuộc sống mà", "Life, you know", "人生ってさ"), ("nằm ngửa vắt chân, vẻ thản nhiên, bong bóng suy nghĩ mông lung", "lies back with crossed legs, deadpan, a hazy thought bubble above", "足を組んで寝転び、すました顔で、ぼんやりした考えの吹き出しが浮かんでいる"), ("Life, you know.", "人生ってさ。")),
+    (("Cuộc sống mà", "Life, you know", "人生ってさ"), ("nằm ngửa vắt chân, vẻ thản nhiên, bong bóng suy nghĩ có đường nhịp tim, tượng trưng cho cuộc sống", "lies back with crossed legs, deadpan, a thought bubble above with a heartbeat line, standing for life", "足を組んで寝転び、すました顔で、心電図の線が入った考えの吹き出しが浮かんでいる（人生を表す）"), ("Life, you know.", "人生ってさ。")),
     (("Buồn ngủ", "Sleepy", "ねむい"), ("gật gù buồn ngủ, có chữ z bay lên", "nods off with a floating z", "うとうとして「z」が浮かんでいる"), ("Sleepy…", "ねむい…")),
     (("Hừm", "Hmph", "むっ"), ("ngồi lườm hờn, thở ra mấy làn khói nhỏ", "sulks with a half-lidded glare and little puffs", "半目でむっとして、小さく息をはいている"), ("Hmph.", "むっ。")),
     (("Quá sức mèo rồi", "Too much for a cat", "ねこには無理"), ("mắt buồn, tai cụp, quá sức", "looks overwhelmed, ears down", "耳をたたんで、手に負えない様子"), ("Too much for a cat.", "ねこには無理！")),
