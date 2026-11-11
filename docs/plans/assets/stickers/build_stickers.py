@@ -329,7 +329,7 @@ def arm(d, w=10):
 
 
 def arms_up():
-    return arm("M40 96 L10 58") + arm("M80 96 L110 58")
+    return arm("M36 100 Q-4 94 9 50") + arm("M84 100 Q124 94 111 50")
 
 
 def ok_sign(x, y):
@@ -340,6 +340,10 @@ def ok_sign(x, y):
         o += f'<ellipse cx="{f(x + dx)}" cy="{f(y + dy)}" rx="3.3" ry="6" fill="{FUR}" stroke="{DARK}" stroke-width="1.1" transform="rotate({r} {f(x + dx)} {f(y + dy)})"/>'
     o += f'<circle cx="{f(x - 5)}" cy="{f(y - 5)}" r="4.6" fill="{BELLY}" stroke="{DARK}" stroke-width="1.6"/>' + "</g>"
     return o
+
+
+def firm_brows():
+    return stroke_path("M33 50 L52 56", INK, 3) + stroke_path("M87 50 L68 56", INK, 3)
 
 
 def crossed_arms():
@@ -367,7 +371,7 @@ def cloud_and_rain():
 
 def hearts():
     out = ""
-    for x, y, k in ((14, 40, 1.0), (104, 30, 1.3), (22, 8, 0.7), (96, 80, 0.8)):
+    for x, y, k in ((12, 50, 1.0), (106, 40, 1.3), (22, 26, 0.8), (100, 86, 0.8)):  # all below the text line
         out += f'<path transform="translate({x},{y}) scale({k})" d="M0 3 C-7 -3 -3 -9 0 -5 C3 -9 7 -3 0 3 Z" fill="#f08a99"/>'
     return out
 
@@ -436,9 +440,9 @@ STICKERS = [
     ("16", "Giỏi quá.", lambda: cat(STAND_F, dict(LOOK["smirk"], lid=0.5, gx=-4, roll=3, mouth="flat", cheek=0.4)) + thumbs_up(96, 86)),
     ("17", "Ai đợi đâu.", lambda: cat(STAND_S, dict(LOOK["rest"], lid=0.7, roll=-6, mouth="smile", cheek=1.0, gx=-3))),
     ("19", "Huhu…", lambda: cat(STAND_F, dict(LOOK["sad"], roll=0, dy=0, lid=1, wide=1, cheek=0.5, droop=1, mouth="none")) + tears()),
-    ("20", "Hoan hô!", lambda: confetti() + arms_up() + cat(STAND_F, dict(LOOK["happy"], dy=0)) + paw(9, 52, 8, 10, -20, True) + paw(111, 52, 8, 10, 20, True)),
+    ("20", "Hoan hô!", lambda: confetti() + arms_up() + cat(STAND_F, dict(LOOK["happy"], dy=0)) + paw(9, 42, 8.5, 10.5, -8, True) + paw(111, 42, 8.5, 10.5, 8, True)),
     ("21", "Ok nè!", lambda: cat(STAND_F, dict(LOOK["rest"], wink=1, mouth="smile", cheek=0.8, roll=4)) + ok_sign(98, 80)),
-    ("22", "Không nha.", lambda: cat(STAND_F, dict(LOOK["rest"], lid=0.8, mouth="flat", cheek=0.3, roll=0)) + crossed_arms() + arcs("M8 62 q-5 6 -1 13", "M112 62 q5 6 1 13")),
+    ("22", "Không nha.", lambda: cat(STAND_F, dict(LOOK["rest"], lid=0.8, mouth="flat", cheek=0.3, roll=0)) + crossed_arms() + firm_brows() + arcs("M8 62 q-5 6 -1 13", "M112 62 q5 6 1 13")),
 ]
 
 S = 2.45
