@@ -1,11 +1,11 @@
 {
-    "version":  "0.3.1",
-    "notes":  "Peak no longer drops by itself; it startles and falls when the window it stands on goes; its words follow its body; repeated pokes, scratches and belly rubs change its answers; more varied lines; Settings shows what Peak is told. See CHANGELOG.md.",
-    "pub_date":  "2026-11-10T04:03:31Z",
+    "version":  "0.3.2",
+    "notes":  "Peak perches and climbs on the edges of windows and never walks off them, falls to the window below, hops out from under the Start menu, can be teased at an edge, and is calmer while you work. Settings lost Chattiness and Quiet hours (Peak decides). See CHANGELOG.md.",
+    "pub_date":  "2026-11-11T07:54:52Z",
     "platforms":  {
                       "windows-x86_64":  {
-                                             "signature":  "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVUcHBlQXhYUlVURmhXSkJ3OUFKODlGbW9UeTVHL294ejYyQ2F0ekhCb1k0SHFqcTY2Q2VSVEJmbFoxTC9lZ0ROZFRqZkROdFFmUWpGTWxTSmVWOStNRDF0NlJqaTA2NmdnPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzk0MjgzNDA3CWZpbGU6U3RyZWFrYm9vbV8wLjMuMV94NjQtc2V0dXAuZXhlCXZlcnNpb246MC4zLjEKd0FkclUzc2ViRXFXeXhZakx1T0cxYTduUzRNZW12d2U0SlhFR3QzU0FLMGplU3RMdnRvdzBRWHpqWEVtQXErc2xCTjgwK3RWMElvMVZNS2NXRWpjQlE9PQo=",
-                                             "url":  "https://api.github.com/repos/vinhcodon/streakboom/releases/assets/730034489"
+                                             "signature":  "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVUcHBlQXhYUlVURnVMcWlLVEowL2FjSVpXRlVqK3d5Zmh3SjgxM0NlQ3UzWTJhSlMrVlFFNlh0S0tSZGRhdU9zVk9sMXkvWjY5YWJHK21pd3FtR29GVTB2OGIzeTBZMmdVPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzk0MzgzNjkwCWZpbGU6U3RyZWFrYm9vbV8wLjMuMl94NjQtc2V0dXAuZXhlCXZlcnNpb246MC4zLjIKODZtdEN1ZlgzSEVQcGNqMnVZbGhxM2w3ZUFFVmkxT3NRUmwzWkZxUTJJOFJqdzVGQ2JEeU80UVlyQm8wU284K0RGY1JjTG5tSHN2YTZYdVRiYWtxQ1E9PQo=",
+                                             "url":  "https://api.github.com/repos/vinhcodon/streakboom/releases/assets/734652433"
                                          }
                   }
 }
