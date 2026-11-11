@@ -339,3 +339,53 @@ The word counts are from my own script (visible text of the main area; the Japan
 Built as chosen (S1, the distilled promises, four promises, one tour round). Measured: the home page 727 English words (from 2,862; Vietnamese 848 from 3,198; Japanese 2,112 characters from 8,591), the How it works page 1,441 (from 659), the privacy page 693 (from 623), `llms-full.txt` 2,754 (from 3,037). **Over budget:** the How it works page (budget 900), the privacy page (500) and `llms-full.txt` (1,500). **Left to do if the author wants it:** remove the overlap between the feature cards and the sections of the How it works page (the AI brain, what is free, how updates work), shorten the privacy sections, and shorten what `llms-full.txt` repeats from the pages. **Not done on purpose:** the fifth promise (after CH-2 and CH-3), anything about the screen picture, a separate charter page.
 
 **Second pass (2026-11-10):** the overlap between the feature cards and the sections of the How it works page is removed (three sections and one question gone, their facts kept where they are said once). Now: How it works 1,209 words (from 1,441; VI 1,432; JA 3,012), `llms-full.txt` 2,298 (from 2,754), home 727, privacy 693. Still over the budgets of ADR-0048 for those three pages; going lower would cut facts that exist only there. **Checked live after the first deploy:** all nine home, How it works and privacy pages at 375 px (no horizontal scroll, one h1, no console errors), and the hero tour on the live home page: ten captions in about 46 seconds, then no change up to 53 seconds, the button reads Play and no pose chip is pressed.
+
+## 15. The sticker page, the menu and the daily history (2026-11-11, ADR-0053)
+The app session handed over a sticker page (`docs/handoff/website-stickers.md`, ADR-0051: the sticker is the button, tap to copy, Share only on phones that support it, CC BY 4.0, no Download, no ZIP). Questions answered by Vinh on 2026-11-11, recorded in [ADR-0053](../decisions/0053-a-four-item-menu-per-language-stickers-and-a-daily-download-history.md):
+
+| Question | Answer |
+|---|---|
+| The header menu has seven items; adding Stickers makes eight | **Four items: Install, How it works, Privacy, Stickers;** GitHub, Changelog, FAQ and Report a bug go to the footer |
+| The stickers carry Vietnamese text; what about English and Japanese? | **One set per language,** made by the sticker session; the website session **waits** for it and builds the three pages from one manifest |
+| How to see whether the page brings people to the app | **The download ledger of ADR-0052 with a daily history** (knows the downloads per day and whether they jump after the page goes live; does not know who, from where, from which page, or installs) |
+
+**Nothing of this is built.** The request to the sticker session (to be sent by the author):
+
+```text
+Gửi phiên sticker (phiên app): làm bộ sticker theo từng ngôn ngữ cho trang web
+
+Bối cảnh. Vinh đã quyết (2026-11-11): trang Stickers của website có ba ngôn ngữ (English, Tiếng Việt, 日本語), và mỗi trang phải hiện bộ sticker có chữ trên ảnh đúng ngôn ngữ của trang. Hiện bộ set-v0 chỉ có chữ tiếng Việt. Phiên website đang DỪNG và chờ bộ này mới dựng trang (xem docs/decisions/0053-a-four-item-menu-per-language-stickers-and-a-daily-download-history.md). Phiên này không được sửa site/, scripts/site/ hay .github/workflows/pages.yml.
+
+Việc cần làm
+1. Giữ nguyên 20 sticker: cùng số thứ tự 01 đến 20, cùng nhân vật, cùng biểu cảm. Làm 3 phiên bản chữ: vi (chữ hiện có), en, ja. Không dịch từng chữ: giữ giọng của Peak (ngắn, ấm, hơi tinh nghịch, không gắt) và ý nghĩa của từng sticker (bảng nghĩa tiếng Anh ở mục 2 của docs/handoff/website-stickers.md). Nếu chữ ở ngôn ngữ khác làm vỡ bố cục, chỉnh cỡ chữ hoặc ngắt dòng, đừng đổi nhân vật.
+2. Font. Tiếng Nhật cần font có chữ Nhật, giấy phép mở (ví dụ Noto Sans JP hoặc M PLUS Rounded 1c, SIL OFL); tiếng Anh dùng được Be Vietnam Pro. Đặt font và file giấy phép vào docs/plans/assets/stickers/fonts/ như hiện nay và ghi tên font, giấy phép vào manifest để trang web ghi công.
+3. Cấu trúc thư mục, để web lấy lúc build và không phải gắn cứng số lượng hay thứ tự:
+   docs/plans/assets/stickers/set-v1/vi/01.png đến NN.png
+   docs/plans/assets/stickers/set-v1/en/01.png đến NN.png
+   docs/plans/assets/stickers/set-v1/ja/01.png đến NN.png
+   docs/plans/assets/stickers/set-v1/manifest.json
+   Mỗi PNG: 360 x 360, nền trong suốt, khoảng 25 KB trở xuống, đọc được trên nền chat sáng và tối. Tên file giống nhau ở cả ba ngôn ngữ.
+4. manifest.json (một nguồn duy nhất cho chữ, tên và alt):
+   {
+     "version": "set-v1",
+     "creator": "Streakboom",
+     "license": "CC BY 4.0",
+     "credits": [ { "font": "Be Vietnam Pro", "license": "SIL OFL 1.1", "langs": ["vi", "en"] }, { "font": "<font tiếng Nhật>", "license": "SIL OFL 1.1", "langs": ["ja"] } ],
+     "stickers": [
+       { "id": "01",
+         "text":  { "vi": "chữ trên ảnh", "en": "...", "ja": "..." },
+         "title": { "vi": "tên ngắn hiện trên trang", "en": "...", "ja": "..." },
+         "alt":   { "vi": "mô tả cho người dùng trình đọc màn hình (cảnh và chữ)", "en": "...", "ja": "..." },
+         "reviewed": { "vi": true, "en": false, "ja": false } },
+       ...
+     ]
+   }
+   Mọi id có đủ ba ngôn ngữ. "id" khớp tên file. Thứ tự trong "stickers" là thứ tự hiện trên trang.
+5. Chữ tiếng Anh và tiếng Nhật mới do AI viết và chưa có người bản ngữ đọc: đánh "reviewed": false như trên và ghi vào docs/plans/verification-debt.md (dòng V-). Đừng viết "sticker Zalo" hay "sticker Telegram" ở bất kỳ đâu (bộ này không nằm trong kho nào).
+6. Giữ nguyên set-v0 cho tới khi trang web đã chuyển xong, và cập nhật build_stickers.py để sinh được set-v1 (một lệnh sinh cả ba ngôn ngữ và manifest).
+7. Không thêm gì khác cho trang: sticker là nút bấm để chép, có Chia sẻ trên điện thoại hỗ trợ, không có Tải về từng ảnh, không có ZIP (đã chốt trong ADR-0051).
+
+Khi xong: cập nhật docs/handoff/website-stickers.md mục 2 (đường dẫn set-v1, manifest, bỏ bảng cứng), rồi báo Vinh: đường dẫn, số sticker, sticker nào phải chỉnh bố cục, và chữ nào chưa có người bản ngữ đọc. Vinh sẽ báo lại phiên website để dựng trang.
+```
+
+When the set is ready the author tells the website session; it then builds `/stickers/`, `/vi/stickers/` and `/ja/stickers/` from the manifest (title, description, `ImageGallery` with `ImageObject` items carrying the CC BY 4.0 licence and Streakboom as creator, alt text, the sitemap, `llms.txt`, `llms-full.txt`, hreflang), the four-item menu and the footer, and the daily history of the ledger.
