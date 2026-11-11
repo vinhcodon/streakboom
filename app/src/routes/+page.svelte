@@ -762,11 +762,15 @@
 
   function pickNext() {
     if (flying) return scheduleNext();
+    if (pose === "peek" || pose === "ledge") return scheduleNext(); // a rest at the edge is not cut short
     if (quiet) return pose === "sleep" || pose === "drowsy" ? undefined : enter("drowsy");
     if (panel) return scheduleNext();
     if (perchWall && Date.now() >= perchedUntil && (pose === "idle" || pose === "look")) return void descend();
     if (perchSeat && !perchWall && Date.now() >= perchedUntil && (pose === "idle" || pose === "look")) return void hopDown();
-    if (Date.now() < perchedUntil) return void (Math.random() < 0.6 ? enter("look") : enter(bubbleOn ? "look" : "drowsy"));
+    if (Date.now() < perchedUntil) {
+      if (perchSeat && Math.random() < 0.25 && !bubbleOn) return void tryWalk(true); // now and then it walks to the edge and looks over (the ladder, CH-4)
+      return void (Math.random() < 0.6 ? enter("look") : enter(bubbleOn ? "look" : "drowsy"));
+    }
     const r = Math.random();
     if (data.settings.groundMap && r > 0.97) return void perchNow();
     if (r < 0.5) enter("look");
@@ -796,6 +800,7 @@
     return { left: Math.max(0, (at.feet.x - (perchSeat.x0 + m)) / at.scale), right: Math.max(0, (perchSeat.x1 - m - at.feet.x) / at.scale) };
   }
   let walkSeatRoom: { left: number; right: number } | null = null;
+  let walkToEdge = false; // this walk goes to the nearer end of the seat on purpose
   /**
    * The grid is coarse (a cell is about 115 px tall): the real top edge of the window under a ledge cell, found by asking a few
    * pixels at a time from half a cell above the cell's top down to it, where what is above stops and the window begins.
@@ -903,6 +908,29 @@
     await fly(splitHop(perch.dx, dy), "walk");
     perchedUntil = Date.now() + 3 * 60_000; // it stays up there a while, and never walks off the seat (CH-2)
     perchSeat = seat;
+  }
+
+  /**
+   * The ladder at the end of a seat (spec/11 section 1.1, CH-4): it has stopped; it crouches and peeks over the edge for a
+   * moment, and then, by chance, turns back (half the time), sits there with its paws over the edge for a while (a rest with
+   * a view), or, when it came up a wall, climbs down early. It never falls: a fall needs a cause (the charter, article 3).
+   */
+  async function atEdge(faced: 1 | -1) {
+    if (!perchSeat || flying) return;
+    await sleepMs(500); // the stop coasts for a moment first
+    if (pose !== "idle" || !perchSeat) return;
+    dir = faced;
+    stopTimers();
+    pose = "peek";
+    poseTick++;
+    await sleepMs(2600);
+    if (!still("peek") || !perchSeat) return;
+    const r = Math.random();
+    note(`edge: peeked, ${r < 0.5 ? "turns back" : r < 0.85 || !perchWall ? "sits at the edge" : "climbs down"}`);
+    if (r < 0.5) return void enter("idle");
+    if (r < 0.85 || !perchWall) return void enter("ledge");
+    enter("idle");
+    void descend();
   }
 
   /** A seat reached by a hop is left by a hop: a deliberate step down with a crouch, not a fall (spec/11 section 1.1). */
@@ -1054,15 +1082,16 @@
   }
 
   /** A walk starts only if the user has paused; otherwise the cat stays where it is and tries again later. */
-  async function tryWalk() {
+  async function tryWalk(toEdge = false) {
     if (flying) return;
     const fo = await probeFocus();
     if (pose !== "idle") return; // something else took over while the probe was read
     if (!fo.walkAllowed || !mayAct(mode, 1, "own", quiet)) return scheduleNext(); // a walk is unhurried: not while the person is working
     const room = await seatRoom();
     if (pose !== "idle") return;
-    if (room && Math.max(room.left, room.right) < SEAT_MIN_WALK) return void enter("look"); // at the end of a small seat: it only looks around
+    if (!toEdge && room && Math.max(room.left, room.right) < SEAT_MIN_WALK) return void enter("look"); // at the end of a small seat: it only looks around
     walkSeatRoom = room;
+    walkToEdge = toEdge;
     enter("walk");
   }
 
@@ -1071,8 +1100,10 @@
     walkPlan = null;
     const leaving = plan !== null; // walking away from the user's work
     const seatRoomNow = walkSeatRoom;
+    const toEdgeNow = walkToEdge;
     walkSeatRoom = null;
-    dir = plan ? plan.dir : seatRoomNow && seatRoomNow.left < SEAT_MIN_WALK ? 1 : seatRoomNow && seatRoomNow.right < SEAT_MIN_WALK ? -1 : Math.random() < 0.5 ? -1 : 1;
+    walkToEdge = false;
+    dir = plan ? plan.dir : toEdgeNow && seatRoomNow ? (seatRoomNow.left < seatRoomNow.right ? -1 : 1) : seatRoomNow && seatRoomNow.left < SEAT_MIN_WALK ? 1 : seatRoomNow && seatRoomNow.right < SEAT_MIN_WALK ? -1 : Math.random() < 0.5 ? -1 : 1;
     const scale = window.devicePixelRatio || 1;
     // pixels per tick at full speed; fractional, the remainder is carried (see gait.ts)
     const fullStep = (WALK_SPEED * scale * WALK_TICK_MS) / 1000;
@@ -1104,7 +1135,10 @@
           if (pose !== "walk") return;
           if (room && (dir > 0 ? room.right : room.left) < 4) {
             if (leaving) settleAfterLeaving();
-            return stopWalking();
+            const faced = dir;
+            stopWalking();
+            if (!leaving) void atEdge(faced);
+            return;
           }
         }
         // the window speeds up as the legs start (the legs follow a spring, see Rig)
@@ -1238,7 +1272,7 @@
   async function groundLost() {
     const now = Date.now();
     if (quiet || panel !== null || flying || !mayReact(gate, EVENTS.ground_lost, now)) return;
-    if (pose !== "idle" && pose !== "look" && !isDozing(pose)) return; // a sleeping cat on a perch that goes is startled out of its sleep
+    if (pose !== "idle" && pose !== "look" && pose !== "peek" && pose !== "ledge" && !isDozing(pose)) return; // a sleeping cat on a perch that goes is startled out of its sleep
     gate = startReaction(gate, EVENTS.ground_lost, now);
     await probeFocus(); // the mode at this moment decides whether it cries out
     const silent = silentReaction(mode);
@@ -1355,7 +1389,7 @@
   let lastEscape = 0;
   async function coverTick() {
     if (escaping || flying || panel !== null || Date.now() - lastEscape < 3000) return;
-    if (!(pose === "idle" || pose === "look" || pose === "walk" || isDozing(pose))) return;
+    if (!(pose === "idle" || pose === "look" || pose === "walk" || pose === "peek" || pose === "ledge" || isDozing(pose))) return;
     try {
       const at = await catFeet();
       if (!at) return;
@@ -1387,7 +1421,7 @@
   async function groundTick() {
     void coverTick();
     if (groundBusy) return;
-    const standing = !flying && !quiet && panel === null && (pose === "idle" || pose === "look" || isDozing(pose));
+    const standing = !flying && !quiet && panel === null && (pose === "idle" || pose === "look" || pose === "peek" || pose === "ledge" || isDozing(pose));
     if (!standing) {
       groundW = startGroundWatch(); // walking, held, asleep, speaking: it will find its footing again when it stands
       return;
@@ -2309,7 +2343,7 @@
       scheduleProactive();
       groundLoop = setInterval(groundTick, GROUND_POLL_MS);
       // Test hook (like window.__cat): lets a debugger trigger the real unprompted-line path now.
-      (window as unknown as Record<string, unknown>).__pet = { proactive: () => void fireProactive(), focus: () => ({ ...focusOut, lastLeave, pose }), trail: () => trail, sleep: () => enter("drowsy"), wake: () => enter("idle"), hop: (dx: number, dy: number) => void fly(splitHop(dx, dy), "walk"), lane: () => ({ ...laneOut, state: laneState, cat: laneCat }), ground: () => invoke("ground_under_cat"), belief: () => { const b = currentBelief(); return { ...b.belief, response: b.response }; }, perch: (fake?: unknown, how?: "hop" | "climb") => void perchNow(fake as GroundMap | undefined, true, how), perchPretend: () => void perchPretend(),  descend: () => void descend(), mode: () => ({ mode, playUntil: attn.playUntil, seat: perchSeat }), play: () => playTouched(), walk: () => void tryWalk(), overlay: () => invoke<string>("overlay_toggle"), map: () => takeGroundMap().then((m) => (m ? { summary: summary(m), ledges: ledges(m).length } : null)), groundLost: () => void groundLost(), say: (t: Trigger, kind?: RepeatKind) => (kind ? say(t, repeatNow(kind)) : say(t)), bubble: () => bubbleText, fall: (d: number) => void fly([planFall(d)], "gasp") };
+      (window as unknown as Record<string, unknown>).__pet = { proactive: () => void fireProactive(), focus: () => ({ ...focusOut, lastLeave, pose }), trail: () => trail, sleep: () => enter("drowsy"), wake: () => enter("idle"), hop: (dx: number, dy: number) => void fly(splitHop(dx, dy), "walk"), lane: () => ({ ...laneOut, state: laneState, cat: laneCat }), ground: () => invoke("ground_under_cat"), belief: () => { const b = currentBelief(); return { ...b.belief, response: b.response }; }, perch: (fake?: unknown, how?: "hop" | "climb") => void perchNow(fake as GroundMap | undefined, true, how), perchPretend: () => void perchPretend(),  descend: () => void descend(), mode: () => ({ mode, playUntil: attn.playUntil, seat: perchSeat }), play: () => playTouched(), walk: (toEdge?: boolean) => void tryWalk(toEdge === true), edge: () => void atEdge(dir), overlay: () => invoke<string>("overlay_toggle"), map: () => takeGroundMap().then((m) => (m ? { summary: summary(m), ledges: ledges(m).length } : null)), groundLost: () => void groundLost(), say: (t: Trigger, kind?: RepeatKind) => (kind ? say(t, repeatNow(kind)) : say(t)), bubble: () => bubbleText, fall: (d: number) => void fly([planFall(d)], "gasp") };
       let lastTick = Date.now();
       minuteTimer = setInterval(() => {
         const now = Date.now();

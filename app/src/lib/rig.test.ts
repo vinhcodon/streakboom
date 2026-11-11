@@ -402,3 +402,47 @@ test("a wake is painted at the walking and soft rates, never at full speed (it c
   assert.ok(frames < 110, `${frames} frames for a wake and the rise after it`);
   assert.equal(r.mode, "idle", "and it ends still");
 });
+
+/** The box a pose draws in, from its shapes: the head, the nose, the ears, the body, the paws, the tail. */
+function extent(k: Key): { x0: number; x1: number; y0: number; y1: number } {
+  const xs: number[] = [];
+  const ys: number[] = [];
+  const ell = (e: { x: number; y: number; rx: number; ry: number }, rotDeg = 0) => {
+    const t = (rotDeg * Math.PI) / 180;
+    const hw = Math.hypot(e.rx * Math.cos(t), e.ry * Math.sin(t));
+    const hh = Math.hypot(e.rx * Math.sin(t), e.ry * Math.cos(t));
+    xs.push(e.x - hw, e.x + hw);
+    ys.push(e.y - hh, e.y + hh);
+  };
+  ell(k.head);
+  ell(k.body, k.body.rot);
+  for (const l of k.legs) {
+    if (l.a < 0.5) continue;
+    ell({ x: l.fx, y: l.fy, rx: Math.max(l.t / 2, l.frx), ry: Math.max(l.t / 2, l.fry) });
+    ell({ x: l.hx, y: l.hy, rx: l.t / 2, ry: l.t / 2 });
+  }
+  for (const e of [k.earL, k.earR]) if (e.alpha > 0.5) for (const p of [e.a, e.b, e.c]) (xs.push(p[0]), ys.push(p[1]));
+  for (const p of [k.nose.a, k.nose.b, k.nose.c]) (xs.push(p[0]), ys.push(p[1]));
+  for (const p of [k.tail.p0, k.tail.p1, k.tail.p2]) (xs.push(p[0] - k.tail.w / 2, p[0] + k.tail.w / 2), ys.push(p[1] - k.tail.w / 2, p[1] + k.tail.w / 2));
+  return { x0: Math.min(...xs), x1: Math.max(...xs), y0: Math.min(...ys), y1: Math.max(...ys) };
+}
+
+test("no pose draws outside the 120 x 120 box of the cat (what is outside is cut off by the window: the nose of the peek was)", () => {
+  // every look of the rig: its body key in the view it uses, with the head turned by the look's roll and moved by its dy
+  for (const [state, look] of Object.entries(LOOKS)) {
+    const k0 = POSE_KEYS[look.base][look.theta > 0.5 ? "s" : "f"];
+    const k = structuredClone(k0) as Key;
+    const t = (look.roll * Math.PI) / 180;
+    const rot = (p: [number, number]): [number, number] => {
+      const dx = p[0] - k.head.x;
+      const dy = p[1] - k.head.y;
+      return [k.head.x + dx * Math.cos(t) - dy * Math.sin(t), k.head.y + dy * Math.cos(t) + dx * Math.sin(t) + look.dy];
+    };
+    for (const e of [k.earL, k.earR]) (e.a = rot(e.a), e.b = rot(e.b), e.c = rot(e.c));
+    k.nose = { a: rot(k.nose.a), b: rot(k.nose.b), c: rot(k.nose.c) };
+    k.head = { ...k.head, y: k.head.y + look.dy };
+    const e = extent(k);
+    const tol = 1.5;
+    assert.ok(e.x0 >= -tol && e.x1 <= 120 + tol && e.y0 >= -tol && e.y1 <= 120 + tol, `${state}: x ${e.x0.toFixed(1)}..${e.x1.toFixed(1)}, y ${e.y0.toFixed(1)}..${e.y1.toFixed(1)}`);
+  }
+});

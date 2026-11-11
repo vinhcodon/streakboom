@@ -188,7 +188,7 @@ export const STRETCH_F: Key = {
 // On a vertical wall at its right (the cat faces +x; a mirrored cat has the wall on the left): the body upright and leaning
 // a little toward the wall, the belly against it, the head up and turned to look up the wall, the front paws reaching up
 // with claws out, the hind paws spread low, the tail hanging. Drawn in the side view only (it is always side-on).
-const CLIMB_HEAD = shiftHead(STAND_S, -22, -42);
+const CLIMB_HEAD = shiftHead(STAND_S, -22, -34); // the ear tip must stay inside the box (the test of the extent)
 export const CLIMB_S: Key = {
   ...CLIMB_HEAD,
   shadow: { x: 60, y: 115, rx: 0, ry: 0 },
@@ -199,6 +199,25 @@ export const CLIMB_S: Key = {
   fx: { sweat: 0, z: 0 },
 };
 
+// ------------------------------------------------------------------------------- at the edge
+// Peeking over the edge of a ledge (the ladder of spec/11 section 1.1): crouched low, the front paws at the very edge, the head
+// lowered and forward to look down, the tail up for balance. Side view only.
+const PEEK_HEAD = shiftHead(STAND_S, -3, 20); // the standing side view already reaches x 119 of the 120 box: a head moved further right is cut off by the canvas
+export const PEEK_S: Key = {
+  ...PEEK_HEAD,
+  shadow: { x: 62, y: 115, rx: 38, ry: 4.5 },
+  tail: { p0: [28, 96], p1: [6, 88], p2: [12, 58], w: 9 },
+  body: { x: 54, y: 96, rx: 34, ry: 20, rot: 10 },
+  belly: { x: 57, y: 104, rx: 20, ry: 8, rot: 10 },
+  legs: [leg(51, 104, 49, 110, 11, 0, 0, 1, 1), leg(88, 104, 100, 110, 10, 5, 3.5, 1, 1), leg(37, 104, 35, 110, 11, 0, 0, 1, 0), leg(76, 104, 98, 111, 10, 5.5, 4, 1, 0)],
+};
+
+// Sitting at the edge with the front paws hanging over it, a rest with a view.
+export const LEDGE_S: Key = {
+  ...SIT_S,
+  legs: [leg(36, 96, 54, 110, 18, 8, 5, 1, 1), leg(78, 84, 96, 104, 10, 5, 4, 1, 1), leg(40, 94, 60, 110, 20, 9, 5.5, 1, 0), leg(72, 84, 92, 108, 10, 6, 4, 1, 0)],
+};
+
 /** Each pose has a front key and a side key; poses without a real side view reuse the front. */
 export const POSE_KEYS = {
   stand: { f: STAND_F, s: STAND_S },
@@ -207,6 +226,8 @@ export const POSE_KEYS = {
   hang: { f: HANG_F, s: HANG_F },
   stretch: { f: STRETCH_F, s: STRETCH_S },
   climb: { f: CLIMB_S, s: CLIMB_S },
+  peek: { f: PEEK_S, s: PEEK_S },
+  ledge: { f: LEDGE_S, s: LEDGE_S },
 } as const;
 export type PoseName = keyof typeof POSE_KEYS;
 export const POSE_NAMES = Object.keys(POSE_KEYS) as PoseName[];
