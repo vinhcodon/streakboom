@@ -47,6 +47,9 @@ The bubble of sticker 03 holds a **heartbeat line** (the symbol of life, with it
 ## Later the same day (11)
 The author changed his mind: the bubble of sticker 03 holds **a little fish** (a cat's idea of life), not the heartbeat line. The manifest's alt text says so.
 
+## Later the same day (12)
+The bubble trail of sticker 03 was moved up and to the middle so the smallest circle no longer touches the cat's head (it starts in the gap between the ears), the gaps between the three circles are even, and the whole picture sits a little lower so the bubble clears the text.
+
 ## Consequences
 - Spec 06 section 7 and the set list are updated: 16 are in the app (matched to a state) and the sticker-only art is now 03, 09 and the cloud of 10; the set is 17 stickers.
 - The sarcasm texts have not been through the author's ear for Vietnamese banter (backlog E3).

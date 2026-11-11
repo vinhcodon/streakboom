@@ -243,11 +243,12 @@ def wrap(inner, x, y, s):
 def thought_bubble():
     """Three round bubbles that grow as they rise from the head, the biggest holding a little fish: a cat's idea of "life"."""
     grey, white = "#b8c2cc", "#ffffff"
-    circles = ((33, 57, 2.4), (38, 48, 3.8), (50, 30, 11.5))
+    # the trail starts in the gap between the ears with clear space above the head, and each circle clears the next by a visible gap
+    circles = ((30, 51, 2.6), (37, 41, 4.2), (50, 24, 11.5))
     o = "".join(f'<circle cx="{x}" cy="{y}" r="{r + 1.3}" fill="{grey}"/>' for x, y, r in circles)
     o += "".join(f'<circle cx="{x}" cy="{y}" r="{r}" fill="{white}"/>' for x, y, r in circles)
-    return o + ('<ellipse cx="49" cy="30" rx="6" ry="3.8" fill="#8ecae6"/><path d="M54 30 l5 -4 v8z" fill="#8ecae6"/>'
-                '<circle cx="46" cy="29" r="0.9" fill="#2b2220"/>')
+    return o + ('<ellipse cx="49" cy="24" rx="6" ry="3.8" fill="#8ecae6"/><path d="M54 24 l5 -4 v8z" fill="#8ecae6"/>'
+                '<circle cx="46" cy="23" r="0.9" fill="#2b2220"/>')
 
 
 def lounging():
@@ -450,7 +451,7 @@ STICKERS = [
     # file, text, svg of the cat (rig units; wrapped below), extras in rig units
     ("01", "Chào buổi sáng!", lambda: cat(STRETCH_S, LOOK["wake"]), dict(scale=2.8, dy=-14)),
     ("02", "Sướng quá~", lambda: cat(STAND_F, LOOK["purr"])),
-    ("03", "Cuộc sống mà.", lounging, dict(scale=2.5, dx=2, dy=0)),
+    ("03", "Cuộc sống mà.", lounging, dict(scale=2.5, dx=2, dy=8)),
     ("04", "Buồn ngủ…", lambda: cat(SIT_F, dict(LOOK["drowsy"], lid=0.06, roll=-11, dy=9, droop=0.5, mouth="o", cheek=0.8, z=1))),
     ("05", "Hừm.", lambda: cat(SIT_F, LOOK["huff"]) + puffs()),
     ("06", "Quá sức mèo rồi.", lambda: cat(STAND_F, LOOK["sad"])),
