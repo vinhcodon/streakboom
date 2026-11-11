@@ -48,14 +48,16 @@ jobs:
           # if either cannot be read the build fails and the site stays as it was
           STREAKBOOM_DOWNLOADS: live
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      # a second copy of the ledger (the first is published with the site), kept by Actions for 90 days
-      - uses: actions/upload-artifact@v4
-        with:
-          name: downloads-ledger
-          path: _site/downloads.json
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:
           path: _site
       - id: deployment
         uses: actions/deploy-pages@v4
+      # a second copy of the ledger (the first is published with the site), kept by Actions for 90 days. It comes AFTER the
+      # deployment: deploy-pages looks for its artifact among the run's artifacts, and a second artifact uploaded before it made
+      # one run fail ("No artifacts named github-pages were found", 2026-11-11)
+      - uses: actions/upload-artifact@v4
+        with:
+          name: downloads-ledger
+          path: _site/downloads.json
