@@ -62,7 +62,7 @@
     coolDown,
     dayKey,
     defaultData,
-    inQuietHours,
+    isNight,
     interact,
     parse,
     recordAi,
@@ -772,6 +772,7 @@
       if (perchSeat && Math.random() < 0.25 && !bubbleOn && !isBruised(bruisedUntil, Date.now())) return void tryWalk(true); // (not while wary after a fall) // now and then it walks to the edge and looks over (the ladder, CH-4)
       return void (Math.random() < 0.6 ? enter("look") : enter(bubbleOn ? "look" : "drowsy"));
     }
+    if (isNight(new Date().getHours()) && mode !== "play" && Math.random() < 0.5) return void enter(bubbleOn ? "look" : "drowsy"); // at night by the clock it is sleepy (the retired quiet hours, ADR-0047)
     const r = Math.random();
     if (data.settings.groundMap && r > 0.97) return void perchNow();
     if (r < 0.5) enter("look");
@@ -1878,7 +1879,7 @@
       const info = await invoke<{ version: string } | null>("update_check");
       if (!info || !shouldOfferUpdate(data, info.version, Date.now())) return;
       const busyNow = await invoke<boolean>("is_busy").catch(() => false);
-      if (quiet || busyNow || panel !== null || inQuietHours(data.settings, new Date().getHours())) {
+      if (quiet || busyNow || panel !== null || isNight(new Date().getHours())) {
         updateRetry = setTimeout(autoCheckUpdate, 10 * MIN); // not now; try again shortly
         return;
       }
@@ -2062,7 +2063,6 @@
   // -------------------------------------------------------------- settings
   function setSetting<K extends keyof Settings>(key: K, value: Settings[K]) {
     data = { ...data, settings: { ...data.settings, [key]: value } };
-    if (key === "freq") scheduleProactive();
     scheduleSave();
   }
 
@@ -2119,9 +2119,9 @@
               installId: data.telemetry.installId,
               events: $state.snapshot(data.telemetry.queue) as { e: string; t: number }[],
               days: $state.snapshot(data.telemetry.days) as DayStat[],
-              config: { gentle: data.settings.gentle, freq: data.settings.freq },
+              config: { gentle: data.settings.gentle },
             }
-          : { installId: "", events: [], days: [], config: { gentle: false, freq: "" } },
+          : { installId: "", events: [], days: [], config: { gentle: false } },
     };
   }
   const pushSettings = () => void toSettings(snapshot());
@@ -2179,10 +2179,8 @@
   // ------------------------------------------------------------- proactive
   function scheduleProactive() {
     clearTimeout(proactiveTimer);
-    const f = data.settings.freq;
-    if (f === "quiet") return;
-    const [a, b] = f === "chatty" ? [4, 7] : [10, 15];
-    proactiveTimer = setTimeout(() => fireProactive(), rand(a, b) * MIN);
+    if (data.hush) return; // chose Quiet at the retired setting: it says nothing unprompted
+    proactiveTimer = setTimeout(() => fireProactive(), rand(10, 15) * MIN); // fixed; whether it may speak now is the attention mode and the night
   }
 
   async function fireProactive() {
@@ -2197,7 +2195,7 @@
     const blocked =
       quiet ||
       busyNow ||
-      inQuietHours(data.settings, hour) ||
+      isNight(hour) ||
       pose === "held" ||
       isDozing(pose) ||
       panel !== null ||
@@ -2476,7 +2474,7 @@
       scheduleProactive();
       groundLoop = setInterval(groundTick, GROUND_POLL_MS);
       // Test hook (like window.__cat): lets a debugger trigger the real unprompted-line path now.
-      (window as unknown as Record<string, unknown>).__pet = { proactive: () => void fireProactive(), focus: () => ({ ...focusOut, lastLeave, pose }), trail: () => trail, sleep: () => enter("drowsy"), wake: () => enter("idle"), hop: (dx: number, dy: number) => void fly(splitHop(dx, dy), "walk"), lane: () => ({ ...laneOut, state: laneState, cat: laneCat }), ground: () => invoke("ground_under_cat"), belief: () => { const b = currentBelief(); return { ...b.belief, response: b.response }; }, perch: (fake?: unknown, how?: "hop" | "climb") => void perchNow(fake as GroundMap | undefined, true, how), perchPretend: () => void perchPretend(),  descend: () => void descend(), mode: () => ({ mode, playUntil: attn.playUntil, seat: perchSeat }), play: () => playTouched(), walk: (toEdge?: boolean) => void tryWalk(toEdge === true), push: (d: 1 | -1, ends?: "recover" | "fall") => void doTeeter(d, ends), drop: () => void afterDrop(), bruise: () => ({ until: bruisedUntil, wary: isBruised(bruisedUntil, Date.now()) }), edge: () => void atEdge(dir), overlay: () => invoke<string>("overlay_toggle"), map: () => takeGroundMap().then((m) => (m ? { summary: summary(m), ledges: ledges(m).length } : null)), groundLost: () => void groundLost(), say: (t: Trigger, kind?: RepeatKind) => (kind ? say(t, repeatNow(kind)) : say(t)), bubble: () => bubbleText, fall: (d: number) => void fly([planFall(d)], "gasp") };
+      (window as unknown as Record<string, unknown>).__pet = { proactive: () => void fireProactive(), focus: () => ({ ...focusOut, lastLeave, pose }), trail: () => trail, sleep: () => enter("drowsy"), wake: () => enter("idle"), hop: (dx: number, dy: number) => void fly(splitHop(dx, dy), "walk"), lane: () => ({ ...laneOut, state: laneState, cat: laneCat }), ground: () => invoke("ground_under_cat"), belief: () => { const b = currentBelief(); return { ...b.belief, response: b.response }; }, perch: (fake?: unknown, how?: "hop" | "climb") => void perchNow(fake as GroundMap | undefined, true, how), perchPretend: () => void perchPretend(),  descend: () => void descend(), mode: () => ({ mode, playUntil: attn.playUntil, seat: perchSeat, hush: data.hush }), play: () => playTouched(), walk: (toEdge?: boolean) => void tryWalk(toEdge === true), push: (d: 1 | -1, ends?: "recover" | "fall") => void doTeeter(d, ends), drop: () => void afterDrop(), bruise: () => ({ until: bruisedUntil, wary: isBruised(bruisedUntil, Date.now()) }), edge: () => void atEdge(dir), overlay: () => invoke<string>("overlay_toggle"), map: () => takeGroundMap().then((m) => (m ? { summary: summary(m), ledges: ledges(m).length } : null)), groundLost: () => void groundLost(), say: (t: Trigger, kind?: RepeatKind) => (kind ? say(t, repeatNow(kind)) : say(t)), bubble: () => bubbleText, fall: (d: number) => void fly([planFall(d)], "gasp") };
       let lastTick = Date.now();
       minuteTimer = setInterval(() => {
         const now = Date.now();

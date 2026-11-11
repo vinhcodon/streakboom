@@ -21,14 +21,8 @@ export interface UiStrings {
   brainBad: string;
   close: string;
   language: string;
-  chattiness: string;
-  quiet: string;
-  normal: string;
-  chatty: string;
   auto: string;
   gentle: string;
-  quietHours: string;
-  to: string;
   // brain request + guide
   askText: string;
   askYes: string;
@@ -193,14 +187,8 @@ export const UI: Record<Lang, UiStrings> = {
     brainBad: "My brain needs a new key",
     close: "Close",
     language: "Language",
-    chattiness: "Chattiness",
-    quiet: "Quiet",
-    normal: "Normal",
-    chatty: "Chatty",
     auto: "Auto",
     gentle: "Gentle tone (no sarcasm)",
-    quietHours: "Quiet hours",
-    to: "to",
     askText: "I'd love to talk with you properly. Could you give me a brain? It's free and takes about 2 minutes.",
     askYes: "Get a free brain",
     askLater: "Later",
@@ -437,14 +425,8 @@ export const UI: Record<Lang, UiStrings> = {
     brainBad: "Bộ não của mình cần key mới",
     close: "Đóng",
     language: "Ngôn ngữ",
-    chattiness: "Độ nói nhiều",
-    quiet: "Ít",
-    normal: "Vừa",
-    chatty: "Nhiều",
     auto: "Tự động",
     gentle: "Giọng nhẹ nhàng (không mỉa mai)",
-    quietHours: "Giờ im lặng",
-    to: "đến",
     askText: "Mình muốn nói chuyện với bạn cho đàng hoàng. Bạn cho mình một bộ não nhé? Miễn phí, mất khoảng 2 phút.",
     askYes: "Lấy bộ não miễn phí",
     askLater: "Để sau",
@@ -681,14 +663,8 @@ export const UI: Record<Lang, UiStrings> = {
     brainBad: "脳みそに新しいキーが必要だよ",
     close: "閉じる",
     language: "言語",
-    chattiness: "おしゃべりの量",
-    quiet: "少なめ",
-    normal: "ふつう",
-    chatty: "多め",
     auto: "自動",
     gentle: "やさしい口調（皮肉なし）",
-    quietHours: "静かな時間",
-    to: "〜",
     askText: "ちゃんとおしゃべりしてみたいな。わたしに脳みそをくれない？無料で、2分くらいで終わるよ。",
     askYes: "無料の脳みそをもらう",
     askLater: "あとで",

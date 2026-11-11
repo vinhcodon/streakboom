@@ -86,7 +86,7 @@ export interface SettingsSnapshot {
     installId: string;
     events: { e: string; t: number }[];
     days: DayStat[]; // per-day counts (empty unless the user agreed to them)
-    config: { gentle: boolean; freq: string }; // two settings, for the "character" figures
+    config: { gentle: boolean }; // one setting, for the "character" figures
   };
   /** The user agreed to per-day counts (the second consent switch). */
   daily: boolean;

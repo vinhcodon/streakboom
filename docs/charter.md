@@ -31,8 +31,7 @@ These are not options. They are how Peak behaves, and a new behaviour is checked
 4. **Never the same trick twice in a row.** Lines and moves come from a bag, and small things come before big ones.
 5. **When unsure, assume the person is working.**
 6. **Slow when nobody asked for fast.** The speed of a thing is its cost to the person beside it.
-7. **A shoo is an answer.** If the person moves Peak away or puts it to sleep, it stays quieter for the rest of the day, without a word about it.
-8. **Come back warmly, never accusingly.** No counting of absences, no reproach.
+7. **Come back warmly, never accusingly.** No counting of absences, no reproach.
 
 ## How it is used
 

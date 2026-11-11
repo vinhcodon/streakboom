@@ -39,7 +39,7 @@ The brain request (spec/02) is more natural at tier 2 or 3, but it is triggered 
   - Settings: tray menu, right-click menu on the pet, and the gear in the chat bubble.
   - Hints: one gesture at a time (head scratch, then belly rub), at least 20 hours apart, until the user has done it.
 - **Reactive to the system (no content reading):** time of day, session length and idle time (a timer). Built. Weekday versus weekend, battery low, lid open after absence and holidays: **not built**. No window titles or screen content are read. The whole model of what Peak can sense and how it reacts, with the proposed senses for the space around and below it, is in [`08-perception.md`](08-perception.md).
-- **Polite:** nothing is said in fullscreen or presentation mode, in quiet hours, in Quiet mode, while dragging, while another bubble is open, or while the pet is asleep or dozing off (an unprompted line waits and is tried again 2 minutes later; the pet also does not doze off while a bubble is showing).
+- **Polite:** nothing is said in fullscreen or presentation mode, at night (23:00 to 07:00 by the clock), in Quiet mode, while dragging, while another bubble is open, or while the pet is asleep or dozing off (an unprompted line waits and is tried again 2 minutes later; the pet also does not doze off while a bubble is showing).
 
 ## Line system
 *Draft, not built (spec/09): the pools below become the offline source of **slots** of events (`event.slot`), keeping every line id; why the lines feel repeated and how to grow and vary them is in spec/09 section 11 (epic E13); reactions to new situations are described by an appraisal and a beat rather than a new trigger and a new `if` in the page.*
@@ -47,7 +47,7 @@ The brain request (spec/02) is more natural at tier 2 or 3, but it is triggered 
 - **Each line has tags:** language, mood band, closeness tier, hours, trigger. Lines marked `~` are sarcastic and hidden in the Gentle tone.
 - **Selection:** filter by tags, exclude recently used (a rolling window of 24), weighted random.
 - **Size today:** 267 lines per language (182 ordinary, 48 added to the smallest pools, 27 for repeated pokes, scratches and belly rubs, 10 that use the name, time or weekday) (about 14% sarcastic), written by hand. Tests check that the three languages match (the Japanese lines are translated one to one, with the same ids, tiers, bands and sarcasm marks, in the casual voice), that no text repeats, that lines fit a bubble (110 characters), that sarcasm stays between a few lines and 40%, and that every tier and mood has gentle-tone coverage.
-- **Rate limits:** one proactive bubble every 10 to 15 minutes by default (4 to 7 chatty, none when quiet); never during quiet hours, Quiet mode or fullscreen and presentation.
+- **Rate limits:** one proactive bubble every 10 to 15 minutes, fixed (the settings of chattiness and quiet hours were retired, ADR-0047; people who had chosen Quiet stay hushed); never at night (23:00 to 07:00), while the person is working (the attention mode of spec/11), in Quiet mode or in fullscreen and presentation.
 
 ## Memory (ADR-0014)
 Separate from the mood state, in `memory.json`, owned by the pet window.

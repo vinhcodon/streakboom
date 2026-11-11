@@ -229,7 +229,6 @@
     if (snap) snap = { ...snap, settings: { ...snap.settings, [key]: value } }; // optimistic
     void fromSettings({ type: "setting", key, value });
   }
-  const stepHour = (key: "qhStart" | "qhEnd", d: number) => s && patch(key, (s[key] + d + 24) % 24);
   const setDaily = (yes: boolean) => {
     if (snap) snap = { ...snap, daily: yes };
     void fromSettings({ type: "daily", yes });
@@ -460,29 +459,10 @@
     {#if page === "personality"}
     <section id="sec-personality" class="card">
       <h2>{ui.sectionPersonality}</h2>
-      <div class="row">
-        <span class="lbl">{ui.chattiness}</span>
-        {#each [["quiet", ui.quiet], ["normal", ui.normal], ["chatty", ui.chatty]] as [v, label]}
-          <button class="seg" class:on={s.freq === v} onclick={() => patch("freq", v as Settings["freq"])}>{label}</button>
-        {/each}
-      </div>
       <label class="chk">
         <input type="checkbox" checked={s.gentle} onchange={(e) => patch("gentle", e.currentTarget.checked)} />
         {ui.gentle}
       </label>
-      <div class="row">
-        <label class="chk">
-          <input type="checkbox" checked={s.qhOn} onchange={(e) => patch("qhOn", e.currentTarget.checked)} />
-          {ui.quietHours}
-        </label>
-        <button class="step" onclick={() => stepHour("qhStart", -1)}>−</button>
-        <span class="hr">{String(s.qhStart).padStart(2, "0")}:00</span>
-        <button class="step" onclick={() => stepHour("qhStart", 1)}>+</button>
-        <span>{ui.to}</span>
-        <button class="step" onclick={() => stepHour("qhEnd", -1)}>−</button>
-        <span class="hr">{String(s.qhEnd).padStart(2, "0")}:00</span>
-        <button class="step" onclick={() => stepHour("qhEnd", 1)}>+</button>
-      </div>
     </section>
     {/if}
 
@@ -877,17 +857,13 @@
     flex-wrap: wrap;
     gap: 5px;
   }
-  .seg,
-  .step {
+  .seg {
     border: 0;
     border-radius: 7px;
     background: #f3f1ea;
     padding: 4px 10px;
     font: inherit;
     cursor: pointer;
-  }
-  .step {
-    padding: 2px 8px;
   }
   .seg:hover {
     background: #ece8da;
@@ -906,9 +882,6 @@
   }
   .push {
     margin-left: auto;
-  }
-  .hr {
-    font-variant-numeric: tabular-nums;
   }
   .progress {
     display: inline-flex;

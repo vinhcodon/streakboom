@@ -1,6 +1,6 @@
 # 11. Restraint, play, and a charter for Peak
 
-**Status:** the charter, the three modes and the fall rule are decided (ADR-0047, 2026-11-10). **Built so far (2026-11-10, not released): CH-4 (the edge ladder with the poses `peek` and `ledge`, waiting for the author to look), CH-2 (the edge check) and CH-3 (the attention modes in `attention.ts`, the thresholds, the silent fall in Work); the audit findings 1 to 5 of section 6 are fixed, 6 is by design, 7 is CH-6.** **CH-5 (the person's push and drop) is built and waits for the author to look**; the shoo (CH-6) is not built. It answers the author's message of 2026-11-10: knocks and slips should be rare and strong; slow, easy actions come first; Peak lives on the screen beside someone who is working, so it must not distract; how does it tell work from play; and does Peak need a manifesto or constitution.
+**Status:** the charter, the three modes and the fall rule are decided (ADR-0047, 2026-11-10). **Built so far (2026-11-10, not released): CH-4 (the edge ladder with the poses `peek` and `ledge`, waiting for the author to look), CH-2 (the edge check) and CH-3 (the attention modes in `attention.ts`, the thresholds, the silent fall in Work); the audit findings 1 to 5 of section 6 are fixed, 6 is by design, 7 is CH-6.** CH-5 (the person's push and drop) is built and committed; **CH-6 is built (Chattiness and Quiet hours retired; the shoo was declined)**. It answers the author's message of 2026-11-10: knocks and slips should be rare and strong; slow, easy actions come first; Peak lives on the screen beside someone who is working, so it must not distract; how does it tell work from play; and does Peak need a manifesto or constitution.
 
 ## 1. Falls, knocks and slips: a strong feeling is spent rarely
 
@@ -48,7 +48,7 @@ Rules that follow: spontaneous behaviour is picked from tiers 0 and 1; a tier-2 
 
 **Why asymmetric.** A false Play (Peak jumps while the person works) costs attention. A false Work (Peak stays calm when the person wanted a game) costs one click to correct: the poke itself enters Play. So every doubt falls to the quiet side, and entering the lively side takes an act.
 
-**No dial.** The author answered (2026-11-10): keep settings to a minimum and make Peak adjust itself; prefer written principles and unwritten rules to options, because people open Settings only when they must. So there is **no "liveliness" setting**. The room is read by the modes above, and by one more signal, the **shoo**: the person moving Peak away, dragging it off, or switching Quiet mode on soon after Peak did something. A shoo makes Peak quieter for the rest of the day (tier 0 and 1 only, no Play entered by chance), is kept in memory only and is never sent or counted for the consent (ADR-0029), and Peak never mentions it. The reverse, a person who keeps touching it, is already Play.
+**No dial, and (decided 2026-11-11) no shoo.** The shoo described below was declined by the author and is not built. The author answered (2026-11-10): keep settings to a minimum and make Peak adjust itself; prefer written principles and unwritten rules to options, because people open Settings only when they must. So there is **no "liveliness" setting**. The room is read by the modes above, and by one more signal, the **shoo**: the person moving Peak away, dragging it off, or switching Quiet mode on soon after Peak did something. A shoo makes Peak quieter for the rest of the day (tier 0 and 1 only, no Play entered by chance), is kept in memory only and is never sent or counted for the consent (ADR-0029), and Peak never mentions it. The reverse, a person who keeps touching it, is already Play.
 
 **How it is checked.** In a test build the page logs the mode and what it allowed; the author reads it against how the day went. An opt-in local counter "how often did the user move Peak away or switch Quiet on within 10 s of an action" would be a good measure of distraction, but a new counter needs a new consent version (ADR-0029), so it is only an option for later.
 
@@ -80,7 +80,7 @@ Rules that follow: spontaneous behaviour is picked from tiers 0 and 1; a tier-2 
 | CH-3 | The attention mode (Work, Free, Play) as pure logic with tests, shown in the debugger, and the tempo tier on every action | M |
 | CH-4 | The edge ladder: poses `peek` and `sit at the edge` (a rig change, the author looks first), then climbing down | M |
 | CH-5 | The user's push: a drop in the air and a flick at an edge, the teeter and the fall, the limits of 1.3, wariness after a fall | M |
-| CH-6 | The shoo: Peak quieter for the rest of the day after the person moves it away or puts it to sleep (memory only), and a review of the settings that are amounts (section 6) | M |
+| CH-6 | ~~The shoo~~ (declined) and the retirement of the settings that are amounts (section 6): done 2026-11-11 | M |
 
 ## 6. The state today, against the charter (audit of 2026-11-10)
 
@@ -90,9 +90,9 @@ Rules that follow: spontaneous behaviour is picked from tiers 0 and 1; a tier-2 
 | Language | a value Peak could not know exactly (auto, vi, en, ja) | keep |
 | Start with Windows | a consent | keep |
 | Updates (auto, ask, off) | a network consent | keep |
-| Chattiness (quiet, normal, chatty) | an **amount** of behaviour: how often unprompted lines come (4 to 7, or 10 to 15 minutes, or never) | **retire**: replace by the mode and the shoo (CH-6); migration: the saved value is read once and dropped |
+| Chattiness (quiet, normal, chatty) | an **amount** of behaviour: how often unprompted lines come (4 to 7, or 10 to 15 minutes, or never) | **retired 2026-11-11 (CH-6)**: fixed at 10 to 15 minutes and only in free or play; a person who had chosen Quiet is hushed (`PetData.hush`) |
 | Gentle tone | a value (sarcasm or not) | keep |
-| Quiet hours (on, start, end) | an **amount** (when to be silent) | **retire**: Work mode already keeps it quiet while the person works; a late-night rest comes from the clock plus idle time, not from a setting |
+| Quiet hours (on, start, end) | an **amount** (when to be silent) | **retired 2026-11-11 (CH-6)**: the night is the clock, 23:00 to 07:00, sleepy and silent |
 | Brain (provider, key), Memory (learn, learn with AI) | credentials and consents | keep |
 | Remarks after a reflex | a consent in effect (an event name and five numbers go to the person's own provider) | keep for now; it could follow the connected brain, to decide with the author |
 | Ground map | a consent for a sense (on by default, ADR-0044) | keep |
@@ -106,7 +106,7 @@ Rules that follow: spontaneous behaviour is picked from tiers 0 and 1; a tier-2 
 4. **The cry (the exclaim bubble) and the full startle** of a lost seat play in any mode, including Work. The person closed the window, so the cause is theirs, but a bubble and a cry beside someone who is writing is tier 3 where tier 1 would do: in Work the beat should be short and **silent** (the jolt and the fall, no bubble); the words wait (CH-3).
 5. **A perch by hop is tier 2 and spontaneous**; it is now allowed by `walkAllowed` only. With the fix in 1 it becomes Free-only. Climbing (tier 1) is the better default and is already chosen 50% of the time, and always when the rise is over 200 px.
 6. **The hop out from under the Start menu or Search** (ADR-0046) is tier 2 but has a reason (getting out of the way): keep, and take the nearest free place (it does).
-7. **No notion of a shoo exists**; nothing remembers that the person moved the cat away (CH-6).
+7. **No notion of a shoo exists**; the author declined it on 2026-11-11 (no change).
 8. **Things already in line with the charter:** the notice beat before moving, escalation stages and shuffle bags (manners 2 to 4), "assume work" in the lane (it needs about 450 ms of a steady guess before acting), no guilt in any line pool, the privacy contract, Quiet mode, silence in a full-screen window and in presentation.
 
 ## 7. Not verified

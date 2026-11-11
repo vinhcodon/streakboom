@@ -82,7 +82,7 @@ Dropped from the handoff: **repeated-line rate**. The line picker (`pick`) avoid
 ### 3.5 Secondary, and what the export gains
 
 - BYOK conversion (`key_valid`) is a monetization metric, not a bonding one. Unchanged.
-- The "Copy stats" JSON gains `days` (the counter array), `config` (`{gentle, freq}`: two settings, no language, no key, no provider name) and `autostart` (a boolean read at copy time). Nothing is sent automatically; the export remains the alpha channel.
+- The "Copy stats" JSON gains `days` (the counter array), `config` (`{gentle}`: one setting; it was `{gentle, freq}` until the chattiness setting was retired, ADR-0047; no language, no key, no provider name) and `autostart` (a boolean read at copy time). Nothing is sent automatically; the export remains the alpha channel.
 
 ## 4. Per-day counters
 
@@ -170,7 +170,7 @@ Stays in `pet.json` on the machine. Nothing is sent automatically and no network
 | D5 | Retention | Present in calendar days `[n, n+1]` after the first launch (5.6). |
 | D6 | `min` and presence | A minute counts only if the gap since the previous tick is at most 2 minutes; present means `min >= 5` (5.4). |
 | D7 | Quiet mode and hide-pet | Add the `quiet` counter now; hide-pet rate is deferred (it needs a Rust event). |
-| D8 | Export | Adds `config` (`gentle`, `freq`) and `autostart` to `days` (3.5). |
+| D8 | Export | Adds `config` (`gentle`; `freq` until it was retired in ADR-0047) and `autostart` to `days` (3.5). |
 
 ## 8. What could not be verified
 

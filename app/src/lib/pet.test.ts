@@ -26,7 +26,7 @@ import {
   TELEMETRY_QUEUE_MAX,
   DAILY_CLOSENESS_CAP,
   defaultData,
-  inQuietHours,
+  isNight,
   interact,
   parse,
   recordAsk,
@@ -183,20 +183,33 @@ test("interaction raises mood; closeness gain is capped per day and resets next 
 
 test("parse is defensive", () => {
   assert.equal(parse("not json", T0).closeness, 10);
-  assert.equal(parse(null, T0).settings.freq, "normal");
+  assert.equal(parse(null, T0).hush, false);
   const odd = parse(JSON.stringify({ mood: 9999, closeness: -5, settings: { freq: "bogus", qhStart: 99 } }), T0);
   assert.equal(odd.mood, 100);
   assert.equal(odd.closeness, 10);
-  assert.equal(odd.settings.freq, "normal");
-  assert.equal(odd.settings.qhStart, 23);
+  assert.equal(odd.hush, false, "an odd old value is not Quiet");
+  assert.equal("freq" in odd.settings || "qhStart" in odd.settings, false, "the retired settings are gone");
 });
 
-test("quiet hours handle ranges that wrap past midnight", () => {
-  const s = { ...defaultData(T0).settings, qhOn: true, qhStart: 22, qhEnd: 7 };
-  assert.equal(inQuietHours(s, 23), true);
-  assert.equal(inQuietHours(s, 3), true);
-  assert.equal(inQuietHours(s, 12), false);
-  assert.equal(inQuietHours({ ...s, qhOn: false }, 23), false);
+test("the night is 23:00 to 07:00 by the clock, with no setting", () => {
+  assert.equal(isNight(23), true);
+  assert.equal(isNight(0), true);
+  assert.equal(isNight(6), true);
+  assert.equal(isNight(7), false);
+  assert.equal(isNight(12), false);
+  assert.equal(isNight(22), false);
+});
+
+test("a person who had chosen Quiet at the retired setting of chattiness stays hushed, once and for good; others are not", () => {
+  const old = (freq: string) => parse(JSON.stringify({ mood: 60, settings: { freq, qhOn: true, qhStart: 20, qhEnd: 6 } }), T0);
+  assert.equal(old("quiet").hush, true);
+  assert.equal(old("normal").hush, false);
+  assert.equal(old("chatty").hush, false);
+  // once saved, the new flag decides and the old value is not looked at again
+  assert.equal(parse(JSON.stringify({ hush: false, settings: { freq: "quiet" } }), T0).hush, false);
+  assert.equal(parse(JSON.stringify({ hush: true }), T0).hush, true);
+  // and it survives a round trip
+  assert.equal(parse(JSON.stringify(old("quiet")), T0).hush, true);
 });
 
 test("brain ask: only after a signal, never with a key, max 3 asks, respects snooze", () => {

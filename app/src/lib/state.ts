@@ -4,11 +4,7 @@ import type { Band, Lang } from "./lines.ts";
 
 export interface Settings {
   lang: "auto" | Lang;
-  freq: "quiet" | "normal" | "chatty";
   gentle: boolean;
-  qhOn: boolean; // quiet hours: no proactive lines
-  qhStart: number;
-  qhEnd: number;
   updates: "auto" | "ask" | "off"; // install by itself when idle / offer through the pet / do not check
   remarks: boolean; // a connected brain may add a short remark after a reflex (RX-7, ADR-0043)
   groundMap: boolean; // Peak may take a coarse picture of where windows are, in memory, when about to move (PC-6, ADR-0043); on by default (ADR-0044)
@@ -272,6 +268,8 @@ export interface PetData {
   bags: Record<string, string[]>;
   said: Record<string, number>; // trigger -> last time spoken (ms)
   milestones: number[];
+  /** Chose "Quiet" at the retired setting of how talkative Peak is (ADR-0047): it keeps from saying anything unprompted, as they chose. Read once from the old setting, kept here. */
+  hush: boolean;
   settings: Settings;
   brain: BrainMeta;
   ai: AiUsage;
@@ -290,11 +288,7 @@ const clamp = (n: number, lo: number, hi: number) => Math.min(hi, Math.max(lo, n
 
 export const DEFAULT_SETTINGS: Settings = {
   lang: "auto",
-  freq: "normal",
   gentle: false,
-  qhOn: false,
-  qhStart: 22,
-  qhEnd: 7,
   updates: "ask",
   remarks: true,
   groundMap: true,
@@ -315,6 +309,7 @@ export function defaultData(now: number): PetData {
     bags: {},
     said: {},
     milestones: [],
+    hush: false,
     settings: { ...DEFAULT_SETTINGS },
     brain: { asks: 0, snoozeUntil: 0, menuOpens: 0, chatTries: 0, connectedAt: 0 },
     ai: defaultAi(),
@@ -359,13 +354,10 @@ export function parse(json: string | null | undefined, now: number): PetData {
       bags: parseBags(o.bags),
       said: o.said && typeof o.said === "object" ? { ...o.said } : {},
       milestones: Array.isArray(o.milestones) ? o.milestones.filter((x: unknown) => typeof x === "number") : [],
+      hush: typeof o.hush === "boolean" ? o.hush : (s as { freq?: unknown }).freq === "quiet",
       settings: {
         lang: s.lang === "vi" || s.lang === "en" || s.lang === "ja" ? s.lang : "auto",
-        freq: s.freq === "quiet" || s.freq === "chatty" ? s.freq : "normal",
         gentle: !!s.gentle,
-        qhOn: !!s.qhOn,
-        qhStart: clamp(Math.floor(num(s.qhStart, 22)), 0, 23),
-        qhEnd: clamp(Math.floor(num(s.qhEnd, 7)), 0, 23),
         updates: s.updates === "auto" || s.updates === "off" ? s.updates : "ask",
         remarks: s.remarks !== false,
         groundMap: s.groundMap !== false,
@@ -431,10 +423,8 @@ export function bandOf(d: PetData, hour: number, lonely: boolean): Band {
   return "content";
 }
 
-export function inQuietHours(s: Settings, hour: number): boolean {
-  if (!s.qhOn) return false;
-  return s.qhStart <= s.qhEnd ? hour >= s.qhStart && hour < s.qhEnd : hour >= s.qhStart || hour < s.qhEnd;
-}
+/** The night, by the clock: Peak is sleepy and says nothing unprompted from 23:00 to 07:00. It replaced the setting of quiet hours (ADR-0047: a setting is not for an amount of behaviour). */
+export const isNight = (hour: number): boolean => hour >= 23 || hour < 7;
 
 /**
  * Should the pet ask for a brain now? Only without a key, at most MAX_BRAIN_ASKS times,

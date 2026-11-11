@@ -34,7 +34,7 @@ Principles:
 - **One writer of state.** The pet window writes `pet.json` and `memory.json`; the other windows send actions or patches (`bubble-action`, `settings-patch`, `brain-changed`) and receive snapshots.
 - **Nothing runs when nothing happens.** A standing pet does not repaint; a short blink or tail twitch every few seconds. The redraw rate follows the motion (`Rig.mode`, PR-4): full speed only while a big motion runs (a pose change, a turn, a hop, being carried), about 24 fps for small motion (a blink, a tail flick, the eyes looking around), about 30 fps walking (two paints per window move, so the steps stay even), about 11 fps for sleep and thinking (the settled cat is cached; only z's and dots are drawn). Springs stop once they are within 1% of their target, so the slow end of an approach does not keep the loop running. Each painted frame costs about 0.55% of one core with software drawing, on top of a floor of about 1.3%. The bubble window is destroyed after 45 s hidden; the settings window exists only while open.
 - **The pet is the only thing that can be clicked** on its window: a Rust thread toggles click-through by hit-testing the cursor against the pet.
-- **Never interrupt.** Proactive lines, update offers and cards are suppressed in Quiet mode, quiet hours, fullscreen or presentation, while dragging or while another bubble is open.
+- **Never interrupt.** Proactive lines, update offers and cards are suppressed in Quiet mode, at night (23:00 to 07:00), while the person is working, in fullscreen or presentation, while dragging or while another bubble is open.
 
 ### 2b. Attention, movement and the typing lane (0.2.4 and 0.2.5)
 All of it follows the sensory contract of ADR-0031: Peak perceives shapes and activity, never meaning; nothing here is stored or sent.
@@ -49,7 +49,7 @@ All of it follows the sensory contract of ADR-0031: Peak perceives shapes and ac
 ## 3. Milestones
 - **M0 Spikes** (done): transparency, click-through, memory and CPU, keyring.
 - **M1 UI shell** (done): transparent always-on-top window, drag, tray, position memory, multi-monitor handling.
-- **M2 Naive pet** (done): mood and closeness, local persistence, line selector with cooldowns, quiet hours, proactive rate limiting, VI/EN line pools (182 per language today).
+- **M2 Naive pet** (done): mood and closeness, local persistence, line selector with cooldowns, proactive rate limiting, VI/EN line pools (182 per language today).
 - **M3 Onboarding and BYOK** (done): brain request, key flow, credential store, error mapping to pet voice, delete key.
 - **M4 Brained pet** (done): the brain client, system prompt, short in-memory context, daily caps, timeout and failover, rate-limit cooldown.
 - **M5 Telemetry and packaging** (partly done): opt-in consent and local funnel queue with "Copy stats" (done); NSIS installer (done); signed auto-update through GitHub Releases (done). **Open:** a sending backend, code signing, crash reporting without content.
@@ -90,7 +90,7 @@ Files in `%APPDATA%\com.streakboom.app\`:
 - Logs: none that contain keys or message content.
 
 ## 6. Testing
-- **Node** (`node --test`, 244 tests): state model and decay, line selection and coverage, gestures, reveal rhythm, telemetry and per-day counter rules (bond.ts), update snoozing, start-with-Windows and tour rules, the rig (key schema, springs, continuity, poses, the redraw rates, and that its files can be copied to the website by erasing types), focus-safety decisions (`focus.ts`), the walk easing (`gait.ts`), hops, falls and crawls (`hop.ts`), the typing lane (`lane.ts`), the belief (`perception.ts`), reactions (`beats.ts`, `events.ts`, `choose.ts`, `reactions.ts`, `escalation.ts`), the ground map and the terrain (`groundmap.ts`, `terrain.ts`, `perch.ts`, `escape.ts`), the line factory, memory rules and lines.
+- **Node** (`node --test`, 245 tests): state model and decay, line selection and coverage, gestures, reveal rhythm, telemetry and per-day counter rules (bond.ts), update snoozing, start-with-Windows and tour rules, the rig (key schema, springs, continuity, poses, the redraw rates, and that its files can be copied to the website by erasing types), focus-safety decisions (`focus.ts`), the walk easing (`gait.ts`), hops, falls and crawls (`hop.ts`), the typing lane (`lane.ts`), the belief (`perception.ts`), reactions (`beats.ts`, `events.ts`, `choose.ts`, `reactions.ts`, `escalation.ts`), the ground map and the terrain (`groundmap.ts`, `terrain.ts`, `perch.ts`, `escape.ts`), the line factory, memory rules and lines.
 - **Rust** (`cargo test`, 73 tests): the four clients against a one-shot mock HTTP server, error mapping, model ordering, mood tags, fact filtering, language rule, window and monitor geometry (clamping across monitors and scales, the room to an edge), the idle-time arithmetic, the pointer offset, the button reading the poll triggers, the ground sense (kinds, points under the feet, majority) and the persona (its layers join into the prompt, the safety and format layers are locked, a fingerprint fixes its words).
 - **Static:** `svelte-check`.
 - **Manual matrix still to run:** Windows 10 and 11, a second and a lower-end machine, multi-monitor, 100%, 125% and 150% DPI, fullscreen video, screen sharing, an 8-hour soak test, a reboot with start with Windows, and real Claude and OpenAI keys.

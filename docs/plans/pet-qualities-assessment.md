@@ -57,7 +57,7 @@ Across 1 and 5 the missing piece is the same: **a context signal** (is the user 
 **Measured by:** Bond Days (the north star), the engagement rate, the `rub` and `engaged` counters (hypotheses H5, H8).
 
 ## 5. Proactive but frugal (the strongest)
-**Built:** at most one line every 10 to 15 minutes (4 to 7 in "chatty", none in "quiet"), at most 110 characters, never taking the keyboard focus for plain speech; silent in fullscreen and presentation, quiet hours, Quiet mode, while dragging, while another bubble or a panel is open, and (0.2.2) while the pet is asleep or dozing off; gesture hints at least 20 hours apart; about half the lines written by the model within daily limits.
+**Built:** at most one line every 10 to 15 minutes (a fixed 10 to 15 minutes since the chattiness setting was retired, ADR-0047), at most 110 characters, never taking the keyboard focus for plain speech; silent in fullscreen and presentation, quiet hours, Quiet mode, while dragging, while another bubble or a panel is open, and (0.2.2) while the pet is asleep or dozing off; gesture hints at least 20 hours apart; about half the lines written by the model within daily limits.
 **Gaps:**
 - Timing is random inside the interval, not contextual: a line can appear while the user is concentrating.
 - The reaction data (`engaged`, `shown`) is collected but not used to adapt the frequency; that waits for a baseline.

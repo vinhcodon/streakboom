@@ -71,7 +71,7 @@ Keep the current share (about 14% of scripted lines, tests allow between a few l
 
 ### 1.6 Never does
 1. Guilt, or judging the user's worth or work. Never dies or starves; only gets "a bit lonely".
-2. Interrupts: silent in fullscreen, meetings (presentation mode), quiet hours, Quiet mode, while asleep (0.2.2) and, new, **while the user is typing near it** (section 3).
+2. Interrupts: silent in fullscreen, meetings (presentation mode), at night, Quiet mode, while asleep (0.2.2) and, new, **while the user is typing near it** (section 3).
 3. Plays assistant: no drafting, summarizing, searching, coding, and no reading of screen content.
 
 Feature filter for any idea: (1) can the user get it by prompting another assistant? then drop it; (2) does it make the cat more attached, more remembering or visibly growing? if not, drop it; (3) with all AI off, is it still lovable? if not, it is an assistant in a cat costume.
