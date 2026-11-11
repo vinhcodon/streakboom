@@ -323,32 +323,13 @@ def joy_tears():
     return o
 
 
-def arm(d, w=10):
-    """A fur arm with a thin darker edge, so it shows against the cream belly or the fur of the body."""
-    return stroke_path(d, DARK, w + 2.4) + stroke_path(d, FUR, w)
-
-
-def arms_up():
-    return arm("M36 100 Q-4 94 9 50") + arm("M84 100 Q124 94 111 50")
-
-
 def ok_sign(x, y):
     """A paw making the 'ok' ring, three fingers up (sticker art)."""
-    o = f'<g transform="translate({f(x)},{f(y)}) scale(1.35) translate({f(-x)},{f(-y)})">' + arm(f"M76 98 L{f(x - 3)} {f(y + 6)}", 9)
+    o = stroke_path(f"M76 98 L{f(x - 3)} {f(y + 6)}", FUR, 9)
     o += f'<ellipse cx="{f(x)}" cy="{f(y)}" rx="9" ry="8" fill="{FUR}" stroke="{DARK}" stroke-width="1.1"/>'
     for dx, dy, r in ((6, -9, 12), (11, -5, 40), (12, 1, 65)):
         o += f'<ellipse cx="{f(x + dx)}" cy="{f(y + dy)}" rx="3.3" ry="6" fill="{FUR}" stroke="{DARK}" stroke-width="1.1" transform="rotate({r} {f(x + dx)} {f(y + dy)})"/>'
-    o += f'<circle cx="{f(x - 5)}" cy="{f(y - 5)}" r="4.6" fill="{BELLY}" stroke="{DARK}" stroke-width="1.6"/>' + "</g>"
-    return o
-
-
-def firm_brows():
-    return stroke_path("M33 50 L52 56", INK, 3) + stroke_path("M87 50 L68 56", INK, 3)
-
-
-def crossed_arms():
-    o = arm("M34 90 L82 110") + arm("M86 90 L38 110")
-    o += paw(84, 111, 7, 6.5, 70) + paw(36, 111, 7, 6.5, -70)
+    o += f'<circle cx="{f(x - 5)}" cy="{f(y - 5)}" r="4.6" fill="{BELLY}" stroke="{DARK}" stroke-width="1.6"/>'
     return o
 
 
@@ -440,9 +421,7 @@ STICKERS = [
     ("16", "Giỏi quá.", lambda: cat(STAND_F, dict(LOOK["smirk"], lid=0.5, gx=-4, roll=3, mouth="flat", cheek=0.4)) + thumbs_up(96, 86)),
     ("17", "Ai đợi đâu.", lambda: cat(STAND_S, dict(LOOK["rest"], lid=0.7, roll=-6, mouth="smile", cheek=1.0, gx=-3))),
     ("19", "Huhu…", lambda: cat(STAND_F, dict(LOOK["sad"], roll=0, dy=0, lid=1, wide=1, cheek=0.5, droop=1, mouth="none")) + tears()),
-    ("20", "Hoan hô!", lambda: confetti() + arms_up() + cat(STAND_F, dict(LOOK["happy"], dy=0)) + paw(9, 42, 8.5, 10.5, -8, True) + paw(111, 42, 8.5, 10.5, 8, True)),
     ("21", "Ok nè!", lambda: cat(STAND_F, dict(LOOK["rest"], wink=1, mouth="smile", cheek=0.8, roll=4)) + ok_sign(98, 80)),
-    ("22", "Không nha.", lambda: cat(STAND_F, dict(LOOK["rest"], lid=0.8, mouth="flat", cheek=0.3, roll=0)) + crossed_arms() + firm_brows() + arcs("M8 62 q-5 6 -1 13", "M112 62 q5 6 1 13")),
 ]
 
 S = 2.45

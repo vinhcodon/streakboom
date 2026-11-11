@@ -26,6 +26,9 @@ The clapping 07 "Giỏi quá!" was removed (it duplicated 16, the thumbs-up "Gi�
 ## Later the same day (4)
 After the audit (`docs/plans/sticker-expression-audit.md`) the author chose to add five emotions the set lacked (laughing, crying, celebrating, "ok", "no"), to drop the rain sticker for them, and to make "Cảm ơn nha!" and "Xin lỗi nhé." differ from their look-alikes. The set is **20 stickers** (the Zalo maximum); sarcasm is 5 of 20 (25%). The paws, arms, tears and the ok ring are sticker art.
 
+## Later the same day (5)
+The author removed "Hoan hô!" and "Không nha." (too fierce to look at, no better idea yet) and kept the first, smaller "Ok nè!". The set is **18 stickers**; sarcasm is 5 of 18 (about 28%).
+
 ## Consequences
 - Spec 06 section 7 and the set list are updated: 16 are in the app (matched to a state) and the sticker-only art is now 03, 09 and the cloud of 10; the set is 17 stickers.
 - The sarcasm texts have not been through the author's ear for Vietnamese banter (backlog E3).
