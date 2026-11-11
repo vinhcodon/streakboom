@@ -2,7 +2,7 @@
 
 **From:** the app session (Vinh and Claude)
 **To:** whoever works on `site/` (GitHub Pages)
-**Status:** a template (ADR-0033). At every release the app session fills in the version and what changed, and gives the author the text below to paste into the website session. This copy is filled for **0.4.0** (prepared 2026-11-12; ADR-0060: it is handed over **after** the release is published, as always; until then it is not to be pasted). The previous copies (0.2.5 to 0.3.2) were acted on by the website session: the structure of its ADR-0034 is built, the site follows 0.3.2 (ADR-0054), is short and gentle (ADR-0048, ADR-0053) and has a Stickers page.
+**Status:** a template (ADR-0033). At every release the app session fills in the version and what changed, and gives the author the text below to paste into the website session. This copy is filled for **0.4.0** (prepared 2026-11-12; ADR-0061: it is handed over **after** the release is published, as always; until then it is not to be pasted). The previous copies (0.2.5 to 0.3.2) were acted on by the website session: the structure of its ADR-0034 is built, the site follows 0.3.2 (ADR-0054), is short and gentle (ADR-0048, ADR-0053) and has a Stickers page.
 
 ---
 
@@ -12,7 +12,7 @@ You are the session that owns `site/` in the repository `vinhcodon/streakboom` (
 
 **Where to work:** on `main`, after the release (it is merged and published; `git pull` first). Commit only `site/` and `scripts/site/` by explicit paths (ADR-0023, never `git add -A`). Push to `main` when your build passes; the push redeploys the site.
 
-**The Pages build is red until you follow.** `node scripts/build-site.mjs` reads the README and checks the site against it; since the release it stops on the number of hand-written lines (the README says 263, the site says 267). The site that is online is the 0.3.2 one and stays so until your build passes (the author accepted this, ADR-0060). Please make it pass first (the number), then do the rest of section 1, and tell the author when it is green.
+**The Pages build is red until you follow.** `node scripts/build-site.mjs` reads the README and checks the site against it; since the release it stops on the number of hand-written lines (the README says 263, the site says 267). The site that is online is the 0.3.2 one and stays so until your build passes (the author accepted this, ADR-0061). Please make it pass first (the number), then do the rest of section 1, and tell the author when it is green.
 
 ### 1. Bring the site in line with the app (do this now)
 - **The number of lines:** the README now says `263 hand-written lines per language` (it said 267; the real pools held 272 and have 263 now). Change it in all three languages (`f1_p` and wherever else it is said); the build checks it.
