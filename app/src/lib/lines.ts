@@ -72,6 +72,8 @@ const EN: Line[] = [
     "Night shift? I'll keep you company, quietly.",
     "Rest is also a productivity tool. Allegedly.",
   ], { hours: [23, 5] }),
+  // outward (spec 12 section 6, rule 7): toward people and the world outside the screen; an offer, never a judgement
+  ...mk("en", "long", ["Someone you like would enjoy a message from you. Not me. A person.", "The window is right there. The real one. Worth a look.", "~Lunch with a human beats lunch with a cat. Barely."], {}, "o"),
   ...mk("en", "long", [
     "Hours in the same chair. Stretch? I'll judge kindly.",
     "Your chair called. It wants a break too.",
@@ -123,6 +125,8 @@ const VI: Line[] = [
     "Ca đêm hả? Mình ngồi cùng, im lặng thôi.",
     "Nghỉ ngơi cũng là một công cụ năng suất. Nghe nói vậy.",
   ], { hours: [23, 5] }),
+  // outward (spec 12 section 6, rule 7): toward people and the world outside the screen; an offer, never a judgement
+  ...mk("vi", "long", ["Ai đó bạn quý chắc sẽ vui khi nhận tin nhắn của bạn. Không phải mình. Một người thật.", "Cửa sổ ở ngay kia kìa. Cửa sổ thật ấy. Đáng nhìn một cái.", "~Ăn trưa với người vẫn hơn ăn trưa với mèo. Hơn một chút thôi."], {}, "o"),
   ...mk("vi", "long", [
     "Ngồi mấy tiếng rồi đó. Đứng dậy vươn vai đi, mình sẽ phán xét nhẹ nhàng.",
     "Cái ghế của bạn gọi, nó cũng muốn nghỉ.",
@@ -463,6 +467,8 @@ const JA: Line[] = [
     "夜のお仕事？静かにそばにいるね。",
     "休むのも生産性向上の道具なんだって。たぶんね。",
   ], { hours: [23, 5] }),
+  // outward (spec 12 section 6, rule 7): toward people and the world outside the screen; an offer, never a judgement
+  ...mk("ja", "long", ["きみの好きな人、メッセージをもらったらよろこぶよ。わたしじゃなくて、人間のね。", "窓はすぐそこだよ。本物のほうの窓。見てみる価値あり。", "~人間とのお昼は、猫とのお昼よりいい。ほんのちょっとだけね。"], {}, "o"),
   ...mk("ja", "long", [
     "何時間も同じ椅子だよ。のびのびしない？やさしく見守るから。",
     "椅子から電話があったよ。椅子も休みたいって。",

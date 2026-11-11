@@ -27,7 +27,7 @@ The short version of [`docs/charter.md`](docs/charter.md), which ranks what Peak
 
 ## What it does ✨
 
-- 🐈 **A pet that is alive without any AI.** A mood and closeness model, 267 hand-written lines per language, with stages when you keep poking it (sarcastic ones can be turned off with "gentle tone"), a sleepy night (from 23:00 to 07:00 by the clock it dozes and says nothing on its own), and no guilt: the pet never dies or starves, it only gets "a bit lonely".
+- 🐈 **A pet that is alive without any AI.** A mood and closeness model, 263 hand-written lines per language, with stages when you keep poking it (sarcastic ones can be turned off with "gentle tone"), a sleepy night (from 23:00 to 07:00 by the clock it dozes and says nothing on its own), and no guilt: the pet never dies or starves, it only gets "a bit lonely".
 - 👆 **Gestures instead of buttons.** Sweep the cursor over its head to scratch it, over its belly to rub it (it usually loves it; sometimes it is a trap), click to poke, drag to carry it (it hangs by the scruff and leans with your cursor). Its eyes follow your cursor when it is over the pet. It wanders on its own (walking, and since 0.2.5 hopping between rows), always stays on screen, and moves like one animal, not a set of pictures.
 - 🧠 **Bring your own brain.** Add your own key and double-click the pet to chat. Gemini and Groq have free tiers (with limits); Claude and OpenAI are paid (a Claude Pro/Team or ChatGPT Plus subscription does not include API access). The brains are offered in this order: Gemini, Groq, Claude, OpenAI. Some of its unprompted lines are then written by the model, within a daily cap (60 chat turns and 6 unprompted lines a day; when it has talked enough, Peak says so in its own words and the count resets at midnight), and each answer comes with a feeling the pet acts out. It answers in the language you write in. Your key stays on your computer.
 - 💭 **It remembers a little, and you control it.** A name for the pet, what to call you, a usual part of the day, milestones, and (with a brain, on by default, switchable) a few short facts from your chats. Settings > Memory shows all of it and can forget any part.
@@ -46,7 +46,7 @@ To use it, follow [Install](#install). To build it or change it, follow [Develop
 
 1. Download `Streakboom_<version>_x64-setup.exe` from the [latest release](https://github.com/vinhcodon/streakboom/releases/latest).
 2. Run it. If SmartScreen says "Windows protected your PC", choose **More info**, then **Run anyway**. It installs for the current user only (no administrator rights) into `%LOCALAPPDATA%\Streakboom`.
-3. Uninstall from Windows Settings, Apps.
+3. Uninstall from Windows Settings, Apps. To remove everything: first use Settings, Brain, **Remove key** (keys live in Windows Credential Manager, which an uninstaller does not touch), then after uninstalling delete the folder `%APPDATA%\com.streakboom.app` if it is still there (the pet's state, its memory and the settings).
 
 GitHub keeps only the latest two releases; the release notes of every version are in [CHANGELOG.md](CHANGELOG.md).
 

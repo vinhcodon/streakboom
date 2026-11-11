@@ -16,7 +16,7 @@ The files are grouped here, not in folders (decided at gate 2 of the foundation 
 
 | File | What | Status |
 |---|---|---|
-| [`roadmap.md`](roadmap.md) | From 0.1.14 to a closed alpha: phases, gates, the decisions needed | approved 2026-11-08; phases 1 and 2 done, the rest open |
+| [`roadmap.md`](roadmap.md) | From 0.1.14 to a closed alpha: phases, gates, the decisions needed | approved 2026-11-08; phases 1 and 2 done; **out of date since 2026-11-11** (a new roadmap follows release 0.4.0) |
 | [`pet-qualities-assessment.md`](pet-qualities-assessment.md) | Dated assessment of the five qualities (presence, continuity, personality, care loop, proactive but frugal) against what exists, the gaps and how the north star is measured | snapshot 2026-11-08, version 0.2.2 |
 | [`terrain-and-attention.md`](terrain-and-attention.md) | The desktop as terrain: a cost field of fixed relief and the user's attention; levels L1 to L4, steps, risks, tests | proposed 2026-11-09; direction agreed; monitors, hops and the typing lane built (0.2.5) |
 | [`character-and-movement.md`](character-and-movement.md) | Character bible, favorite places and focus-safety: ordered steps, files, risks, test plan; the CPU baseline comes first | spec 06 approved 2026-11-08; step 0 (CPU) first |

@@ -1,6 +1,6 @@
 # Release 0.4.0: the alignment release (a plan; nothing is built)
 
-**Status:** approved by the author at gate 3 (2026-11-11), with Q9. **FA-1 to FA-6 are built on the branch (not on `main`, not released); FA-7 to FA-11 are open.** Spec: [`../../spec/12-foundation-alignment.md`](../../spec/12-foundation-alignment.md). Decisions: ADR-0056 to ADR-0059. No code before the author approves, and then story by story.
+**Status:** approved by the author at gate 3 (2026-11-11), with Q9. **FA-1 to FA-11 are built on the branch `foundation/alignment` (not on `main`, not released).** Spec: [`../../spec/12-foundation-alignment.md`](../../spec/12-foundation-alignment.md). Decisions: ADR-0056 to ADR-0059. No code before the author approves, and then story by story.
 
 ## Stories (epic E17, "Foundation alignment"; they enter `backlog.md` when approved)
 
@@ -35,3 +35,11 @@ The night share and the long tail of active minutes in the opt-in local stats; t
 
 ## Not verified
 See spec 12 section 11. Sizes are estimates; no code was tried.
+
+## Before this branch goes to `main` (2026-11-11)
+- **The website must change in the same push.** The README now says 263 hand-written lines per language and "your absence costs nothing"; the site says 267 and "it only gets a little lonely" (`pr2`, three languages). `node scripts/build-site.mjs` fails on this branch for the count (checked 2026-11-11), so the Pages build would fail on `main` until the website session follows. The website session is told by the release prompt: the count (263), the promise sentence, "for adults (18+)", the mission sentence, the right click as a push (ADR-0055), no streak and no "Longest streak", the help text in Settings.
+- The author reads the Vietnamese lines (V-103) and tries the persona with a real key (V-104).
+
+## What the data checks found (FA-10, 2026-11-11)
+- **Gemini free tier:** the terms (opened 2026-11-11, effective 2026-03-23) say that with unpaid use Google uses prompts and responses to improve its products and that human reviewers may read them; with paid use it does not. The app already says so on the Brain page and in the README. The same page says API users must be 18 or older, and that the service may not be used in an app directed at or likely to be accessed by people under 18.
+- **Uninstalling:** keys are in Windows Credential Manager and are not removed by an uninstaller; the README now says how to remove everything. Whether the uninstaller offers to delete the data folder was **not checked** on a real uninstall.
