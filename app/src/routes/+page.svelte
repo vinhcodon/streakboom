@@ -1494,6 +1494,8 @@
       lastMap = null;
     } else if (p.kind === "activity" && p.on) {
       void probeFocus();
+    } else if (p.kind === "covered" && p.on) {
+      void coverTick(); // told by Rust when the cat is under the Start menu or Search, and again every 3 s while it is
     }
   }
 
@@ -1518,12 +1520,12 @@
     if (escaping || flying || panel !== null || Date.now() - lastEscape < 3000) return;
     if (!(pose === "idle" || pose === "look" || pose === "walk" || pose === "peek" || pose === "ledge" || isDozing(pose))) return;
     try {
+      // Rust (the hit-test thread) found the cat covered and put Peak back on top without result: work out where to go
       const at = await catFeet();
       if (!at) return;
       const half = (PET_SIZE / 2) * at.scale;
       const cat = { x: at.feet.x - half, y: at.feet.y - PET_SIZE * at.scale, r: at.feet.x + half, b: at.feet.y };
       const here = bodyPoints(cat);
-      if (!(await invoke<boolean[]>("cover_probe", { points: here, raise: true })).some(Boolean) || flying) return;
       const mons = await invoke<{ x: number; y: number; w: number; h: number; scale: number }[]>("monitors_info");
       const m = mons.find((k) => at.feet.x >= k.x && at.feet.x < k.x + k.w && at.feet.y >= k.y && at.feet.y <= k.y + k.h) ?? mons[0];
       if (!m) return;
@@ -1546,7 +1548,6 @@
   }
 
   async function groundTick() {
-    void coverTick();
     if (groundBusy) return;
     const standing = !flying && !quiet && panel === null && (pose === "idle" || pose === "look" || pose === "peek" || pose === "ledge" || isDozing(pose));
     if (!standing) {

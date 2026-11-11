@@ -21,3 +21,6 @@ With the cat at the bottom left, the Start menu opened: `covered: out by 400,0`,
 
 ## Not done
 Win 11's centred menus, Task View, the action centre and the notification flyouts should work the same (they are of the same kind of window) but were not seen. A window in front of the cat on a second monitor, the cat dozing under the menu, and the cost of a probe when many places are tried are in the list of what is not verified.
+
+## Amendment 2026-11-11 (the CPU check of 0.3.2)
+The first version asked from the page once a second (`cat_covered`, then three calls a second). The CPU check against 0.3.1 showed about 0.4 of a core-percent more in the Rust process and 0.5 more in the WebView2 manager. The check now runs in the hit-test thread (`cat_covered_at`, about once a second, no call from the page); the page is told by the `percept` event `covered` when the answer changes and again every 3 seconds while it lasts, and it then works out where to hop as before. Seen again with the Start menu: covered, out by 400 px, no longer covered. After the change the Rust and the manager CPU were the same as 0.3.1's.

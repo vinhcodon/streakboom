@@ -513,6 +513,24 @@ struct GroundUnder {
 /// window's rectangle is useless (the Start menu's is the whole screen), only a touch at a point tells where its flyout is, so
 /// the page tries places for the cat and asks about their points. With `raise`, Peak first puts itself back on top (a window of
 /// its own layer may simply have come later) and the answer is taken after that. Only "covered or not" comes back.
+/// Is anything covering the cat that it cannot be raised over (the Start menu, Search)? Asked about five points of its body, by the
+/// hit-test thread about once a second (it already wakes often): no call from the page, which is told only when the answer
+/// changes. A first version asked from the page once a second and then three times a second; the CPU check of 0.3.2 showed
+/// about 1 per cent of a core more than 0.3.1 standing still. With `raise`, Peak first puts itself back on top (a window of its own
+/// layer may simply have come later), and the answer is taken after that.
+fn cat_covered_at(x: i32, y: i32, scale: f64, own: isize, raise: bool) -> bool {
+    let (l, t, s) = pet_px(scale);
+    let at = |fx: f64, fy: f64| (x + l + (s as f64 * fx) as i32, y + t + (s as f64 * fy) as i32);
+    let pts = [at(0.5, 0.5), at(0.25, 0.3), at(0.75, 0.3), at(0.25, 0.8), at(0.75, 0.8)];
+    let any = || pts.iter().any(|(px, py)| ground::cover_at(own, *px, *py));
+    let mut covered = any();
+    if covered && raise {
+        ground::raise_own(own);
+        covered = any();
+    }
+    covered
+}
+
 #[tauri::command]
 fn cover_probe(window: WebviewWindow, points: Vec<(i32, i32)>, raise: bool) -> Result<Vec<bool>, String> {
     let own = window.hwnd().map_err(|e| e.to_string())?.0 as isize;
@@ -1228,6 +1246,9 @@ fn spawn_hit_test(app: AppHandle, win: WebviewWindow) {
         let mut mons_sig = layout::monitors_signature(&mons_of(&win));
         let mut mons_checked = Instant::now();
         let mut last_flush = Instant::now();
+        let mut cover_checked = Instant::now();
+        let mut cover_told = Instant::now();
+        let mut was_covered = false;
         loop {
             let state = app.state::<AppState>();
             let mut delay = 150;
@@ -1285,6 +1306,19 @@ fn spawn_hit_test(app: AppHandle, win: WebviewWindow) {
             if act != was_active {
                 was_active = act;
                 let _ = app.emit("percept", serde_json::json!({ "kind": "activity", "on": act }));
+            }
+            // covered by a window of a higher layer (Start, Search)? About once a second; the page is told when it changes, and again every
+            // 3 seconds while it lasts (it may have been busy the first time)
+            if cover_checked.elapsed() >= Duration::from_secs(1) && win.is_visible().unwrap_or(false) {
+                cover_checked = Instant::now();
+                if let (Ok(pos), Ok(scale), Ok(h)) = (win.outer_position(), win.scale_factor(), win.hwnd()) {
+                    let covered = cat_covered_at(pos.x, pos.y, scale, h.0 as isize, true);
+                    if covered != was_covered || (covered && cover_told.elapsed() >= Duration::from_secs(3)) {
+                        was_covered = covered;
+                        cover_told = Instant::now();
+                        let _ = app.emit("percept", serde_json::json!({ "kind": "covered", "on": covered }));
+                    }
+                }
             }
             if mons_checked.elapsed() > Duration::from_secs(5) {
                 mons_checked = Instant::now();
