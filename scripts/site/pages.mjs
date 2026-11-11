@@ -129,17 +129,19 @@ ${script ? `\n  <script type="module" src="${script === true ? "/app.js" : scrip
 
 /** One release as a card; `level` is the heading level (3 on the home page, 2 on the changelog page). */
 /** The first sentence of a line (a short form for the home page; the changelog page has the whole line). */
-const firstSentence = (text) => (text.match(/^.*?[.!?。](?=\s|$)/s) || [text])[0];
+const firstSentence = (text) => (text.match(/^.*?[.!?。]\**(?=\s|$)/s) || [text])[0];
+/** Release notes are written in Markdown: only **bold** is used, and it is shown as bold. */
+const notes = (text) => esc(text).replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>");
 
 export function entryHtml(e, lang, level, maxItems = Infinity, short = false) {
   const when = e.date ? `<time datetime="${esc(e.date)}">${esc(fmtDate(e.date, lang))}</time>` : "";
   const sub = [when, e.title ? esc(e.title) : ""].filter(Boolean).join(" · ");
-  return `<li${level === 2 ? ` id="v${esc(e.version)}"` : ""}><h${level}>Streakboom ${esc(e.version)}</h${level}><div class="meta">${sub}</div><ul>${e.items.slice(0, maxItems).map((i) => `<li>${esc(short ? firstSentence(i) : i)}</li>`).join("")}</ul></li>`;
+  return `<li${level === 2 ? ` id="v${esc(e.version)}"` : ""}><h${level}>Streakboom ${esc(e.version)}</h${level}><div class="meta">${sub}</div><ul>${e.items.slice(0, maxItems).map((i) => `<li>${notes(short ? firstSentence(i) : i)}</li>`).join("")}</ul></li>`;
 }
 
 /** The questions of the home page and of the How it works page (numbers of the q/a keys); together they are all of them. */
 export const HOME_FAQ = [1, 10, 2, 8, 4];
-export const HOW_FAQ = [5, 6, 7, 9, 11];
+export const HOW_FAQ = [5, 6, 7, 9, 11, 12];
 
 /** Question and answer pairs: those with the given numbers, or all of them in order. */
 export function faqPairs(lang, ctx, ids = null) {
@@ -158,6 +160,8 @@ const faqNode = (lang, ctx, path, ids) => ({
 
 /** The charter of Peak on GitHub: the proof behind the promises (docs/charter.md; the build checks that the file exists). */
 export const CHARTER_URL = `${REPO_URL}/blob/main/docs/charter.md`;
+/** The research behind the design (ADR-0057, ADR-0062): a link to the folder on GitHub, no page and no figures on the site. */
+export const RESEARCH_URL = `${REPO_URL}/tree/main/docs/foundation`;
 /** The four promises of the home page and the privacy page (keys pr1 to pr4); the build checks each against the README. */
 export const PROMISES = ["pr1", "pr5", "pr2", "pr3", "pr4"]; // the order of the charter and the README; pr5 was added in 0.3.2
 
@@ -321,7 +325,7 @@ export function howPage(lang, ctx) {
   const path = PATHS[lang].how;
   const features = FEATURE_IDS
     .map((i) => `        <h3>${s(`f${i}_h`)}</h3>\n        <p>${s(`f${i}_p`)}</p>`).join("\n");
-  const gestures = [1, 2, 3, 4, 5, 7, 6]
+  const gestures = [1, 2, 3, 8, 4, 5, 7, 6]
     .map((i) => `          <tr><th>${s(`g${i}_a`)}</th><td>${s(`g${i}_b`)}</td></tr>`).join("\n");
   const sections = STRINGS[lang].hw_sections
     .map((sec) => `      <section>
@@ -466,6 +470,7 @@ export function privacyPage(lang, ctx) {
 ${PROMISES.map((k) => `          <li>${s(k)}</li>`).join("\n")}
         </ul>
         <p><a href="${CHARTER_URL}">${s("charter_link")}</a></p>
+        <p><a href="${RESEARCH_URL}">${s("research_link")}</a></p>
       </section>
 ${sections}
       <p><a href="${PATHS[lang].home}">${s("pv_back")}</a></p>

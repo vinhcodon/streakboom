@@ -10,6 +10,7 @@ import { t } from "./ui.js";
 
 const reduceMotion = matchMedia("(prefers-reduced-motion: reduce)").matches;
 const HAPPY = SCENES.findIndex((s) => s.id === "happy"); // a click is a poke: in the app it makes Peak happy
+const GASP = SCENES.findIndex((s) => s.id === "gasp"); // a right click pushes Peak in the app (ADR-0055); here it only gets a fright
 
 export function startPeak(canvas, chipBox) {
   const rig = new Rig();
@@ -158,6 +159,13 @@ export function startPeak(canvas, chipBox) {
     if (!reduceMotion && !raf) wake();
   });
   canvas.addEventListener("click", () => (tour ? tour.select(HAPPY) : showScene(HAPPY, { user: true })));
+  // a right click on the picture of Peak itself (not on the page around it) shows the fright, like the push of the app
+  canvas.addEventListener("contextmenu", (e) => {
+    e.preventDefault();
+    if (tour) tour.select(GASP);
+    else showScene(GASP, { user: true });
+    setCaption(t("cap_push"), true);
+  });
   canvas.style.cursor = "pointer";
 
   // blink now and then, only while standing around

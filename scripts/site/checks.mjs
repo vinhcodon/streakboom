@@ -7,7 +7,7 @@ import { ORIGIN, ROOT, fmtDate } from "./facts.mjs";
 import { formatCount } from "./downloads.mjs";
 import { CC_URL, fontNames, needsReviewNote, stickerUrl } from "./stickers.mjs";
 import { pageList } from "./files.mjs";
-import { CHARTER_URL, HOME_FAQ, HOW_FAQ, PROMISES, PATHS, esc } from "./pages.mjs";
+import { CHARTER_URL, RESEARCH_URL, HOME_FAQ, HOW_FAQ, PROMISES, PATHS, esc } from "./pages.mjs";
 import { STRINGS, EN_ONLY, FEATURE_IDS, HTML_KEYS, LANGS, UI_KEYS } from "../../site/strings.mjs";
 import { SCENES } from "../../site/scenes.js";
 
@@ -56,9 +56,18 @@ const BANNED = [
 /** Wording that was true once and is not any more: it may stay in old release notes (the changelog) but not in what the site says now. */
 const OUTDATED = [
   [/the left mouse button|nút trái chuột|マウスの左ボタン/, "'the left mouse button' (since 0.3.0 the app reads the primary button, the one you click with)"],
-  [/(are|is) in English and Vietnamese(?! and)|are in English and Vietnamese only|bằng tiếng Anh và tiếng Việt\.|英語とベトナム語です/, "'English and Vietnamese only' (the app has spoken Japanese since 0.3.0)"],
+  [/(are|is) in English and Vietnamese\b(?! and)|are in English and Vietnamese only|bằng tiếng Anh và tiếng Việt\.|英語とベトナム語です/, "'English and Vietnamese only' (the app has spoken Japanese since 0.3.0)"],
   [/quiet hours|chattiness|giờ yên tĩnh|mức nói nhiều|静かな時間帯|おしゃべり度/i, "'quiet hours' or 'chattiness' (0.3.2 removed both settings: Peak decides, and it is quiet at night)"],
   [/(Gemini, Claude (or|and) OpenAI)|(Gemini、Claude、OpenAI)|(Gemini, Claude hoặc OpenAI)|(three (AI )?brains)/i, "three brains (Groq is the fourth since 0.3.0)"],
+  // 0.4.0 (ADR-0056, ADR-0057, ADR-0059): Peak is not a character who needs you, and nothing here is a health claim
+  [/\blonel(y|iness)\b|cô đơn|さみし|寂し|さびし/i, "'lonely' (0.4.0: your absence costs nothing; there is no lonely state; no claim about loneliness)"],
+  [/\bstreaks?\b|chuỗi ngày|連続/i, "a streak (0.4.0 removed streaks and the counting of days)"],
+  [/right-click it, or the tray|chuột phải vào nó, hoặc|右クリック、またはトレイ|right-click me/i, "the pet's own right-click menu (0.4.0: a right click pushes Peak; the menu is in the tray icon)"],
+  [/\bheal(s|ed|ing)?\b|\btherap(y|ies|eutic)\b|clinically proven|chữa lành|trị liệu|癒し|セラピー|治療/i, "a health claim word (healing, therapy, clinically proven; ADR-0057)"],
+  [/(reduces?|relieves?|treats?|cures?) (your )?(anxiety|depression|ADHD|loneliness|stress)|giảm (lo âu|trầm cảm|ADHD|cô đơn)|(不安|うつ|孤独)を(減らし|和らげ|癒し)/i, "a claim to reduce anxiety, depression, ADHD or loneliness (ADR-0057)"],
+  [/replaces? (your )?(friends|a therapist|professionals?)|thay (thế )?(bạn bè|chuyên gia)/i, "a claim to replace friends or professionals (ADR-0057)"],
+  [/detects? (a )?(crisis|crises)|phát hiện (cơn )?khủng hoảng|危機を(検出|検知)/i, "a claim that Peak detects a crisis (it does not read your messages for that: it is a rule for how it answers; spec 12)"],
+  [/safe for everyone|adults only|an toàn cho mọi người|成人限定/i, "'safe for everyone' or 'adults only' as a promise (the wording is 'Made for adults (18+)'; a lawyer has not seen it)"],
   [/first official release|bản phát hành chính thức đầu tiên|正式リリース第1弾/i, "'first official release (0.2)' (the app is at a later version; the notice states the current one)"],
 ];
 
@@ -158,7 +167,7 @@ export function check({ ctx, pages, files, out }) {
   // the promises: each is on the home page and the privacy page in every language, and each is backed by a sentence of the README
   const BACKING = {
     pr1: [/never reads what you type/i, "README.md: 'never reads what you type'"],
-    pr2: [/never dies or starves/i, "README.md: 'never dies or starves'"],
+    pr2: [/absence costs nothing/i, "README.md: 'Your absence costs nothing'"],
     pr3: [/alive without any AI/i, "README.md: 'alive without any AI'"],
     pr4: [/companion, not an assistant/i, "README.md: 'a companion, not an assistant'"],
     pr5: [/stays still and quiet/i, "README.md: 'stays still and quiet'"],
@@ -177,6 +186,7 @@ export function check({ ctx, pages, files, out }) {
         if (!html.includes(text)) bad(`${path}: the promise ${k} is not on the page`);
       }
       if (!html.includes(`href="${CHARTER_URL}"`)) bad(`${path}: there is no link to the charter`);
+      if (path === PATHS[lang].privacy && !html.includes(`href="${RESEARCH_URL}"`)) bad(`${path}: there is no link to the research (ADR-0062: a link, not a page)`);
     }
   }
 
@@ -343,7 +353,7 @@ export function check({ ctx, pages, files, out }) {
       ["Windows 10", "the platform"],
       ["MIT", "the license"],
       ["Vinh Codon", "the author"],
-      [esc(ctx.entries[0].items[0].slice(0, 40)), "the first line of the newest changelog entry"],
+      [esc(ctx.entries[0].items[0].replaceAll("**", "").slice(0, 20)), "the first line of the newest changelog entry"],
       [`<html lang="${lang}"`, "the page language"],
     ];
     for (const [text, what] of need) if (!h.includes(text)) bad(`${p.path}: ${what} is not in the static HTML (${text})`);

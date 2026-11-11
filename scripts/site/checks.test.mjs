@@ -191,8 +191,8 @@ test("the size budget passes on the real site and fails when exceeded", async ()
 
 test("a number of hand-written lines that differs from the README", () => fails((c) => {
   const p = page(c, "/ja/how-it-works/");
-  p.html = p.html.replaceAll("267個", "182個");
-}, /does not say 267個/));
+  p.html = p.html.replaceAll("263個", "182個");
+}, /does not say 263個/));
 test("a privacy page that lacks the sense under Peak's feet (README says it has it)", () => fails((c) => {
   const p = page(c, "/vi/privacy/");
   p.html = p.html.replaceAll("dưới chân nó", "ở đâu đó");
@@ -227,7 +227,7 @@ test("a memory number on the Japanese How it works page that differs from the RE
 // ADR-0048: the short home page, the promises, the split FAQ
 test("the home page is short: four feature lines, five questions, one update, no long blocks", () => {
   const c = clone();
-  for (const [path, words] of [["/", 800], ["/vi/", 900]]) { // was 2,862 and 3,198 words before ADR-0048
+  for (const [path, words] of [["/", 800], ["/vi/", 950]]) { // was 2,862 and 3,198 words before ADR-0048; Vietnamese 900 to 950 in 0.4.0 (ADR-0062: the mission lead, the adults line, the longer first sentence of the newest update)
     const h = page(c, path).html;
     assert.equal((h.match(/<article class="card">/g) || []).length, 4, `${path}: four feature lines`);
     assert.equal((h.match(/<details>/g) || []).length, 5, `${path}: five questions`);
@@ -317,4 +317,51 @@ test("a string that nothing uses stops the build", () => {
     for (const l of ["en", "vi", "ja"]) delete STRINGS[l].orphan_probe;
   }
   assert.doesNotThrow(() => check(clone()));
+});
+
+// ADR-0062: the site follows 0.4.0 (the alignment release)
+test("a lonely Peak, a streak, the pet's own menu and health claims cannot come back", () => {
+  const add = (html) => (c) => { const p = page(c, "/"); p.html = p.html.replace("</main>", html + "</main>"); };
+  fails(add("<p>If you stay away it only gets a little lonely.</p>"), /lonely/);
+  fails(add("<p>Peak keeps a streak of days.</p>"), /streak/);
+  fails(add("<p>Right-click it, or the tray icon, for Settings.</p>"), /right-click menu/);
+  fails(add("<p>A healing companion.</p>"), /health claim word/);
+  fails(add("<p>Peak reduces anxiety.</p>"), /reduce anxiety/);
+  fails(add("<p>It replaces your friends.</p>"), /replace friends/);
+  fails(add("<p>Peak detects a crisis.</p>"), /detects a crisis/);
+  fails(add("<p>Safe for everyone.</p>"), /safe for everyone/i);
+  fails((c) => { const p = page(c, "/vi/"); p.html = p.html.replace("</main>", "<p>Chữa lành tâm hồn.</p></main>"); }, /health claim word/);
+  fails((c) => { const p = page(c, "/ja/"); p.html = p.html.replace("</main>", "<p>さみしくなるだけです。</p></main>"); }, /lonely/);
+  // the release notes keep what was true when they were written (they say "no streak", "no lonely state")
+  assert.doesNotThrow(() => check(clone()));
+});
+test("the absence promise says it costs nothing, and the page says Made for adults (18+) under the download", () => {
+  const c = clone();
+  for (const [path, word] of [["/", "Your absence costs nothing"], ["/privacy/", "Your absence costs nothing"], ["/vi/", "Bạn vắng mặt cũng không mất gì"], ["/ja/", "離れていても何も失いません"]]) {
+    assert.ok(page(c, path).html.includes(word), `${path}: ${word}`);
+  }
+  for (const [path, word] of [["/", "Made for adults (18+)"], ["/vi/", "Dành cho người lớn (18+)"], ["/ja/", "大人（18歳以上）向け"]]) {
+    assert.ok(page(c, path).html.includes(word), `${path}: ${word}`);
+  }
+  assert.match(page(c, "/how-it-works/").html, /Who is Streakboom for\?/);
+  assert.match(c.files["llms-full.txt"], /made for adults \(18\+\)/i);
+});
+test("the right click pushes, the left click pokes, and the tray icon holds the menu", () => {
+  const how = page(clone(), "/how-it-works/").html;
+  assert.match(how, /<th>Left-click once<\/th>/);
+  assert.match(how, /<th>Right-click it<\/th><td>A push away from the pointer/);
+  assert.match(how, /<th>The tray icon<\/th><td>A click shows or hides Peak/);
+});
+test("the research is a link to GitHub on the privacy pages, labelled as evidence, with no page of its own", () => {
+  const c = clone();
+  for (const path of ["/privacy/", "/vi/privacy/", "/ja/privacy/"]) assert.ok(page(c, path).html.includes("/tree/main/docs/foundation"), path);
+  assert.match(page(c, "/privacy/").html, /not claims about Peak/);
+  assert.match(c.files["llms-full.txt"], /evidence, not claims about Peak/);
+  assert.ok(!c.pages.some((p) => /research/.test(p.path)), "no research page");
+  fails((c2) => { const p = page(c2, "/vi/privacy/"); p.html = p.html.replaceAll("/tree/main/docs/foundation", "/x"); }, /no link to the research/);
+});
+test("the demo Peak shows a fright on a right click and says what the app does", () => {
+  const js = readFileSync(join(ROOT, "site", "peak.js"), "utf8");
+  assert.ok(js.includes('addEventListener("contextmenu"'));
+  for (const l of ["en", "vi", "ja"]) assert.ok(STRINGS[l].cap_push, l);
 });

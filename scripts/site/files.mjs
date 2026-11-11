@@ -75,7 +75,7 @@ function stickerSection(ctx) {
 export function llms(ctx) {
   return `# Streakboom
 
-> Streakboom is an open-source desktop pet for Windows 10 and 11. The pet is Peak, a golden chibi cat. The app is free and the code is under the MIT license. Latest version: ${ctx.version}, released ${fmtDate(ctx.date, "en")}. There is no account. The installer is not code-signed yet, so Windows SmartScreen warns on the first run.
+> Streakboom is an open-source desktop pet for Windows 10 and 11. The pet is Peak, a golden chibi cat: a small friend who makes the workday lighter and leads you back to real life. It is made for adults (18+). The app is free and the code is under the MIT license. Latest version: ${ctx.version}, released ${fmtDate(ctx.date, "en")}. There is no account. The installer is not code-signed yet, so Windows SmartScreen warns on the first run.
 
 ${FACTS}
 
@@ -117,6 +117,8 @@ ${bullets(STRINGS.en.glance, ctx)}
 ${PROMISES.map((k) => `- ${en(k, ctx)}`).join("\n")}
 
 The charter behind them: ${REPO_URL}/blob/main/docs/charter.md
+
+The research the design was checked against (evidence, not claims about Peak; it is not quoted here): ${REPO_URL}/tree/main/docs/foundation
 
 ## What Streakboom is not
 

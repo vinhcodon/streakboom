@@ -408,3 +408,18 @@ When the set is ready the author tells the website session; it then builds `/sti
 **Not done on purpose:** a comparison page; a scene in the tour; promising that Peak never moves (it makes way, hops out from under the Start menu and falls when its window goes); the opt-in screen picture (not built).
 
 **Not verified:** the app's behaviour against what the site now says (the README and the CHANGELOG were read, the app was not run); the Vietnamese and Japanese texts have no native reader; the Lighthouse numbers of the sticker pages and the new texts (to measure after the deploy); how the sticker preview looks when a link is sent in Zalo, Telegram or Messenger; whether Search Console and Bing accept the image sitemap.
+
+## 17. After 0.4.0 (2026-11-12, ADR-0062 to ADR-0064)
+**Done:** the Pages build is green again (263 lines); `pr2` says that your absence costs nothing; no "lonely", "streak" or pet right-click menu anywhere outside the release notes (the build fails on them); "Made for adults (18+)" under the download, in a question, in the structured data and in the llms files; the mission is the one-line description; the gestures table follows the app (right click pushes, the tray icon holds the menu); the chat rules are said as a rule for how Peak answers, not as a crisis detector; the removal steps (Remove key, Delete the application data); the release notes show bold; 95 tests.
+
+**Proposals (section 2 of the release prompt), answered by Vinh on 2026-11-12:**
+
+| Proposal | Answer |
+|---|---|
+| Where the research lives and how it is labelled | **A link on the privacy page to `docs/foundation` on GitHub**, labelled as evidence, not claims; no page, no figures (ADR-0063) |
+| Does the charter get a page with the mission line | **No**, it stays on GitHub; the mission line is in the hero lead, the description and `llms.txt` (ADR-0063) |
+| The hero Peak and a right click | **Yes**: a fright and a caption that says what the app does (ADR-0064) |
+
+**Still planned:** ask the fixed set of questions of the AI assistants again on 2026-12-01 and compare with the baseline (section 12); measure Lighthouse of the sticker pages again after the layout-shift fix (W-38).
+
+**Not verified:** see W-40 and W-41 in `verification-debt.md`.
