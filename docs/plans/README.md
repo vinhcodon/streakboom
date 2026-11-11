@@ -40,6 +40,7 @@ The files are grouped here, not in folders (decided at gate 2 of the foundation 
 
 | File | What | Status |
 |---|---|---|
+| [`vi-lines-0.4.0.md`](vi-lines-0.4.0.md) | The Vietnamese lines changed for 0.4.0, before and after, for the author to read (V-103, V-105) | written 2026-11-12; **waits for the author's reading** |
 | [`release-0.4.0.md`](release-0.4.0.md) | The alignment release: stories FA-1 to FA-11 from spec 12, their order, tests, risks, what waits for 0.4.1 | proposed 2026-11-11; **waits for the author at gate 3; nothing built** |
 | [`release-0.3.2.md`](release-0.3.2.md) | The draft of release 0.3.2: what is in it, the changelog entry, the README change, the version files, what the website is told, the checks | prepared 2026-11-11; the CHANGELOG, README and version files were filled the same day and the release waits for the author's order |
 

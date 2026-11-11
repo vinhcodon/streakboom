@@ -46,7 +46,7 @@ To use it, follow [Install](#install). To build it or change it, follow [Develop
 
 1. Download `Streakboom_<version>_x64-setup.exe` from the [latest release](https://github.com/vinhcodon/streakboom/releases/latest).
 2. Run it. If SmartScreen says "Windows protected your PC", choose **More info**, then **Run anyway**. It installs for the current user only (no administrator rights) into `%LOCALAPPDATA%\Streakboom`.
-3. Uninstall from Windows Settings, Apps. To remove everything: first use Settings, Brain, **Remove key** (keys live in Windows Credential Manager, which an uninstaller does not touch), then after uninstalling delete the folder `%APPDATA%\com.streakboom.app` if it is still there (the pet's state, its memory and the settings).
+3. Uninstall from Windows Settings, Apps. To remove everything: first use Settings, Brain, **Remove key** (keys live in Windows Credential Manager, which an uninstaller does not touch); in the uninstaller tick **Delete the application data** (it removes `%APPDATA%\com.streakboom.app`: the pet's state, its memory and the settings), or delete that folder yourself afterwards.
 
 GitHub keeps only the latest two releases; the release notes of every version are in [CHANGELOG.md](CHANGELOG.md).
 
