@@ -5,7 +5,10 @@
 // Without this script the pictures are still there (real <img> elements).
 import { t } from "./ui.js";
 
-const COPY_PX = 180; // the page shows 360 for sharpness; a copy is half of that (ADR-0060)
+const COPY_PX = 128; // the page shows 360 for sharpness; a copy is smaller, so a chat shows it near a real sticker's size (ADR-0060, ADR-0074)
+// To try other sizes in a chat, open the page with ?px=NN (48 to 360); nothing is stored, and without it the size is COPY_PX.
+const asked = Number(new URLSearchParams(location.search).get("px"));
+const COPY_SIDE = Number.isInteger(asked) && asked >= 48 && asked <= 360 ? asked : COPY_PX;
 // the numbers of a set mean nothing in another set (ADR-0073): the list is kept per set, and the one of an older set is dropped
 const LEGACY_KEY = "streakboom-sticker-recent";
 const SET_ID = (document.getElementById("sticker-recent") || { dataset: {} }).dataset.set || "";
@@ -45,11 +48,11 @@ function say(text, shareFile, onShared) {
   doneTimer = setTimeout(() => { status.dataset.on = ""; status.textContent = ""; }, 7000);
 }
 
-/** The picture at COPY_PX (a PNG with its transparency); if anything fails, the original picture. */
+/** The picture at COPY_SIDE (a PNG with its transparency); if anything fails, the original picture. */
 async function shrink(blob) {
   try {
     const bmp = await createImageBitmap(blob);
-    const side = Math.min(COPY_PX, bmp.width);
+    const side = Math.min(COPY_SIDE, bmp.width);
     const canvas = document.createElement("canvas");
     canvas.width = side;
     canvas.height = Math.round((bmp.height * side) / bmp.width);
