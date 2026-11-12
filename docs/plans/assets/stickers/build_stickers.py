@@ -602,11 +602,7 @@ with open(os.path.join(V1_DIR, "manifest.json"), "w", encoding="utf-8", newline=
 print("set-v1:", len(stickers_json), "stickers x", len(LANGS), "languages in", V1_DIR)
 
 # ---- pack Cute (docs/plans/sticker-packs-three-categories.md): ten new stickers next to ten of the current ones --------------
-def arm(d, w=10):
-    """A fur arm with a thin darker edge (sticker art)."""
-    return stroke_path(d, DARK, w + 2.4) + stroke_path(d, FUR, w)
-
-
+# No arms, ever (the author, 2026-11-12): gestures are paws on the body, props, marks or the face.
 def fist(x, y):
     o = f'<ellipse cx="{f(x)}" cy="{f(y)}" rx="8.5" ry="7.5" fill="{FUR}" stroke="{DARK}" stroke-width="1.1"/>'
     for dy in (-2.5, 1, 4.5):
@@ -619,8 +615,9 @@ def heart(x, y, k, col="#f08a99"):
 
 
 def cute_hug():
-    return (cat(STAND_F, dict(LOOK["purr"], roll=0, dy=0, cheek=0.95)) + arm("M34 98 Q14 100 6 84") + arm("M86 98 Q106 100 114 84")
-            + paw(5, 79, 7.5, 9, -25, True) + paw(115, 79, 7.5, 9, 25, True) + heart(18, 50, 1.0) + heart(104, 42, 1.3))
+    """Open for a hug: two stubby paws at the sides of the body, pads toward us, and hearts. No arms."""
+    return (cat(STAND_F, dict(LOOK["purr"], roll=0, dy=0, cheek=0.95)) + paw(24, 96, 9, 10.5, -55, True) + paw(96, 96, 9, 10.5, 55, True)
+            + arcs("M12 86 q-5 6 -1 13", "M108 86 q5 6 1 13") + heart(16, 50, 1.1) + heart(104, 42, 1.4) + heart(98, 70, 0.8))
 
 
 def cute_heart_eyes():
@@ -634,15 +631,19 @@ def cute_miss_you():
 
 
 def cute_cheer():
-    return (cat(STAND_F, dict(LOOK["happy"], roll=4, dy=0, cheek=0.9)) + arm("M84 98 L100 66") + fist(102, 58)
-            + stroke_path("M92 44 l-4 -6", "#ffd166", 2.4) + stroke_path("M104 40 l0 -8", "#ffd166", 2.4) + stroke_path("M116 46 l5 -6", "#ffd166", 2.4)
-            + star(18, 52, 6, "#ffd166"))
+    """Cheering someone on: a red headband with a knot, bright eyes, two small fists at the chest, sparks. No arms."""
+    band = ('<path d="M20 50 Q60 36 100 50 L100 57 Q60 43 20 57Z" fill="#e5484d"/>'
+            '<path d="M99 51 l13 -6 l-2 8z M99 55 l12 6 l-7 3z" fill="#e5484d"/><circle cx="99" cy="53.5" r="3.2" fill="#c93a40"/>')
+    return (cat(STAND_F, dict(LOOK["rest"], wide=0.4, mouth="open", cheek=0.9, roll=0)) + band + fist(50, 99) + fist(70, 99)
+            + stroke_path("M38 88 l-6 -5", "#ffd166", 2.4) + stroke_path("M82 88 l6 -5", "#ffd166", 2.4) + star(16, 40, 6, "#ffd166") + star(106, 78, 5, "#ffd166"))
 
 
 def cute_flower():
-    petals = "".join(f'<circle cx="{104 + 5.2 * math.cos(a * math.pi / 2.5)}" cy="{44 + 5.2 * math.sin(a * math.pi / 2.5)}" r="4.3" fill="#f4a7a7"/>' for a in range(5))
-    return (cat(STAND_F, dict(LOOK["happy"], roll=3, dy=0, cheek=0.9)) + arm("M82 98 L98 88") + stroke_path("M101 84 L104 52", "#7cc17c", 2.4)
-            + paw(101, 86, 6.5, 7.5, 10, True) + petals + '<circle cx="104" cy="44" r="3.2" fill="#ffd166"/>')
+    """Congratulations: a flower held at the chest with both paws. No arms."""
+    petals = "".join(f'<circle cx="{f(78 + 6.2 * math.cos(a * math.pi / 2.5))}" cy="{f(88 + 6.2 * math.sin(a * math.pi / 2.5))}" r="5.2" fill="#f08a99"/>' for a in range(5))
+    return (cat(STAND_F, dict(LOOK["happy"], roll=-3, dy=0, cheek=0.9)) + stroke_path("M60 106 Q66 98 76 91", "#7cc17c", 2.6)
+            + petals + '<circle cx="78" cy="88" r="3.4" fill="#ffd166"/>' + paw(53, 103, 6.5, 8, 15) + paw(66, 104, 6.5, 8, -15)
+            + star(18, 46, 5, "#ffd166") + star(104, 44, 6, "#f4a7a7"))
 
 
 def cute_birthday():
@@ -671,9 +672,11 @@ def cute_pat():
 
 
 def cute_pout():
-    puff = ell(19, 78, 11, 10, FUR) + ell(101, 78, 11, 10, FUR)  # cheeks that bulge past the head's edge (drawn behind the head)
-    blush = ell(28, 80, 8, 5, "#f59e9e", 0, 0.85) + ell(92, 80, 8, 5, "#f59e9e", 0, 0.85)
-    return puff + cat(STAND_F, dict(LOOK["rest"], lid=0.8, gx=-6, gy=0, roll=-6, mouth="flat", cheek=0.4)) + blush
+    """A cute sulk: both cheeks puffed out evenly (the head is not tilted), eyes aside, a small huff mark."""
+    puff = ell(19, 78, 11, 10, FUR) + ell(101, 78, 11, 10, FUR)  # cheeks that bulge past the head's edge (drawn over the head edge and the tail, same fur colour)
+    blush = ell(26, 80, 8, 5, "#f59e9e", 0, 0.85) + ell(94, 80, 8, 5, "#f59e9e", 0, 0.85)
+    huff = stroke_path("M100 44 l6 -4 M104 52 l8 -1", "#b9a98f", 2)
+    return cat(STAND_F, dict(LOOK["rest"], lid=0.8, gx=-6, gy=0, roll=0, mouth="flat", cheek=0.0)) + puff + blush + huff
 
 
 CUTE_NEW = [
@@ -682,7 +685,7 @@ CUTE_NEW = [
     ("Nhớ bạn!", cute_miss_you, {}),
     ("Cố lên nha!", cute_cheer, {}),
     ("Chúc mừng nha!", cute_flower, {}),
-    ("Sinh nhật vui!", cute_birthday, dict(scale=2.2, dy=26)),
+    ("Sinh nhật vui!", cute_birthday, dict(scale=2.0, dy=42)),
     ("Meo~", cute_meow, {}),
     ("Ú òa!", cute_peekaboo, {}),
     ("Xoa đầu cái!", cute_pat, {}),
