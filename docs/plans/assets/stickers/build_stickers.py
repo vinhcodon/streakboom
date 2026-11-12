@@ -130,6 +130,10 @@ LOOK = {
 def eye_svg(e, look):
     if e["rx"] < 0.3 or e["a"] ** 3 < 0.02:
         return ""
+    if look.get("hearts"):  # the eyes are two pink hearts (sticker art)
+        k = e["rx"] / 7.5 * 1.25
+        return (f'<path transform="translate({f(e["x"])},{f(e["y"] + 1)}) scale({f(k)})" '
+                f'd="M0 7 C-13 -3 -6 -13 0 -6 C6 -13 13 -3 0 7Z" fill="#ef6f7e"/>')
     if look.get("wink") and e["x"] > 60:
         look = dict(look, happy=1, lid=1)
     x, y, rx, ry = e["x"] + look["gx"] * 0.75, e["y"] + look["gy"] * 0.75, e["rx"], e["ry"]
@@ -596,5 +600,113 @@ with open(os.path.join(V1_DIR, "manifest.json"), "w", encoding="utf-8", newline=
     json.dump(manifest, fh, ensure_ascii=False, indent=2)
     fh.write("\n")
 print("set-v1:", len(stickers_json), "stickers x", len(LANGS), "languages in", V1_DIR)
+
+# ---- pack Cute (docs/plans/sticker-packs-three-categories.md): ten new stickers next to ten of the current ones --------------
+def arm(d, w=10):
+    """A fur arm with a thin darker edge (sticker art)."""
+    return stroke_path(d, DARK, w + 2.4) + stroke_path(d, FUR, w)
+
+
+def fist(x, y):
+    o = f'<ellipse cx="{f(x)}" cy="{f(y)}" rx="8.5" ry="7.5" fill="{FUR}" stroke="{DARK}" stroke-width="1.1"/>'
+    for dy in (-2.5, 1, 4.5):
+        o += f'<path d="M{f(x - 6)} {f(y + dy)} L{f(x + 6)} {f(y + dy)}" stroke="{DARK}" stroke-width="1.1" stroke-linecap="round"/>'
+    return o
+
+
+def heart(x, y, k, col="#f08a99"):
+    return f'<path transform="translate({x},{y}) scale({k})" d="M0 3 C-7 -3 -3 -9 0 -5 C3 -9 7 -3 0 3Z" fill="{col}"/>'
+
+
+def cute_hug():
+    return (cat(STAND_F, dict(LOOK["purr"], roll=0, dy=0, cheek=0.95)) + arm("M34 98 Q14 100 6 84") + arm("M86 98 Q106 100 114 84")
+            + paw(5, 79, 7.5, 9, -25, True) + paw(115, 79, 7.5, 9, 25, True) + heart(18, 50, 1.0) + heart(104, 42, 1.3))
+
+
+def cute_heart_eyes():
+    return (cat(STAND_F, dict(LOOK["purr"], hearts=1, happy=0, mouth="smile", cheek=1.0, roll=-3))
+            + star(14, 50, 6, "#ffd166") + star(106, 38, 7, "#f4a7a7") + star(100, 82, 4, "#c9b8f0"))
+
+
+def cute_miss_you():
+    return (cat(STAND_F, dict(LOOK["sad"], lid=1, wide=0.85, cheek=0.5, droop=0.6, roll=-4, dy=2, mouth="flat"))
+            + heart(60, 97, 2.6, "#ef6f7e") + paw(51, 101, 6.5, 8, 18, True) + paw(69, 101, 6.5, 8, -18, True))  # a heart held to the chest
+
+
+def cute_cheer():
+    return (cat(STAND_F, dict(LOOK["happy"], roll=4, dy=0, cheek=0.9)) + arm("M84 98 L100 66") + fist(102, 58)
+            + stroke_path("M92 44 l-4 -6", "#ffd166", 2.4) + stroke_path("M104 40 l0 -8", "#ffd166", 2.4) + stroke_path("M116 46 l5 -6", "#ffd166", 2.4)
+            + star(18, 52, 6, "#ffd166"))
+
+
+def cute_flower():
+    petals = "".join(f'<circle cx="{104 + 5.2 * math.cos(a * math.pi / 2.5)}" cy="{44 + 5.2 * math.sin(a * math.pi / 2.5)}" r="4.3" fill="#f4a7a7"/>' for a in range(5))
+    return (cat(STAND_F, dict(LOOK["happy"], roll=3, dy=0, cheek=0.9)) + arm("M82 98 L98 88") + stroke_path("M101 84 L104 52", "#7cc17c", 2.4)
+            + paw(101, 86, 6.5, 7.5, 10, True) + petals + '<circle cx="104" cy="44" r="3.2" fill="#ffd166"/>')
+
+
+def cute_birthday():
+    hat = '<polygon points="46,28 74,28 60,0" fill="#8ecae6"/><polygon points="53,28 67,28 62,12 58,12" fill="#f4a7a7" opacity="0.9"/><circle cx="60" cy="0" r="3.6" fill="#ffd166"/>'
+    cake = ('<rect x="42" y="98" width="36" height="15" rx="3" fill="#fff1d6" stroke="#e9a94a" stroke-width="1.1"/>'
+            '<path d="M42 102 q4 5 9 0 q4 5 9 0 q4 5 9 0 q4 5 9 -1 v-5 h-36z" fill="#f4a7a7"/>'
+            '<rect x="59" y="88" width="3" height="10" fill="#8ecae6"/><ellipse cx="60.5" cy="85" rx="2.2" ry="3.4" fill="#ffb347"/>')
+    return cat(SIT_F, dict(LOOK["happy"], dy=0, cheek=0.9)) + hat + cake
+
+
+def cute_meow():
+    return (cat(STAND_F, dict(LOOK["curious"], mouth="o", roll=7, gx=0, gy=0, wide=0.3, cheek=0.7))
+            + arcs("M96 76 q6 4 0 10", "M103 72 q9 8 0 18", "M24 76 q-6 4 0 10", "M17 72 q-9 8 0 18") + star(100, 36, 5, "#ffd166"))
+
+
+def cute_peekaboo():
+    box = ('<rect x="10" y="78" width="100" height="40" rx="2" fill="#d4a76a" stroke="#b88a4e" stroke-width="1.4"/>'
+           '<rect x="8" y="74" width="104" height="8" rx="2" fill="#b88a4e"/><path d="M40 82 L40 118 M80 82 L80 118" stroke="#c4955a" stroke-width="1.2"/>')
+    return (ell(60, 118, 52, 4, "#000", op=0.08) + cat(dict(STAND_F, shadow=(60, 115, 0, 0)), dict(LOOK["curious"], wide=0.5, gx=0, gy=-2, roll=0, mouth="none", cheek=0.6))
+            + box + paw(38, 76, 7, 6.5, 0) + paw(82, 76, 7, 6.5, 0))
+
+
+def cute_pat():
+    return (cat(STAND_F, dict(LOOK["purr"], roll=-14, dy=6, droop=0.6, cheek=1.0))
+            + stroke_path("M44 12 q5 -7 10 0", "#b9a98f", 2) + stroke_path("M58 6 q5 -7 10 0", "#b9a98f", 2) + stroke_path("M72 12 q5 -7 10 0", "#b9a98f", 2))
+
+
+def cute_pout():
+    puff = ell(19, 78, 11, 10, FUR) + ell(101, 78, 11, 10, FUR)  # cheeks that bulge past the head's edge (drawn behind the head)
+    blush = ell(28, 80, 8, 5, "#f59e9e", 0, 0.85) + ell(92, 80, 8, 5, "#f59e9e", 0, 0.85)
+    return puff + cat(STAND_F, dict(LOOK["rest"], lid=0.8, gx=-6, gy=0, roll=-6, mouth="flat", cheek=0.4)) + blush
+
+
+CUTE_NEW = [
+    ("Ôm cái nè!", cute_hug, {}),
+    ("Thương quá!", cute_heart_eyes, {}),
+    ("Nhớ bạn!", cute_miss_you, {}),
+    ("Cố lên nha!", cute_cheer, {}),
+    ("Chúc mừng nha!", cute_flower, {}),
+    ("Sinh nhật vui!", cute_birthday, dict(scale=2.2, dy=26)),
+    ("Meo~", cute_meow, {}),
+    ("Ú òa!", cute_peekaboo, {}),
+    ("Xoa đầu cái!", cute_pat, {}),
+    ("Dỗi nè.", cute_pout, {}),
+]
+CUTE_DIR = os.path.join(os.path.dirname(os.path.abspath(OUT)), "pack-cute-draft")
+os.makedirs(CUTE_DIR, exist_ok=True)
+cute_files = []
+for ci, (ctext, cart, copt) in enumerate(CUTE_NEW, 1):
+    csc = copt.get("scale", S)
+    cinner = wrap(cart(), (360 - 120 * csc) / 2 + copt.get("dx", 0), 82 - 20 * csc + 8 + copt.get("dy", 0), csc)
+    cpath = os.path.join(CUTE_DIR, f"new-{ci:02d}.png")
+    png_from(cinner, (360, 360), ctext, cpath)
+    cute_files.append(cpath)
+# a contact sheet: the ten current Cute stickers (Vietnamese, from set-v1) and the ten new ones
+current_cute = [1, 2, 4, 8, 10, 11, 12, 13, 17, 19]
+cd = fitz.open()
+cpg = cd.new_page(width=1100, height=880)
+cpg.draw_rect(cpg.rect, color=None, fill=(1, 1, 1))
+for ci, cf in enumerate([os.path.join(V1_DIR, "vi", f"{n:02d}.png") for n in current_cute] + cute_files):
+    r = fitz.Rect(10 + (ci % 5) * 216, 10 + (ci // 5) * 214, 10 + (ci % 5) * 216 + 206, 10 + (ci // 5) * 214 + 206)
+    cpg.draw_rect(r, color=(0.85, 0.85, 0.85), fill=(0.97, 0.97, 0.97) if ci < 10 else (1, 0.98, 0.93))
+    cpg.insert_image(r, filename=cf)
+cpg.get_pixmap(dpi=72).save(os.path.join(CUTE_DIR, "contact_sheet.png"))
+print("pack-cute-draft:", len(cute_files), "new stickers in", CUTE_DIR)
 
 print("done", len(made), "stickers in", OUT)
