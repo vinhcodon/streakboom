@@ -652,9 +652,12 @@ def cute_flower():
 
 def cute_birthday():
     hat = '<polygon points="46,28 74,28 60,0" fill="#8ecae6"/><polygon points="53,28 67,28 62,12 58,12" fill="#f4a7a7" opacity="0.9"/><circle cx="60" cy="0" r="3.6" fill="#ffd166"/>'
-    cake = ('<rect x="42" y="98" width="36" height="15" rx="3" fill="#fff1d6" stroke="#e9a94a" stroke-width="1.1"/>'
-            '<path d="M42 102 q4 5 9 0 q4 5 9 0 q4 5 9 0 q4 5 9 -1 v-5 h-36z" fill="#f4a7a7"/>'
-            '<rect x="59" y="88" width="3" height="10" fill="#8ecae6"/><ellipse cx="60.5" cy="85" rx="2.2" ry="3.4" fill="#ffb347"/>')
+    cake = ('<rect x="42" y="100" width="36" height="14" rx="3" fill="#fff1d6" stroke="#e9a94a" stroke-width="1.1"/>'
+            '<path d="M42 104 q4 5 9 0 q4 5 9 0 q4 5 9 0 q4 5 9 -1 v-5 h-36z" fill="#f4a7a7"/>'
+            '<rect x="58.5" y="84" width="3.6" height="16" rx="1" fill="#8ecae6"/><path d="M58.5 90 l3.6 -2 M58.5 95 l3.6 -2" stroke="#fff" stroke-width="1.2"/>'
+            '<path d="M60.3 72 Q66 80 62.5 84 Q60.3 86 58 84 Q54.5 80 60.3 72Z" fill="#ff8a3d"/>'
+            '<path d="M60.3 77 Q63 81 61.5 83.5 Q60.3 85 59 83.5 Q57.5 81 60.3 77Z" fill="#ffd166"/>'
+            + stroke_path("M52 75 l-4 -3 M68 75 l4 -3 M60.3 66 l0 -4", "#ffb347", 1.8))
     return cat(SIT_F, dict(LOOK["happy"], dy=0, cheek=0.9)) + hat + cake
 
 
@@ -751,9 +754,10 @@ def fr_shrug():
 
 
 def fr_dream_on():
-    """A cheeky "as if": eyes shut tight (downward curves, not the happy arcs), head tipped away, the tongue stuck out."""
-    return (cat(STAND_F, dict(LOOK["rest"], lid=0.06, roll=12, dy=-2, mouth="smile", cheek=0.7)) + ell(63.5, 87, 3.6, 5, "#ef6f7e", 12)
-            + stroke_path("M98 40 l8 -4 M102 49 l10 -1 M100 58 l8 3", "#b9a98f", 2))
+    """"Lêu lêu": a wink, the head tipped back and a big tongue stuck out."""
+    tongue = ('<path d="M55 82 Q55 98 60 98 Q65 98 65 82Z" fill="#ef6f7e"/><path d="M60 86 L60 95" stroke="#c94f5f" stroke-width="1.4" stroke-linecap="round"/>')
+    return (cat(STAND_F, dict(LOOK["rest"], wink=1, mouth="none", roll=10, dy=-2, cheek=0.9)) + stroke_path("M53 80 Q60 85 67 80", MOUTH, 1.9) + tongue
+            + stroke_path("M100 44 l8 -4 M104 53 l10 -1 M102 62 l8 3", "#b9a98f", 2))
 
 
 def fr_really():
@@ -874,8 +878,10 @@ def of_seen():
 
 
 def of_ok_boss():
-    return (cat(STAND_F, dict(LOOK["rest"], wide=0.6, mouth="open", cheek=0.9, roll=-3)) + paw(96, 48, 9.5, 11.5, 55, True) + star(112, 30, 5, "#ffd166")
-            + stroke_path("M109 58 l7 3 M106 66 l6 5", "#b9a98f", 2))
+    """A military salute: the flat paw at the brow above the right eye, palm down, toes together; chest out, a sharp smile."""
+    hand = ('<g transform="translate(92,49) rotate(-22)"><rect x="-15" y="-6" width="30" height="12" rx="6" fill="#f6c26b" stroke="#e9a94a" stroke-width="1.2"/>'
+            '<path d="M7 -4 L7 4 M11 -4.5 L11 4.5 M3 -3.5 L3 3.5" stroke="#e9a94a" stroke-width="1.1" stroke-linecap="round"/></g>')
+    return cat(STAND_F, dict(LOOK["rest"], wide=0.4, mouth="open", cheek=0.8, roll=-3, dy=-1)) + hand + star(112, 30, 5, "#ffd166")
 
 
 def of_meeting():
@@ -1019,5 +1025,60 @@ for oi, of_ in enumerate([os.path.join(V1_DIR, "vi", "07.png")] + of_files):
     opg.insert_image(r, filename=of_)
 opg.get_pixmap(dpi=72).save(os.path.join(OF_DIR, "contact_sheet.png"))
 print("pack-office-draft:", len(of_files), "new stickers in", OF_DIR)
+
+# ---- the single list (docs/plans/sticker-list-33.md): the author's shortlist, grouped by type; no categories ----------------
+ART = {}
+for _ident, _text, _art, *_opt in STICKERS:
+    ART[_text] = (_art, _opt[0] if _opt else {})
+for _lst in (CUTE_NEW, FRIENDS_NEW, OFFICE_NEW):
+    for _text, _art, _opt in _lst:
+        ART[_text] = (_art, _opt)
+# (group, key in ART, the text printed on the image if it changes)
+GROUPS = [
+    ("Chào hỏi và ngày tháng", [("Chào buổi sáng!", None), ("Ngủ ngon.", None), ("Buồn ngủ…", None), ("Thứ Sáu rồi!", None)]),
+    ("Yêu thương và lời tử tế", [("Thương quá!", "Yêu quá!"), ("Cảm ơn nha!", None), ("Xin lỗi nhé.", None), ("Quá sức mèo rồi.", "Rất tiếc."),
+                                 ("Chúc mừng nha!", None), ("Sinh nhật vui!", "Sinh nhật vui vẻ!"), ("Cố lên nha!", None)]),
+    ("Vui và phấn khích", [("Haha!", None), ("Sướng quá~", None), ("Hì hì.", None), ("Meo~", None), ("Ú òa!", None), ("Đi chơi đi!", None), ("Hóng!", None)]),
+    ("Buồn và lo", [("Huhu…", None), ("Deadline!", None)]),
+    ("Bất ngờ và nghi ngờ", [("Ơ!", None), ("Ủa?", None), ("Để mình nghĩ…", None)]),
+    ("Trêu và lầy", [("Còn lâu!", None), ("Gớm!", None), ("Xỉu ngang!", None), ("Hừm.", None), ("Ai đợi đâu.", None), ("Giỏi quá.", None), ("Cuộc sống mà.", None)]),
+    ("Đáp lời", [("Ok nè!", None), ("Ok sếp.", None), ("Không nha.", None)]),
+]
+ALL_DIR = os.path.join(os.path.dirname(os.path.abspath(OUT)), "list-33-draft")
+os.makedirs(ALL_DIR, exist_ok=True)
+for _old in os.listdir(ALL_DIR):
+    if _old.endswith(".png"):
+        os.remove(os.path.join(ALL_DIR, _old))
+n_all = 0
+placed = []  # (group, number, file)
+for gname, items in GROUPS:
+    for key, shown in items:
+        n_all += 1
+        aart, aopt = ART[key]
+        asc = aopt.get("scale", S)
+        ainner = wrap(aart(), (360 - 120 * asc) / 2 + aopt.get("dx", 0), 82 - 20 * asc + 8 + aopt.get("dy", 0), asc)
+        apath = os.path.join(ALL_DIR, f"{n_all:02d}.png")
+        png_from(ainner, (360, 360), shown or key, apath)
+        placed.append((gname, n_all, apath, shown or key))
+# a contact sheet, one block per group with its name on top
+cells_per_row, cw, ch, head = 5, 216, 214, 30
+rows_total = sum((len(items) + cells_per_row - 1) // cells_per_row for _, items in GROUPS)
+sd = fitz.open()
+spg = sd.new_page(width=1100, height=rows_total * ch + len(GROUPS) * head + 20)
+spg.draw_rect(spg.rect, color=None, fill=(1, 1, 1))
+spg.insert_font(fontname="hd", fontfile=FONT)
+yy = 10
+for gname, items in GROUPS:
+    spg.insert_text(fitz.Point(12, yy + 20), gname, fontname="hd", fontsize=16, color=(0.35, 0.3, 0.28))
+    yy += head
+    mine = [pl for pl in placed if pl[0] == gname]
+    for gi, (_, num, path, _t) in enumerate(mine):
+        r = fitz.Rect(10 + (gi % cells_per_row) * cw, yy + (gi // cells_per_row) * ch, 10 + (gi % cells_per_row) * cw + 206, yy + (gi // cells_per_row) * ch + 206)
+        spg.draw_rect(r, color=(0.85, 0.85, 0.85), fill=(0.97, 0.97, 0.97))
+        spg.insert_image(r, filename=path)
+        spg.insert_text(fitz.Point(r.x0 + 4, r.y1 - 4), f"{num:02d}", fontname="hd", fontsize=11, color=(0.5, 0.5, 0.5))
+    yy += ((len(mine) + cells_per_row - 1) // cells_per_row) * ch
+spg.get_pixmap(dpi=72).save(os.path.join(ALL_DIR, "contact_sheet.png"))
+print("list-33-draft:", n_all, "stickers in", ALL_DIR)
 
 print("done", len(made), "stickers in", OUT)
