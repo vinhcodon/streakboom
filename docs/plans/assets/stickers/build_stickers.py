@@ -620,8 +620,8 @@ def heart(x, y, k, col="#f08a99"):
 
 def cute_hug():
     """Open for a hug: two stubby paws at the sides of the body, pads toward us, and hearts. No arms."""
-    return (cat(STAND_F, dict(LOOK["purr"], roll=0, dy=0, cheek=0.95)) + paw(24, 96, 9, 10.5, -55, True) + paw(96, 96, 9, 10.5, 55, True)
-            + arcs("M12 86 q-5 6 -1 13", "M108 86 q5 6 1 13") + heart(16, 50, 1.1) + heart(104, 42, 1.4) + heart(98, 70, 0.8))
+    return (cat(STAND_F, dict(LOOK["purr"], roll=0, dy=0, cheek=0.95)) + paw(22, 94, 10.5, 12, -55, True) + paw(98, 94, 10.5, 12, 55, True)
+            + arcs("M7 82 q-5 7 -1 15", "M113 82 q5 7 1 15") + heart(16, 50, 1.1) + heart(104, 42, 1.4) + heart(98, 70, 0.8))
 
 
 def cute_heart_eyes():
@@ -638,7 +638,7 @@ def cute_cheer():
     """Cheering someone on: a red headband with a knot, bright eyes, two small fists at the chest, sparks. No arms."""
     band = ('<path d="M20 50 Q60 36 100 50 L100 57 Q60 43 20 57Z" fill="#e5484d"/>'
             '<path d="M99 51 l13 -6 l-2 8z M99 55 l12 6 l-7 3z" fill="#e5484d"/><circle cx="99" cy="53.5" r="3.2" fill="#c93a40"/>')
-    return (cat(STAND_F, dict(LOOK["rest"], wide=0.4, mouth="open", cheek=0.9, roll=0)) + band + fist(50, 99) + fist(70, 99)
+    return (cat(STAND_F, dict(LOOK["rest"], wide=0.4, mouth="open", cheek=0.9, roll=0)) + band + paw(51, 100, 6.5, 8, 12) + paw(69, 100, 6.5, 8, -12)
             + stroke_path("M38 88 l-6 -5", "#ffd166", 2.4) + stroke_path("M82 88 l6 -5", "#ffd166", 2.4) + star(16, 40, 6, "#ffd166") + star(106, 78, 5, "#ffd166"))
 
 
@@ -717,6 +717,10 @@ cpg.get_pixmap(dpi=72).save(os.path.join(CUTE_DIR, "contact_sheet.png"))
 print("pack-cute-draft:", len(cute_files), "new stickers in", CUTE_DIR)
 
 # ---- pack Friends (docs/plans/sticker-packs-three-categories.md): eleven new stickers, no arms -------------------------------
+LOAF_F = dict(shift(STAND_F, 0, 18), shadow=(60, 115, 40, 4.5), tail=([86, 108], [110, 110], [106, 92], 9),
+              body=(60, 100, 40, 17, 0), belly=(60, 106, 24, 9, 0), legs=[leg(46, 108, 46, 110, 0, 11, 6.5, 0, 1)] * 4)
+
+
 def qmark(x, y, k=1.0, col="#8a97a6"):
     return (f'<g transform="translate({x},{y}) scale({k})">' + stroke_path("M-4.5 -6 Q-4.5 -11 0 -11 Q4.5 -11 4.5 -7 Q4.5 -3.5 0 -2 L0 0.5", col, 2.6)
             + f'<circle cx="0" cy="5" r="1.7" fill="{col}"/></g>')
@@ -729,10 +733,10 @@ def fr_gossip():
 
 
 def fr_faint():
-    k = dict(STAND_F, shadow=(60, 115, 0, 0))
-    body = cat(k, dict(LOOK["rest"], swirl=1, mouth="open", cheek=0.5)) + ell(60, 88, 3.4, 4.2, "#f4a7a7")
-    lying = f'<g transform="translate(0,-10) rotate(-90 60 80)">{body}</g>'
-    return ell(52, 116, 48, 4.5, "#000", op=0.08) + lying + star(14, 34, 6, "#ffd166") + star(34, 22, 4, "#ffd166") + star(56, 30, 5, "#ffd166")
+    """Knocked flat: the cat as a pancake on the floor, spiral eyes, the tongue out, stars circling over its head."""
+    ring = '<ellipse cx="60" cy="38" rx="30" ry="7" fill="none" stroke="#e6d9b8" stroke-width="1.6" stroke-dasharray="3 4"/>'
+    return (cat(LOAF_F, dict(LOOK["rest"], swirl=1, mouth="flat", cheek=0.5, dy=2)) + ell(60, 104.5, 3.6, 4.6, "#f4a7a7")
+            + ring + star(32, 36, 6, "#ffd166") + star(60, 30, 5, "#ffd166") + star(88, 36, 6, "#ffd166"))
 
 
 def fr_ew():
@@ -747,11 +751,15 @@ def fr_shrug():
 
 
 def fr_dream_on():
-    return (cat(STAND_F, dict(LOOK["purr"], roll=13, dy=-3, mouth="flat", cheek=0.5)) + stroke_path("M98 40 l8 -4 M102 49 l10 -1 M100 58 l8 3", "#b9a98f", 2))
+    """A cheeky "as if": eyes shut tight (downward curves, not the happy arcs), head tipped away, the tongue stuck out."""
+    return (cat(STAND_F, dict(LOOK["rest"], lid=0.06, roll=12, dy=-2, mouth="smile", cheek=0.7)) + ell(63.5, 87, 3.6, 5, "#ef6f7e", 12)
+            + stroke_path("M98 40 l8 -4 M102 49 l10 -1 M100 58 l8 3", "#b9a98f", 2))
 
 
 def fr_really():
-    return cat(STAND_F, dict(LOOK["rest"], lid=1, lidR=0.42, wide=0.5, roll=-12, gx=2, mouth="flat", cheek=0.4)) + stroke_path("M66 50 L88 46", INK, 2.6)
+    """Doubt: the head tilted, one eye wide and the other narrowed, three dots beside it (no brow)."""
+    dots = "".join(ell(x, 40, 2.4, 2.4, "#8a97a6") for x in (94, 102, 110))
+    return cat(STAND_F, dict(LOOK["rest"], lid=1, lidR=0.38, wide=0.5, roll=-12, gx=2, mouth="flat", cheek=0.4)) + dots
 
 
 def fr_treat():
@@ -776,8 +784,10 @@ def fr_go_out():
 
 
 def fr_fibber():
+    """"Sure, sure": eyes narrowed to slits and slid aside, a one-sided smirk, a paw on the chin."""
     k = dict(STAND_F, mouth=dict(STAND_F["mouth"], ra=0))
-    return cat(k, dict(LOOK["smirk"], lid=0.45, gx=4, roll=-7, cheek=0.7)) + paw(96, 93, 8, 9.5, 75, True) + stroke_path("M106 80 l7 -4 M108 88 l9 0", "#b9a98f", 2)
+    return (cat(k, dict(LOOK["smirk"], lid=0.28, gx=6, roll=-9, cheek=0.8)) + paw(72, 92, 7, 8.5, -20)
+            + stroke_path("M100 44 q5 2 4 7 M106 38 q8 4 6 12", "#b9a98f", 2))
 
 
 FRIENDS_NEW = [
@@ -864,8 +874,8 @@ def of_seen():
 
 
 def of_ok_boss():
-    return (cat(STAND_F, dict(LOOK["rest"], wide=0.6, mouth="open", cheek=0.9, roll=-3)) + paw(95, 50, 7, 9, 60) + star(110, 36, 5, "#ffd166")
-            + stroke_path("M104 58 l7 2 M102 66 l6 4", "#b9a98f", 2))
+    return (cat(STAND_F, dict(LOOK["rest"], wide=0.6, mouth="open", cheek=0.9, roll=-3)) + paw(96, 48, 9.5, 11.5, 55, True) + star(112, 30, 5, "#ffd166")
+            + stroke_path("M109 58 l7 3 M106 66 l6 5", "#b9a98f", 2))
 
 
 def of_meeting():
@@ -873,9 +883,10 @@ def of_meeting():
 
 
 def of_listening():
-    z = '<path d="M90 22 h10 l-10 11 h10" fill="none" stroke="#6b7cff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>'
-    return (cat(STAND_F, dict(LOOK["gasp"], mouth="o", cheek=0.6)) + z + stroke_path("M86 36 L106 18", "#e5484d", 2.6)
-            + stroke_path("M22 44 l-7 -3 M24 36 l-5 -6", "#b9a98f", 2) + sweat())
+    """Caught dozing in a meeting: eyes wide and slid aside, a nervous smile, a sweat drop, the "z" crossed out."""
+    z = '<path d="M88 20 h11 l-11 12 h11" fill="none" stroke="#6b7cff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>'
+    return (cat(STAND_F, dict(LOOK["rest"], wide=0.9, gx=-6, mouth="smile", cheek=0.9, roll=3)) + z + stroke_path("M84 36 L104 16", "#e5484d", 2.8)
+            + '<path d="M22 34 Q27 41 22 45 Q17 41 22 34" fill="#8ecae6"/>')
 
 
 def of_deadline():
@@ -934,7 +945,8 @@ def of_recall():
 def of_lag():
     spin = ('<circle cx="60" cy="12" r="9" fill="none" stroke="#dfe5ea" stroke-width="3.2"/>'
             '<path d="M60 3 a9 9 0 0 1 9 9" fill="none" stroke="#5aa9d6" stroke-width="3.2" stroke-linecap="round"/>')
-    blocks = "".join(f'<rect x="{x}" y="{y}" width="5" height="5" fill="{FUR}" opacity="0.9"/>' for x, y in ((104, 60), (110, 66), (104, 72), (12, 84), (6, 90)))
+    blocks = "".join(f'<rect x="{x}" y="{y}" width="8" height="8" fill="{c}"/>' for x, y, c in (
+        (104, 52, FUR), (112, 60, DARK), (104, 68, FUR), (112, 76, FUR), (8, 76, FUR), (0, 84, DARK), (8, 92, FUR), (96, 60, "#fff6e3"), (16, 84, "#fff6e3")))
     return cat(STAND_F, dict(LOOK["rest"], lid=0.75, mouth="o", cheek=0.3), ) + spin + blocks
 
 
@@ -961,10 +973,11 @@ def of_boss():
 
 
 def of_wfh():
-    blanket_back = ell(60, 84, 54, 40, "#bcd9f2")
-    blanket_front = '<path d="M10 100 Q60 84 110 100 L112 118 L8 118Z" fill="#bcd9f2"/><path d="M22 104 l6 12 M44 98 l4 18 M76 98 l-4 18 M98 104 l-6 12" stroke="#9fc4e6" stroke-width="2"/>'
-    lap = '<rect x="42" y="96" width="36" height="20" rx="3" fill="#dfe5ea" stroke="#6f7b88" stroke-width="1.4"/><circle cx="60" cy="106" r="2.6" fill="#6f7b88" opacity="0.5"/>'
-    return ell(60, 118, 54, 4, "#000", op=0.08) + blanket_back + cat(dict(LOAF_F, shadow=(60, 115, 0, 0), tail=([86, 108], [88, 108], [90, 108], 0.01)), dict(LOOK["rest"], lid=0.5, mouth="smile", cheek=0.6)) + blanket_front + lap
+    """Working from home: a nightcap still on, half-lidded and content, behind a laptop."""
+    cap = ('<path d="M36 31 Q58 -8 98 14 Q82 15 85 33Z" fill="#8ecae6"/><path d="M34 29 Q60 19 87 31 l0 7 Q60 26 34 36Z" fill="#fff" stroke="#bcd9f2" stroke-width="1"/>'
+           '<circle cx="99" cy="15" r="5.5" fill="#fff" stroke="#bcd9f2" stroke-width="1"/>')
+    return (cat(SIT_F, dict(LOOK["rest"], lid=0.5, mouth="smile", cheek=0.7, roll=0)) + cap + laptop_back(60, 116, 58, 30)
+            + paw(34, 88, 6, 5.5, 0) + paw(86, 88, 6, 5.5, 0))
 
 
 OFFICE_NEW = [
@@ -986,7 +999,7 @@ OFFICE_NEW = [
     ("Mai tính nha.", of_tomorrow, dict(dy=-4)),
     ("Bản cuối. Thật.", of_final, {}),
     ("Sếp tới rồi!", of_boss, {}),
-    ("Làm ở nhà.", of_wfh, dict(scale=2.3, dy=4)),
+    ("Làm ở nhà.", of_wfh, dict(scale=2.2, dy=24)),
 ]
 OF_DIR = os.path.join(os.path.dirname(os.path.abspath(OUT)), "pack-office-draft")
 os.makedirs(OF_DIR, exist_ok=True)
