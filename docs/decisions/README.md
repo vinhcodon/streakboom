@@ -10,6 +10,7 @@ What was **decided**, why, and what was rejected. One short file per decision (a
 
 | ADR | Decision | Status | Date |
 |---|---|---|---|
+| [0073](0073-the-sticker-pages-are-built-from-set-v2.md) | The sticker pages are built from set-v2 (31 stickers); the recent list is kept per set (the website session) | accepted, built | 2026-11-12 |
 | [0071](0071-roadmap-v2-alpha-first-signing-before-lawyer-after.md) | Roadmap version 2: the closed alpha first (5 to 8 Vietnamese-speaking acquaintances), a signed installer before it (replaces R3 of roadmap v1), the lawyer after it and before anything public | accepted; not yet carried out | 2026-11-12 |
 | [0070](0070-one-entry-point-a-short-readme-and-an-update-rule.md) | `docs/PROJECT.md` is the entry point, the README is short for developers, contributor files and a CI workflow in the repository, an update rule the audit enforces; no wiki, no repository settings yet | accepted; built | 2026-11-12 |
 | [0069](0069-the-website-follows-the-app-in-0-4-1.md) | The website follows the app in 0.4.1: the language list, the tray menu, one Peak (the website session) | accepted, built | 2026-11-12 |

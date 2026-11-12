@@ -1,5 +1,5 @@
 // The Peak stickers (ADR-0051, ADR-0053): the page of each language shows the set in that language, taken at build time from ONE
-// folder of the repository, docs/plans/assets/stickers/set-v1/ (vi/, en/, ja/ with NN.png, and manifest.json). The manifest is the
+// folder of the repository, docs/plans/assets/stickers/set-v2/ (vi/, en/, ja/ with NN.png, and manifest.json). The manifest is the
 // single source of the text on each image, the short title, the alt text, the `reviewed` flag per language, the licence and the
 // font credits. Nothing here hard-codes the number or the order of the stickers.
 import { existsSync, readFileSync } from "node:fs";
@@ -7,7 +7,7 @@ import { join } from "node:path";
 import { ROOT } from "./facts.mjs";
 import { LANGS } from "../../site/strings.mjs";
 
-export const STICKER_DIR = join(ROOT, "docs", "plans", "assets", "stickers", "set-v1");
+export const STICKER_DIR = join(ROOT, "docs", "plans", "assets", "stickers", "set-v2");
 /** Where the images of a language are served from. */
 export const stickerUrl = (lang, id) => `/assets/stickers/${lang}/${id}.png`;
 export const CC_URL = "https://creativecommons.org/licenses/by/4.0/";

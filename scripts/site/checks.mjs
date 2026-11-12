@@ -302,7 +302,7 @@ export function check({ ctx, pages, files, out }) {
     if (!js) bad("stickers.js was not built");
     for (const word of ["cookie", "sessionStorage", "sendBeacon", "XMLHttpRequest", "analytics", "indexedDB"]) if (js.includes(word)) bad(`stickers.js mentions ${word}: the page may keep only the recent list in localStorage (ADR-0060)`);
     // the one thing kept: a short list of sticker numbers in this browser (ADR-0060), under one key, with a way to clear it
-    if ((js.match(/localStorage/g) || []).length !== 3 || !js.includes("streakboom-sticker-recent")) bad("stickers.js: localStorage is only for the recent-stickers list (one key, read, write, remove)");
+    if ((js.match(/localStorage/g) || []).length !== 4 || !js.includes("streakboom-sticker-recent")) bad("stickers.js: localStorage is only for the recent-stickers list (one key per set: read, write, remove, and dropping the list of an older set)");
     if (!js.includes("COPY_PX = 180")) bad("stickers.js: the copied picture is no longer 180 px (ADR-0060)");
     // the pictures stay real images that the system menu can act on (a long press, a right click)
     const css = readFileSync(join(out, "style.css"), "utf8");

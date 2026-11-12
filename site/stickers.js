@@ -6,7 +6,10 @@
 import { t } from "./ui.js";
 
 const COPY_PX = 180; // the page shows 360 for sharpness; a copy is half of that (ADR-0060)
-const RECENT_KEY = "streakboom-sticker-recent";
+// the numbers of a set mean nothing in another set (ADR-0073): the list is kept per set, and the one of an older set is dropped
+const LEGACY_KEY = "streakboom-sticker-recent";
+const SET_ID = (document.getElementById("sticker-recent") || { dataset: {} }).dataset.set || "";
+const RECENT_KEY = `${LEGACY_KEY}-${SET_ID}`;
 const RECENT_MAX = 8;
 
 const hint = document.getElementById("sticker-hint");
@@ -78,6 +81,11 @@ function writeRecent(list) {
   }
 }
 
+try {
+  localStorage.removeItem(LEGACY_KEY);
+} catch {
+  // storage is blocked: nothing to drop
+}
 const recentBox = document.getElementById("sticker-recent");
 const recentList = document.getElementById("sticker-recent-list");
 const mainButtons = new Map([...document.querySelectorAll(".sticker-grid:not(.recent-grid) .sticker")].map((b) => [b.dataset.id, b]));

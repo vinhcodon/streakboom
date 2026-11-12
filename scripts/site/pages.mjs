@@ -417,7 +417,7 @@ export function stickersPage(lang, ctx) {
   const items = set.stickers.map((st, i) => {
     const title = st.title[lang];
     const label = raw(lang, "st_aria", ctx).replace("{title}", title);
-    return `        <li class="sticker-item"><button class="sticker" type="button" data-id="${esc(st.id)}" data-title="${esc(title)}" aria-label="${esc(label)}"><img src="${stickerUrl(lang, st.id)}" width="360" height="360" alt="${esc(st.alt[lang])}"${i < 6 ? "" : ' loading="lazy"'}><span class="paw" aria-hidden="true"></span></button><span class="sticker-title">${esc(title)}</span></li>`;
+    return `        <li class="sticker-item"><button class="sticker" type="button" data-id="${esc(st.id)}" data-title="${esc(title)}" aria-label="${esc(label)}"><img src="${stickerUrl(lang, st.id)}" width="360" height="360" alt="${esc(st.alt[lang])}"${i < 12 ? "" : ' loading="lazy"'}><span class="paw" aria-hidden="true"></span></button><span class="sticker-title">${esc(title)}</span></li>`;
   }).join("\n");
   const fonts = esc(raw(lang, "st_fonts", ctx).replace("{fonts}", fontNames(set, lang)));
   const aiNote = needsReviewNote(set, lang) ? `\n      <p class="note">${s("st_ai_note")}</p>` : "";
@@ -427,7 +427,7 @@ export function stickersPage(lang, ctx) {
       <p class="lead">${s("st_lead")}</p>
       <p id="sticker-hint" class="hint" hidden>${s("st_hint")}</p>
       <noscript><p class="note">${s("st_nojs")}</p></noscript>
-      <div id="sticker-recent" class="sticker-recent" hidden>
+      <div id="sticker-recent" class="sticker-recent" data-set="${esc(set.version)}" hidden>
         <h2>${s("st_recent")} <button id="sticker-recent-clear" class="linklike" type="button">${s("st_recent_clear")}</button></h2>
         <ul id="sticker-recent-list" class="sticker-grid recent-grid"></ul>
       </div>
