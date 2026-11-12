@@ -9,7 +9,7 @@ Status: **Vinh chose a shortlist on 2026-11-12, dropped the three categories and
 |---|---|---|---|
 | 01 | Chào buổi sáng! | now | |
 | 02 | Ngủ ngon. | now | |
-| 03 | Buồn ngủ… | now, redrawn | a big yawn, eyes half open, a string of drool, no "z" and no sweat or tear drop (the "z" stays on "Ngủ ngon.") |
+| 03 | Buồn ngủ… | now, redrawn | nodding off: the head dropped to one side, eyes shut, a faint smile, two nod marks; **no yawn, no drool, no sweat drop, no "z"** (the yawn with the drool looked disgusting to Vinh; sketches of other ideas are in `assets/stickers/direction-v1/sleepy_options.png`) |
 | 04 | Thứ Sáu rồi! | new | |
 | 05 | **Yêu quá!** | new | was "Thương quá!" |
 | 06 | Cảm ơn nha! | now, redrawn | open shiny eyes and sparkles instead of the floating hearts |
