@@ -1,6 +1,6 @@
 # Plan: implementing "Bond Days" (companion to `spec/05-north-star-metrics.md`)
 
-Part of [`roadmap.md`](roadmap.md) (Phase 2). Status: **steps 0 to 6 implemented on 2026-11-08 (92 Node tests, svelte-check clean); the manual checks in 5.2 and the release are open.** Step 0 was settled by working in the clean current tree and committing explicit paths. Step 6 documentation is done; ADR-0022 and the README say "built, awaiting release". Based on the local working tree on 2026-11-08 (see spec section 0 for how it differs from the handoff and from `main`).
+Part of [`roadmap-v1.md`](roadmap-v1.md) (Phase 2). Status: **steps 0 to 6 implemented on 2026-11-08 (92 Node tests, svelte-check clean); the manual checks in 5.2 and the release are open.** Step 0 was settled by working in the clean current tree and committing explicit paths. Step 6 documentation is done; ADR-0022 and the README say "built, awaiting release". Based on the local working tree on 2026-11-08 (see spec section 0 for how it differs from the handoff and from `main`).
 
 ## 1. Decisions (answered by Vinh, 2026-11-08; the recommendation column is what was chosen, except D1)
 

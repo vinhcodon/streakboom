@@ -16,7 +16,8 @@ The files are grouped here, not in folders (decided at gate 2 of the foundation 
 
 | File | What | Status |
 |---|---|---|
-| [`roadmap.md`](roadmap.md) | From 0.1.14 to a closed alpha: phases, gates, the decisions needed | approved 2026-11-08; phases 1 and 2 done; **out of date since 2026-11-11** (a new roadmap follows release 0.4.0) |
+| [`roadmap.md`](roadmap.md) | **Version 2:** from 0.4.1 to a closed alpha and the gates to going public (R0 to R6): the signed installer, the checks, the alpha, the decisions after it | written 2026-11-12 (ADR-0071); **R0 and R1 start now** |
+| [`roadmap-v1.md`](roadmap-v1.md) | The first roadmap, from 0.1.14 and 0.2.0 to a closed alpha: phases 0 to 6 and its decisions R1 to R6 | superseded 2026-11-12 by `roadmap.md`; kept for the record |
 | [`pet-qualities-assessment.md`](pet-qualities-assessment.md) | Dated assessment of the five qualities (presence, continuity, personality, care loop, proactive but frugal) against what exists, the gaps and how the north star is measured | snapshot 2026-11-08, version 0.2.2 |
 | [`terrain-and-attention.md`](terrain-and-attention.md) | The desktop as terrain: a cost field of fixed relief and the user's attention; levels L1 to L4, steps, risks, tests | proposed 2026-11-09; direction agreed; monitors, hops and the typing lane built (0.2.5) |
 | [`character-and-movement.md`](character-and-movement.md) | Character bible, favorite places and focus-safety: ordered steps, files, risks, test plan; the CPU baseline comes first | spec 06 approved 2026-11-08; step 0 (CPU) first |
@@ -31,6 +32,7 @@ The files are grouped here, not in folders (decided at gate 2 of the foundation 
 | [`sticker-set-v1-direction.md`](sticker-set-v1-direction.md) | The direction for the second pass of the sticker set (about 29% sarcasm, the lounging and the curled cat) | the sticker session's file; decided in ADR-0050 |
 | [`sticker-expression-audit.md`](sticker-expression-audit.md) | The audit of how different the emotions of the sticker set are, and the choices that followed | the sticker session's file, 2026-11-11 |
 | [`sticker-packs-three-categories.md`](sticker-packs-three-categories.md) | The sticker packs in three categories of 20 (Cute, Friends, Office): the lists, the voice of each, and the first pass of the ten new Cute stickers | the sticker session's file; approved by the author on 2026-11-12 (its row was added by the app session during the documents audit) |
+| [`sticker-list-33.md`](sticker-list-33.md) | The author's shortlist of 33 stickers in one list grouped by type (the three-category split was dropped on 2026-11-12) | the sticker session's file; its row was added by the app session during the roadmap work |
 
 ### Website (the website session's file)
 

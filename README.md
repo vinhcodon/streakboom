@@ -83,7 +83,7 @@ More in [`docs/development.md`](docs/development.md) (layout, windows, release b
 
 Released so far: **0.2** the naive pet, the key flow, memory, gestures, signed auto-update; **0.2.4 and 0.2.5** focus-safety and hops; **0.3.0** Japanese (beta) and Groq; **0.3.1 and 0.3.2** reactions, perching and climbing on windows, calmer behaviour; **0.4.0** aligned with the research in [`docs/foundation/`](docs/foundation/README.md) (your absence costs nothing, no streak, for adults, safety rules in chat); **0.4.1** one Peak at a time and a tray menu in your language.
 
-Next: the checks that need other machines or people (the Groq, Claude and OpenAI brains with real keys, a lower-end computer, several monitors, a handful of observed first-time users), more lines, a native reader for the Japanese text, code signing. The ordered plan is in [`docs/plans/roadmap.md`](docs/plans/roadmap.md), the stories in [`docs/plans/backlog.md`](docs/plans/backlog.md) and what is built but not yet checked in [`docs/plans/verification-debt.md`](docs/plans/verification-debt.md).
+Next (roadmap version 2): a signed installer, the checks that need other machines or people (the Groq, Claude and OpenAI brains with real keys, a lower-end computer, several monitors), then a closed alpha with a handful of observed adults before anything public. The ordered plan is in [`docs/plans/roadmap.md`](docs/plans/roadmap.md), the stories in [`docs/plans/backlog.md`](docs/plans/backlog.md) and what is built but not yet checked in [`docs/plans/verification-debt.md`](docs/plans/verification-debt.md).
 
 ## Contributing
 

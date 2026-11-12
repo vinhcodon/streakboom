@@ -1,83 +1,67 @@
-# Roadmap: from the first official release (0.2.0) to the first outside users
+# Roadmap (version 2): from 0.4.1 to a closed alpha, and the gates to going public
 
-> **Out of date since 2026-11-11.** The product is at 0.3.2 and public; Phase 5 (the closed alpha with 5 to 10 observed people) never ran and is still the next real gate. The foundation (ADR-0058) and release 0.4.0 (`release-0.4.0.md`) come first; a new roadmap is written after 0.4.0 and will supersede this file. Product Hunt comes after the observed group (ADR-0059 point 4).
+**Status:** written 2026-11-12 after the review of the backlog (163 stories, about 93 done), with the author's answers of the same day (ADR-0071). It supersedes [`roadmap-v1.md`](roadmap-v1.md) (2026-11-08, "from 0.2.0 to the first outside users"), whose Phases 0 to 2 are done and whose Phase 5 is carried forward here. The stories are in [`backlog.md`](backlog.md); what is built but unchecked is in [`verification-debt.md`](verification-debt.md); the strategy and the evidence are in [`../PROJECT.md`](../PROJECT.md) and [`../foundation/`](../foundation/README.md). Durations are **estimates**, not promises: three of the steps depend on other people (a certificate, the testers, a lawyer).
 
-Status: **approved 2026-11-08 with the answers in section 5; Phases 0, 1 and 2 are done and shipped (the counters in 0.1.15, the first official release 0.2.0 (ADR-0026), the chat-cap fix 0.2.1 (ADR-0027)); Phase 4 has started (A4 first positive report, A5 soak running, a sleep-speech fix committed and unreleased); the rest is open. A reminder to update the website is in `../handoff/to-website-0.2.0.md`.** Written 2026-11-08 after reading all project documents and the code.
+## Where we are
 
-The work is split into epics and user stories in [`backlog.md`](backlog.md) (progress per epic, sizes, order); the assessment behind it is [`pet-qualities-assessment.md`](pet-qualities-assessment.md).
+The product is at **0.4.1**, public on GitHub, with a website in three languages. Behaviour, safety rules and documents are ahead of the evidence: the app is built for adults, makes no health claim and has no character that needs the person (0.4.0), but **nobody outside the author has used it**, nothing has run on a second computer, Windows 11 or more than one monitor, three of the four brains have never met a real key, and the north star has no baseline. The bottleneck is not features; it is **finding out whether anyone wants this and whether it does no harm**. The backlog shows it: the measurement epic E6 is 1 of 7 done.
 
-Goal of this stretch: run a closed alpha with 5 to 10 observed first-time users and get a first baseline of the north star (Bond Days, [`../../spec/05-north-star-metrics.md`](../../spec/05-north-star-metrics.md)) to test hypotheses H1, H2b, H4 and H5 ([`../hypotheses/README.md`](../hypotheses/README.md)).
+## The aim of this stretch
 
-## Phase 0. Housekeeping (done on 2026-11-08)
-- `gh` installed under `%LOCALAPPDATA%\Programs\GitHub CLI` and added to the user PATH (it had been a portable copy outside the PATH, which is why applications reported it unavailable). Restart the Claude desktop app and any open terminal to pick up the PATH.
-- Documents reorganized into `spec/` (how it works now), `docs/decisions/`, `docs/hypotheses/`, `docs/handoff/`, `docs/plans/` and the engineering log; README and specs 01 to 04 brought up to date with 0.1.14.
-- Process rule written down (ADR-0023): commit explicit paths, release from a clean tree.
+Run a **closed alpha with 5 to 8 adults the author knows, Vietnamese speakers**, observed (a call after day 3 and day 7), on a signed installer, and get a first baseline of Bond Days and of the guardrails, to test hypotheses H1, H2b, H4 and H5. **Descriptive only:** the foundation says about 100 people per arm are needed to infer anything, so n of 5 to 8 tells us where people stop and what they feel, not a rate.
 
-## Phase 1. Settle what is in `main` and in 0.1.14 (done)
-The reverted Bond Days prototype was folded out in the Bond Days release (decision R1): 0.1.15 shipped the counters and no prototype, and every copy of 0.1.14 is gone (the 0.1.x builds were withdrawn with 0.2.0, ADR-0026). Hypothesis A10 (no leftover counters after the update) was not checked on other machines because there are none; the author's copy was replaced by hand.
+## Phases
 
-## Phase 2. Bond Days, built from the plan (done and released in 0.1.15 on 2026-11-08; a few checks remain listed as not verified)
-Plan and tests: [`bond-days.md`](bond-days.md) (steps 0 to 6, decisions D1 to D8 answered). Order and gates:
-1. Step 0: agree the working-tree rules (branch or worktree; ADR-0023).
-2. Step 1 to 2: pure functions in `bond.ts` and the schema with the consent version, with their unit tests first.
-3. Step 3 to 4: thin call sites in the pet window; the new funnel events (`tier_2`, `tier_3`, `pet_named`).
-4. Step 5 to 6: the export fields, the new consent wording and card, the second privacy switch, and the documentation changes (README, specs, ADR-0009) in the same change.
-5. Manual checks 1 to 10 in the real window (plan section 5.2), on this machine, using the DevTools port recipe.
-6. Gate: all three test suites green, the manual list done, wording and docs updated, a one-line note to people who already opted in.
-**Risks to watch:** consent scope, concurrent edits, chat leaking into engagement, the write volume, idle CPU (must stay near 0).
+### R0. Close what is open (days, now)
+The author: click through the in-app update to 0.4.1 (V-111), try the tray menu in two languages, the language picker and a second start (V-108 to V-110). Claude: commit the backlog fix, run the CI for the first time through a throwaway pull request when the author agrees (V-112), a strict Content-Security-Policy (V-113, CS-1). **Gate:** V-108 to V-111 are checked or have a named reason.
 
-**Follow-up 0.2.1 (done and released 2026-11-08, ADR-0027):** the author hit the daily chat cap in one day. Fact-noting requests now have their own cap (20) and no longer eat the 60 chat turns, and the pet declines in character with no numbers.  Watch the chat-share metric: if people keep reaching 60, consider a setting for the cap.
+### R1. The signing certificate (starts now, the longest wait)
+Decided 2026-11-12: **get a code-signing certificate before the alpha** (ADR-0071, which replaces R3 of roadmap v1). Options from the earlier plan, **not verified**: SignPath Foundation (free for open source, needs an application and eligibility), or an OV certificate (about 150 to 300 USD a year); Azure Artifact Signing is not available to individuals in Vietnam; an EV certificate does not give instant SmartScreen trust. The updater's own key (minisign) is separate and stays. Stories **DS-1** (choose and apply: the author), **DS-2** (sign in `release.ps1`), **DS-3** (a clean-machine install: SmartScreen, the uninstaller, an update from the signed build). **Gate:** a signed installer installs on a clean machine and updates in app. **If the certificate is late, the alpha does not wait forever:** at week 6 the author chooses to start unsigned with the SmartScreen steps in the install guide (then ADR-0071 gets an amendment).
 
-## Phase 3. Real-key verification of the Claude and OpenAI brains
-**Why:** both clients exist and are covered by mock-server tests only (hypothesis A6).
-**Needs from Vinh:** a small prepaid balance and a key for each, or a tester who has them.
-**Steps**
-1. For each brain: connect, chat in both languages, trigger the "no credit" and "bad key" errors on purpose, check the model list and the automatic choice, check the mood tags, check the facts note.
-2. Note any reasoning-model empty answers (OpenAI) and any model-name problems (Claude's default is `claude-haiku-5-5`).
-3. Fix what is found; add a test for each bug; record results in the engineering log.
-**Done when** each brain has completed a real chat and a real error case, or the failures are written down.
+### R2. Make it checkable (Claude, 1 to 2 weeks, in parallel with R1)
+- **ME-3** a script that computes BD7, D3, D7, the engagement rate and the chat share from a folder of "Copy stats" exports; **ME-1** the author's own baseline (consent must be on); **ME-2** check what was never verified (`chat` with a real chat, `quiet`, the midnight rollover, the per-day counters).
+- **GR-1** the guardrails beyond chat share, in the opt-in local stats and from what is already counted: the share of use at night (23:00 to 05:00) and the long tail of active minutes (the foundation's list; regret and compulsion scales need a survey and are not in this stretch).
+- **ME-4** the alpha kit: who to ask and the message in Vietnamese, an install guide (with the signing state), the observation protocol (install, the first ten minutes, a call after day 3 and day 7; write down where people stop), the questions, and **AL-1** a plain consent text for taking part (what is collected, that it is by hand through Copy stats, that they can stop and have it deleted; the foundation asks for consent of its own and, where possible, a reviewer from outside: **AL-2** says what is done about that for a group of friends and what a lawyer must still say).
+- **PE-1** export all Vietnamese lines for a native reader (the author, and one more person if possible).
+**Gate:** the script runs on the author's baseline; the kit is written and read by the author.
 
-## Track in parallel (added 2026-11-10): the character's expression and words
-Not a phase, because it does not block or wait for the alpha path. After 0.3.0 the author asked for reactions that feel alive and lines that do not repeat. Epic **E12** (spec 09, ADR-0041: events, appraisal, beats, the persona in layers and shown to the user) and epic **E13** (spec 09 section 11: a shuffle bag, escalation, tokens, a line factory) are the work. They serve hypotheses H4 (a charming naive pet worth keeping for 7 days) and H2b (attachment that leads to a brain) and are cheap in CPU. They are done in the order of the backlog's "Suggested order" and released with the next version the author orders. **Update 2026-11-10:** E12 and most of E13 were built (0.3.1 and after); two more tracks followed from the author's feedback, both off the alpha path and cheap in CPU: epic **E14** (the desktop as terrain, version 2: spec 10; perches, walls and climbing, falls to the plane below, getting out from under the Start menu) and epic **E15** (restraint, play and the charter: spec 11, `docs/charter.md`, ADR-0047). E15 is where the next work is: the edge check, the three attention modes and the fixes the audit found. A release of this unreleased work needs the README promise, the website prompt and the CPU check (ADR-0033). Real-key checks (Phase 3) and the alpha readiness checks (Phase 4) stay as they are.
+### R3. Ready to be watched (the author and Claude, 2 to 3 weeks)
+What the testers would meet, and nothing more: **VE-2** 125% and 150% display scale and a second monitor; **VE-3** a second, lower-end computer; **VE-8** an 8-hour soak after the CPU fix; **PF-3** a stronger silence test (fullscreen, presentation, screen sharing); **PR-8** start with Windows across a reboot and an update; **V-104** the chat rules with a real key on at least two brains; **PE-4** the vague "too big for a cat" refusal. Small fixes found on the way go into 0.4.x patch releases. **No new behaviour** (it would reset what the testers see). **Gate:** the checks above are done or recorded as known problems, and the installer is signed (or the week-6 decision is taken).
 
-## Phase 4. Alpha readiness
-Verify the assumptions in the hypotheses register before outsiders see the app.
+### R4. The closed alpha (3 to 4 weeks of use)
+5 to 8 adults, Vietnamese speakers, people the author can call. Install, the first ten minutes watched, a call after day 3 and day 7, "Copy stats" collected from those who agree. Record outcomes in the hypotheses register (status and evidence, descriptive). **The foundation's stop rule applies:** if any guardrail gets worse for a person (they report pressure or guilt, night use rises, chat share climbs sharply), Peak is changed or the person is released from the test, even if Bond Days rises. **Gate to R5:** everyone has had at least 7 days, or has stopped and said why.
 
-**Progress (2026-11-11, version 0.3.2: perches, climbing, the push and the calm, the retired settings, see the backlog E14 and E15, the CPU equal to 0.3.1 within the noise of one machine); earlier (2026-11-09, version 0.3.0):** the 8-hour soak was stopped at 2 h 23 (memory flat) to fix the CPU (0.2.2 to 0.2.4, the median from about 17% to about 8 to 9% of one core, PR-9 open); the in-app update path was seen working four times; focus-safety, hops, the typing lane and the notice beat were built and released (0.2.4, 0.2.5, 0.3.0, backlog E8, E9 and E10), and Japanese (beta) and the Groq brain with them (0.3.0, E11); everything built but not yet checked is in [`verification-debt.md`](verification-debt.md). Earlier (2026-11-08): A4 first positive report from the author (one try, not a pass); A5 8-hour soak started at 19:40 (`scripts/soak-log.ps1`, result pending); A7 waits for the end of the soak (a reboot would cut it; start with Windows is still off on the author's machine). Next in order after the soak: A7 with the tray icon check, a forced unprompted line during fullscreen (A4) and while the cat sleeps (fix `a4e620f`, then release 0.2.2). A1, A2 and A3 need a second machine or monitor.
+### R5. Decide (1 week after the alpha)
+Write what was learned (the engineering log and the hypotheses), set the **Bond Days thresholds** from the baseline (they have been blank on purpose), and choose the next stretch as multiple choice with ADRs: the proxy question (D3, by the key funnel: who tried to chat and stopped at the key), what to build (taught places TT-8, more lines, growth CO-3 and CO-5, an editable voice), selling (only demand signals, after the foundation's gate), and whether to widen the alpha.
 
-| Item | Hypothesis | Action |
-|---|---|---|
-| Second and lower-end machine; CPU and RAM | A1 | Run the measurement recipe in the engineering log; compare with the 120 MB / 7 to 15% walking budget |
-| Visual check without GPU; 125% and 150% DPI | A2 | Look at the rig on several screens |
-| Multi-monitor and mixed DPI | A3 | Manual matrix in spec/04 section 6 |
-| Fullscreen, video, screen sharing | A4 | Real apps; confirm the pet stays silent |
-| 8-hour soak | A5 | Watch memory growth |
-| Start with Windows across a reboot and an update | A7 | Reboot test from the installed build |
-| SmartScreen and install conversion | A8 | See decision R3 below |
-| First-time reaction to the tour, the trap rate, the mood tags, the new Settings | A9 | Observed sessions (Phase 5) |
+### R6. The gates before going public (not scheduled; in this order)
+1. **A lawyer** (decided 2026-11-12: after the alpha, before anything public): the age gate, the data and claims questions in [`../foundation/legal-questions.md`](../foundation/legal-questions.md).
+2. A wider, still observed group; the Zalo sticker test and the website's reach (E16 and the website session) are their own tracks.
+3. **Product Hunt only after** the observed group and the lawyer (ADR-0059 point 4), never as the first step.
 
-Also decide: **R2** where stats go (keep "Copy stats" for the alpha, or pick a sending backend) and **R3** whether to buy a code-signing certificate before the alpha or accept the SmartScreen warning. Crash reporting without content stays out of the alpha unless a tester loses data.
+## Tracks owned by others (they continue in parallel)
+- **Stickers** (the sticker session, E16): the three packs of 20, the Zalo test. Their results feed R5 (does the sticker audience bond?), through sources outside the app, with no tracking added to the app.
+- **The website** (the website session): follows each release; no change needed for the alpha except the install guide's link.
 
-## Phase 5. The closed alpha
-1. Recruit 5 to 10 first-time users (people the author can observe or call).
-2. Observation protocol: install, first 10 minutes (watch the tour, the first gestures, the consent card), a call after day 3 and day 7. Write down where people stop.
-3. Collect "Copy stats" JSON from consenting testers; compute Bond Days, engagement rate, chat share and D3/D7 with the formulas in spec/05. **No thresholds are set until the baseline exists** (a fixed decision).
-4. Record outcomes in the hypotheses register (status and evidence), and turn changes of direction into decision records. Decide the fate of H3 (see the register).
-
-## Phase 6. After the alpha (not scheduled)
-Candidates, in no order: a cheaper walking draw; emotions for scripted lines; more key poses for the in-between frames; the hide-pet rate (needs a Rust event); weekday, battery and lid-open reactions; a macOS port; code signing and a stats backend if the alpha supports going wider; streaming replies only if answers get longer.
+## What is deliberately not in this roadmap
+Voice, a keyless trial through a proxy, selling anything, a stats backend (a place to send stats), the screen picture sense (TT-10), taught places (TT-8), content surfaces (TT-11), a macOS port, crash reporting. Each is either waiting for the alpha's answer or for a legal gate. Adding behaviour during R3 and R4 is also out.
 
 ## Dependencies at a glance
 ```
-Phase 0 (done) -> Phase 1 -> Phase 2 -----------------> Phase 4 -> Phase 5
-                    \-> Phase 3 (can run in parallel) -----^
+R0 (days) -> R2 (make it checkable) -> R3 (ready to be watched) -> R4 (alpha) -> R5 (decide) -> R6 (public gates)
+        \-> R1 (certificate, longest wait) ---------------------^
 ```
-Phase 2 and Phase 3 touch different code (counters and consent versus the brain clients), so they can run in parallel if the working-tree rules in Phase 2 step 0 are followed.
 
-## 5. Decisions (answered by Vinh, 2026-11-08)
-- **R1.** Release vehicle for removing the prototype: **fold it into the Bond Days release** (no separate 0.1.15). Until then 0.1.14 copies keep the prototype locally.
-- **R2.** Stats: **keep "Copy stats" for the alpha**; no sending backend yet.
-- **R3.** Code signing: **not before the alpha**; accept the SmartScreen warning.
-- **R4.** Hypothesis H3: **kept as a secondary hypothesis**; H5 is primary.
-- **R5.** Real Claude and OpenAI keys: **later, none available now**; Phase 3 waits, and both brains stay "not verified with a real key" in the documents.
-- **R6.** Working method: **directly in the current tree**, committing only the files changed (ADR-0023). The tree was clean when work started.
+## Risks
+- **The certificate takes longer than the plan** (an application, a verification of identity): hence the week-6 decision.
+- **Too few testers, or testers who are polite:** friends tell you it is nice. The observation protocol asks where they stopped and what they did when nobody was looking (the stats), not whether they liked it.
+- **The numbers mean nothing at n of 8.** They are descriptive; the risks and the stop rule are the real output.
+- **Research without ethics:** a small test among acquaintances is not a study, and must not be written up as evidence; a published claim needs the foundation's design (consent, an outside reviewer, a larger group).
+- **The Vietnamese lines have a single reader** (the author) and the Japanese none: the alpha is Vietnamese on purpose.
+- **A second machine may show problems that need a new behaviour or fix:** they go to a patch release and are explained to the testers.
+
+## Decisions (answered by the author, 2026-11-12; ADR-0071)
+- **Direction:** the alpha first; features only as small fixes.
+- **Alpha:** 5 to 8 acquaintances who speak Vietnamese.
+- **Signing:** a certificate before the alpha (replaces R3 of roadmap v1: "not before the alpha").
+- **Lawyer:** after the alpha, before anything public.
