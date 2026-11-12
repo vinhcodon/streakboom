@@ -31,6 +31,8 @@ All 15 stickers, the icon, the preview and the 9 banners exist as PNG in [`asset
 
 **Third pass (2026-11-11):** the six stickers that looked alike at 120 px now differ by silhouette or gesture: 05 sits and puffs, 08 beckons with a raised paw, 14 rests a paw on the chin under a thought bubble, 15 giggles behind a paw, 16 claps slowly, 17 turns side-on (see [`six_distinct.png`](assets/stickers/direction-v1/six_distinct.png)); 03 lost its thought dots. The paws and arcs are sticker art, not rig poses.
 
+**No arms (2026-11-12, the author's rule):** "Làm chung nhé?" (file 07), "Giỏi quá." (15) and "Ok nè!" (18) were redrawn without the arm stroke: the paw, the thumbs-up and the ok sign sit at the edge of the body. `set-v1` was rebuilt in the three languages.
+
 **Sticker 03, sixth look (2026-11-11, the author):** the bubble trail is moved up and to the middle, clear of the head, with even gaps.
 
 **Sticker 03, fifth look (2026-11-11, the author):** the bubble holds a little fish (a cat's idea of life), after the heartbeat line.

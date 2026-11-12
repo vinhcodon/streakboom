@@ -314,9 +314,8 @@ def paw(x, y, rx=8, ry=7, rot=0, pad=False):
 
 
 def thumbs_up(x, y):
-    """A raised fist with the thumb up, on an arm from the shoulder (sticker art, the rig has no such gesture)."""
-    o = stroke_path(f"M76 98 L{f(x - 2)} {f(y + 3)}", FUR, 9)
-    o += f'<ellipse cx="{f(x)}" cy="{f(y)}" rx="10" ry="9" fill="{FUR}" stroke="{DARK}" stroke-width="1.1"/>'
+    """A fist with the thumb up, sitting at the edge of the body, no arm (sticker art, the rig has no such gesture)."""
+    o = f'<ellipse cx="{f(x)}" cy="{f(y)}" rx="10" ry="9" fill="{FUR}" stroke="{DARK}" stroke-width="1.1"/>'
     o += f'<ellipse cx="{f(x - 1)}" cy="{f(y - 11)}" rx="4.4" ry="8" fill="{FUR}" stroke="{DARK}" stroke-width="1.1"/>'
     o += f'<ellipse cx="{f(x - 1)}" cy="{f(y - 5)}" rx="6" ry="3.5" fill="{FUR}"/>'
     for dy in (-1, 3):
@@ -342,8 +341,7 @@ def joy_tears():
 
 def ok_sign(x, y):
     """A paw making the 'ok' ring, three fingers up (sticker art)."""
-    o = stroke_path(f"M76 98 L{f(x - 3)} {f(y + 6)}", FUR, 9)
-    o += f'<ellipse cx="{f(x)}" cy="{f(y)}" rx="9" ry="8" fill="{FUR}" stroke="{DARK}" stroke-width="1.1"/>'
+    o = f'<ellipse cx="{f(x)}" cy="{f(y)}" rx="9" ry="8" fill="{FUR}" stroke="{DARK}" stroke-width="1.1"/>'
     for dx, dy, r in ((6, -9, 12), (11, -5, 40), (12, 1, 65)):
         o += f'<ellipse cx="{f(x + dx)}" cy="{f(y + dy)}" rx="3.3" ry="6" fill="{FUR}" stroke="{DARK}" stroke-width="1.1" transform="rotate({r} {f(x + dx)} {f(y + dy)})"/>'
     o += f'<circle cx="{f(x - 5)}" cy="{f(y - 5)}" r="4.6" fill="{BELLY}" stroke="{DARK}" stroke-width="1.6"/>'
@@ -459,7 +457,7 @@ STICKERS = [
     ("04", "Buồn ngủ…", lambda: cat(SIT_F, dict(LOOK["drowsy"], lid=0.06, roll=-11, dy=9, droop=0.5, mouth="o", cheek=0.8, z=1))),
     ("05", "Hừm.", lambda: cat(SIT_F, LOOK["huff"]) + puffs()),
     ("06", "Quá sức mèo rồi.", lambda: cat(STAND_F, LOOK["sad"])),
-    ("08", "Làm chung nhé?", lambda: cat(STAND_F, dict(LOOK["curious"], roll=12, wide=0.6, cheek=0.7)) + stroke_path("M38 98 L22 74", FUR, 10) + paw(20, 66, 8, 10, -12, True) + arcs("M8 60 q-5 6 -1 13", "M4 52 q-7 8 -2 18")),
+    ("08", "Làm chung nhé?", lambda: cat(STAND_F, dict(LOOK["curious"], roll=12, wide=0.6, cheek=0.7)) + paw(25, 94, 9, 10.5, -40, True) + arcs("M11 82 q-6 6 -2 14", "M5 76 q-8 9 -3 20")),
     ("09", "Ngủ ngon.", curled_up, dict(scale=2.7, dy=-14)),
     ("18", "Haha!", lambda: joy_tears() + cat(STAND_F, dict(LOOK["happy"], mouth="yawn", roll=8, dy=-2, cheek=0.95)) + paw(58, 104, 7, 6.5, 40)),
     ("11", "Xin lỗi nhé.", lambda: cat(STAND_F, dict(LOOK["sad"], roll=-6, dy=5, lid=1, wide=0.9, cheek=0.3, droop=1)) + sweat()),
@@ -467,10 +465,10 @@ STICKERS = [
     ("13", "Ơ!", lambda: cat(STAND_F, LOOK["gasp"])),
     ("14", "Để mình nghĩ…", lambda: cat(STAND_F, dict(LOOK["think"], roll=6, dots=0)) + paw(70, 90, 7, 8.5, 22) + ell(88, 32, 2.8, 2.8, "#8a8a8a") + ell(97, 25, 3.8, 3.8, "#8a8a8a") + ell(108, 16, 5, 5, "#8a8a8a", 0, 0.9)),
     ("15", "Hì hì.", lambda: cat(STAND_F, dict(LOOK["purr"], roll=8, dy=0, mouth="smile", cheek=1.0)) + paw(66, 86, 7.5, 9.5, 28) + arcs("M96 52 q6 -3 7 -10", "M102 62 q7 -2 9 -9")),
-    ("16", "Giỏi quá.", lambda: cat(STAND_F, dict(LOOK["smirk"], lid=0.5, gx=-4, roll=3, mouth="flat", cheek=0.4)) + thumbs_up(96, 86)),
+    ("16", "Giỏi quá.", lambda: cat(STAND_F, dict(LOOK["smirk"], lid=0.5, gx=-4, roll=3, mouth="flat", cheek=0.4)) + thumbs_up(91, 95)),
     ("17", "Ai đợi đâu.", lambda: cat(STAND_S, dict(LOOK["rest"], lid=0.7, roll=-6, mouth="smile", cheek=1.0, gx=-3))),
     ("19", "Huhu…", lambda: cat(STAND_F, dict(LOOK["sad"], roll=0, dy=0, lid=1, wide=1, cheek=0.5, droop=1, mouth="none")) + tears()),
-    ("21", "Ok nè!", lambda: cat(STAND_F, dict(LOOK["rest"], wink=1, mouth="smile", cheek=0.8, roll=4)) + ok_sign(98, 80)),
+    ("21", "Ok nè!", lambda: cat(STAND_F, dict(LOOK["rest"], wink=1, mouth="smile", cheek=0.8, roll=4)) + ok_sign(91, 94)),
     ("20", "Hoan hô!", hop_for_joy),
     ("22", "Không nha.", no_entry_sign),
 ]
