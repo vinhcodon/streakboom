@@ -463,7 +463,7 @@ STICKERS = [
     ("01", "Chào buổi sáng!", lambda: cat(STRETCH_S, LOOK["wake"]), dict(scale=2.8, dy=-14)),
     ("02", "Sướng quá~", lambda: cat(STAND_F, LOOK["purr"])),
     ("03", "Cuộc sống mà.", lounging, dict(scale=2.5, dx=2, dy=8)),
-    ("04", "Buồn ngủ…", lambda: cat(SIT_F, dict(LOOK["drowsy"], lid=0.34, roll=-8, dy=8, droop=0.4, mouth="yawn", cheek=0.8)) + '<path d="M66 82 Q70 90 67 97" fill="none" stroke="#a9d8ee" stroke-width="2.6" stroke-linecap="round"/><path d="M67 98 Q63 103 67 105.5 Q71 103 67 98Z" fill="#a9d8ee"/>'),
+    ("04", "Buồn ngủ…", lambda: cat(SIT_F, dict(LOOK["drowsy"], lid=0.34, roll=-8, dy=8, droop=0.4, mouth="yawn", cheek=0.8)) + '<path d="M69.5 80.5 Q75 87 72.5 95" fill="none" stroke="#a9d8ee" stroke-width="2.2" stroke-linecap="round"/><path d="M72.5 95.5 Q69.5 99.5 72.5 102 Q75.5 99.5 72.5 95.5Z" fill="#a9d8ee"/>'),
     ("05", "Hừm.", lambda: cat(SIT_F, dict(LOOK["rest"], lid=0.06, roll=15, dy=-2, gx=-7, mouth="flat", cheek=0.4)) + puffs() + stroke_path("M10 60 l7 3 M8 70 l9 1", "#b9a98f", 2)),
     ("06", "Quá sức mèo rồi.", lambda: cat(STAND_F, LOOK["sad"])),
     ("08", "Làm chung nhé?", lambda: cat(STAND_F, dict(LOOK["curious"], roll=12, wide=0.6, cheek=0.7)) + paw(25, 94, 9, 10.5, -40, True) + arcs("M11 82 q-6 6 -2 14", "M5 76 q-8 9 -3 20")),
