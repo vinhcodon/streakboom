@@ -1,0 +1,64 @@
+# Checks for every pull request (and by hand): the tests, the types, the documents and the website build.
+# It never builds an installer, signs or publishes anything. It runs on a pull request and manually only, until the first
+# runs are seen to be green (docs/plans/verification-debt.md); then it can also run on a push to main.
+name: CI
+
+on:
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    runs-on: windows-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: app/package-lock.json
+
+      - name: Install the app dependencies
+        working-directory: app
+        run: npm ci
+
+      - name: JavaScript tests (the pure logic)
+        working-directory: app
+        run: npm test
+
+      - name: Types (svelte-check)
+        working-directory: app
+        run: npm run check
+
+      - name: Build the front end (the Rust core needs it)
+        working-directory: app
+        run: npm run build
+
+      - uses: dtolnay/rust-toolchain@stable
+
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: app/src-tauri
+
+      - name: Rust tests
+        working-directory: app/src-tauri
+        run: cargo test --locked
+
+      - name: Documents agree with each other and with the code
+        run: node scripts/audit-docs.mjs
+
+      - name: Website scripts (tests)
+        run: node --test scripts/site/
+
+      - name: Website build (it also checks the README)
+        run: node scripts/build-site.mjs

@@ -24,3 +24,5 @@ Leaving it to chance (rejected: the drift above); a continuous-integration check
 - A release now takes a little longer; the cost is paid back in fewer wrong statements.
 - The script checks what can be checked mechanically; the rest depends on reading. The first run found 7 problems and the reading found about a dozen more.
 - Not verified: that the website session has acted on the first prompt.
+
+**Amended 2026-11-12 (ADR-0070):** the release steps live in `docs/releasing.md` (the README is now short and no longer has a "Release and auto-update" section), and the routine also refreshes the snapshot and section 4 of `docs/PROJECT.md`; the audit checks that the snapshot names the current version.

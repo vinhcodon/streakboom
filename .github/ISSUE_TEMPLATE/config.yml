@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: The website and the downloads
+    url: https://streakboom.com
+    about: The latest download, the changelog and how Peak behaves, in Vietnamese, English and Japanese.
+  - name: Read first, the project guide
+    url: https://github.com/vinhcodon/streakboom/blob/main/docs/PROJECT.md
+    about: What Streakboom is, what it will not do, and where every fact lives.

@@ -1,6 +1,6 @@
 # 12. Aligning Peak to the foundation (0.4.0)
 
-**Status:** approved by the author at gate 3 (2026-11-11), with Q9. **Built so far on the branch `foundation/alignment` (not released): sections 1 to 5 and the charter's article 7 (FA-1 to FA-6); sections 6 to 8 are not built.** As built, section 4 names one public directory (findahelpline.com) and no phone number; section 5 puts the 18+ line at the end of the first tour card; the installer description was left as it is. Decisions: ADR-0056 (18+), ADR-0057 (the mission), ADR-0058 (the foundation), ADR-0059 (what changes). The findings behind it: `docs/plans/foundation-review.md`. The plan and the stories: `docs/plans/release-0.4.0.md`.
+**Status:** approved by the author at gate 3 (2026-11-11), with Q9. **Built and released in 0.4.0 (2026-11-12): sections 1 to 8** (the pieces of 0.4.1 that touch the same ground are in ADR-0066 and ADR-0068). As built, section 4 names one public directory (findahelpline.com) and no phone number; section 5 puts the 18+ line at the end of the first tour card; the installer description was left as it is. What was not verified is in the debt list (V-103 to V-105, V-107).
 
 This spec describes what will be **different** from 0.3.2. Everything not named stays as specs 01 to 11 say. When it is built, the sections below move into the specs they change (03, 05, 09) and this file keeps only the rules and their tests.
 

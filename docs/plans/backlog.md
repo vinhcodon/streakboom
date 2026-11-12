@@ -9,7 +9,7 @@ Status: **proposed 2026-11-08, asked by Vinh to be carried out story by story.**
 4. **Done means:** tests for the pure logic, the spec and README updated in the same commit, the engineering-log entry saying what was **not** verified **and the same items added to [`verification-debt.md`](verification-debt.md)** (the one list of everything built but not yet checked; tick or remove a row when it is checked), explicit-path commit (ADR-0023). Behavior the website describes also gets the website session told (README, Release and auto-update, step 1). A release is a separate step the author orders.
 5. Statuses: `done`, `doing`, `ready` (can start), `needs Vinh` (a decision or an action only Vinh can do), `blocked` (waits for something named), `later`.
 
-## Progress (2026-11-11, version 0.3.2; counts exclude stories merged into others)
+## Progress (2026-11-12, version 0.4.1; counts exclude stories merged into others)
 
 | Epic | Quality | Done / stories | Where it stands |
 |---|---|---|---|
@@ -26,7 +26,8 @@ Status: **proposed 2026-11-08, asked by Vinh to be carried out story by story.**
 | E15 | Restraint, play and the charter (spec/11, ADR-0047) | 6 / 6 | The charter, the edge check and the attention modes, the edge ladder, the person's push and drop, and the retirement of Chattiness and Quiet hours are built and committed (CH-1 to CH-6; the shoo was declined); **released in 0.3.2** |
 | E16 | The sticker test on Zalo (spec/06 section 7, plan `sticker-test.md`, ADR-0049) | 1 / 6 | Decisions answered 2026-11-10 (name, wording, expressions, 12 to 20 stickers, threshold); the public Zalo rules read; ST-2 (the character sheet) approved; next: the account-only checks (ST-1) and drawing the stickers (ST-3); no app code |
 | E14 | The desktop as terrain, version 2 (spec/10) | 7 / 16 | Spec 10, ADR-0044, ADR-0045, ADR-0046: the ground map with window numbers, the overlay, the fall to the plane below, walls, climbing and the climb pose, getting out from under the Start menu (TT-0 to TT-3 partly, TT-9, TT-12, TT-14, TT-15) are built and **released in 0.3.2**; knocks (TT-13), the screen picture sense (TT-10) and content surfaces (TT-11) are next in that track |
-| E17 | Foundation alignment (spec/12, ADR-0056 to ADR-0059, ADR-0061) | 11 / 11, released in 0.4.0 | The review, the decisions (Q1 to Q9), spec 12 and the plan of 0.4.0; built on the branch `foundation/alignment`: absence costs nothing, no streak, the bored lines no longer ask for attention; open: the persona, the help card, 18+, the outward lines, the public texts, the audit of claim words, the data checks, the hypotheses |
+| E17 | Foundation alignment (spec/12, ADR-0056 to ADR-0059, ADR-0061) | 11 / 11, released in 0.4.0 | The review, the decisions (Q1 to Q9), spec 12 and the release: absence costs nothing, no streak, the bored lines, the persona rules, the help text, 18+, the outward lines, the claim-word audit. Open: a lawyer for the age gate, the Vietnamese and Japanese reading, the chat rules with real keys on all four brains |
+| E18 | Language and one instance (ADR-0066, ADR-0068, ADR-0055 amendment) | 3 / 3, released in 0.4.1 | The tray menu in the chosen language; the default language from the system's list of preferred languages and a picker in the tour (never the IP); one Peak per user. Open: the author's checks (V-108 to V-110) and the in-app update to 0.4.1 |
 | E13 | Fresh words: more variety in the scripted lines | 5 / 9 | Lines more varied: the shuffle bag, tokens, the smallest pools raised (LN-1 to LN-3, LN-5 partly, 0.3.1); the line factory script is built and waits for the author to run it (LN-4); rare lines blocked; the brain's top-up declined for now |
 | E12 | Reactions: one way to express what happens | 9 / 10 | Spec 09 and ADR-0041: events, appraisal, beats, words after the body, escalation, the persona in layers, the remark after a fall (RX-1 to RX-8; the first part released in 0.3.1, the remark and the gate not yet); RX-9 later |
 | E11 | Reach: languages and brains | 4 / 5 | Groq is the fourth brain and Japanese is built in full, both released in 0.3.0 (BR-1, JA-1 to JA-3, ADR-0037, ADR-0038); BR-2 needs a key |
@@ -278,6 +279,15 @@ Why: the foundation (the evidence home, ADR-0058) names the mechanisms that make
 | FA-10 | The two data checks (the uninstaller, the Gemini free tier) and their sentences | S | done 2026-11-11: the Gemini terms were opened and the app already says it; the README says how to remove everything; a real uninstall was not tried (V-105) | |
 | FA-11 | Hypotheses H1, H4, H5, H6 read against the foundation, with a counter-measure; the old roadmap marked out of date | S | done 2026-11-11 | |
 
+## E18. Language and one instance (0.4.1)
+Why: the author found a tray menu that was always English, asked how the default language should be chosen, and found that every click on the program started another Peak. Serves charter articles 1 and 2.
+
+| ID | Story | Size | Status | Depends on |
+|---|---|---|---|---|
+| LG-1 | The tray menu follows the chosen language (`set_tray_labels`) | S | done, released in 0.4.1 (ADR-0055 amendment); not seen by the author (V-108) | |
+| LG-2 | The default language: the system's ordered list of preferred languages, a picker on the first tour card, never the IP (ADR-0066); the website suggestion is the website session's (ADR-0067) | S | done, released in 0.4.1; not seen by the author (V-109) | |
+| SI-1 | One Peak per user: a second start does not open a second pet and shows the running one if it was hidden (ADR-0068) | S | done, released in 0.4.1; three starts left one process, an older build left three (V-110) | |
+
 ## E16. The sticker test on Zalo (spec/06 section 7, plan `sticker-test.md`, ADR-0049)
 Why: an off-app test of whether a free sticker set of Peak brings installs (H14) of the same quality (H15) and fixes the character (H16). No app code, no telemetry change. Thresholds are in the plan (section 5) and are written down before the run.
 | ID | Story | Size | Status | Depends on |
@@ -288,4 +298,5 @@ Why: an off-app test of whether a free sticker set of Peak brings installs (H14)
 | ST-4 | The consistency review and the note on what the drawing made us decide (H16) | S | ready after ST-3 | ST-3 |
 | ST-5 | Short links and the date of each channel; thresholds written and dated; package and submit | S | ready after ST-4 and ST-1 | ST-1, ST-4 |
 | ST-7 | The web gallery: a page on streakboom.com where each sticker can be copied or shared (images, CC BY 4.0), built by the website session from `docs/handoff/website-stickers.md`; ADR-0051 | M | done 2026-11-11 (live: /stickers/, /vi/stickers/, /ja/stickers/ from `set-v1` and its manifest, a button copies the PNG, no download and no ZIP, ImageGallery data, a four-item menu; ADR-0053); **the checks on real devices stay open** (V-97: pasting into Zalo, Telegram and Messenger, copy and Share on Android and iPhone, press-and-hold on iOS, older browsers; V-99: English and Japanese text on the stickers not read by a native speaker; Lighthouse not run on the new pages) | ST-3 |
+| ST-8 | Three sticker packs of 20 (Cute, Friends, Office; the current 20 are sorted into them and 40 new ones added; Vietnamese first for the new ones); **the lists wait for the author's approval before anything is drawn**; order Cute, Friends, Office; the website moves once at the end (`docs/plans/sticker-packs-three-categories.md`, `sticker-pack-2-office.md`) | L | proposal written 2026-11-12 | ST-3 |
 | ST-6 | The run of 4 to 6 weeks, the reading against the thresholds (20 installs, H15 if there is a baseline), the decision and an ADR | S | waits for approval by Zalo | ST-5 |

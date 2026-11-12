@@ -1,6 +1,6 @@
 # ADR-0058: `docs/foundation/` is the home of evidence; the charter is aligned to it; 0.4.0 is the alignment release
 
-- **Status:** proposed (Vinh agreed the direction on 2026-11-11; the version number and scope wait for the review)
+- **Status:** accepted; carried out: the review was done, the scope was set in ADR-0059 and released as 0.4.0 on 2026-11-12
 - **Date:** 2026-11-11
 - **Decided by:** Vinh (author), with Claude
 

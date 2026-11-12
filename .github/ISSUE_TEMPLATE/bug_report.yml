@@ -1,0 +1,51 @@
+name: Bug
+description: Something does not work as it should
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thank you. **Never paste an API key or any other secret.** Streakboom is made for adults (18+).
+  - type: input
+    id: version
+    attributes:
+      label: Streakboom version
+      description: Settings, About shows it (for example 0.4.1).
+    validations:
+      required: true
+  - type: input
+    id: windows
+    attributes:
+      label: Windows version
+      description: For example Windows 11 23H2.
+    validations:
+      required: true
+  - type: input
+    id: screens
+    attributes:
+      label: Monitors and display scale
+      description: For example one 1080p screen at 125%, or two screens with different scales.
+  - type: textarea
+    id: happened
+    attributes:
+      label: What happened
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: What you expected
+  - type: textarea
+    id: steps
+    attributes:
+      label: How to make it happen again
+      description: The steps, and whether it happens every time.
+  - type: dropdown
+    id: brain
+    attributes:
+      label: Is a brain (your own API key) involved?
+      options:
+        - No, the pet without AI
+        - Gemini
+        - Groq
+        - Claude
+        - OpenAI

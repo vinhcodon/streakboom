@@ -1,0 +1,22 @@
+name: Idea
+description: A change or a new behaviour you would like
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Please read `docs/charter.md` first (one page): a good idea here keeps Peak gentle, out of the way and a companion, not an assistant. We will not add anything that reads what a person types or what is on their screen, a pet that needs the person, health claims, or a setting for an amount of behaviour.
+  - type: textarea
+    id: problem
+    attributes:
+      label: What would be better, and for whom
+    validations:
+      required: true
+  - type: textarea
+    id: idea
+    attributes:
+      label: Your idea
+  - type: textarea
+    id: charter
+    attributes:
+      label: Does it fit the charter?
+      description: Which article does it serve, and could it make someone who is working look up?

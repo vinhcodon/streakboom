@@ -8,7 +8,10 @@
 // and the "as of" lines of the specs match tauri.conf.json, package.json and Cargo.toml; (5) the newest CHANGELOG entry is the
 // current version; (6) no retired name appears (see RETIRED below); (7) test counts quoted in the README and spec/04 match the
 // counts the tests report if you pass them (--js 155 --rust 53); (8) no health claim word in the README and the texts the app
-// shows (ADR-0057).
+// shows (ADR-0057); (9) the entry points exist (ADR-0070): docs/PROJECT.md with a snapshot that names the current version,
+// AGENTS.md, CONTRIBUTING.md, SECURITY.md, CODE_OF_CONDUCT.md, and a README that stays short (a README that grows is
+// a sign that detail belongs in docs/); (10) every ADR number appears once in the decision index; every document directly in
+// docs/ is named in docs/README.md.
 
 import { execFileSync } from "node:child_process";
 import { existsSync, readFileSync } from "node:fs";
@@ -90,9 +93,7 @@ for (const f of files.filter((f) => f.startsWith("site/") && /\.(html|js|css|jso
 // 7. test counts, when given
 const js = arg("--js");
 const rust = arg("--rust");
-if (js && !text("README.md").includes(`${js} tests`)) bad(`README.md does not say "${js} tests" (Node)`);
 if (js && !text("spec/04-technical-design.md").includes(`${js} tests`)) bad(`spec/04 does not say "${js} tests" (Node)`);
-if (rust && !text("README.md").includes(`${rust} tests`)) bad(`README.md does not say "${rust} tests" (Rust)`);
 if (rust && !text("spec/04-technical-design.md").includes(`${rust} tests`)) bad(`spec/04 does not say "${rust} tests" (Rust)`);
 
 // 8. no health claim (ADR-0057; spec 12 section 7): the README and the texts the app shows never say that Peak heals, treats
@@ -110,6 +111,27 @@ for (const f of ["README.md", "app/src/lib/ui.ts", "app/src/lib/lines.ts", "app/
 const claimsInSite = [];
 for (const f of files.filter((f) => f.startsWith("site/") && /\.(html|mjs|js|json|md|txt)$/.test(f))) {
   if (claimsIn(f).length) claimsInSite.push(f);
+}
+
+// 9. entry points (ADR-0070)
+for (const f of ["docs/PROJECT.md", "AGENTS.md", "CLAUDE.md", "CONTRIBUTING.md", "SECURITY.md", "CODE_OF_CONDUCT.md", ".github/CODEOWNERS", ".github/PULL_REQUEST_TEMPLATE.md"]) {
+  if (!existsSync(f)) bad(`missing entry point: ${f}`);
+}
+if (existsSync("docs/PROJECT.md")) {
+  const snap = /version \*\*([\d.]+)\*\*, date \*\*(\d{4}-\d{2}-\d{2})\*\*/.exec(text("docs/PROJECT.md"));
+  if (!snap) bad("docs/PROJECT.md has no snapshot line ('version **x.y.z**, date **YYYY-MM-DD**')");
+  else if (snap[1] !== conf) bad(`docs/PROJECT.md snapshot says version ${snap[1]}, the app is ${conf}: update the snapshot and section 4`);
+}
+const README_MAX_LINES = 220;
+const readmeLines = text("README.md").split(String.fromCharCode(10)).length;
+if (readmeLines > README_MAX_LINES) bad(`README.md has ${readmeLines} lines (the limit is ${README_MAX_LINES}): move detail to docs/ and link it`);
+
+// 10. one row per ADR number; every document directly in docs/ is named in docs/README.md
+const adrNumbers = [...index.matchAll(/^\| \[(\d{4})\]/gm)].map((m) => m[1]);
+for (const n of new Set(adrNumbers)) if (adrNumbers.filter((x) => x === n).length > 1) bad(`ADR ${n} has more than one row in docs/decisions/README.md`);
+const docsMap = text("docs/README.md");
+for (const f of files.filter((f) => /^docs\/[^/]+\.md$/.test(f) && f !== "docs/README.md")) {
+  if (!docsMap.includes(basename(f))) bad(`not named in docs/README.md: ${f}`);
 }
 
 console.log(`version ${conf}; ${mds.length} markdown files checked.`);

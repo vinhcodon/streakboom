@@ -1,8 +1,8 @@
 ---
 title: The eleven hard rules against the charter and ADRs
-status: draft-for-review
+status: verified-2026-11-11
 updated: 2026-11-11
-note: Written from the charter and ADR-0013/0022/0055 only. Everything marked "check" is unverified against code and the rest of the ADRs.
+note: Written from the charter and ADR-0013/0022 only; every row was verified against the code and the texts on 2026-11-11 (see ../plans/foundation-review.md, which also says where the foundation may be wrong). The conflicts it found were resolved in 0.4.0 (ADR-0059).
 ---
 
 # Foundation rules vs what the repo already says

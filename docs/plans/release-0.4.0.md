@@ -31,7 +31,7 @@ Read the replaced Vietnamese lines; try a goodbye and a hard sentence in chat wi
 - Old installs: closeness that had decayed is not restored (nobody can know what it was); it simply stops decaying.
 
 ## Proposed for 0.4.1, not here
-The night share and the long tail of active minutes in the opt-in local stats; the plan for the observed group (the old Phase 3) and a new roadmap; the answer to the lawyer on the age gate.
+The night share and the long tail of active minutes in the opt-in local stats; the plan for the observed group (the old Phase 5, the closed alpha) and a new roadmap; the answer to the lawyer on the age gate.
 
 ## Not verified
 See spec 12 section 11. Sizes are estimates; no code was tried.

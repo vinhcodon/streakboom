@@ -8,7 +8,7 @@ The files are grouped here, not in folders (decided at gate 2 of the foundation 
 
 | File | What | Status |
 |---|---|---|
-| [`foundation-review.md`](foundation-review.md) | The review of the code, the texts, the decisions, the hypotheses and the earlier plans against the foundation (the eleven rules, the mission, 18+, banned claims): each row of `foundation/charter-alignment.md` verified, where the foundation may be wrong, eight decisions proposed | written 2026-11-11 (phase 1 of the foundation handoff); **waits for the author at gate 1** |
+| [`foundation-review.md`](foundation-review.md) | The review of the code, the texts, the decisions, the hypotheses and the earlier plans against the foundation (the eleven rules, the mission, 18+, banned claims): each row of `foundation/charter-alignment.md` verified, where the foundation may be wrong, eight decisions proposed | written 2026-11-11; **done** (gates 1 to 3 passed; its decisions are ADR-0059 and the work is released in 0.4.0) |
 | [`backlog.md`](backlog.md) | Epics and user stories from the five qualities of the pet, with sizes, dependencies, progress and the standing rule to compare with the plan after each story | proposed 2026-11-08; being carried out story by story (progress as of 0.2.5) |
 | [`verification-debt.md`](verification-debt.md) | Everything built or released but not yet checked, in one list (what, how to check, who, since when); updated after every task and at every release | live; started 2026-11-09 |
 
@@ -25,10 +25,12 @@ The files are grouped here, not in folders (decided at gate 2 of the foundation 
 
 | File | What | Status |
 |---|---|---|
+| [`sticker-pack-2-office.md`](sticker-pack-2-office.md) | A second pack of 20 stickers for office chats in a cheeky cat's voice: assessment, risks, the list of 20 quotes with descriptions, the check against pack 1, the way of working | proposal 2026-11-12; the list waits for the author's approval, nothing drawn |
 | [`sticker-test.md`](sticker-test.md) | An off-app test: a sticker set of the cat on Zalo to bring new users; steps, facts to verify first, how installs and Bond Days are read without new tracking, stop rules | proposal 2026-11-10; waiting for Vinh's answers to the open questions (spec/06 section 7.5) |
 | [`sticker-set-v0.md`](sticker-set-v0.md) | The list of the sticker set (ST-3): the texts, the poses, the counts; updated by ADR-0050 | the sticker session's file; its row was added by the app session at the 0.3.2 release |
 | [`sticker-set-v1-direction.md`](sticker-set-v1-direction.md) | The direction for the second pass of the sticker set (about 29% sarcasm, the lounging and the curled cat) | the sticker session's file; decided in ADR-0050 |
 | [`sticker-expression-audit.md`](sticker-expression-audit.md) | The audit of how different the emotions of the sticker set are, and the choices that followed | the sticker session's file, 2026-11-11 |
+| [`sticker-packs-three-categories.md`](sticker-packs-three-categories.md) | The sticker packs in three categories of 20 (Cute, Friends, Office): the lists, the voice of each, and the first pass of the ten new Cute stickers | the sticker session's file; approved by the author on 2026-11-12 (its row was added by the app session during the documents audit) |
 
 ### Website (the website session's file)
 
@@ -40,8 +42,8 @@ The files are grouped here, not in folders (decided at gate 2 of the foundation 
 
 | File | What | Status |
 |---|---|---|
-| [`vi-lines-0.4.0.md`](vi-lines-0.4.0.md) | The Vietnamese lines changed for 0.4.0, before and after, for the author to read (V-103, V-105) | written 2026-11-12; **waits for the author's reading** |
-| [`release-0.4.0.md`](release-0.4.0.md) | The alignment release: stories FA-1 to FA-11 from spec 12, their order, tests, risks, what waits for 0.4.1 | proposed 2026-11-11; **waits for the author at gate 3; nothing built** |
+| [`vi-lines-0.4.0.md`](vi-lines-0.4.0.md) | The Vietnamese lines changed for 0.4.0, before and after, for the author to read (V-103, V-105) | written 2026-11-12; **read by the author, no change asked** (V-103, V-105) |
+| [`release-0.4.0.md`](release-0.4.0.md) | The alignment release: stories FA-1 to FA-11 from spec 12, their order, tests, risks, what waits for 0.4.1 | **published 2026-11-12**; carried out as planned (the first run of the release script failed on quotes in the notes, nothing was published) |
 | [`release-0.3.2.md`](release-0.3.2.md) | The draft of release 0.3.2: what is in it, the changelog entry, the README change, the version files, what the website is told, the checks | prepared 2026-11-11; the CHANGELOG, README and version files were filled the same day and the release waits for the author's order |
 
 ### Done (kept for the record)

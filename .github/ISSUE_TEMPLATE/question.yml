@@ -1,0 +1,12 @@
+name: Question
+description: You are not sure how something works
+body:
+  - type: markdown
+    attributes:
+      value: Check the README, docs/features.md and the website first. Never paste an API key.
+  - type: textarea
+    id: question
+    attributes:
+      label: Your question
+    validations:
+      required: true

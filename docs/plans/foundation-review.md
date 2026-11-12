@@ -1,6 +1,6 @@
 # Review against the foundation (phase 1 of the foundation handoff)
 
-**Status:** written 2026-11-11 by the app session, on the branch `foundation/alignment`; **waits for the author at gate 1**. It changes nothing: no code, no charter, no public text. Source of the task: [`../handoff/2026-11-11-foundation-handoff.md`](../handoff/2026-11-11-foundation-handoff.md). It is here and not in `handoff/` because a handoff is an input from another conversation; this is our own assessment, like [`pet-qualities-assessment.md`](pet-qualities-assessment.md).
+**Status:** written 2026-11-11 by the app session, on the branch `foundation/alignment`; **completed: gates 1 to 3 were passed on 2026-11-11 and the work was released in 0.4.0** (sections 10 to 13 record the gates). When it was written it changed nothing: no code, no charter, no public text (that came after the gates). Source of the task: [`../handoff/2026-11-11-foundation-handoff.md`](../handoff/2026-11-11-foundation-handoff.md). It is here and not in `handoff/` because a handoff is an input from another conversation; this is our own assessment, like [`pet-qualities-assessment.md`](pet-qualities-assessment.md).
 
 **How to read it.** Severity: **block** (must be settled before 0.4.0 ships), **fix** (should be in 0.4.0), **note** (recorded, no work now). Effort: S (hours), M (a day or two), L (more). "Checked" means I read the code or the text on 2026-11-11 at commit `f1ba666`; anything else says so.
 
@@ -48,7 +48,7 @@ Also in `charter-alignment.md`:
 | H6 | "Remembering makes the pet feel more like theirs": the foundation's finding that trust and bonding go with dependence (MIT/OpenAI, correlation) cuts against treating this as purely good | note; add the risk |
 | H3, H7 | Chat preference and paying for a smarter brain: chat is where the foundation's dose risk lives | note |
 | H14 to H16 (stickers) | Unaffected | none |
-| `plans/roadmap.md` | Title and status say 0.2.0 and a closed alpha with 5 to 10 observed users; reality is 0.3.2 public on GitHub and a website. The closed alpha (Phase 3) never ran. The foundation's first gate is "a lawyer and a small opt-in group": the same thing, not done | fix: a new roadmap after gate 3, the old one marked superseded |
+| `plans/roadmap.md` | Title and status say 0.2.0 and a closed alpha with 5 to 10 observed users; reality is 0.3.2 public on GitHub and a website. The closed alpha (Phase 5 of that roadmap) never ran. The foundation's first gate is "a lawyer and a small opt-in group": the same thing, not done | fix: a new roadmap after gate 3, the old one marked superseded |
 | `handoff/requirements-draft-v0.4.md` | See section 5 | |
 | `plans/backlog.md` | CO-2 "closeness tiers and the streak" (done) is the story behind rules 1, 2, 6. PF-2 (daily limits) supports rule 8. RX-9 (editable voice, character packs) would let a user remove the locked core's safety unless the core stays locked, which the story already says. No story about voice, selling or a proxy exists yet, so nothing to remove | note |
 | `README.md` | Line 22 ("a little lonely"); "Longest streak" is not in the README; the settings section says "Memory" page without the streak. Roadmap section does not mention 18+ | fix |
@@ -105,7 +105,7 @@ Also in `charter-alignment.md`:
 | Q1 | Absence: remove the mood and closeness cost, the lonely band, the counting lines; what does the welcome sound like? | Remove all four; a warm welcome with no number and no need ("There you are."); amend charter art. 7 and supersede the sentence of ADR-0013 |
 | Q2 | The streak: remove it (lines, "Longest streak", milestones on consecutive days, +3 a day)? | Yes; keep "Days together" and the marks on different days, which already exist |
 | Q3 | Rule 5: a schedule setting, or "no notifications" recorded as meeting it? | The second |
-| Q4 | Product Hunt: before or after a 90-day gate, and is the gate measured or observed? | After a small observed group (the old Phase 3), not after a measured 90 days we cannot run |
+| Q4 | Product Hunt: before or after a 90-day gate, and is the gate measured or observed? | After a small observed group (the old Phase 5, the closed alpha), not after a measured 90 days we cannot run |
 | Q5 | Crisis safety: the three honest pieces of 6.5, with no keyword detection? | Yes, and ask the lawyer about the list of resources |
 | Q6 | Age: self-declared 18+ at first run and in the texts now, the level revisited after the lawyer? | Yes; do not write "safe" or "adults only" as a promise (handoff 4.5) |
 | Q7 | The name Streakboom: keep, on the record? | Keep; one sentence in an ADR |
