@@ -754,9 +754,10 @@ def fr_shrug():
 
 
 def fr_dream_on():
-    """"Lêu lêu": a wink, the head tipped back and a big tongue stuck out."""
-    tongue = ('<path d="M55 82 Q55 98 60 98 Q65 98 65 82Z" fill="#ef6f7e"/><path d="M60 86 L60 95" stroke="#c94f5f" stroke-width="1.4" stroke-linecap="round"/>')
-    return (cat(STAND_F, dict(LOOK["rest"], wink=1, mouth="none", roll=10, dy=-2, cheek=0.9)) + stroke_path("M53 80 Q60 85 67 80", MOUTH, 1.9) + tongue
+    """"Lêu lêu": the lower eyelids pulled down (a pink crescent under each eye) and a short tongue stuck out; the head tipped."""
+    lids = "".join(f'<path d="M{x - 8} {y + 6} Q{x} {y + 22} {x + 8} {y + 6} Q{x} {y + 10} {x - 8} {y + 6}Z" fill="#ef5f72"/>' for x, y in ((44, 66), (76, 66)))
+    tongue = ('<path d="M55 81 Q55 90 60 90 Q65 90 65 81Z" fill="#ef6f7e"/><path d="M60 83 L60 88" stroke="#c94f5f" stroke-width="1.2" stroke-linecap="round"/>')
+    return (cat(STAND_F, dict(LOOK["rest"], mouth="none", roll=8, dy=-2, cheek=0.5, wide=0.1, gy=-3)) + lids + stroke_path("M53 80 Q60 84 67 80", MOUTH, 1.9) + tongue
             + stroke_path("M100 44 l8 -4 M104 53 l10 -1 M102 62 l8 3", "#b9a98f", 2))
 
 
@@ -882,6 +883,13 @@ def of_ok_boss():
     hand = ('<g transform="translate(92,49) rotate(-22)"><rect x="-15" y="-6" width="30" height="12" rx="6" fill="#f6c26b" stroke="#e9a94a" stroke-width="1.2"/>'
             '<path d="M7 -4 L7 4 M11 -4.5 L11 4.5 M3 -3.5 L3 3.5" stroke="#e9a94a" stroke-width="1.1" stroke-linecap="round"/></g>')
     return cat(STAND_F, dict(LOOK["rest"], wide=0.4, mouth="open", cheek=0.8, roll=-3, dy=-1)) + hand + star(112, 30, 5, "#ffd166")
+
+
+def of_regret():
+    """"Rất tiếc": a shrug and a pout: eyes up, the mouth pushed out in a frown, both palms spread open at the sides of the body."""
+    pout = stroke_path("M51 87 Q60 79 69 87", MOUTH, 2.2) + ell(60, 88.5, 6, 2.6, "#f4a7a7")
+    return (cat(STAND_F, dict(LOOK["rest"], lid=0.55, gy=-4, mouth="none", roll=0, dy=3, cheek=0.4)) + pout + paw(17, 97, 10, 11.5, -90, True) + paw(103, 97, 10, 11.5, 90, True)
+            + arcs("M6 80 q-3 6 0 12", "M114 80 q3 6 0 12"))
 
 
 def of_meeting():
@@ -1030,6 +1038,7 @@ print("pack-office-draft:", len(of_files), "new stickers in", OF_DIR)
 ART = {}
 for _ident, _text, _art, *_opt in STICKERS:
     ART[_text] = (_art, _opt[0] if _opt else {})
+ART["Quá sức mèo rồi."] = (of_regret, {})  # the new "Rất tiếc." (a shrug and a pout), not the old overwhelmed face
 for _lst in (CUTE_NEW, FRIENDS_NEW, OFFICE_NEW):
     for _text, _art, _opt in _lst:
         ART[_text] = (_art, _opt)
@@ -1042,9 +1051,9 @@ GROUPS = [
     ("Buồn và lo", [("Huhu…", None), ("Deadline!", None)]),
     ("Bất ngờ và nghi ngờ", [("Ơ!", None), ("Ủa?", None), ("Để mình nghĩ…", None)]),
     ("Trêu và lầy", [("Còn lâu!", None), ("Gớm!", None), ("Xỉu ngang!", None), ("Hừm.", None), ("Ai đợi đâu.", None), ("Giỏi quá.", None), ("Cuộc sống mà.", None)]),
-    ("Đáp lời", [("Ok nè!", None), ("Ok sếp.", None), ("Không nha.", None)]),
+    ("Đáp lời", [("Ok nè!", None), ("Không nha.", None)]),
 ]
-ALL_DIR = os.path.join(os.path.dirname(os.path.abspath(OUT)), "list-33-draft")
+ALL_DIR = os.path.join(os.path.dirname(os.path.abspath(OUT)), "list-draft")
 os.makedirs(ALL_DIR, exist_ok=True)
 for _old in os.listdir(ALL_DIR):
     if _old.endswith(".png"):
@@ -1060,25 +1069,19 @@ for gname, items in GROUPS:
         apath = os.path.join(ALL_DIR, f"{n_all:02d}.png")
         png_from(ainner, (360, 360), shown or key, apath)
         placed.append((gname, n_all, apath, shown or key))
-# a contact sheet, one block per group with its name on top
-cells_per_row, cw, ch, head = 5, 216, 214, 30
-rows_total = sum((len(items) + cells_per_row - 1) // cells_per_row for _, items in GROUPS)
+# one contact sheet, a single list (the order follows the types, but there is no group on the page)
+cells_per_row, cw, ch = 5, 216, 214
+rows_total = (len(placed) + cells_per_row - 1) // cells_per_row
 sd = fitz.open()
-spg = sd.new_page(width=1100, height=rows_total * ch + len(GROUPS) * head + 20)
+spg = sd.new_page(width=1100, height=rows_total * ch + 20)
 spg.draw_rect(spg.rect, color=None, fill=(1, 1, 1))
 spg.insert_font(fontname="hd", fontfile=FONT)
-yy = 10
-for gname, items in GROUPS:
-    spg.insert_text(fitz.Point(12, yy + 20), gname, fontname="hd", fontsize=16, color=(0.35, 0.3, 0.28))
-    yy += head
-    mine = [pl for pl in placed if pl[0] == gname]
-    for gi, (_, num, path, _t) in enumerate(mine):
-        r = fitz.Rect(10 + (gi % cells_per_row) * cw, yy + (gi // cells_per_row) * ch, 10 + (gi % cells_per_row) * cw + 206, yy + (gi // cells_per_row) * ch + 206)
-        spg.draw_rect(r, color=(0.85, 0.85, 0.85), fill=(0.97, 0.97, 0.97))
-        spg.insert_image(r, filename=path)
-        spg.insert_text(fitz.Point(r.x0 + 4, r.y1 - 4), f"{num:02d}", fontname="hd", fontsize=11, color=(0.5, 0.5, 0.5))
-    yy += ((len(mine) + cells_per_row - 1) // cells_per_row) * ch
+for gi, (_, num, path, _t) in enumerate(placed):
+    r = fitz.Rect(10 + (gi % cells_per_row) * cw, 10 + (gi // cells_per_row) * ch, 10 + (gi % cells_per_row) * cw + 206, 10 + (gi // cells_per_row) * ch + 206)
+    spg.draw_rect(r, color=(0.85, 0.85, 0.85), fill=(0.97, 0.97, 0.97))
+    spg.insert_image(r, filename=path)
+    spg.insert_text(fitz.Point(r.x0 + 4, r.y1 - 4), f"{num:02d}", fontname="hd", fontsize=11, color=(0.5, 0.5, 0.5))
 spg.get_pixmap(dpi=72).save(os.path.join(ALL_DIR, "contact_sheet.png"))
-print("list-33-draft:", n_all, "stickers in", ALL_DIR)
+print("list-draft:", n_all, "stickers in", ALL_DIR)
 
 print("done", len(made), "stickers in", OUT)
