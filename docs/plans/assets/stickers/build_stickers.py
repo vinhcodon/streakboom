@@ -1078,4 +1078,77 @@ for gi, (_, num, path, _t) in enumerate(placed):
 spg.get_pixmap(dpi=72).save(os.path.join(ALL_DIR, "contact_sheet.png"))
 print("list-draft:", n_all, "stickers in", ALL_DIR)
 
+# ---- set-v2: the single list of 31 in Vietnamese, English and Japanese, with a manifest (no groups) ------------------------
+# In the order of the list (docs/plans/sticker-list.md): titles (vi, en, ja), scene for the alt text (vi, en, ja), text on the image (en, ja).
+# The English and Japanese lines are written by an AI and not read by a native speaker: "reviewed" is false for them.
+V2 = [
+    (("Chào buổi sáng", "Good morning", "おはよう"), ("vươn vai và ngáp", "stretches and yawns", "のびをしてあくびをしている"), ("Good morning!", "おはよう！")),
+    (("Ngủ ngon", "Sweet dreams", "おやすみ"), ("cuộn tròn ngủ ngon, có chữ z", "curled up asleep with a z", "丸くなってぐっすり眠っている"), ("Sweet dreams.", "おやすみ。")),
+    (("Buồn ngủ", "Sleepy", "ねむい"), ("gật gù buồn ngủ, đầu cúi nghiêng, mắt nhắm", "nods off, the head dropped to one side, eyes shut", "うとうとして頭が傾き、目を閉じている"), ("Sleepy…", "ねむい…")),
+    (("Thứ Sáu rồi", "Friday", "金曜日"), ("đeo kính râm, vui vẻ, lấp lánh", "wears sunglasses, cheerful, with sparkles", "サングラスをかけて、きらきらしている"), ("It's Friday!", "金曜日だ！")),
+    (("Yêu quá", "Love you", "だいすき"), ("mắt thành hai trái tim, má đỏ", "heart-shaped eyes and pink cheeks", "目がハートになって、ほっぺが赤い"), ("Love you!", "だいすき！")),
+    (("Cảm ơn", "Thank you", "ありがとう"), ("mắt mở long lanh, chắp hai chân, ngôi sao lấp lánh, cảm ơn", "shiny open eyes, paws together, sparkles, saying thanks", "きらきらの目で両手を合わせ、ありがとうと言っている"), ("Thank you!", "ありがとう！")),
+    (("Xin lỗi", "Sorry", "ごめんね"), ("mắt to ướt, tai cụp, giọt mồ hôi, xin lỗi", "big wet eyes, ears down, a sweat drop", "うるんだ大きな目で耳をたたみ、汗をかいている"), ("Sorry!", "ごめんね。")),
+    (("Chúc mừng", "Congrats", "おめでとう"), ("mắt long lanh, cầm bông hoa hồng trước ngực", "shiny eyes, holding a pink flower at the chest", "きらきらの目で、ピンクの花を胸の前で持っている"), ("Congrats!", "おめでとう！")),
+    (("Sinh nhật vui vẻ", "Happy birthday", "お誕生日"), ("đội nón tiệc, cây nến sáng trên miếng bánh", "wearing a party hat, a lit candle on a cake", "パーティーハットをかぶり、火のついたろうそくのケーキがある"), ("Happy birthday!", "お誕生日おめでとう！")),
+    (("Cố lên", "You got this", "がんばって"), ("băng đô đỏ, hai chân nắm lại trước ngực, tia sáng", "a red headband, paws held at the chest, sparks", "赤いはちまきをして、両手を胸の前で握っている"), ("You got this!", "がんばって！")),
+    (("Haha", "Haha", "あはは"), ("cười lớn, nước mắt vui", "laughs out loud with tears of joy", "涙を浮かべて大笑いしている"), ("Haha!", "あはは！")),
+    (("Sướng quá", "Bliss", "きもちいい"), ("nhắm mắt sung sướng, được gãi đầu", "eyes shut in bliss, being scratched", "うっとり目を閉じて頭をなでられている"), ("So good~", "きもちいい〜")),
+    (("Hì hì", "Hehe", "ふふっ"), ("khúc khích sau bàn chân", "giggles behind a paw", "手で口をおさえてくすくす笑っている"), ("Hehe.", "ふふっ。")),
+    (("Meo", "Meow", "にゃ〜"), ("miệng tròn nhỏ, sóng âm hai bên má, kêu meo", "a small round mouth with sound waves at the cheeks, meowing", "小さな口でにゃーと鳴き、両側に音の波がある"), ("Meow~", "にゃ〜")),
+    (("Ú òa", "Peekaboo", "いないいないばあ"), ("thò mắt và hai bàn chân trên miệng hộp các-tông", "peeks over the rim of a cardboard box", "段ボール箱のふちから顔をのぞかせている"), ("Peekaboo!", "いないいないばあ！")),
+    (("Đi chơi đi", "Let's go out", "あそびにいこう"), ("đeo ba lô, quay ngang, cười rủ đi chơi", "wears a backpack, side-on, smiling, asking to go out", "リュックを背負って横向きで、笑って遊びに誘っている"), ("Let's go out!", "あそびにいこう！")),
+    (("Hóng", "Popcorn time", "わくわく"), ("ngồi ôm hộp bắp rang, mắt tròn xoe nhìn", "sits with a bowl of popcorn, eyes wide, watching", "ポップコーンを持って座り、目を丸くして見ている"), ("Popcorn time!", "わくわく！")),
+    (("Huhu", "Boohoo", "うえーん"), ("khóc, hai dòng nước mắt", "cries with two streams of tears", "二すじの涙を流して泣いている"), ("Boohoo…", "うえーん…")),
+    (("Deadline", "Deadline", "締め切り"), ("hai chân ôm má, miệng há, đồng hồ báo thức reo", "paws on both cheeks, mouth open, an alarm clock ringing", "両手をほっぺにあてて口を開け、目覚まし時計が鳴っている"), ("Deadline!", "締め切り！")),
+    (("Ơ", "Oh", "えっ"), ("mắt trắng đồng tử nhỏ, miệng há to, người ngả ra sau, giật mình", "white eyes with tiny pupils, mouth wide open, leaning back in shock", "小さな瞳で目を見開き、口を大きく開けて、のけぞっておどろいている"), ("Oh!", "えっ！")),
+    (("Ủa", "Huh", "あれ"), ("nghiêng đầu, hai dấu hỏi", "tilts its head with two question marks", "首をかしげて、はてなマークが浮かんでいる"), ("Huh?", "あれ？")),
+    (("Để mình nghĩ", "Let me think", "考え中"), ("chống chân lên cằm, đang nghĩ", "paw on chin, thinking", "あごに手をあてて考えている"), ("Let me think…", "考え中…")),
+    (("Còn lâu", "Nyah nyah", "べーっだ"), ("kéo mí mắt dưới xuống và thè lưỡi ngắn, lêu lêu", "pulls down its lower eyelids and sticks out a short tongue, teasing", "あかんべえをして、短く舌を出している"), ("Nyah nyah!", "べーっだ！")),
+    (("Gớm", "Ugh, really", "うわぁ"), ("mắt lim dim, miệng lượn sóng, vạch u ám trên trán", "half-closed eyes, a wavy mouth, gloom lines on the forehead", "半目で口が波うち、おでこに縦線が入っている"), ("Ugh, really?", "うわぁ…")),
+    (("Xỉu ngang", "I'm dead", "もうだめ"), ("nằm bẹp, mắt xoáy, lè lưỡi, sao quay trên đầu", "flat on the floor, spiral eyes, tongue out, stars circling", "ぺちゃんと倒れて目がぐるぐる、舌を出し、星が回っている"), ("I'm dead!", "もうだめ〜")),
+    (("Hứ", "Hmph", "むっ"), ("quay đầu đi, mắt nhắm, thở ra mấy làn khói nhỏ", "turns its head away, eyes shut, little puffs of breath", "そっぽを向いて目を閉じ、小さく息をはいている"), ("Hmph.", "むっ。")),
+    (("Ai đợi đâu", "Who's waiting?", "待ってないし"), ("đứng nghiêng, má đỏ, làm bộ không đợi", "stands sideways, cheeks pink, pretending not to wait", "横向きで頬を赤くして、待ってないふりをしている"), ("Who's waiting?", "待ってないし。")),
+    (("Giỏi quá", "Good job", "すごいすごい"), ("giơ ngón cái, mặt thản nhiên", "gives a deadpan thumbs-up", "すました顔で親指を立てている"), ("Good job.", "すごいすごい。")),
+    (("Cuộc sống mà", "Life, you know", "人生ってさ"), ("nằm ngửa vắt chân, thản nhiên, bong bóng suy nghĩ có con cá", "lies back with crossed legs, deadpan, a thought bubble with a little fish", "足を組んで寝転び、すました顔で、小さな魚の入った吹き出しが浮かんでいる"), ("Life, you know.", "人生ってさ。")),
+    (("Ok nè", "OK", "オッケー"), ("nháy mắt, làm dấu ok", "winks and makes an OK sign", "ウインクしてオッケーサインをしている"), ("OK!", "オッケー！")),
+    (("Không nha", "Nope", "だめだよ"), ("cầm biển cấm đi ngược chiều", "holds a no-entry road sign", "進入禁止の標識を持っている"), ("Nope.", "だめだよ。")),
+]
+ORDER = [item for _g, items in GROUPS for item in items]
+assert len(V2) == len(ORDER) == len(placed), (len(V2), len(ORDER), len(placed))
+V2_DIR = os.path.join(os.path.dirname(os.path.abspath(OUT)), "set-v2")
+manifest2 = []
+for pos, ((key, shown), (titles, scenes, texts_new)) in enumerate(zip(ORDER, V2), 1):
+    aart, aopt = ART[key]
+    asc = aopt.get("scale", S)
+    ainner = wrap(aart(), (360 - 120 * asc) / 2 + aopt.get("dx", 0), 82 - 20 * asc + 8 + aopt.get("dy", 0), asc)
+    texts = {"vi": shown or key, "en": texts_new[0], "ja": texts_new[1]}
+    for lang in LANGS:
+        os.makedirs(os.path.join(V2_DIR, lang), exist_ok=True)
+        png_from(ainner, (360, 360), texts[lang], os.path.join(V2_DIR, lang, f"{pos:02d}.png"), font=LANG_FONT[lang])
+    manifest2.append({
+        "id": f"{pos:02d}",
+        "text": texts,
+        "title": {"vi": titles[0], "en": titles[1], "ja": titles[2]},
+        "alt": {
+            "vi": f"Peak {scenes[0]}. Chữ trên ảnh: “{texts['vi']}”",
+            "en": f"Peak {scenes[1]}. Text on the image: \"{texts['en']}\"",
+            "ja": f"Peak（ねこ）が{scenes[2]}。画像の文字：「{texts['ja']}」",
+        },
+        "reviewed": {"vi": True, "en": False, "ja": False},
+    })
+with open(os.path.join(V2_DIR, "manifest.json"), "w", encoding="utf-8", newline="\n") as fh:
+    json.dump({"version": "set-v2", "creator": "Streakboom", "license": "CC BY 4.0", "credits": manifest["credits"], "stickers": manifest2}, fh, ensure_ascii=False, indent=2)
+    fh.write("\n")
+for lang in LANGS:  # a review sheet per language (not for the website)
+    rd = fitz.open()
+    rpg = rd.new_page(width=1100, height=((len(manifest2) + 4) // 5) * 214 + 20)
+    rpg.draw_rect(rpg.rect, color=None, fill=(1, 1, 1))
+    for gi in range(len(manifest2)):
+        r = fitz.Rect(10 + (gi % 5) * 216, 10 + (gi // 5) * 214, 10 + (gi % 5) * 216 + 206, 10 + (gi // 5) * 214 + 206)
+        rpg.draw_rect(r, color=(0.85, 0.85, 0.85), fill=(0.97, 0.97, 0.97))
+        rpg.insert_image(r, filename=os.path.join(V2_DIR, lang, f"{gi + 1:02d}.png"))
+    rpg.get_pixmap(dpi=72).save(os.path.join(os.path.dirname(os.path.abspath(OUT)), "direction-v1", f"set-v2_{lang}_sheet.png"))
+print("set-v2:", len(manifest2), "stickers x", len(LANGS), "languages in", V2_DIR)
+
 print("done", len(made), "stickers in", OUT)
