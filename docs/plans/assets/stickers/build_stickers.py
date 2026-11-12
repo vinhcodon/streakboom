@@ -813,4 +813,198 @@ for fi, ff in enumerate([os.path.join(V1_DIR, "vi", f"{n:02d}.png") for n in cur
 fpg.get_pixmap(dpi=72).save(os.path.join(FR_DIR, "contact_sheet.png"))
 print("pack-friends-draft:", len(fr_files), "new stickers in", FR_DIR)
 
+# ---- pack Office (docs/plans/sticker-packs-three-categories.md): nineteen new stickers, one prop each, no arms ----------------
+LOAF_F = dict(shift(STAND_F, 0, 18), shadow=(60, 115, 40, 4.5), tail=([86, 108], [110, 110], [106, 92], 9),
+              body=(60, 100, 40, 17, 0), belly=(60, 106, 24, 9, 0), legs=[leg(46, 108, 46, 110, 0, 11, 6.5, 0, 1)] * 4)
+GREY_D, GREY_L, BLUE = "#6f7b88", "#dfe5ea", "#5aa9d6"
+
+
+def tick(x, y, k=1.0, col=BLUE, w=2.6):
+    return f'<path transform="translate({x},{y}) scale({k})" d="M-5 0 l3.5 3.5 l7 -8" fill="none" stroke="{col}" stroke-width="{w}" stroke-linecap="round" stroke-linejoin="round"/>'
+
+
+def clock(x, y, r=10):
+    return (f'<circle cx="{x}" cy="{y}" r="{r}" fill="#fff" stroke="{GREY_D}" stroke-width="2"/>'
+            + stroke_path(f"M{x} {y} L{x} {y - r * 0.6} M{x} {y} L{x + r * 0.45} {y + r * 0.15}", GREY_D, 1.8))
+
+
+def mug(x, y, k=1.0, rot=0, col="#fff"):
+    return (f'<g transform="translate({x},{y}) rotate({rot}) scale({k})"><path d="M8 -4 q8 0 8 6 q0 6 -8 6" fill="none" stroke="{GREY_D}" stroke-width="2.4"/>'
+            f'<rect x="-9" y="-9" width="18" height="18" rx="3" fill="{col}" stroke="{GREY_D}" stroke-width="1.6"/><rect x="-7" y="-9" width="14" height="4" rx="1.5" fill="#7a4b3a"/></g>')
+
+
+def laptop_back(x, y, w=64, h=40):
+    return (f'<rect x="{x - w / 2}" y="{y - h}" width="{w}" height="{h}" rx="4" fill="{GREY_L}" stroke="{GREY_D}" stroke-width="1.6"/>'
+            f'<circle cx="{x}" cy="{y - h / 2}" r="3.2" fill="{GREY_D}" opacity="0.5"/><rect x="{x - w / 2 - 5}" y="{y - 1}" width="{w + 10}" height="5" rx="2.5" fill="{GREY_D}"/>')
+
+
+def page(x, y, w=22, h=27):
+    return (f'<rect x="{x - w / 2}" y="{y - h / 2}" width="{w}" height="{h}" rx="2" fill="#fff" stroke="{GREY_D}" stroke-width="1.4"/>'
+            + stroke_path(f"M{x - 6} {y - 7} h12 M{x - 6} {y - 2} h8", "#c3ccd4", 1.6))
+
+
+def calendar(x, y, k=1.0, rot=0, mark=True):
+    o = (f'<g transform="translate({x},{y}) rotate({rot}) scale({k})"><rect x="-11" y="-11" width="22" height="22" rx="3" fill="#fff" stroke="{GREY_D}" stroke-width="1.5"/>'
+         f'<rect x="-11" y="-11" width="22" height="7" rx="3" fill="#e5484d"/>')
+    if mark:
+        o += '<circle cx="2" cy="4" r="4.5" fill="none" stroke="#e5484d" stroke-width="1.8"/>'
+    return o + "</g>"
+
+
+def grey_cloud(x, y, k=1.0, rain=False):
+    c = "#9fb3c8"
+    o = f'<g transform="translate({x},{y}) scale({k})">' + ell(-12, 2, 11, 8, c) + ell(0, -4, 12, 10, c) + ell(12, 2, 11, 8, c) + ell(0, 5, 20, 7, c)
+    if rain:
+        o += "".join(f'<path d="M{dx} 15 q2 4 0 6 q-2 -2 0 -6z" fill="#5aa9d6"/>' for dx in (-12, 0, 12))
+    return o + "</g>"
+
+
+def of_seen():
+    return cat(STAND_F, dict(LOOK["rest"], lid=0.5, gx=-6, mouth="flat", cheek=0.3)) + tick(98, 44, 1.2) + tick(105, 44, 1.2)
+
+
+def of_ok_boss():
+    return (cat(STAND_F, dict(LOOK["rest"], wide=0.6, mouth="open", cheek=0.9, roll=-3)) + paw(95, 50, 7, 9, 60) + star(110, 36, 5, "#ffd166")
+            + stroke_path("M104 58 l7 2 M102 66 l6 4", "#b9a98f", 2))
+
+
+def of_meeting():
+    return cat(STAND_F, dict(LOOK["gasp"], droop=1, mouth="flat", cheek=0.2, dy=3)) + clock(20, 40, 11) + sweat() + stroke_path("M10 24 l-4 -4 M20 21 l0 -6 M30 24 l4 -4", "#b9a98f", 2)
+
+
+def of_listening():
+    z = '<path d="M90 22 h10 l-10 11 h10" fill="none" stroke="#6b7cff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>'
+    return (cat(STAND_F, dict(LOOK["gasp"], mouth="o", cheek=0.6)) + z + stroke_path("M86 36 L106 18", "#e5484d", 2.6)
+            + stroke_path("M22 44 l-7 -3 M24 36 l-5 -6", "#b9a98f", 2) + sweat())
+
+
+def of_deadline():
+    bell = (clock(100, 34, 10) + ell(92, 23, 4, 3, "#e5484d", -35) + ell(108, 23, 4, 3, "#e5484d", 35)
+            + stroke_path("M84 26 q-4 6 -1 12 M116 26 q4 6 1 12", "#e5484d", 2))
+    return cat(STAND_F, dict(LOOK["gasp"], mouth="yawn", cheek=0.3)) + paw(27, 82, 7.5, 9, 20) + paw(93, 82, 7.5, 9, -20) + bell
+
+
+def of_done():
+    return (cat(STAND_F, dict(LOOK["happy"], mouth="smile", cheek=0.9, roll=3, dy=-1)) + page(60, 98) + tick(60, 104, 1.3, "#3fae5a", 3)
+            + paw(46, 104, 6, 7.5, 10) + paw(74, 104, 6, 7.5, -10) + star(100, 40, 5, "#ffd166"))
+
+
+def of_nudge():
+    desk = f'<rect x="0" y="112" width="100" height="5" rx="2" fill="#b88a4e"/>'
+    return (cat(dict(STAND_F, shadow=(60, 115, 0, 0)), dict(LOOK["rest"], lid=0.55, gx=4, mouth="smile", cheek=0.6, roll=4)) + desk
+            + mug(101, 100, 0.95, 24) + paw(86, 101, 7, 8, 80) + arcs("M112 84 q5 5 2 12", "M118 80 q7 8 3 18"))
+
+
+def of_coffee():
+    steam = stroke_path("M54 76 q-4 -5 0 -10 M66 76 q4 -5 0 -10", "#b9a98f", 2)
+    return (cat(SIT_F, dict(LOOK["drowsy"], lid=0.3, mouth="flat", roll=-5, dy=5, cheek=0.3)) + steam + mug(60, 99, 1.5)
+            + paw(41, 101, 6.5, 8, -10) + paw(73, 104, 6.5, 8, 10))
+
+
+def of_payday():
+    return (cat(STAND_F, dict(LOOK["rest"], wide=0.9, gy=-3, mouth="smile", cheek=0.9, roll=-5)) + paw(54, 98, 6.5, 9, 14, True) + paw(66, 98, 6.5, 9, -14, True)
+            + calendar(102, 36, 1.1, 8) + star(84, 30, 4, "#ffd166"))
+
+
+def of_monday():
+    return cat(LOAF_F, dict(LOOK["sad"], lid=0.5, roll=0, dy=3, gy=3, cheek=0.1, droop=1)) + grey_cloud(60, 22, 1.0, True)
+
+
+def of_friday():
+    shades = (f'<rect x="31" y="58" width="25" height="16" rx="6" fill="{INK}"/><rect x="64" y="58" width="25" height="16" rx="6" fill="{INK}"/>'
+              f'<path d="M56 63 h8 M31 62 l-8 -3 M89 62 l8 -3" stroke="{INK}" stroke-width="2.6" stroke-linecap="round"/>'
+              '<path d="M36 62 l6 -2 M69 62 l6 -2" stroke="#fff" stroke-width="2" stroke-linecap="round" opacity="0.8"/>')
+    return (cat(STAND_F, dict(LOOK["rest"], lid=0.06, mouth="open", cheek=0.8, roll=5)) + shades
+            + star(14, 40, 6, "#ffd166") + star(106, 34, 7, "#f4a7a7") + star(104, 76, 4, "#8ecae6"))
+
+
+def of_not_me():
+    note = '<g transform="translate(22,46)"><ellipse cx="0" cy="8" rx="4.5" ry="3.5" fill="#6f7b88" transform="rotate(-20 0 8)"/><path d="M4 7 V-8 l8 3" fill="none" stroke="#6f7b88" stroke-width="2.2" stroke-linecap="round"/></g>'
+    spill = ell(105, 114, 12, 3.5, "#7a4b3a", 0, 0.75)
+    return cat(STAND_F, dict(LOOK["rest"], lid=0.7, gx=-7, gy=-3, mouth="o", cheek=0.6, roll=-5)) + note + spill + mug(104, 104, 0.9, 90)
+
+
+def of_recall():
+    bubble = ('<path d="M76 14 h34 a6 6 0 0 1 6 6 v16 a6 6 0 0 1 -6 6 h-20 l-8 8 v-8 h-6 a6 6 0 0 1 -6 -6 v-16 a6 6 0 0 1 6 -6z" fill="#fff" stroke="#6f7b88" stroke-width="1.6"/>'
+              '<path d="M103 34 h-14 M95 28 l-7 6 l7 6" fill="none" stroke="#e5484d" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>'
+              '<path d="M103 34 q6 0 6 -6" fill="none" stroke="#e5484d" stroke-width="2.6" stroke-linecap="round"/>')
+    return cat(STAND_F, dict(LOOK["gasp"], mouth="o", cheek=0.3, roll=-4)) + bubble + stroke_path("M20 44 l-7 -3 M22 36 l-5 -6", "#b9a98f", 2)
+
+
+def of_lag():
+    spin = ('<circle cx="60" cy="12" r="9" fill="none" stroke="#dfe5ea" stroke-width="3.2"/>'
+            '<path d="M60 3 a9 9 0 0 1 9 9" fill="none" stroke="#5aa9d6" stroke-width="3.2" stroke-linecap="round"/>')
+    blocks = "".join(f'<rect x="{x}" y="{y}" width="5" height="5" fill="{FUR}" opacity="0.9"/>' for x, y in ((104, 60), (110, 66), (104, 72), (12, 84), (6, 90)))
+    return cat(STAND_F, dict(LOOK["rest"], lid=0.75, mouth="o", cheek=0.3), ) + spin + blocks
+
+
+def of_mute():
+    mic = ('<rect x="98" y="30" width="10" height="18" rx="5" fill="#6f7b88"/><path d="M93 42 q0 12 10 12 q10 0 10 -12 M103 54 v7 M97 61 h12" fill="none" stroke="#6f7b88" stroke-width="2.2" stroke-linecap="round"/>'
+           '<path d="M90 60 L116 30" stroke="#e5484d" stroke-width="3.2" stroke-linecap="round"/>')
+    return cat(STAND_F, dict(LOOK["rest"], wide=0.3, mouth="yawn", cheek=0.6, roll=3)) + mic + arcs("M22 76 q-6 4 0 10", "M15 72 q-9 8 0 18")
+
+
+def of_tomorrow():
+    return (cat(LOAF_F, dict(LOOK["purr"], roll=5, dy=2, cheek=0.8)) + calendar(98, 36, 1.0, 22, False)
+            + stroke_path("M78 46 l-8 4 M80 34 l-10 1 M84 56 l-6 6", "#b9a98f", 2))
+
+
+def of_final():
+    files = "".join(f'<rect x="{38 + d}" y="{92 - d}" width="40" height="24" rx="2.5" fill="#fff" stroke="{GREY_D}" stroke-width="1.4"/>' for d in (6, 3, 0))
+    return (cat(STAND_F, dict(LOOK["rest"], lid=0.5, mouth="smile", cheek=0.3, roll=-3)) + files + tick(58, 105, 1.3, "#3fae5a", 3) + sweat()
+            + paw(36, 106, 6, 7, 5) + paw(80, 106, 6, 7, -5))
+
+
+def of_boss():
+    return (cat(STAND_F, dict(LOOK["gasp"], perk=1, mouth="none", cheek=0.3)) + laptop_back(60, 116, 76, 42)
+            + stroke_path("M14 40 l-7 -4 M12 52 l-8 0 M106 40 l7 -4 M108 52 l8 0", "#b9a98f", 2.2) + paw(34, 76, 6.5, 6, 0) + paw(86, 76, 6.5, 6, 0))
+
+
+def of_wfh():
+    blanket_back = ell(60, 84, 54, 40, "#bcd9f2")
+    blanket_front = '<path d="M10 100 Q60 84 110 100 L112 118 L8 118Z" fill="#bcd9f2"/><path d="M22 104 l6 12 M44 98 l4 18 M76 98 l-4 18 M98 104 l-6 12" stroke="#9fc4e6" stroke-width="2"/>'
+    lap = '<rect x="42" y="96" width="36" height="20" rx="3" fill="#dfe5ea" stroke="#6f7b88" stroke-width="1.4"/><circle cx="60" cy="106" r="2.6" fill="#6f7b88" opacity="0.5"/>'
+    return ell(60, 118, 54, 4, "#000", op=0.08) + blanket_back + cat(dict(LOAF_F, shadow=(60, 115, 0, 0), tail=([86, 108], [88, 108], [90, 108], 0.01)), dict(LOOK["rest"], lid=0.5, mouth="smile", cheek=0.6)) + blanket_front + lap
+
+
+OFFICE_NEW = [
+    ("Đã xem.", of_seen, {}),
+    ("Ok sếp.", of_ok_boss, {}),
+    ("Họp nữa à?", of_meeting, {}),
+    ("Em có nghe mà.", of_listening, {}),
+    ("Deadline!", of_deadline, {}),
+    ("Xong rồi nha!", of_done, {}),
+    ("Nhắc nhẹ nhé.", of_nudge, {}),
+    ("Cà phê đâu?", of_coffee, {}),
+    ("Lương về chưa?", of_payday, {}),
+    ("Thứ Hai rồi…", of_monday, dict(scale=2.3, dy=14)),
+    ("Thứ Sáu rồi!", of_friday, {}),
+    ("Không phải em.", of_not_me, {}),
+    ("Thu hồi đi!", of_recall, {}),
+    ("Mạng lag quá.", of_lag, dict(scale=2.3, dy=12)),
+    ("Tắt mic rồi!", of_mute, {}),
+    ("Mai tính nha.", of_tomorrow, dict(dy=-4)),
+    ("Bản cuối. Thật.", of_final, {}),
+    ("Sếp tới rồi!", of_boss, {}),
+    ("Làm ở nhà.", of_wfh, dict(scale=2.3, dy=4)),
+]
+OF_DIR = os.path.join(os.path.dirname(os.path.abspath(OUT)), "pack-office-draft")
+os.makedirs(OF_DIR, exist_ok=True)
+of_files = []
+for oi, (otext, oart, oopt) in enumerate(OFFICE_NEW, 1):
+    osc = oopt.get("scale", S)
+    oinner = wrap(oart(), (360 - 120 * osc) / 2 + oopt.get("dx", 0), 82 - 20 * osc + 8 + oopt.get("dy", 0), osc)
+    opath = os.path.join(OF_DIR, f"new-{oi:02d}.png")
+    png_from(oinner, (360, 360), otext, opath)
+    of_files.append(opath)
+od = fitz.open()
+opg = od.new_page(width=1100, height=880)
+opg.draw_rect(opg.rect, color=None, fill=(1, 1, 1))
+for oi, of_ in enumerate([os.path.join(V1_DIR, "vi", "07.png")] + of_files):
+    r = fitz.Rect(10 + (oi % 5) * 216, 10 + (oi // 5) * 214, 10 + (oi % 5) * 216 + 206, 10 + (oi // 5) * 214 + 206)
+    opg.draw_rect(r, color=(0.85, 0.85, 0.85), fill=(0.97, 0.97, 0.97) if oi < 1 else (1, 0.98, 0.93))
+    opg.insert_image(r, filename=of_)
+opg.get_pixmap(dpi=72).save(os.path.join(OF_DIR, "contact_sheet.png"))
+print("pack-office-draft:", len(of_files), "new stickers in", OF_DIR)
+
 print("done", len(made), "stickers in", OUT)
