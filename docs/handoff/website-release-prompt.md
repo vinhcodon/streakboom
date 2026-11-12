@@ -2,7 +2,7 @@
 
 **From:** the app session (Vinh and Claude)
 **To:** whoever works on `site/` (GitHub Pages)
-**Status:** a template (ADR-0033). At every release the app session fills in the version and what changed, and gives the author the text below to paste into the website session. This copy is filled for **0.4.0** (**published 2026-11-12**; ADR-0061: it is handed over after the release, as always, and the author hands it over now). The previous copies (0.2.5 to 0.3.2) were acted on by the website session: the structure of its ADR-0034 is built, the site follows 0.4.0 (ADR-0062; ADR-0063 and ADR-0064 are its research link and its right-click demo), is short and gentle (ADR-0048, ADR-0053) and has a Stickers page.
+**Status:** a template (ADR-0033). At every release the app session fills in the version and what changed, and gives the author the text below to paste into the website session. This copy was filled for **0.4.0** (published 2026-11-12, acted on by the website session: ADR-0062 to ADR-0064) and has a short **0.4.1** addition at its end (published 2026-11-12, a patch). The previous copies (0.2.5 to 0.3.2) were acted on by the website session: the structure of its ADR-0034 is built, the site follows 0.4.0 (ADR-0062; ADR-0063 and ADR-0064 are its research link and its right-click demo), is short and gentle (ADR-0048, ADR-0053) and has a Stickers page.
 
 ---
 
@@ -31,3 +31,11 @@ As at every release, review the structure of ADR-0034 and the short, gentle site
 
 ### 3. Report back
 Summarise what changed, list what you did not verify (the state on the Pages host, other browsers, a phone, a Japanese reader), and add any unchecked item to the website section of `docs/plans/verification-debt.md`.
+
+---
+
+## 0.4.1 (a patch, published 2026-11-12): what to check on the site, nothing urgent
+- **The Pages build stays green:** the README keeps `263 hand-written lines per language`, "Your absence costs nothing" and the other phrases your build checks; only the status line (v0.4.1) and one sentence in the roadmap changed.
+- **Behaviour to know about:** only one Peak runs at a time (a second start of the program no longer opens a second pet, and brings the running one back if it was hidden: ADR-0068); the tray icon menu follows the app's language; the app's Auto language reads the system's whole list of preferred languages, with a picker on the first card of the tour, and **never** uses the IP address or location (ADR-0066, which is the app side of your ADR-0067).
+- **FAQ and download text:** if any text says that starting the program again opens a second Peak, or that the tray menu is English only, it is out of date.
+- **GitHub keeps the newest two releases:** `v0.4.1` and `v0.4.0` (`v0.3.2` was deleted); the download button stays on `releases/latest`; your Pages check that the file is published (ADR-0065) should now see the 0.4.1 installer.

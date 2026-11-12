@@ -1,6 +1,6 @@
 # ADR-0068: One Peak per user
 
-- **Status:** accepted (ordered by the author on 2026-11-12: "fix it, then release a patch"); built and released in 0.4.1
+- **Status:** accepted (ordered by the author on 2026-11-12: "fix it, then release a patch"); **built and released in 0.4.1 (2026-11-12)**
 - **Date:** 2026-11-12
 - **Decided by:** Vinh (author), with Claude (the app session)
 
