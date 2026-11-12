@@ -10,7 +10,7 @@ const COPY_PX = 180; // the page shows 360 for sharpness; a copy is half of that
 const LEGACY_KEY = "streakboom-sticker-recent";
 const SET_ID = (document.getElementById("sticker-recent") || { dataset: {} }).dataset.set || "";
 const RECENT_KEY = `${LEGACY_KEY}-${SET_ID}`;
-const RECENT_MAX = 8;
+const RECENT_MAX = 10;
 
 const hint = document.getElementById("sticker-hint");
 const status = document.getElementById("sticker-status");
