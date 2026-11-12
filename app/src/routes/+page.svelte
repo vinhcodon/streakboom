@@ -187,6 +187,11 @@
   $effect(() => {
     document.documentElement.lang = lang;
   });
+  // the tray icon's menu is built in Rust: tell it the words in the language that is chosen now (and again when it changes)
+  $effect(() => {
+    const u = ui;
+    invoke("set_tray_labels", { labels: [u.trayShow, u.traySettings, u.trayQuiet, u.trayQuit] }).catch(() => {});
+  });
   const canChat = $derived(hasKey && !brainBad);
 
   const rand = (a: number, b: number) => a + Math.random() * (b - a);

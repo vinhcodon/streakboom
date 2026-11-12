@@ -95,6 +95,8 @@ struct AppState {
     drag: Mutex<DragStart>,
     bubble: Mutex<BubbleState>,
     quiet_item: Mutex<Option<CheckMenuItem<tauri::Wry>>>,
+    /// The other tray items, so that their text can follow the language (`set_tray_labels`).
+    tray_items: Mutex<Option<[MenuItem<tauri::Wry>; 3]>>,
     /// Which part of the settings window to scroll to when it opens ("brain"). A window URL
     /// with a query string is not reliable across dev and release, so the page asks for it.
     settings_section: Mutex<Option<String>>,
@@ -830,6 +832,29 @@ fn open_settings_async(app: &AppHandle) {
     tauri::async_runtime::spawn(async move { open_settings_window(&app, None) });
 }
 
+/// The text of the tray menu in the app's language (the page sends it at start and whenever the language changes):
+/// [Show / Hide, Settings, Quiet mode, Quit]. An empty or missing entry keeps the English default.
+#[tauri::command]
+fn set_tray_labels(state: State<AppState>, labels: Vec<String>) {
+    let pick = |i: usize| labels.get(i).map(|s| s.trim()).filter(|s| !s.is_empty()).map(str::to_string);
+    if let Some([toggle, settings, quit]) = state.tray_items.lock().unwrap().as_ref() {
+        if let Some(t) = pick(0) {
+            let _ = toggle.set_text(t);
+        }
+        if let Some(t) = pick(1) {
+            let _ = settings.set_text(t);
+        }
+        if let Some(t) = pick(3) {
+            let _ = quit.set_text(t);
+        }
+    }
+    if let Some(t) = pick(2) {
+        if let Some(item) = state.quiet_item.lock().unwrap().as_ref() {
+            let _ = item.set_text(t);
+        }
+    }
+}
+
 /// Switch quiet mode (tray menu): persist, tell the frontend, sync the tray check mark.
 fn set_quiet(app: &AppHandle, q: bool) {
     let state = app.state::<AppState>();
@@ -1421,6 +1446,7 @@ fn build_tray(app: &AppHandle, quiet: bool) -> tauri::Result<()> {
     menu.append(&MenuItem::with_id(app, "overlay", "Terrain overlay (dev)", true, None::<&str>)?)?;
     let quiet_ref = quiet_item.clone();
     *app.state::<AppState>().quiet_item.lock().unwrap() = Some(quiet_item.clone());
+    *app.state::<AppState>().tray_items.lock().unwrap() = Some([toggle.clone(), settings.clone(), quit.clone()]);
 
     let mut builder = TrayIconBuilder::with_id("tray")
         .tooltip("Streakboom")
@@ -1508,6 +1534,7 @@ pub fn run() {
                 drag: Mutex::new(DragStart::default()),
                 bubble: Mutex::new(BubbleState::default()),
                 quiet_item: Mutex::new(None),
+                tray_items: Mutex::new(None),
                 settings_section: Mutex::new(None),
                 bubble_gen: AtomicU64::new(0),
             });
@@ -1540,6 +1567,7 @@ pub fn run() {
             }
         })
         .invoke_handler(tauri::generate_handler![
+            set_tray_labels,
             set_hit_rect,
             get_prefs,
             move_by,

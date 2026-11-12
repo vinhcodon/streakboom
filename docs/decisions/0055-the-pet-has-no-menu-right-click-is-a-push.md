@@ -21,3 +21,6 @@ Charter: few settings, few surfaces. Two buttons with one meaning each can be le
 - The intro line about the Gemini key says "from the tray icon" (three languages, still one line each).
 - README, specs 02, 03, 04 and 11 follow. The 0.3.2 changelog (released) still says "poke Peak near the end of a ledge"; the next release notes must say the push moved to the right click.
 - Rejected: the silent nod (too like a poke), throwing a ball of wool (needs new art), calling Peak to the pointer.
+
+## Amendment 2026-11-12: the tray menu follows the language
+The tray menu was built in Rust with English words only ("Show / Hide", "Settings…", "Quiet mode", "Quit"): it never followed the chosen language, and it became the only menu when the pet's own menu (which received translated labels from the page) was removed here. Now the page sends the four labels in the chosen language to Rust (`set_tray_labels`) at start and whenever the language changes; the words are `trayShow`, `traySettings`, `trayQuiet` and `trayQuit` in `ui.ts`. The tooltip stays "Streakboom".

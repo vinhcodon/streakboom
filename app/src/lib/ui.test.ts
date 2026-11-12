@@ -55,3 +55,10 @@ test("18+ and the help card exist in every language (spec 12 sections 4 and 5)",
     assert.ok(!/\d{3,}/.test(u.helpText), `${lang}: no phone number is compiled in`);
   }
 });
+
+test("the tray menu has its own words in every language, none left in English (ADR-0055)", () => {
+  for (const key of ["trayShow", "traySettings", "trayQuiet", "trayQuit"] as const) {
+    for (const lang of ["vi", "ja"] as const) assert.notEqual(UI[lang][key], UI.en[key], `${lang}.${key} is still English`);
+    assert.ok(UI.en[key].length > 0);
+  }
+});

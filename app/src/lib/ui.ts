@@ -137,6 +137,11 @@ export interface UiStrings {
   memNotice: string;
   sectionAbout: string;
   openWebsite: string;
+  /** The tray icon's menu (the only menu Peak has, ADR-0055). */
+  trayShow: string;
+  traySettings: string;
+  trayQuiet: string;
+  trayQuit: string;
   /** "If you need help now" (spec 12 section 4): a static card, no numbers, no country. */
   helpTitle: string;
   helpText: string;
@@ -365,6 +370,10 @@ export const UI: Record<Lang, UiStrings> = {
     memNotice: "I jotted down something you told me. It's in Settings > What the pet remembers, where you can edit or delete it, and it goes to {company} with our chats. You can turn it off there.",
     sectionAbout: "About",
     openWebsite: "Open the website (streakboom.com)",
+    trayShow: "Show / Hide",
+    traySettings: "Settings…",
+    trayQuiet: "Quiet mode",
+    trayQuit: "Quit",
     helpTitle: "If you need help now",
     helpText: "Peak is a small program, not a helper in a crisis. If you are in danger or thinking of harming yourself, please contact your local emergency number or a person you trust now. A directory of crisis lines by country: findahelpline.com",
     brainAdult: "The brain providers' terms require the key holder to be an adult (18+).",
@@ -602,6 +611,10 @@ export const UI: Record<Lang, UiStrings> = {
     memNotice: "Mình vừa ghi lại điều bạn kể. Nó nằm ở Cài đặt > Pet nhớ gì, bạn sửa hoặc xóa được, và nó được gửi cho {company} cùng các cuộc trò chuyện. Bạn tắt được ở đó.",
     sectionAbout: "Về app",
     openWebsite: "Mở trang web (streakboom.com)",
+    trayShow: "Hiện / Ẩn",
+    traySettings: "Cài đặt…",
+    trayQuiet: "Chế độ yên lặng",
+    trayQuit: "Thoát",
     helpTitle: "Nếu bạn cần giúp ngay",
     helpText: "Peak chỉ là một chương trình nhỏ, không giúp được khi bạn gặp khủng hoảng. Nếu bạn đang gặp nguy hiểm hoặc nghĩ đến việc tự làm hại mình, hãy gọi ngay số khẩn cấp ở nơi bạn sống hoặc liên lạc với một người bạn tin tưởng. Danh bạ đường dây hỗ trợ theo quốc gia: findahelpline.com",
     brainAdult: "Điều khoản của các nhà cung cấp bộ não yêu cầu người giữ khóa là người lớn (18+).",
@@ -839,6 +852,10 @@ export const UI: Record<Lang, UiStrings> = {
     memNotice: "教えてもらったことをメモしたよ。設定の「ペットの記憶」にあって、直したり消したりできるし、おしゃべりのときに{company}にも送られるよ。そこでオフにもできるよ。",
     sectionAbout: "アプリ情報",
     openWebsite: "ウェブサイトを開く（streakboom.com）",
+    trayShow: "表示 / 非表示",
+    traySettings: "設定…",
+    trayQuiet: "静かモード",
+    trayQuit: "終了",
     helpTitle: "いますぐ助けが必要なとき",
     helpText: "Peakは小さなプログラムで、危機のときの助けにはなれません。危険を感じているとき、自分を傷つけたい気持ちがあるときは、いますぐお住まいの地域の緊急番号か、信頼できる人に連絡してください。国ごとの相談窓口の一覧：findahelpline.com",
     brainAdult: "脳のプロバイダーの利用規約では、キーの持ち主が成人（18歳以上）であることが必要です。",
