@@ -2,6 +2,12 @@
 
 Release notes of every version of Streakboom, newest first. **GitHub keeps the latest release and the one right before it** (installer and update manifest; the previous one is a way back if the newest is bad); when a new version is published, anything older is deleted together with its tag and its notes stay here (ADR-0028). The git history keeps every commit.
 
+## 0.4.1 (2026-11-12)
+- **Only one Peak runs at a time.** Before, every click on the program started another Peak, so you could end up with several pets on the screen. Now starting Streakboom again does not open a second pet; if the Peak that is running was hidden, it comes back. (ADR-0068.)
+- **The tray icon menu speaks your language.** Show / Hide, Settings, Quiet mode and Quit were always in English; they now follow the language you chose, and change at once when you change it in Settings.
+- **A better first guess of the language.** Auto now reads your system's whole list of preferred languages (the first one Peak has: Vietnamese, Japanese or English), not only the first one, and the first card of the tour has a small picker (Tiếng Việt, English, 日本語) if the guess is wrong. Peak never uses your IP address or location for this. (ADR-0066.)
+- Not yet tried: the tray menu in Vietnamese and Japanese by the author, the picker in the tour, which Windows setting the list of languages follows, a second start while Peak is hidden.
+
 ## 0.4.0 (2026-11-12)
 This release changes what Peak is, not what it can do. It follows a review of Peak against research on companions, streaks and attachment (`docs/foundation/`, ADR-0056 to ADR-0059). Everything that made Peak a character who needs you is gone.
 - **Your absence costs nothing.** Being away never lowers Peak's mood or closeness any more, there is no "lonely" state, and no line counts the days you were away or says it missed you. When you come back it is simply glad.

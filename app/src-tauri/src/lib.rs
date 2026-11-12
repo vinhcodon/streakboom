@@ -1487,6 +1487,16 @@ fn build_tray(app: &AppHandle, quiet: bool) -> tauri::Result<()> {
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
+        // ONE Peak per user (ADR-0067): a second start (a click on the program, the start with Windows after a manual start)
+        // does not open a second pet. It must be the first plugin. The running Peak is only made visible if it was hidden:
+        // whoever starts it again most likely cannot find it.
+        .plugin(tauri_plugin_single_instance::init(|app, _args, _cwd| {
+            if let Some(win) = app.get_webview_window("main") {
+                if !win.is_visible().unwrap_or(true) {
+                    let _ = win.show();
+                }
+            }
+        }))
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_updater::Builder::new().build())
         // Starting with Windows is the user's choice (Settings, or the one-time question from the pet).
