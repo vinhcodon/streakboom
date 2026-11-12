@@ -75,3 +75,37 @@ function Test-ReleaseVersions {
   if ($Package -ne $v) { $problems += "package.json says '$Package', the tag says '$v'" }
   return $problems
 }
+
+<#
+.SYNOPSIS
+  The first line of a CHANGELOG entry as a plain sentence for the update manifest's "notes" (what the app can show when it
+  offers an update): the first non-empty line without the leading "- ", the bold marks and the code marks, at most 300 characters.
+#>
+function Get-ManifestNotes {
+  param([Parameter(Mandatory = $true)][AllowEmptyCollection()][AllowEmptyString()][string[]]$Entry)
+  $first = $Entry | Where-Object { -not [string]::IsNullOrWhiteSpace($_) } | Select-Object -First 1
+  if (-not $first) { return "" }
+  $t = ($first -replace '^\s*-\s+', '') -replace '\*\*', '' -replace '`', ''
+  $t = $t.Trim()
+  if ($t.Length -gt 300) { $t = $t.Substring(0, 297).TrimEnd() + "..." }
+  return $t
+}
+
+<#
+.SYNOPSIS
+  The update manifest (latest.json) for one installer: the version, the notes, the date, the updater signature and the address
+  the app downloads the installer from. The same shape as scripts/release.ps1 writes. Write it as UTF-8 WITHOUT a byte-order mark.
+#>
+function New-UpdateManifest {
+  param(
+    [Parameter(Mandatory = $true)][string]$Version, [Parameter(Mandatory = $true)][AllowEmptyString()][string]$Notes,
+    [Parameter(Mandatory = $true)][string]$Signature, [Parameter(Mandatory = $true)][string]$Url, [string]$PubDate = ""
+  )
+  if (-not $PubDate) { $PubDate = (Get-Date).ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:ssZ") }
+  return [ordered]@{
+    version   = $Version
+    notes     = $Notes
+    pub_date  = $PubDate
+    platforms = [ordered]@{ "windows-x86_64" = [ordered]@{ signature = $Signature; url = $Url } }
+  }
+}

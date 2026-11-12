@@ -48,4 +48,15 @@ Check "versions: a tag that is not a version" ((Test-ReleaseVersions -Tag "relea
 Check "versions: a tag with a suffix is refused" ((Test-ReleaseVersions -Tag "v0.4.1-rc1" -Conf "0.4.1" -Cargo "0.4.1" -Package "0.4.1").Count -eq 1)
 Check "versions: each file that disagrees is named" ((Test-ReleaseVersions -Tag "v0.4.2" -Conf "0.4.2" -Cargo "0.4.1" -Package "0.4.0").Count -eq 2)
 
+# the notes line and the manifest of a release finished locally
+Check "notes: the first line, plain" ((Get-ManifestNotes -Entry @("", "- **One peak.** Starts `once`.", "- Two")) -eq "One peak. Starts once.")
+Check "notes: a paragraph line is kept as it is" ((Get-ManifestNotes -Entry @("A paragraph", "- A")) -eq "A paragraph")
+Check "notes: empty entry gives nothing" ((Get-ManifestNotes -Entry @()) -eq "")
+Check "notes: cut at 300 characters" ((Get-ManifestNotes -Entry @("- " + ("x" * 500))).Length -eq 300)
+$m = New-UpdateManifest -Version "0.4.2" -Notes "n" -Signature "SIG" -Url "https://api.github.com/repos/o/r/releases/assets/9" -PubDate "2026-11-12T10:00:00Z"
+$j = $m | ConvertTo-Json -Depth 5 | ConvertFrom-Json
+Check "manifest: version, notes, date" ($j.version -eq "0.4.2" -and $j.notes -eq "n" -and $j.pub_date -eq "2026-11-12T10:00:00Z")
+Check "manifest: the windows platform has the signature and the address" ($j.platforms."windows-x86_64".signature -eq "SIG" -and $j.platforms."windows-x86_64".url -match "/assets/9$")
+Check "manifest: a date is made when none is given" ((New-UpdateManifest -Version "1.0.0" -Notes "" -Signature "S" -Url "u").pub_date -match '^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$')
+
 if ($fail) { "$fail failed"; exit 1 } else { "all passed" }
