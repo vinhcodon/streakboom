@@ -1,6 +1,6 @@
 # ADR-0071: Roadmap version 2: the closed alpha first, a signed installer before it, the lawyer after it
 
-- **Status:** accepted (answered by the author on 2026-11-12); not yet carried out
+- **Status:** accepted (answered by the author on 2026-11-12); not yet carried out; **point 3 amended by ADR-0072** (SignPath only, the alpha runs unsigned)
 - **Date:** 2026-11-12
 - **Decided by:** Vinh (author), with Claude (the app session)
 
@@ -21,3 +21,6 @@ New stories in the backlog, epic E19 (the certificate, the guardrail counters, t
 
 ## Sources
 `docs/plans/roadmap.md`; `docs/plans/backlog.md`; `docs/plans/verification-debt.md`; `docs/foundation/` (the measurement plan and the gates); the author's answers of 2026-11-12.
+
+## Amendment 2026-11-12: what signing does not do
+While writing the application guide (`docs/plans/code-signing.md`) it was found that **no certificate removes the SmartScreen warning at once**, not even EV since 2024 (Microsoft Learn, updated 2026-11-10): reputation builds over time for a consistent publisher. The alpha testers will therefore probably still see a prompt, and the install guide keeps its "More info, Run anyway" step. Signing stays worth doing (a named publisher, reputation that starts to build, before going public), so the decision stands, but **the alpha does not wait on it beyond week 6**, as decided above.

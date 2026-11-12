@@ -15,8 +15,8 @@ Run a **closed alpha with 5 to 8 adults the author knows, Vietnamese speakers**,
 ### R0. Close what is open (days, now)
 The author: click through the in-app update to 0.4.1 (V-111), try the tray menu in two languages, the language picker and a second start (V-108 to V-110). Claude: commit the backlog fix, run the CI for the first time through a throwaway pull request when the author agrees (V-112), a strict Content-Security-Policy (V-113, CS-1). **Gate:** V-108 to V-111 are checked or have a named reason.
 
-### R1. The signing certificate (starts now, the longest wait)
-Decided 2026-11-12: **get a code-signing certificate before the alpha** (ADR-0071, which replaces R3 of roadmap v1). Options from the earlier plan, **not verified**: SignPath Foundation (free for open source, needs an application and eligibility), or an OV certificate (about 150 to 300 USD a year); Azure Artifact Signing is not available to individuals in Vietnam; an EV certificate does not give instant SmartScreen trust. The updater's own key (minisign) is separate and stays. Stories **DS-1** (choose and apply: the author), **DS-2** (sign in `release.ps1`), **DS-3** (a clean-machine install: SmartScreen, the uninstaller, an update from the signed build). **Gate:** a signed installer installs on a clean machine and updates in app. **If the certificate is late, the alpha does not wait forever:** at week 6 the author chooses to start unsigned with the SmartScreen steps in the install guide (then ADR-0071 gets an amendment).
+### R1. Signing through SignPath Foundation, with releases built in CI (starts now, runs in parallel)
+Decided 2026-11-12 (ADR-0072, which amends ADR-0071 point 3): **free code signing from SignPath Foundation only**; paid certificates are out. It needs automated builds of the public repository, so the work is: **CP-1** the code signing policy, **CP-3** the dependency licenses, **CI-1** a release workflow in CI, **CI-2** a local finishing script (the updater key stays on the author's computer), **CI-3** two real releases built by CI, **CP-2** the website's policy section, then **AP-1** the application by the author, then **SP-1** the SignPath setup. The full assessment, the flow and the reputation risk are in [`signpath-ci-plan.md`](signpath-ci-plan.md). **The alpha does not wait for the signature:** it runs on the unsigned installer once R3 is done (no certificate removes the SmartScreen prompt at once anyway), and the install guide keeps its "More info, Run anyway" step. If SignPath declines, plan B is free: stay unsigned and reapply later, or (a separate, larger project) publish through the Microsoft Store.
 
 ### R2. Make it checkable (Claude, 1 to 2 weeks, in parallel with R1)
 - **ME-3** a script that computes BD7, D3, D7, the engagement rate and the chat share from a folder of "Copy stats" exports; **ME-1** the author's own baseline (consent must be on); **ME-2** check what was never verified (`chat` with a real chat, `quiet`, the midnight rollover, the per-day counters).
@@ -26,7 +26,7 @@ Decided 2026-11-12: **get a code-signing certificate before the alpha** (ADR-007
 **Gate:** the script runs on the author's baseline; the kit is written and read by the author.
 
 ### R3. Ready to be watched (the author and Claude, 2 to 3 weeks)
-What the testers would meet, and nothing more: **VE-2** 125% and 150% display scale and a second monitor; **VE-3** a second, lower-end computer; **VE-8** an 8-hour soak after the CPU fix; **PF-3** a stronger silence test (fullscreen, presentation, screen sharing); **PR-8** start with Windows across a reboot and an update; **V-104** the chat rules with a real key on at least two brains; **PE-4** the vague "too big for a cat" refusal. Small fixes found on the way go into 0.4.x patch releases. **No new behaviour** (it would reset what the testers see). **Gate:** the checks above are done or recorded as known problems, and the installer is signed (or the week-6 decision is taken).
+What the testers would meet, and nothing more: **VE-2** 125% and 150% display scale and a second monitor; **VE-3** a second, lower-end computer; **VE-8** an 8-hour soak after the CPU fix; **PF-3** a stronger silence test (fullscreen, presentation, screen sharing); **PR-8** start with Windows across a reboot and an update; **V-104** the chat rules with a real key on at least two brains; **PE-4** the vague "too big for a cat" refusal. Small fixes found on the way go into 0.4.x patch releases. **No new behaviour** (it would reset what the testers see). **Gate:** the checks above are done or recorded as known problems (the installer is unsigned for the alpha, ADR-0072).
 
 ### R4. The closed alpha (3 to 4 weeks of use)
 5 to 8 adults, Vietnamese speakers, people the author can call. Install, the first ten minutes watched, a call after day 3 and day 7, "Copy stats" collected from those who agree. Record outcomes in the hypotheses register (status and evidence, descriptive). **The foundation's stop rule applies:** if any guardrail gets worse for a person (they report pressure or guilt, night use rises, chat share climbs sharply), Peak is changed or the person is released from the test, even if Bond Days rises. **Gate to R5:** everyone has had at least 7 days, or has stopped and said why.
@@ -53,7 +53,7 @@ R0 (days) -> R2 (make it checkable) -> R3 (ready to be watched) -> R4 (alpha) ->
 ```
 
 ## Risks
-- **The certificate takes longer than the plan** (an application, a verification of identity): hence the week-6 decision.
+- **SignPath declines, or answers late** (a young repository, weak reputation): the alpha does not depend on it.
 - **Too few testers, or testers who are polite:** friends tell you it is nice. The observation protocol asks where they stopped and what they did when nobody was looking (the stats), not whether they liked it.
 - **The numbers mean nothing at n of 8.** They are descriptive; the risks and the stop rule are the real output.
 - **Research without ethics:** a small test among acquaintances is not a study, and must not be written up as evidence; a published claim needs the foundation's design (consent, an outside reviewer, a larger group).
@@ -63,5 +63,5 @@ R0 (days) -> R2 (make it checkable) -> R3 (ready to be watched) -> R4 (alpha) ->
 ## Decisions (answered by the author, 2026-11-12; ADR-0071)
 - **Direction:** the alpha first; features only as small fixes.
 - **Alpha:** 5 to 8 acquaintances who speak Vietnamese.
-- **Signing:** a certificate before the alpha (replaces R3 of roadmap v1: "not before the alpha").
+- **Signing:** first decided as "a certificate before the alpha" (ADR-0071), **amended the same day** (ADR-0072): SignPath Foundation only, releases built in CI, applied for after two CI releases, and **the alpha runs unsigned**.
 - **Lawyer:** after the alpha, before anything public.
