@@ -463,7 +463,7 @@ STICKERS = [
     ("01", "Chào buổi sáng!", lambda: cat(STRETCH_S, LOOK["wake"]), dict(scale=2.8, dy=-14)),
     ("02", "Sướng quá~", lambda: cat(STAND_F, LOOK["purr"])),
     ("03", "Cuộc sống mà.", lounging, dict(scale=2.5, dx=2, dy=8)),
-    ("04", "Buồn ngủ…", lambda: cat(SIT_F, dict(LOOK["drowsy"], lid=0.34, roll=-8, dy=8, droop=0.4, mouth="yawn", cheek=0.8)) + '<path d="M33 74 Q36 80 33 83 Q30 80 33 74" fill="#8ecae6"/>'),
+    ("04", "Buồn ngủ…", lambda: cat(SIT_F, dict(LOOK["drowsy"], lid=0.34, roll=-8, dy=8, droop=0.4, mouth="yawn", cheek=0.8)) + '<path d="M66 82 Q70 90 67 97" fill="none" stroke="#a9d8ee" stroke-width="2.6" stroke-linecap="round"/><path d="M67 98 Q63 103 67 105.5 Q71 103 67 98Z" fill="#a9d8ee"/>'),
     ("05", "Hừm.", lambda: cat(SIT_F, dict(LOOK["rest"], lid=0.06, roll=15, dy=-2, gx=-7, mouth="flat", cheek=0.4)) + puffs() + stroke_path("M10 60 l7 3 M8 70 l9 1", "#b9a98f", 2)),
     ("06", "Quá sức mèo rồi.", lambda: cat(STAND_F, LOOK["sad"])),
     ("08", "Làm chung nhé?", lambda: cat(STAND_F, dict(LOOK["curious"], roll=12, wide=0.6, cheek=0.7)) + paw(25, 94, 9, 10.5, -40, True) + arcs("M11 82 q-6 6 -2 14", "M5 76 q-8 9 -3 20")),
@@ -888,13 +888,6 @@ def of_ok_boss():
     return cat(STAND_F, dict(LOOK["rest"], wide=0.4, mouth="open", cheek=0.8, roll=-3, dy=-1)) + hand + star(112, 30, 5, "#ffd166")
 
 
-def of_regret():
-    """"Rất tiếc": a shrug and a pout: eyes up, the mouth pushed out in a frown, both palms spread open at the sides of the body."""
-    pout = stroke_path("M51 87 Q60 79 69 87", MOUTH, 2.2) + ell(60, 88.5, 6, 2.6, "#f4a7a7")
-    return (cat(STAND_F, dict(LOOK["rest"], lid=0.55, gy=-4, mouth="none", roll=0, dy=3, cheek=0.4)) + pout + paw(17, 97, 10, 11.5, -90, True) + paw(103, 97, 10, 11.5, 90, True)
-            + arcs("M6 80 q-3 6 0 12", "M114 80 q3 6 0 12"))
-
-
 def of_meeting():
     return cat(STAND_F, dict(LOOK["gasp"], droop=1, mouth="flat", cheek=0.2, dy=3)) + clock(20, 40, 11) + sweat() + stroke_path("M10 24 l-4 -4 M20 21 l0 -6 M30 24 l4 -4", "#b9a98f", 2)
 
@@ -1041,15 +1034,13 @@ print("pack-office-draft:", len(of_files), "new stickers in", OF_DIR)
 ART = {}
 for _ident, _text, _art, *_opt in STICKERS:
     ART[_text] = (_art, _opt[0] if _opt else {})
-ART["Quá sức mèo rồi."] = (of_regret, {})  # the new "Rất tiếc." (a shrug and a pout), not the old overwhelmed face
 for _lst in (CUTE_NEW, FRIENDS_NEW, OFFICE_NEW):
     for _text, _art, _opt in _lst:
         ART[_text] = (_art, _opt)
 # (group, key in ART, the text printed on the image if it changes)
 GROUPS = [
     ("Chào hỏi và ngày tháng", [("Chào buổi sáng!", None), ("Ngủ ngon.", None), ("Buồn ngủ…", None), ("Thứ Sáu rồi!", None)]),
-    ("Yêu thương và lời tử tế", [("Thương quá!", "Yêu quá!"), ("Cảm ơn nha!", None), ("Xin lỗi nhé.", None), ("Quá sức mèo rồi.", "Rất tiếc."),
-                                 ("Chúc mừng nha!", None), ("Sinh nhật vui!", "Sinh nhật vui vẻ!"), ("Cố lên nha!", None)]),
+    ("Yêu thương và lời tử tế", [("Thương quá!", "Yêu quá!"), ("Cảm ơn nha!", None), ("Xin lỗi nhé.", None), ("Chúc mừng nha!", None), ("Sinh nhật vui!", "Sinh nhật vui vẻ!"), ("Cố lên nha!", None)]),
     ("Vui và phấn khích", [("Haha!", None), ("Sướng quá~", None), ("Hì hì.", None), ("Meo~", None), ("Ú òa!", None), ("Đi chơi đi!", None), ("Hóng!", None)]),
     ("Buồn và lo", [("Huhu…", None), ("Deadline!", None)]),
     ("Bất ngờ và nghi ngờ", [("Ơ!", None), ("Ủa?", None), ("Để mình nghĩ…", None)]),
