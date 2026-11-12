@@ -90,7 +90,7 @@ jobs:
         working-directory: app/src-tauri
         run: cargo test --locked
 
-      - name: Build the installer (no updater key in CI: the update signature is made on the maintainer's computer)
+      - name: Build the installer (no updater key in CI, the update signature is made on the maintainer's computer)
         working-directory: app
         run: npm run tauri build -- --bundles nsis --config "${{ github.workspace }}/.github/ci/tauri.ci.conf.json"
 

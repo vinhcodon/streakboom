@@ -126,6 +126,32 @@ const README_MAX_LINES = 220;
 const readmeLines = text("README.md").split(String.fromCharCode(10)).length;
 if (readmeLines > README_MAX_LINES) bad(`README.md has ${readmeLines} lines (the limit is ${README_MAX_LINES}): move detail to docs/ and link it`);
 
+// 9b. the YAML files of GitHub (workflows, issue forms): there is no YAML parser in this repository, and a broken workflow file
+// is only found out on GitHub ("workflow file issue", no message). The two mistakes made so far: a tab, and a plain value that
+// contains ": " (a step name such as "Build (no key in CI: the update...)" is not valid YAML unless it is quoted).
+for (const f of files.filter((f) => /^\.github\/.*\.ya?ml$/.test(f))) {
+  let inBlock = false;
+  let blockIndent = 0;
+  text(f).split(/\r?\n/).forEach((l, i) => {
+    if (l.includes("\t")) bad(`${f}:${i + 1}: a tab (YAML wants spaces)`);
+    if (inBlock) {
+      if (l.trim() === "" || l.length - l.trimStart().length > blockIndent) return;
+      inBlock = false;
+    }
+    const m = /^(\s*)(- )?([A-Za-z_-]+):\s*(.*)$/.exec(l);
+    if (!m) return;
+    const v = m[4];
+    if (["|", ">", "|-", ">-"].includes(v)) {
+      inBlock = true;
+      blockIndent = m[1].length + (m[2] ? 2 : 0);
+      return;
+    }
+    if (!v || /^["'\[{]/.test(v)) return;
+    const plain = v.replace(/\s#.*$/, "");
+    if (plain.includes(": ") || plain.endsWith(":")) bad(`${f}:${i + 1}: a plain value with ": " inside is not valid YAML, put it in quotes: ${v.slice(0, 60)}`);
+  });
+}
+
 // 10. one row per ADR number; every document directly in docs/ is named in docs/README.md
 const adrNumbers = [...index.matchAll(/^\| \[(\d{4})\]/gm)].map((m) => m[1]);
 for (const n of new Set(adrNumbers)) if (adrNumbers.filter((x) => x === n).length > 1) bad(`ADR ${n} has more than one row in docs/decisions/README.md`);
