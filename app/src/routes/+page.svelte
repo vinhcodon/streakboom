@@ -181,7 +181,7 @@
   let saveTimer: ReturnType<typeof setTimeout> | undefined;
   let slowTimer: ReturnType<typeof setTimeout> | undefined;
 
-  const lang = $derived(resolveLang(data.settings.lang, navigator.language));
+  const lang = $derived(resolveLang(data.settings.lang, navigator.languages?.length ? navigator.languages : navigator.language));
   const ui = $derived(UI[lang]);
   // the document language decides which font variants the web view picks for Japanese characters
   $effect(() => {
@@ -193,6 +193,12 @@
     invoke("set_tray_labels", { labels: [u.trayShow, u.traySettings, u.trayQuiet, u.trayQuit] }).catch(() => {});
   });
   const canChat = $derived(hasKey && !brainBad);
+  /** The picker on the first card of the tour: each language in its own name, so that anyone can find theirs (ADR-0065). */
+  const LANG_CHOICES = [
+    { value: "vi" as const, label: "Tiếng Việt" },
+    { value: "en" as const, label: "English" },
+    { value: "ja" as const, label: "日本語" },
+  ];
 
   const rand = (a: number, b: number) => a + Math.random() * (b - a);
   const clip = (s: string) => (s.length > MAX_REPLY_CHARS ? s.slice(0, MAX_REPLY_CHARS - 1).trimEnd() + "…" : s);
@@ -2022,6 +2028,13 @@
       case "chat-blocked":
         onChatBlocked();
         break;
+      case "tour-lang":
+        // the picker on the first card of the tour: an explicit choice, kept like the one in Settings (ADR-0065)
+        if (panel !== "tour") break;
+        setSetting("lang", a.value);
+        pushSettings();
+        resetMenuTimer();
+        break;
       case "tour":
         if (panel !== "tour") break;
         if (a.action === "skip" || tourStep + 1 >= ui.tourSteps.length) endTour();
@@ -2339,6 +2352,7 @@
         text: ui.tourSteps[tourStep] ?? "",
         next: tourStep + 1 < total ? ui.tourNext : ui.tourDone,
         skip: ui.tourSkip,
+        langs: tourStep === 0 ? LANG_CHOICES.map((c) => ({ ...c, on: c.value === lang })) : undefined,
       };
     }
     if (panel === "dailyconsent") {

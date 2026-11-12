@@ -183,6 +183,13 @@
       {:else if view.kind === "tour"}
         <div class="note">{view.step} / {view.total}</div>
         <div class="say">{view.text}</div>
+        {#if view.langs}
+          <div class="row langs">
+            {#each view.langs as l (l.value)}
+              <button class="btn" class:primary={l.on} aria-pressed={l.on} onclick={() => fromBubble({ type: "tour-lang", value: l.value })}>{l.label}</button>
+            {/each}
+          </div>
+        {/if}
         <div class="row end">
           {#if view.step < view.total}
             <button class="btn" onclick={() => fromBubble({ type: "tour", action: "skip" })}>{view.skip}</button>
@@ -413,6 +420,10 @@
     display: flex;
     gap: 6px;
     flex-wrap: wrap;
+  }
+  .row.langs {
+    gap: 6px;
+    margin: 2px 0 4px;
   }
   .row.end {
     justify-content: flex-end;

@@ -479,3 +479,13 @@ test("Japanese lines: written in Japanese, with the same triggers, tiers, bands 
     assert.ok(!/です[。！？…」）]|ます[。！？…」）]|にゃ/.test(l.text), `${l.id} is not in the casual voice: ${l.text}`);
   }
 });
+
+test("the language list: the first language of the system's list that the app has, else English (ADR-0065)", () => {
+  assert.equal(resolveLang("auto", ["en-US", "vi-VN"]), "en", "the first one that the app has wins, even if it is English");
+  assert.equal(resolveLang("auto", ["fr-FR", "vi-VN", "en-US"]), "vi", "a language the app lacks is skipped");
+  assert.equal(resolveLang("auto", ["de", "ko"]), "en", "none of them: English");
+  assert.equal(resolveLang("auto", []), "en");
+  assert.equal(resolveLang("auto", ["ja"]), "ja");
+  assert.equal(resolveLang("vi", ["ja-JP"]), "vi", "the choice of the person beats the system");
+  assert.equal(resolveLang("auto", "vi"), "vi", "a single language still works");
+});

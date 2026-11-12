@@ -11,6 +11,7 @@ What was **decided**, why, and what was rejected. One short file per decision (a
 | ADR | Decision | Status | Date |
 |---|---|---|---|
 | [0061](0061-0-4-0-release-flow-website-after-the-release.md) | How 0.4.0 reaches `main`: the old flow (merge commit, push `main`, release, then the website session), a short red site build accepted, two gates (the Vietnamese lines read, the chat tried with a real key), no new CPU measurement | accepted; carried out | 2026-11-12 |
+| [0066](0066-the-default-language-from-the-system-never-from-the-ip.md) | The default language comes from what the system already says (the ordered list of preferred languages), never from the IP address or a location; a language picker on the first card of the tour; the website gets a dismissible suggestion, no redirect | accepted; the app part built (0.4.1), the website part requested | 2026-11-12 |
 | [0065](0065-the-download-button-downloads-the-installer.md) | The download button downloads the installer at once, with a line after the click; the build checks the file exists (the website session) | accepted, built | 2026-11-12 |
 | [0064](0064-the-hero-demo-shows-a-fright-on-a-right-click.md) | The hero demo shows a fright on a right click and says what the app does (the website session) | accepted, built | 2026-11-12 |
 | [0063](0063-the-research-is-a-link-and-the-charter-stays-on-github.md) | The research is a link, not a page; the charter stays on GitHub (the website session) | accepted, built | 2026-11-12 |

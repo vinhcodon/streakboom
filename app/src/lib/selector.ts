@@ -89,8 +89,19 @@ export function remember(recent: string[], id: string, max = 24): string[] {
   return [...recent.filter((x) => x !== id), id].slice(-max);
 }
 
-export function resolveLang(setting: "auto" | Lang, navLang: string): Lang {
+/**
+ * The language of the app (ADR-0065): the person's choice, else the first language of the system's ordered list of
+ * preferred languages that the app has, else English. Nothing else is consulted (no location, no network). `navLangs` is
+ * `navigator.languages` (or a single `navigator.language`).
+ */
+export function resolveLang(setting: "auto" | Lang, navLangs: string | readonly string[]): Lang {
   if (setting !== "auto") return setting;
-  const n = navLang.toLowerCase();
-  return n.startsWith("vi") ? "vi" : n.startsWith("ja") ? "ja" : "en";
+  const list = typeof navLangs === "string" ? [navLangs] : navLangs;
+  for (const raw of list) {
+    const n = raw.toLowerCase();
+    if (n.startsWith("vi")) return "vi";
+    if (n.startsWith("ja")) return "ja";
+    if (n.startsWith("en")) return "en";
+  }
+  return "en";
 }

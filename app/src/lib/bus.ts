@@ -29,7 +29,7 @@ export type BubbleView =
   // a yes/not-now question about a setting (currently only "start with Windows")
   | { kind: "choice"; id: "startup"; text: string; yes: string; later: string }
   // one step of the first-run tour
-  | { kind: "tour"; step: number; total: number; text: string; next: string; skip: string }
+  | { kind: "tour"; step: number; total: number; text: string; next: string; skip: string; langs?: { value: "vi" | "en" | "ja"; label: string; on: boolean }[] }
   // a one-line question the user answers by typing (the pet's name, what to call the user)
   | { kind: "input"; field: MemField; text: string; placeholder: string; ok: string; skip: string };
 
@@ -42,6 +42,7 @@ export type BubbleAction =
   | { type: "typing"; nonEmpty: boolean }
   | { type: "choice"; id: "startup"; yes: boolean }
   | { type: "tour"; action: "next" | "skip" }
+  | { type: "tour-lang"; value: "vi" | "en" | "ja" } // the language picker on the first card of the tour (ADR-0065)
   | { type: "alive" } // the user is still here (clicked, focused or pressed a key in the bubble)
   | { type: "close" }
   | { type: "ask-yes" }

@@ -55,3 +55,6 @@ To publish, in this order (ADR-0061; nothing is done until the author orders "Ph
 ## Published (2026-11-12) and checked
 The first run of `release.ps1` stopped before publishing: the release notes had double quotes, which Windows PowerShell 5.1 breaks when it hands the text to `gh`; nothing had been created (checked with `gh release list`). Run again with notes without double quotes, it published. Checked afterwards: the published installer is byte for byte the one built (SHA-256 278B25CF...7340, 2,669,595 bytes, product version 0.4.0); the release is not a draft and is the latest; the tag `v0.4.0` points at 9065445; `updates/latest.json` on `main` says 0.4.0 with a signature. **Not checked:** the update offer on an installed 0.3.x (the author's installed Peak is 0.3.1: V-107), a clean install, Windows 11, several monitors.
 Lesson for the next release: write the notes without double quotes (or in a file), and check the notes before the build.
+
+## Already built for 0.4.1 (on `main`, 2026-11-12)
+The tray menu in the chosen language (ADR-0055, V-108); the default language from the system's list of preferred languages and a picker on the first card of the tour (ADR-0066, V-109); the right click that pushes (ADR-0055) was already in 0.4.0.
