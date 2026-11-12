@@ -227,7 +227,7 @@ test("a memory number on the Japanese How it works page that differs from the RE
 // ADR-0048: the short home page, the promises, the split FAQ
 test("the home page is short: four feature lines, five questions, one update, no long blocks", () => {
   const c = clone();
-  for (const [path, words] of [["/", 800], ["/vi/", 950]]) { // was 2,862 and 3,198 words before ADR-0048; Vietnamese 900 to 950 in 0.4.0 (ADR-0062: the mission lead, the adults line, the longer first sentence of the newest update)
+  for (const [path, words] of [["/", 920], ["/vi/", 1080]]) { // was 2,862 and 3,198 words before ADR-0048; English 800 to 920 and Vietnamese 950 to 1,080 for the Code signing policy (ADR-0076); Vietnamese 900 to 950 in 0.4.0 (ADR-0062: the mission lead, the adults line, the longer first sentence of the newest update)
     const h = page(c, path).html;
     assert.equal((h.match(/<article class="card">/g) || []).length, 4, `${path}: four feature lines`);
     assert.equal((h.match(/<details>/g) || []).length, 5, `${path}: five questions`);
@@ -389,4 +389,22 @@ test("Auto reads the whole list of the system's languages, never the IP; the tra
   assert.match(page(c, "/how-it-works/").html, /Starting Streakboom again never opens a second Peak/);
   assert.match(page(c, "/vi/how-it-works/").html, /không sinh thêm Peak thứ hai/);
   assert.match(page(c, "/ja/how-it-works/").html, /2匹目のPeakは出ず/);
+});
+
+// ADR-0076: the Code signing policy
+test("the Code signing policy is on every home page, says nothing is signed, and the attribution waits for approval", () => {
+  const c = clone();
+  for (const path of ["/", "/vi/", "/ja/"]) {
+    const h = page(c, path).html;
+    assert.match(h, /<section id="code-signing"[\s\S]*<h2>Code signing policy<\/h2>/, path);
+    assert.ok(h.includes("blob/main/CODE_SIGNING.md"), path + ": link to the policy");
+    assert.ok(h.includes('href="#code-signing"'), path + ": the download area points to it");
+  }
+  assert.match(page(c, "/").html, /not code-signed yet/);
+  assert.match(page(c, "/").html, /Vinh Codon \(@vinhcodon on GitHub\) is the author, reviewer and approver/);
+  assert.ok(c.files["llms.txt"].includes("CODE_SIGNING.md"));
+  fails((c2) => { const p = page(c2, "/"); p.html = p.html.replace("</main>", "<p>Free code signing provided by SignPath.io, certificate by SignPath Foundation</p></main>"); }, /attribution line before the project is approved/);
+  fails((c2) => { const p = page(c2, "/vi/"); p.html = p.html.replace('<section id="code-signing"', '<section id="x"'); }, /Code signing policy section is missing/);
+  fails((c2) => { const p = page(c2, "/ja/"); p.html = p.html.replace("<h2>Code signing policy</h2>", "<h2>署名ポリシー</h2>"); }, /exact term/);
+  fails((c2) => { const p = page(c2, "/"); p.html = p.html.replace("Windows SmartScreen warns", "The installer is verified and Windows SmartScreen warns"); }, /claims more than is true/);
 });

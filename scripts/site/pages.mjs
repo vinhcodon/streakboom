@@ -168,6 +168,8 @@ const faqNode = (lang, ctx, path, ids) => ({
 });
 
 /** The charter of Peak on GitHub: the proof behind the promises (docs/charter.md; the build checks that the file exists). */
+/** The code signing policy of the repository (ADR-0076): the site links to it and says, honestly, that nothing is signed yet. */
+export const CODE_SIGNING_URL = `${REPO_URL}/blob/main/CODE_SIGNING.md`;
 export const CHARTER_URL = `${REPO_URL}/blob/main/docs/charter.md`;
 /** The research behind the design (ADR-0057, ADR-0062): a link to the folder on GitHub, no page and no figures on the site. */
 export const RESEARCH_URL = `${REPO_URL}/tree/main/docs/foundation`;
@@ -252,7 +254,7 @@ export function homePage(lang, ctx) {
           <span>${s("other_os")}</span>
           <a id="direct-dl" href="${ctx.installerUrl}">${s("direct_dl")}</a>
         </p>
-        <p class="note win-note">${s("alpha_note")} <a href="${RELEASES_URL}">${s("dl_all")}</a></p>
+        <p class="note win-note">${s("alpha_note")} <a href="${RELEASES_URL}">${s("dl_all")}</a> · <a href="#code-signing">${s("cs_title")}</a></p>
         <p class="note">${s("lang_note")}</p>
         <p id="dl-toast" class="toast" role="status" aria-live="polite"></p>
       </div>
@@ -299,6 +301,15 @@ ${teasers}
       </ol>
       <p class="sub">${s("inst_note")}</p>${ctx.downloads ? `
       <p class="sub downloads">${s("dl_count")}</p>` : ""}
+    </section>
+
+    <!-- CODE SIGNING POLICY (ADR-0076): the exact term, the team, the privacy sentence; nothing is signed yet, so it says so -->
+    <section id="code-signing" class="section">
+      <h2>${s("cs_title")}</h2>
+      <p>${s("cs_p1")}</p>
+      <p>${s("cs_team")}</p>
+      <p>${s("cs_privacy")}</p>
+      <p class="links"><a href="${PATHS[lang].privacy}">${s("priv_more")}</a> · <a href="${CODE_SIGNING_URL}">${s("cs_full")}</a></p>
     </section>
 
     <!-- FAQ: five answers of one or two sentences; the rest is on the How it works page -->

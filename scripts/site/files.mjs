@@ -93,6 +93,7 @@ ${FACTS}
 - [README](${REPO_URL}#readme): the reference text for features, privacy and status
 - [Installer for Windows, version ${ctx.version}](${ctx.installerUrl}): a direct download of the .exe
 - [Latest release](${RELEASES_URL}): release notes and other versions
+- [Code signing policy](${REPO_URL}/blob/main/CODE_SIGNING.md): the installers are not code-signed yet; who approves what; what the program sends
 - [Issues](${REPO_URL}/issues): bug reports and ideas
 - [Full facts for assistants](${ORIGIN}/llms-full.txt)
 

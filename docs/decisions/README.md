@@ -10,6 +10,7 @@ What was **decided**, why, and what was rejected. One short file per decision (a
 
 | ADR | Decision | Status | Date |
 |---|---|---|---|
+| [0076](0076-the-code-signing-policy-on-the-home-page.md) | A truthful Code signing policy on the home page in three languages; no SignPath attribution yet (the website session) | accepted, built | 2026-11-12 |
 | [0075](0075-the-sticker-copy-is-the-original-360-px.md) | The sticker copy is the original 360 px again (128 was too small and soft; the website session) | accepted, built | 2026-11-12 |
 | [0074](0074-the-sticker-copy-is-128-px-with-a-test-parameter.md) | The sticker copy is 128 px, with a ?px=NN parameter to try other sizes; the white background in Zalo is the chat app's (the website session) | accepted, built | 2026-11-12 |
 | [0073](0073-the-sticker-pages-are-built-from-set-v2.md) | The sticker pages are built from set-v2 (31 stickers); the recent list is kept per set (the website session) | accepted, built | 2026-11-12 |

@@ -7,7 +7,7 @@ import { ORIGIN, RELEASES_URL, ROOT, fmtDate } from "./facts.mjs";
 import { formatCount } from "./downloads.mjs";
 import { CC_URL, fontNames, needsReviewNote, stickerUrl } from "./stickers.mjs";
 import { pageList } from "./files.mjs";
-import { CHARTER_URL, RESEARCH_URL, HOME_FAQ, HOW_FAQ, PROMISES, PATHS, esc } from "./pages.mjs";
+import { CHARTER_URL, CODE_SIGNING_URL, RESEARCH_URL, HOME_FAQ, HOW_FAQ, PROMISES, PATHS, esc } from "./pages.mjs";
 import { STRINGS, EN_ONLY, FEATURE_IDS, HTML_KEYS, LANGS, UI_KEYS } from "../../site/strings.mjs";
 import { SCENES } from "../../site/scenes.js";
 
@@ -69,6 +69,8 @@ const OUTDATED = [
   [/detects? (a )?(crisis|crises)|phát hiện (cơn )?khủng hoảng|危機を(検出|検知)/i, "a claim that Peak detects a crisis (it does not read your messages for that: it is a rule for how it answers; spec 12)"],
   [/safe for everyone|adults only|an toàn cho mọi người|成人限定/i, "'safe for everyone' or 'adults only' as a promise (the wording is 'Made for adults (18+)'; a lawyer has not seen it)"],
   [/picks it on a Japanese Windows|tự chọn tiếng Nhật trên Windows tiếng Nhật|日本語のWindowsでは日本語になります/i, "'Auto picks it on a Japanese Windows' (0.4.1: Auto reads the whole list of the system's languages, and never the IP address or location; ADR-0066)"],
+  // ADR-0076: the SignPath attribution line only after the project is approved (the author says when); until then nothing is "signed"
+  [/Free code signing provided by SignPath/i, "the SignPath attribution line before the project is approved (ADR-0076: the author tells the website session when it is active)"],
   [/first official release|bản phát hành chính thức đầu tiên|正式リリース第1弾/i, "'first official release (0.2)' (the app is at a later version; the notice states the current one)"],
 ];
 
@@ -201,6 +203,23 @@ export function check({ ctx, pages, files, out }) {
     if (!html.includes(`href="${RELEASES_URL}"`)) bad(`${PATHS[lang].home}: there is no link to the release page (notes and other versions)`);
   }
   if (!files["llms.txt"].includes(ctx.installerUrl)) bad("llms.txt does not give the direct installer link");
+
+  // the Code signing policy (ADR-0076): on the home page of every language, with the exact term, the team, the privacy sentence and the link
+  // to CODE_SIGNING.md; it says that nothing is signed yet and claims nothing more
+  for (const lang of LANGS) {
+    const h = byPath.get(PATHS[lang].home).html;
+    const m = h.match(/<section id="code-signing"[\s\S]*?<\/section>/);
+    if (!m) { bad(PATHS[lang].home + ": the Code signing policy section is missing"); continue; }
+    const sec = m[0];
+    if (!sec.includes("<h2>Code signing policy</h2>")) bad(PATHS[lang].home + ': the heading of the section must be the exact term "Code signing policy"');
+    if (!sec.includes('href="' + CODE_SIGNING_URL + '"')) bad(PATHS[lang].home + ": the section does not link to CODE_SIGNING.md");
+    if (!sec.includes('href="' + PATHS[lang].privacy + '"')) bad(PATHS[lang].home + ": the section does not link to the privacy page");
+    if (!sec.includes("SignPath.io") || !sec.includes("Vinh Codon") || !sec.includes("@vinhcodon")) bad(PATHS[lang].home + ": the section lacks SignPath.io, the author's name or the GitHub name");
+    const text = sec.replace(/<[^>]+>/g, " ");
+    if (/\b(verified|trusted|secure installer|safe)\b|đã được ký|署名済み|signed by/i.test(text)) bad(PATHS[lang].home + ": the Code signing policy claims more than is true (nothing is signed yet)");
+    if (!h.includes('href="#code-signing"')) bad(PATHS[lang].home + ": the download area does not point to the Code signing policy");
+  }
+  if (!files["llms.txt"].includes(CODE_SIGNING_URL)) bad("llms.txt does not link to the Code signing policy");
 
   // the language suggestion (ADR-0067): an inline script on the pages that have a same-page translation, none on the English-only
   // pages; no strip in the static HTML; it reads only the browser's languages and the local storage; it never redirects or asks a server
