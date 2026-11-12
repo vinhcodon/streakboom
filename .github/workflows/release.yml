@@ -1,0 +1,181 @@
+# Release build in CI (ADR-0072, docs/plans/signpath-ci-plan.md, CODE_SIGNING.md).
+#
+# On a version tag vX.Y.Z (pushed by the owner) it checks that the tag, the three version files and CHANGELOG.md agree, runs
+# the tests, builds the Windows installer on a GitHub-hosted runner WITHOUT the updater key, and makes a DRAFT release with
+# the installer. The maintainer then finishes the release on his own computer (scripts/release-finish.ps1, story CI-2): the
+# update key never goes to GitHub. By hand ("Run workflow") it is a rehearsal: it builds and uploads the installer as an
+# artifact and releases nothing.
+#
+# Code signing (story SP-1) is NOT active. After SignPath Foundation approves the project, set the repository variable
+# SIGNPATH_SIGNING to true and add the variables and the secret named below; the "Sign" step then runs between the build and
+# the draft. Until then nothing here is signed, and CODE_SIGNING.md says so.
+#
+# Every action is pinned to a commit (the CI configuration is part of what a signer reviews).
+name: Release
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: windows-latest
+    timeout-minutes: 60
+    outputs:
+      version: ${{ steps.prepare.outputs.version }}
+      tag: ${{ steps.prepare.outputs.tag }}
+      installer-artifact-id: ${{ steps.upload-installer.outputs.artifact-id }}
+      installer-name: ${{ steps.find.outputs.name }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          fetch-depth: 0
+
+      - name: A release is built only from a commit that is on main
+        if: github.ref_type == 'tag'
+        shell: pwsh
+        run: |
+          git fetch origin main
+          git merge-base --is-ancestor $env:GITHUB_SHA origin/main
+          if ($LASTEXITCODE -ne 0) { Write-Host "::error::the tag $env:GITHUB_REF_NAME is not on main"; exit 1 }
+
+      - name: Work out the tag (a rehearsal uses the version in tauri.conf.json)
+        id: tag
+        shell: pwsh
+        run: |
+          if ($env:GITHUB_REF_TYPE -eq 'tag') { $tag = $env:GITHUB_REF_NAME }
+          else { $tag = 'v' + (Get-Content app/src-tauri/tauri.conf.json -Raw | ConvertFrom-Json).version }
+          Add-Content $env:GITHUB_OUTPUT "tag=$tag"
+
+      - name: Check that the tag, the versions and CHANGELOG.md agree; write the release notes
+        id: prepare
+        shell: pwsh
+        run: ./scripts/ci-release-prepare.ps1 -Tag "${{ steps.tag.outputs.tag }}" -NotesPath "$env:RUNNER_TEMP/release-notes.md"
+
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: app/package-lock.json
+
+      - name: Install the app dependencies
+        working-directory: app
+        run: npm ci
+
+      - name: JavaScript tests
+        working-directory: app
+        run: npm test
+
+      - name: Types (svelte-check)
+        working-directory: app
+        run: npm run check
+
+      - uses: dtolnay/rust-toolchain@b725eda525362e7cf34af9a7243cac1e3f01a7ec # stable
+        with:
+          toolchain: stable
+
+      - uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2.9.3
+        with:
+          workspaces: app/src-tauri
+
+      - name: Rust tests
+        working-directory: app/src-tauri
+        run: cargo test --locked
+
+      - name: Build the installer (no updater key in CI: the update signature is made on the maintainer's computer)
+        working-directory: app
+        run: npm run tauri build -- --bundles nsis --config "${{ github.workspace }}/.github/ci/tauri.ci.conf.json"
+
+      - name: Find the installer and say what it is
+        id: find
+        shell: pwsh
+        run: |
+          $dir = 'app/src-tauri/target/release/bundle/nsis'
+          $files = @(Get-ChildItem $dir -Filter 'Streakboom_*_x64-setup.exe')
+          if ($files.Count -ne 1) { Write-Host "::error::expected one installer in $dir, found $($files.Count)"; exit 1 }
+          $f = $files[0]
+          $v = '${{ steps.prepare.outputs.version }}'
+          if ($f.Name -ne "Streakboom_${v}_x64-setup.exe") { Write-Host "::error::the installer is $($f.Name), not Streakboom_${v}_x64-setup.exe"; exit 1 }
+          New-Item -ItemType Directory -Force out | Out-Null
+          Copy-Item $f.FullName out/
+          $hash = (Get-FileHash $f.FullName -Algorithm SHA256).Hash
+          Add-Content $env:GITHUB_OUTPUT "name=$($f.Name)"
+          Add-Content $env:GITHUB_STEP_SUMMARY "### $($f.Name)`n`nSHA-256 ``$hash`` ($([math]::Round($f.Length / 1KB)) KB). Built by CI from commit ``$env:GITHUB_SHA``; **not signed**, no update signature yet."
+          Copy-Item "$env:RUNNER_TEMP/release-notes.md" out/release-notes.md -ErrorAction SilentlyContinue
+
+      - name: Upload the installer
+        id: upload-installer
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: installer
+          path: out/${{ steps.find.outputs.name }}
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Upload the release notes
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: release-notes
+          path: out/release-notes.md
+          if-no-files-found: error
+          retention-days: 14
+
+  release:
+    # only for a real tag: it makes the DRAFT release (nothing is published here)
+    if: github.ref_type == 'tag'
+    needs: build
+    runs-on: windows-latest
+    timeout-minutes: 30
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          name: installer
+          path: dist-in
+
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          name: release-notes
+          path: notes-in
+
+      # Story SP-1, after SignPath Foundation approves the project. Needs: the variable SIGNPATH_SIGNING = true; the variables
+      # SIGNPATH_ORGANIZATION_ID, SIGNPATH_PROJECT_SLUG, SIGNPATH_POLICY_SLUG and SIGNPATH_ARTIFACT_CONFIGURATION_SLUG; and the
+      # secret SIGNPATH_API_TOKEN (a submitter token, set only in GitHub, never in a file or in chat). The signing request is
+      # approved by hand in SignPath. Check the inputs against docs.signpath.io before enabling.
+      - name: Sign (SignPath Foundation)
+        if: vars.SIGNPATH_SIGNING == 'true'
+        uses: SignPath/github-action-submit-signing-request@f6d04783b4569d051e0c80105fe66e82819d0092 # v3.0
+        with:
+          api-token: ${{ secrets.SIGNPATH_API_TOKEN }}
+          organization-id: ${{ vars.SIGNPATH_ORGANIZATION_ID }}
+          project-slug: ${{ vars.SIGNPATH_PROJECT_SLUG }}
+          signing-policy-slug: ${{ vars.SIGNPATH_POLICY_SLUG }}
+          artifact-configuration-slug: ${{ vars.SIGNPATH_ARTIFACT_CONFIGURATION_SLUG }}
+          github-artifact-id: ${{ needs.build.outputs.installer-artifact-id }}
+          wait-for-completion: true
+          output-artifact-directory: signed
+
+      - name: Make the draft release
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ needs.build.outputs.tag }}
+          VERSION: ${{ needs.build.outputs.version }}
+          INSTALLER: ${{ needs.build.outputs.installer-name }}
+        run: |
+          $signed = Test-Path "signed/$env:INSTALLER"
+          $file = if ($signed) { "signed/$env:INSTALLER" } else { "dist-in/$env:INSTALLER" }
+          Write-Host "release file: $file (signed: $signed)"
+          gh release create $env:TAG $file --repo $env:GITHUB_REPOSITORY --draft --verify-tag --title "Streakboom $env:VERSION" --notes-file notes-in/release-notes.md
+          if ($LASTEXITCODE -ne 0) { Write-Host "::error::gh release create failed (a release for $env:TAG may already exist)"; exit 1 }
+          $state = if ($signed) { 'signed by SignPath' } else { '**not signed** (SignPath is not active yet)' }
+          Add-Content $env:GITHUB_STEP_SUMMARY "### Draft release $env:TAG made`n`nThe installer is $state. **Next, on the maintainer's computer:** ``scripts\release-finish.ps1 -Tag $env:TAG`` (story CI-2) adds the update signature, writes the manifest and publishes."

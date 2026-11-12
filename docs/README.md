@@ -6,6 +6,7 @@ Each kind of statement has one home. Before adding a sentence, decide which kind
 |---|---|---|---|
 | **The whole project, for someone coming cold** | [`PROJECT.md`](PROJECT.md) | What is this, why, in what state, by what rules, and where is everything? | every release, and whenever a fact it states changes (ADR-0070); it points at the owners and never replaces them |
 | What Peak does and how to use it | [`features.md`](features.md) | What can a person do with it? | the product changes |
+| What the dependencies are licensed under | [`dependency-licenses.md`](dependency-licenses.md) | Is every component open source, and which licenses are in the build? (a SignPath condition) | a dependency is added or changed; before an application for signing |
 | What it reads, keeps and sends | [`privacy.md`](privacy.md) | What does Peak know about me? | a sense, a file or a thing sent changes (also the README promise and the website) |
 | How to build and run it | [`development.md`](development.md) | How is the repository laid out and how do I run the tests? | the layout or the commands change |
 | How a release is made | [`releasing.md`](releasing.md) | How is a version signed, published and checked, and what is done after? | the release process changes |

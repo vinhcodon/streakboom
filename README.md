@@ -42,6 +42,10 @@ Streakboom is made for adults (18+). Peak is a small friend that makes the workd
 
 GitHub keeps only the latest two releases; the release notes of every version are in [CHANGELOG.md](CHANGELOG.md).
 
+## Code signing policy
+
+**The installers are not code-signed yet.** We are preparing to apply for free code signing from [SignPath.io](https://signpath.io) (certificate by [SignPath Foundation](https://signpath.org)), which needs releases built automatically in public CI. What is signed, by whom, how, and what the program does on your computer: [`CODE_SIGNING.md`](CODE_SIGNING.md). Team: Vinh Codon ([@vinhcodon](https://github.com/vinhcodon)) is the author, reviewer and approver. Privacy: [`docs/privacy.md`](docs/privacy.md). The dependencies and their licenses: [`docs/dependency-licenses.md`](docs/dependency-licenses.md).
+
 ## What Peak promises
 
 The short version of [`docs/charter.md`](docs/charter.md), which ranks what Peak is for:

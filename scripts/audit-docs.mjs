@@ -114,7 +114,7 @@ for (const f of files.filter((f) => f.startsWith("site/") && /\.(html|mjs|js|jso
 }
 
 // 9. entry points (ADR-0070)
-for (const f of ["docs/PROJECT.md", "AGENTS.md", "CLAUDE.md", "CONTRIBUTING.md", "SECURITY.md", "CODE_OF_CONDUCT.md", ".github/CODEOWNERS", ".github/PULL_REQUEST_TEMPLATE.md"]) {
+for (const f of ["docs/PROJECT.md", "AGENTS.md", "CLAUDE.md", "CONTRIBUTING.md", "SECURITY.md", "CODE_OF_CONDUCT.md", "CODE_SIGNING.md", ".github/CODEOWNERS", ".github/PULL_REQUEST_TEMPLATE.md"]) {
   if (!existsSync(f)) bad(`missing entry point: ${f}`);
 }
 if (existsSync("docs/PROJECT.md")) {

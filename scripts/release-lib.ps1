@@ -39,3 +39,39 @@ function Test-ChangelogEntry {
   }
   return $false
 }
+
+<#
+.SYNOPSIS
+  The lines of the CHANGELOG.md entry for $Version (without its heading), up to the next "## " heading, with leading and
+  trailing blank lines removed. Used for the notes of a release built in CI (ADR-0072). Empty when there is no entry.
+#>
+function Get-ChangelogEntry {
+  param([Parameter(Mandatory = $true)][AllowEmptyString()][string[]]$Lines, [Parameter(Mandatory = $true)][string]$Version)
+  $head = '^## ' + [regex]::Escape($Version) + ' \(\d{4}-\d{2}-\d{2}\)(, .+)?\s*$'
+  $in = $false
+  $out = New-Object System.Collections.Generic.List[string]
+  foreach ($l in $Lines) {
+    if (-not $in) { if ($l -match $head) { $in = $true }; continue }
+    if ($l -match '^## ') { break }
+    $out.Add($l)
+  }
+  while ($out.Count -gt 0 -and [string]::IsNullOrWhiteSpace($out[0])) { $out.RemoveAt(0) }
+  while ($out.Count -gt 0 -and [string]::IsNullOrWhiteSpace($out[$out.Count - 1])) { $out.RemoveAt($out.Count - 1) }
+  return ,$out.ToArray()
+}
+
+<#
+.SYNOPSIS
+  What is wrong with a release tag? The tag must be "v" + the version, and the version of tauri.conf.json, Cargo.toml and
+  package.json must be the same. Returns the list of problems (empty when all agree). A release built in CI starts here.
+#>
+function Test-ReleaseVersions {
+  param([Parameter(Mandatory = $true)][string]$Tag, [string]$Conf, [string]$Cargo, [string]$Package)
+  $problems = @()
+  if ($Tag -notmatch '^v(\d+\.\d+\.\d+)$') { $problems += "the tag '$Tag' is not v<major>.<minor>.<patch>"; return $problems }
+  $v = $Matches[1]
+  if ($Conf -ne $v) { $problems += "tauri.conf.json says '$Conf', the tag says '$v'" }
+  if ($Cargo -ne $v) { $problems += "Cargo.toml says '$Cargo', the tag says '$v'" }
+  if ($Package -ne $v) { $problems += "package.json says '$Package', the tag says '$v'" }
+  return $problems
+}

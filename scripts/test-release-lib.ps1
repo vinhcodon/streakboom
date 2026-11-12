@@ -34,4 +34,18 @@ Check "changelog: entry without a bullet rejected" (-not (Test-ChangelogEntry -L
 Check "changelog: 0.2 does not match 0.2.1" (-not (Test-ChangelogEntry -Lines $ok -Version "0.2"))
 Check "changelog: sub-headings (###) are not accepted as the bullets' parent" (-not (Test-ChangelogEntry -Lines @("## 0.3.0 (2026-11-09)", "## Added", "- A") -Version "0.3.0"))
 
+# the notes of an entry (a release built in CI)
+$cl = @("# Changelog", "", "## 0.4.1 (2026-11-12)", "- **One.** First", "  more", "- Two", "", "## 0.4.0 (2026-11-12), a title", "A paragraph", "- A")
+$e = Get-ChangelogEntry -Lines $cl -Version "0.4.1"
+Check "entry: its lines, without the heading and the blank line before the next" (($e -join "|") -eq "- **One.** First|  more|- Two")
+$e = Get-ChangelogEntry -Lines $cl -Version "0.4.0"
+Check "entry: a title in the heading, a paragraph line kept" (($e -join "|") -eq "A paragraph|- A")
+Check "entry: a missing version gives nothing" ((Get-ChangelogEntry -Lines $cl -Version "0.9.9").Count -eq 0)
+
+# the tag and the three versions
+Check "versions: all agree" ((Test-ReleaseVersions -Tag "v0.4.1" -Conf "0.4.1" -Cargo "0.4.1" -Package "0.4.1").Count -eq 0)
+Check "versions: a tag that is not a version" ((Test-ReleaseVersions -Tag "release-1" -Conf "0.4.1" -Cargo "0.4.1" -Package "0.4.1").Count -eq 1)
+Check "versions: a tag with a suffix is refused" ((Test-ReleaseVersions -Tag "v0.4.1-rc1" -Conf "0.4.1" -Cargo "0.4.1" -Package "0.4.1").Count -eq 1)
+Check "versions: each file that disagrees is named" ((Test-ReleaseVersions -Tag "v0.4.2" -Conf "0.4.2" -Cargo "0.4.1" -Package "0.4.0").Count -eq 2)
+
 if ($fail) { "$fail failed"; exit 1 } else { "all passed" }
