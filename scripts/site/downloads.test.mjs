@@ -130,3 +130,13 @@ test("a counter that is on but not shown", () => fails((c) => {
 test("a ledger file that differs from the one the pages show", () => fails((c) => {
   c.files["downloads.json"] = c.files["downloads.json"].replace("1234", "1233");
 }, /downloads\.json is missing or is not the ledger/));
+
+// ADR-0065: the download button is the installer itself, so it must exist
+test("assertInstaller: the release and its installer must be published", async () => {
+  const { assertInstaller } = await import("./downloads.mjs");
+  const ok = [{ tag_name: "v1.2.3", draft: false, assets: [{ name: "Streakboom_1.2.3_x64-setup.exe" }, { name: "latest.json" }] }];
+  assert.doesNotThrow(() => assertInstaller(ok, "1.2.3", "Streakboom_1.2.3_x64-setup.exe"));
+  assert.throws(() => assertInstaller([], "1.2.3", "Streakboom_1.2.3_x64-setup.exe"), /no published release v1\.2\.3/);
+  assert.throws(() => assertInstaller([{ ...ok[0], draft: true }], "1.2.3", "Streakboom_1.2.3_x64-setup.exe"), /draft/);
+  assert.throws(() => assertInstaller([{ tag_name: "v1.2.3", assets: [{ name: "latest.json" }] }], "1.2.3", "Streakboom_1.2.3_x64-setup.exe"), /no asset named/);
+});

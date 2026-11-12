@@ -3,7 +3,7 @@
 import { existsSync, readFileSync, readdirSync } from "node:fs";
 import { gzipSync } from "node:zlib";
 import { join } from "node:path";
-import { ORIGIN, ROOT, fmtDate } from "./facts.mjs";
+import { ORIGIN, RELEASES_URL, ROOT, fmtDate } from "./facts.mjs";
 import { formatCount } from "./downloads.mjs";
 import { CC_URL, fontNames, needsReviewNote, stickerUrl } from "./stickers.mjs";
 import { pageList } from "./files.mjs";
@@ -190,6 +190,17 @@ export function check({ ctx, pages, files, out }) {
     }
   }
 
+  // the download buttons are the installer itself, not the release page (ADR-0065); the release page is one small link away
+  for (const lang of LANGS) {
+    const html = byPath.get(PATHS[lang].home).html;
+    const want = ctx.installerUrl;
+    if (want !== `https://github.com/vinhcodon/streakboom/releases/download/v${ctx.version}/${ctx.exe}`) bad(`the installer link ${want} does not name this version's file`);
+    for (const id of ["download-btn", "direct-dl"]) if (!html.includes(`id="${id}" ${id === "download-btn" ? 'class="btn primary" ' : ""}href="${want}"`)) bad(`${PATHS[lang].home}: #${id} is not the installer link`);
+    if (!html.includes('id="dl-toast"')) bad(`${PATHS[lang].home}: the line that follows a click on a download is missing`);
+    if (!html.includes(`href="${RELEASES_URL}"`)) bad(`${PATHS[lang].home}: there is no link to the release page (notes and other versions)`);
+  }
+  if (!files["llms.txt"].includes(ctx.installerUrl)) bad("llms.txt does not give the direct installer link");
+
   // the download counter (ADR-0052): off in local builds; when on, the number on every home page is the ledger's total, in the
   // language's own grouping, the ledger is published, and the sentence says downloads (never installs or people)
   if (ctx.downloads) {
@@ -253,7 +264,7 @@ export function check({ ctx, pages, files, out }) {
         }
       }
       // what the author does not want: a Download button per sticker, a ZIP, a copy icon of two squares
-      if (/<a [^>]*\bdownload\b|\.zip["' ]|\bzip\b/i.test(html.replace(/<script[\s\S]*?<\/script>/g, ""))) bad(`${p.path}: a download or a ZIP of the stickers (the author does not want them)`);
+      if (/<a\b[^>]*\sdownload(=|\s|>)|\.zip["' ]|\bzip\b/i.test(html.replace(/<script[\s\S]*?<\/script>/g, ""))) bad(`${p.path}: a download or a ZIP of the stickers (the author does not want them)`);
       // no third-party script or tracker
       for (const m of html.matchAll(/<script[^>]*\ssrc="([^"]*)"/g)) if (!m[1].startsWith("/")) bad(`${p.path}: a script from outside the site: ${m[1]}`);
     }

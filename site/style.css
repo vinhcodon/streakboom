@@ -239,12 +239,12 @@ summary h3 { display: inline; font-size: inherit; font-weight: 600; margin: 0; }
 @keyframes sticker-bounce { 0% { transform: scale(1); } 35% { transform: scale(1.07); } 70% { transform: scale(.98); } 100% { transform: scale(1); } }
 @keyframes paw-pop { from { transform: scale(.3); opacity: 0; } to { transform: scale(1); opacity: 1; } }
 @media (prefers-reduced-motion: reduce) { .sticker.copied, .sticker.copied .paw { animation: none; } .sticker .paw { transition: none; } }
-.sticker-status {
+.sticker-status, .toast {
   position: fixed; left: 50%; bottom: 16px; transform: translateX(-50%); z-index: 30;
   width: max-content; max-width: min(92vw, 520px); margin: 0; padding: 10px 16px; border-radius: 14px;
   background: var(--ink); color: var(--bg); font-size: .95rem; box-shadow: 0 6px 20px rgba(0, 0, 0, .25);
   opacity: 0; pointer-events: none; transition: opacity .2s;
 }
-.sticker-status[data-on="1"] { opacity: 1; pointer-events: auto; }
+.sticker-status[data-on="1"], .toast[data-on="1"] { opacity: 1; pointer-events: auto; }
 .sticker-share { margin-left: 8px; font: inherit; font-weight: 700; color: inherit; background: transparent; border: 1px solid currentColor; border-radius: 999px; padding: 2px 14px; cursor: pointer; }
 .licence { font-weight: 600; }

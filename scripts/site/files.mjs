@@ -91,7 +91,8 @@ ${FACTS}
 
 ## Source and downloads
 - [README](${REPO_URL}#readme): the reference text for features, privacy and status
-- [Latest release](${RELEASES_URL}): the Windows installer
+- [Installer for Windows, version ${ctx.version}](${ctx.installerUrl}): a direct download of the .exe
+- [Latest release](${RELEASES_URL}): release notes and other versions
 - [Issues](${REPO_URL}/issues): bug reports and ideas
 - [Full facts for assistants](${ORIGIN}/llms-full.txt)
 

@@ -16,7 +16,7 @@ import { loadStickers } from "./site/stickers.mjs";
 import { LANGS } from "../site/strings.mjs";
 import { changelogFeed, llms, llmsFull, robots, sitemap } from "./site/files.mjs";
 import { check } from "./site/checks.mjs";
-import { liveLedger } from "./site/downloads.mjs";
+import { assertInstaller, liveData } from "./site/downloads.mjs";
 
 export const OUT = join(ROOT, "_site");
 const SITE = join(ROOT, "site");
@@ -79,9 +79,14 @@ export function build({ out = OUT, downloads = null, stickerDir } = {}) {
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
   try {
     // the counter reads GitHub and the live site, so it runs only where asked to (the Pages workflow), never in a local build
-    const downloads = process.env.STREAKBOOM_DOWNLOADS === "live"
-      ? await liveLedger({ today: new Date().toISOString().slice(0, 10), token: process.env.GITHUB_TOKEN || "" })
-      : null;
+    let downloads = null;
+    if (process.env.STREAKBOOM_DOWNLOADS === "live") {
+      const live = await liveData({ today: new Date().toISOString().slice(0, 10), token: process.env.GITHUB_TOKEN || "" });
+      downloads = live.ledger;
+      // the button downloads the .exe at once (ADR-0065): it must exist, or nothing is deployed
+      const c = context();
+      assertInstaller(live.releases, c.version, c.exe);
+    }
     const r = build({ downloads });
     console.log(`site built in ${r.out}: version ${r.ctx.version} (${r.ctx.date}), ${r.pages.length} pages, ${Object.keys(r.files).length} files${downloads ? `, ${downloads.total} downloads` : ""}; all checks passed`);
   } catch (e) {

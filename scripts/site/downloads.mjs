@@ -87,10 +87,25 @@ export async function listReleases({ repo = REPO, token = "", fetchFn = fetch } 
   return res.json();
 }
 
-/** The new ledger: the live site's previous one merged with GitHub's current counts. */
-export async function liveLedger({ today, token = "", fetchFn = fetch } = {}) {
+/** The installer that the download button points at must exist in the published release of this version (ADR-0065): a button that
+ *  gives a 404 is worse than the release page, so the build stops and the site that is online stays as it is. */
+export function assertInstaller(releases, version, exe) {
+  if (!Array.isArray(releases)) throw new Error("downloads: the releases are not a list");
+  const rel = releases.find((r) => r.tag_name === `v${version}`);
+  if (!rel) throw new Error(`downloads: there is no published release v${version}: the download button would give a 404 (publish the release first)`);
+  if (rel.draft) throw new Error(`downloads: the release v${version} is a draft: the download button would give a 404`);
+  if (!(rel.assets || []).some((a) => a.name === exe)) throw new Error(`downloads: the release v${version} has no asset named ${exe}: the download button would give a 404`);
+}
+
+/** What a live build reads from GitHub: the new ledger (the live site's previous one merged with the current counts) and the releases. */
+export async function liveData({ today, token = "", fetchFn = fetch } = {}) {
   const [releases, previous] = await Promise.all([listReleases({ token, fetchFn }), previousLedger({ fetchFn })]);
-  return mergeLedger(previous, installerCounts(releases), today);
+  return { ledger: mergeLedger(previous, installerCounts(releases), today), releases };
+}
+
+/** The new ledger only. */
+export async function liveLedger(opts = {}) {
+  return (await liveData(opts)).ledger;
 }
 
 /** The number as a visitor reads it, in the language's own grouping (1,234 / 1.234). */

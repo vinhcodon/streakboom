@@ -187,7 +187,7 @@ export function homeJsonLd(lang, ctx) {
         softwareVersion: ctx.version,
         datePublished: first.date,
         dateModified: ctx.date,
-        downloadUrl: RELEASES_URL,
+        downloadUrl: ctx.installerUrl,
         offers: { "@type": "Offer", price: "0", priceCurrency: "USD" },
         isAccessibleForFree: true,
         license: `${REPO_URL}/blob/main/LICENSE`,
@@ -231,7 +231,7 @@ export function homePage(lang, ctx) {
         <h1>${s("hero_title")}</h1>
         <p class="lead">${s("hero_lead")}</p>
         <div class="cta">
-          <a id="download-btn" class="btn primary" href="${RELEASES_URL}">
+          <a id="download-btn" class="btn primary" href="${ctx.installerUrl}">
             <span>${s("download")}</span>
             <small>v${esc(ctx.version)} · ${esc(fmtDate(ctx.date, lang))}</small>
           </a>
@@ -241,10 +241,11 @@ export function homePage(lang, ctx) {
         </div>
         <p id="other-os" class="note other-os only-other">
           <span>${s("other_os")}</span>
-          <a id="direct-dl" href="${RELEASES_URL}">${s("direct_dl")}</a>
+          <a id="direct-dl" href="${ctx.installerUrl}">${s("direct_dl")}</a>
         </p>
-        <p class="note win-note">${s("alpha_note")}</p>
+        <p class="note win-note">${s("alpha_note")} <a href="${RELEASES_URL}">${s("dl_all")}</a></p>
         <p class="note">${s("lang_note")}</p>
+        <p id="dl-toast" class="toast" role="status" aria-live="polite"></p>
       </div>
 
       <div class="hero-art">
@@ -440,7 +441,7 @@ ${items}
 
     <section class="section">
       <p>${s("st_cta")}</p>
-      <p class="cta"><a class="btn primary" href="${RELEASES_URL}">${s("download")}</a> <a class="btn ghost" href="${PATHS[lang].home}">${s("see_more")}</a></p>
+      <p class="cta"><a class="btn primary" href="${ctx.installerUrl}">${s("download")}</a> <a class="btn ghost" href="${PATHS[lang].home}">${s("see_more")}</a></p>
     </section>
 `;
   return htmlDoc({

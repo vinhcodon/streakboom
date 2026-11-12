@@ -365,3 +365,18 @@ test("the demo Peak shows a fright on a right click and says what the app does",
   assert.ok(js.includes('addEventListener("contextmenu"'));
   for (const l of ["en", "vi", "ja"]) assert.ok(STRINGS[l].cap_push, l);
 });
+
+// ADR-0065: the download button downloads the installer
+test("the download buttons are the installer file of this version, in every language, with a line after the click", () => {
+  const c = clone();
+  const url = `https://github.com/vinhcodon/streakboom/releases/download/v${c.ctx.version}/${c.ctx.exe}`;
+  for (const path of ["/", "/vi/", "/ja/"]) {
+    const h = page(c, path).html;
+    assert.ok(h.includes(`id="download-btn" class="btn primary" href="${url}"`), `${path}: the button`);
+    assert.ok(h.includes(`id="direct-dl" href="${url}"`), `${path}: the other-computers link`);
+    assert.ok(h.includes('id="dl-toast"'), `${path}: the line after the click`);
+    assert.ok(h.includes('href="https://github.com/vinhcodon/streakboom/releases/latest"'), `${path}: the release page stays one link away`);
+  }
+  assert.ok(c.files["llms.txt"].includes(url));
+  fails((c2) => { const p = page(c2, "/"); p.html = p.html.replace(`id="download-btn" class="btn primary" href="${url}"`, 'id="download-btn" class="btn primary" href="https://github.com/vinhcodon/streakboom/releases/latest"'); }, /#download-btn is not the installer link/);
+});

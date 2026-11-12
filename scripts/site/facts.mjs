@@ -65,5 +65,7 @@ export function context() {
     latest,
     date: latest.date,
     exe: `Streakboom_${version}_x64-setup.exe`,
+    // the button downloads this exact file at once (ADR-0065); the release page stays one link away
+    installerUrl: `${REPO_URL}/releases/download/v${version}/Streakboom_${version}_x64-setup.exe`,
   };
 }

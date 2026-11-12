@@ -12,6 +12,8 @@ export const STRINGS = {
     share_btn: "Send link to my PC", link_copied: "Link copied",
     other_os: "Peak runs on Windows 10/11, so this device cannot install it. Send the link to your PC and download it there.",
     direct_dl: "Download the .exe anyway",
+    dl_all: "Release notes and other versions",
+    dl_started: "Your download has started. Open the file when it finishes. If Windows says it protected your PC, choose More info, then Run anyway.",
     alpha_note: "An early release ({version}), Windows 10/11 only. Made for adults (18+). The installer is not code-signed yet, so SmartScreen warns: choose <em>More info</em>, then <em>Run anyway</em>.",
     demo_hint: "Try it: move the mouse near Peak, click it, or pick a pose.",
     pose_idle: "Idle", pose_happy: "Happy", pose_purr: "Purr", pose_sleep: "Sleep", pose_walk: "Walk", pose_gasp: "Surprised", pose_sad: "Sad", pose_curious: "Curious",
@@ -163,6 +165,8 @@ export const STRINGS = {
     share_btn: "Gửi liên kết sang máy tính", link_copied: "Đã sao chép liên kết",
     other_os: "Peak chạy trên Windows 10/11 nên thiết bị này không cài được. Hãy gửi liên kết sang máy tính của bạn rồi tải về ở đó.",
     direct_dl: "Vẫn tải file .exe",
+    dl_all: "Ghi chú phát hành và các bản khác",
+    dl_started: "Đã bắt đầu tải. Mở file khi tải xong. Nếu Windows báo đã bảo vệ máy của bạn, chọn More info rồi Run anyway.",
     alpha_note: "Một bản phát hành sớm ({version}), chỉ dành cho Windows 10/11. Dành cho người lớn (18+). Bộ cài chưa được ký số nên SmartScreen sẽ cảnh báo: hãy chọn <em>More info</em>, rồi <em>Run anyway</em>.",
     demo_hint: "Thử đi: rê chuột lại gần Peak, bấm vào nó, hoặc chọn một tư thế.",
     pose_idle: "Đứng yên", pose_happy: "Vui", pose_purr: "Rù rù", pose_sleep: "Ngủ", pose_walk: "Đi dạo", pose_gasp: "Giật mình", pose_sad: "Buồn", pose_curious: "Tò mò",
@@ -318,6 +322,8 @@ export const STRINGS = {
     link_copied: "リンクをコピーしました",
     other_os: "PeakはWindows 10/11で動くため、この端末にはインストールできません。リンクをお使いのPCに送って、そちらでダウンロードしてください。",
     direct_dl: "それでも.exeをダウンロードする",
+    dl_all: "リリースノートと他のバージョン",
+    dl_started: "ダウンロードを始めました。終わったらファイルを開いてください。Windowsが「PCを保護しました」と表示したら、「詳細情報」（More info）、「実行」（Run anyway）の順に選んでください。",
     alpha_note: "初期のリリース（{version}）、Windows 10/11のみ対応。大人（18歳以上）向けです。インストーラーはまだコード署名されていないため、SmartScreenが警告を表示します。<em>詳細情報</em>（More info）、<em>実行</em>（Run anyway）の順に選んでください。",
     demo_hint: "試してみましょう：マウスをPeakに近づける、クリックする、またはポーズを選んでください。",
     pose_idle: "立つ",
@@ -493,4 +499,4 @@ export const STICKER_UI_KEYS = ["st_copied", "st_copy_failed", "st_share"];
 /** Keys that exist in English only: the changelog and the 404 page are not translated. */
 export const EN_ONLY = new Set(["cl_feed", "cl_page_title", "cl_desc", "cl_title", "cl_intro", "nf_title", "nf_text"]);
 /** The keys the page scripts need (share button, copy note, pose labels); the build puts them in each page. */
-export const UI_KEYS = ["share_btn", "link_copied", "tour_pause", "tour_play", "cap_push", ...SCENES.map((s) => `cap_${s.id}`)];
+export const UI_KEYS = ["share_btn", "link_copied", "tour_pause", "tour_play", "cap_push", "dl_started", ...SCENES.map((s) => `cap_${s.id}`)];

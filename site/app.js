@@ -24,6 +24,21 @@ shareBtn?.addEventListener("click", async () => {
   }
 });
 
+// A click on a download link starts the download at once (the link is the .exe itself, ADR-0065); this only says, for a moment, what
+// to expect, because the installer is not code-signed yet and Windows warns. Nothing is recorded or sent.
+const toast = document.getElementById("dl-toast");
+let dlTimer;
+if (toast) {
+  for (const a of document.querySelectorAll("#download-btn, #direct-dl")) {
+    a.addEventListener("click", () => {
+      toast.textContent = t("dl_started");
+      toast.dataset.on = "1";
+      clearTimeout(dlTimer);
+      dlTimer = setTimeout(() => { toast.dataset.on = ""; }, 12000);
+    });
+  }
+}
+
 // The interactive Peak starts when the browser is idle after the first paint. The canvas has fixed width and height in the
 // HTML, so nothing moves when it starts.
 const canvas = document.getElementById("peak");
