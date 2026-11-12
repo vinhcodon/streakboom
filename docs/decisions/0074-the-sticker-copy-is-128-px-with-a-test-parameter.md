@@ -1,6 +1,6 @@
 # ADR-0074: The sticker copy is 128 px, with a ?px=NN parameter to try other sizes
 
-- **Status:** accepted (answered by the author on 2026-11-12); **built on 2026-11-12** (committed; the live behaviour is checked after the push)
+- **Status:** accepted (answered by the author on 2026-11-12) and built; **the size was superseded the same day by ADR-0075 (back to 360 px); the `?px=NN` parameter stays**
 - **Date:** 2026-11-12
 - **Decided by:** Vinh (author), with Claude (the website session)
 

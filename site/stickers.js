@@ -1,11 +1,11 @@
 // The sticker page (ADR-0051, ADR-0053, ADR-0060): the picture itself is the button. Tap or click copies the PNG to the clipboard
-// (shrunk to COPY_PX, so a chat shows it near a real sticker's size); where the phone supports it, the confirmation carries a Share
+// (the picture as it is, 360 px; ?px=NN on the address can shrink it to try); where the phone supports it, the confirmation carries a Share
 // link. The only thing kept is a short list of the last stickers you used, in this browser only (local storage: sticker numbers, never
 // sent anywhere; the row has a Clear button). There is no request except the one for the picture that is already on the page.
 // Without this script the pictures are still there (real <img> elements).
 import { t } from "./ui.js";
 
-const COPY_PX = 128; // the page shows 360 for sharpness; a copy is smaller, so a chat shows it near a real sticker's size (ADR-0060, ADR-0074)
+const COPY_PX = 360; // the copy is the picture as it is: 360 px, as sharp as it can be (ADR-0075; 180 and 128 were tried and were too small and soft)
 // To try other sizes in a chat, open the page with ?px=NN (48 to 360); nothing is stored, and without it the size is COPY_PX.
 const asked = Number(new URLSearchParams(location.search).get("px"));
 const COPY_SIDE = Number.isInteger(asked) && asked >= 48 && asked <= 360 ? asked : COPY_PX;
@@ -53,6 +53,7 @@ async function shrink(blob) {
   try {
     const bmp = await createImageBitmap(blob);
     const side = Math.min(COPY_SIDE, bmp.width);
+    if (side >= bmp.width) return blob; // the original file, not re-encoded
     const canvas = document.createElement("canvas");
     canvas.width = side;
     canvas.height = Math.round((bmp.height * side) / bmp.width);
