@@ -130,6 +130,12 @@ LOOK = {
 def eye_svg(e, look):
     if e["rx"] < 0.3 or e["a"] ** 3 < 0.02:
         return ""
+    if "lidR" in look and e["x"] > 60:  # a different lid for the right eye (a skeptical squint)
+        look = dict(look, lid=look["lidR"])
+    if look.get("swirl"):  # dizzy spiral eyes (sticker art)
+        x0, y0 = e["x"], e["y"]
+        d = f"M{f(x0)} {f(y0)} m0 0 a2 2 0 1 1 3 -2 a4.5 4.5 0 1 1 -7 3 a7 7 0 1 1 11 -5"
+        return stroke_path(d, INK, 2.2)
     if look.get("hearts"):  # the eyes are two pink hearts (sticker art)
         k = e["rx"] / 7.5 * 1.25
         return (f'<path transform="translate({f(e["x"])},{f(e["y"] + 1)}) scale({f(k)})" '
@@ -709,5 +715,102 @@ for ci, cf in enumerate([os.path.join(V1_DIR, "vi", f"{n:02d}.png") for n in cur
     cpg.insert_image(r, filename=cf)
 cpg.get_pixmap(dpi=72).save(os.path.join(CUTE_DIR, "contact_sheet.png"))
 print("pack-cute-draft:", len(cute_files), "new stickers in", CUTE_DIR)
+
+# ---- pack Friends (docs/plans/sticker-packs-three-categories.md): eleven new stickers, no arms -------------------------------
+def qmark(x, y, k=1.0, col="#8a97a6"):
+    return (f'<g transform="translate({x},{y}) scale({k})">' + stroke_path("M-4.5 -6 Q-4.5 -11 0 -11 Q4.5 -11 4.5 -7 Q4.5 -3.5 0 -2 L0 0.5", col, 2.6)
+            + f'<circle cx="0" cy="5" r="1.7" fill="{col}"/></g>')
+
+
+def fr_gossip():
+    bowl = ('<path d="M40 96 L80 96 L75 116 L45 116Z" fill="#e5484d"/><path d="M50 96 L52 116 M60 96 L60 116 M70 96 L68 116" stroke="#fff" stroke-width="3"/>')
+    pop = "".join(ell(x, y, 5, 4.5, "#fff6dc") + ell(x - 1, y - 1, 2, 1.8, "#ffe9a8") for x, y in ((46, 93), (55, 90), (64, 91), (73, 93), (51, 86), (60, 84), (69, 86)))
+    return cat(SIT_F, dict(LOOK["rest"], wide=0.9, gy=0, roll=0, mouth="o", cheek=0.8)) + pop + bowl + paw(40, 103, 6, 7, -15) + paw(80, 103, 6, 7, 15)
+
+
+def fr_faint():
+    k = dict(STAND_F, shadow=(60, 115, 0, 0))
+    body = cat(k, dict(LOOK["rest"], swirl=1, mouth="open", cheek=0.5)) + ell(60, 88, 3.4, 4.2, "#f4a7a7")
+    lying = f'<g transform="translate(0,-10) rotate(-90 60 80)">{body}</g>'
+    return ell(52, 116, 48, 4.5, "#000", op=0.08) + lying + star(14, 34, 6, "#ffd166") + star(34, 22, 4, "#ffd166") + star(56, 30, 5, "#ffd166")
+
+
+def fr_ew():
+    gloom = "".join(stroke_path(f"M{x} 34 L{x} {y}", "#7f93a8", 2.2) for x, y in ((74, 46), (80, 50), (86, 46)))
+    wavy = stroke_path("M51 82 q2.2 -3.5 4.5 0 t4.5 0 t4.5 0 t4.5 0", MOUTH, 1.9)
+    return cat(STAND_F, dict(LOOK["huff"], lid=0.5, gx=-3, roll=9, dy=-2, mouth="none", cheek=0.2)) + gloom + wavy
+
+
+def fr_shrug():
+    return (cat(STAND_F, dict(LOOK["rest"], lid=0.5, mouth="smile", cheek=0.4, roll=-4)) + paw(23, 92, 8.5, 10, -80, True) + paw(97, 92, 8.5, 10, 80, True)
+            + sweat())
+
+
+def fr_dream_on():
+    return (cat(STAND_F, dict(LOOK["purr"], roll=13, dy=-3, mouth="flat", cheek=0.5)) + stroke_path("M98 40 l8 -4 M102 49 l10 -1 M100 58 l8 3", "#b9a98f", 2))
+
+
+def fr_really():
+    return cat(STAND_F, dict(LOOK["rest"], lid=1, lidR=0.42, wide=0.5, roll=-12, gx=2, mouth="flat", cheek=0.4)) + stroke_path("M66 50 L88 46", INK, 2.6)
+
+
+def fr_treat():
+    coin = '<circle cx="98" cy="74" r="8" fill="#ffd166" stroke="#e0a93a" stroke-width="1.6"/><circle cx="98" cy="74" r="4.2" fill="none" stroke="#e0a93a" stroke-width="1.2"/>'
+    return (cat(STAND_F, dict(LOOK["happy"], roll=5, dy=0, cheek=0.95)) + paw(96, 93, 8.5, 9.5, 60, True) + coin + star(112, 60, 4, "#ffd166") + star(84, 60, 3, "#ffd166"))
+
+
+def fr_wait():
+    big = (f'<ellipse cx="60" cy="97" rx="14" ry="15" fill="{FUR}" stroke="{DARK}" stroke-width="1.3"/>'
+           + ell(60, 101, 6.5, 5.5, PINK) + "".join(ell(x, 89, 2.6, 3, PINK) for x in (51, 57, 63, 69)))
+    return cat(STAND_F, dict(LOOK["gasp"], mouth="flat", cheek=0.3)) + big + arcs("M38 86 q-6 8 -1 18", "M82 86 q6 8 1 18")
+
+
+def fr_huh():
+    return cat(STAND_F, dict(LOOK["rest"], wide=0.3, roll=14, mouth="flat", cheek=0.6)) + qmark(98, 34, 1.5) + qmark(112, 48, 0.9)
+
+
+def fr_go_out():
+    pack = ('<rect x="30" y="62" width="30" height="26" rx="8" fill="#8ecae6" stroke="#5aa9d6" stroke-width="1.3"/>'
+            '<rect x="36" y="74" width="18" height="10" rx="3" fill="#bfe3f2"/><path d="M58 66 Q70 72 70 86" fill="none" stroke="#5aa9d6" stroke-width="3" stroke-linecap="round"/>')
+    return cat(STAND_S, dict(LOOK["happy"], roll=-4, cheek=0.9)) + pack + star(112, 40, 6, "#ffd166") + star(20, 44, 4, "#ffd166") + arcs("M4 96 l8 0", "M2 104 l10 0")
+
+
+def fr_fibber():
+    k = dict(STAND_F, mouth=dict(STAND_F["mouth"], ra=0))
+    return cat(k, dict(LOOK["smirk"], lid=0.45, gx=4, roll=-7, cheek=0.7)) + paw(96, 93, 8, 9.5, 75, True) + stroke_path("M106 80 l7 -4 M108 88 l9 0", "#b9a98f", 2)
+
+
+FRIENDS_NEW = [
+    ("Hóng!", fr_gossip, {}),
+    ("Xỉu ngang!", fr_faint, {}),
+    ("Gớm!", fr_ew, {}),
+    ("Bó tay.", fr_shrug, {}),
+    ("Còn lâu!", fr_dream_on, {}),
+    ("Thật hả?", fr_really, {}),
+    ("Bao nha!", fr_treat, {}),
+    ("Khoan đã!", fr_wait, {}),
+    ("Ủa?", fr_huh, {}),
+    ("Đi chơi đi!", fr_go_out, {}),
+    ("Xạo vừa thôi!", fr_fibber, {}),
+]
+FR_DIR = os.path.join(os.path.dirname(os.path.abspath(OUT)), "pack-friends-draft")
+os.makedirs(FR_DIR, exist_ok=True)
+fr_files = []
+for fi, (ftext, fart, fopt) in enumerate(FRIENDS_NEW, 1):
+    fsc = fopt.get("scale", S)
+    finner = wrap(fart(), (360 - 120 * fsc) / 2 + fopt.get("dx", 0), 82 - 20 * fsc + 8 + fopt.get("dy", 0), fsc)
+    fpath = os.path.join(FR_DIR, f"new-{fi:02d}.png")
+    png_from(finner, (360, 360), ftext, fpath)
+    fr_files.append(fpath)
+current_friends = [3, 5, 6, 9, 14, 15, 16, 18, 20]
+fd = fitz.open()
+fpg = fd.new_page(width=1100, height=880)
+fpg.draw_rect(fpg.rect, color=None, fill=(1, 1, 1))
+for fi, ff in enumerate([os.path.join(V1_DIR, "vi", f"{n:02d}.png") for n in current_friends] + fr_files):
+    r = fitz.Rect(10 + (fi % 5) * 216, 10 + (fi // 5) * 214, 10 + (fi % 5) * 216 + 206, 10 + (fi // 5) * 214 + 206)
+    fpg.draw_rect(r, color=(0.85, 0.85, 0.85), fill=(0.97, 0.97, 0.97) if fi < 9 else (1, 0.98, 0.93))
+    fpg.insert_image(r, filename=ff)
+fpg.get_pixmap(dpi=72).save(os.path.join(FR_DIR, "contact_sheet.png"))
+print("pack-friends-draft:", len(fr_files), "new stickers in", FR_DIR)
 
 print("done", len(made), "stickers in", OUT)
