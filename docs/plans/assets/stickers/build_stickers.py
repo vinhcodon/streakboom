@@ -136,6 +136,9 @@ def eye_svg(e, look):
         x0, y0 = e["x"], e["y"]
         d = f"M{f(x0)} {f(y0)} m0 0 a2 2 0 1 1 3 -2 a4.5 4.5 0 1 1 -7 3 a7 7 0 1 1 11 -5"
         return stroke_path(d, INK, 2.2)
+    if look.get("shock"):  # a white eye with a tiny pupil: a shock (sticker art)
+        return (ell(e["x"], e["y"], e["rx"] * 1.2, e["ry"] * 1.1, "#fff") + f'<ellipse cx="{f(e["x"])}" cy="{f(e["y"])}" rx="{f(e["rx"] * 1.2)}" ry="{f(e["ry"] * 1.1)}" fill="none" stroke="{INK}" stroke-width="1.8"/>'
+                + ell(e["x"], e["y"], 2.4, 2.4, INK))
     if look.get("hearts"):  # the eyes are two pink hearts (sticker art)
         k = e["rx"] / 7.5 * 1.25
         return (f'<path transform="translate({f(e["x"])},{f(e["y"] + 1)}) scale({f(k)})" '
@@ -460,15 +463,15 @@ STICKERS = [
     ("01", "Chào buổi sáng!", lambda: cat(STRETCH_S, LOOK["wake"]), dict(scale=2.8, dy=-14)),
     ("02", "Sướng quá~", lambda: cat(STAND_F, LOOK["purr"])),
     ("03", "Cuộc sống mà.", lounging, dict(scale=2.5, dx=2, dy=8)),
-    ("04", "Buồn ngủ…", lambda: cat(SIT_F, dict(LOOK["drowsy"], lid=0.06, roll=-11, dy=9, droop=0.5, mouth="o", cheek=0.8, z=1))),
-    ("05", "Hừm.", lambda: cat(SIT_F, LOOK["huff"]) + puffs()),
+    ("04", "Buồn ngủ…", lambda: cat(SIT_F, dict(LOOK["drowsy"], lid=0.34, roll=-8, dy=8, droop=0.4, mouth="yawn", cheek=0.8)) + '<path d="M33 74 Q36 80 33 83 Q30 80 33 74" fill="#8ecae6"/>'),
+    ("05", "Hừm.", lambda: cat(SIT_F, dict(LOOK["rest"], lid=0.06, roll=15, dy=-2, gx=-7, mouth="flat", cheek=0.4)) + puffs() + stroke_path("M10 60 l7 3 M8 70 l9 1", "#b9a98f", 2)),
     ("06", "Quá sức mèo rồi.", lambda: cat(STAND_F, LOOK["sad"])),
     ("08", "Làm chung nhé?", lambda: cat(STAND_F, dict(LOOK["curious"], roll=12, wide=0.6, cheek=0.7)) + paw(25, 94, 9, 10.5, -40, True) + arcs("M11 82 q-6 6 -2 14", "M5 76 q-8 9 -3 20")),
     ("09", "Ngủ ngon.", curled_up, dict(scale=2.7, dy=-14)),
     ("18", "Haha!", lambda: joy_tears() + cat(STAND_F, dict(LOOK["happy"], mouth="yawn", roll=8, dy=-2, cheek=0.95)) + paw(58, 104, 7, 6.5, 40)),
     ("11", "Xin lỗi nhé.", lambda: cat(STAND_F, dict(LOOK["sad"], roll=-6, dy=5, lid=1, wide=0.9, cheek=0.3, droop=1)) + sweat()),
-    ("12", "Cảm ơn nha!", lambda: hearts() + cat(STAND_F, dict(LOOK["purr"], roll=-4, dy=6)) + paw(54, 94, 6.5, 9, 14, True) + paw(66, 94, 6.5, 9, -14, True)),
-    ("13", "Ơ!", lambda: cat(STAND_F, LOOK["gasp"])),
+    ("12", "Cảm ơn nha!", lambda: star(16, 48, 6, "#ffd166") + star(104, 40, 7, "#f4a7a7") + star(98, 74, 4, "#8ecae6") + cat(STAND_F, dict(LOOK["rest"], wide=0.5, mouth="smile", cheek=0.9, roll=-4, dy=6)) + paw(54, 94, 6.5, 9, 14, True) + paw(66, 94, 6.5, 9, -14, True)),
+    ("13", "Ơ!", lambda: cat(STAND_F, dict(LOOK["rest"], shock=1, mouth="yawn", cheek=0.3, roll=11, dy=3)) + stroke_path("M42 24 l-5 -9 M58 18 l0 -10 M76 24 l5 -9", "#b9a98f", 2.4)),
     ("14", "Để mình nghĩ…", lambda: cat(STAND_F, dict(LOOK["think"], roll=6, dots=0)) + paw(70, 90, 7, 8.5, 22) + ell(88, 32, 2.8, 2.8, "#8a8a8a") + ell(97, 25, 3.8, 3.8, "#8a8a8a") + ell(108, 16, 5, 5, "#8a8a8a", 0, 0.9)),
     ("15", "Hì hì.", lambda: cat(STAND_F, dict(LOOK["purr"], roll=8, dy=0, mouth="smile", cheek=1.0)) + paw(66, 86, 7.5, 9.5, 28) + arcs("M96 52 q6 -3 7 -10", "M102 62 q7 -2 9 -9")),
     ("16", "Giỏi quá.", lambda: cat(STAND_F, dict(LOOK["smirk"], lid=0.5, gx=-4, roll=3, mouth="flat", cheek=0.4)) + thumbs_up(91, 95)),
@@ -645,7 +648,7 @@ def cute_cheer():
 def cute_flower():
     """Congratulations: a flower held at the chest with both paws. No arms."""
     petals = "".join(f'<circle cx="{f(78 + 6.2 * math.cos(a * math.pi / 2.5))}" cy="{f(88 + 6.2 * math.sin(a * math.pi / 2.5))}" r="5.2" fill="#f08a99"/>' for a in range(5))
-    return (cat(STAND_F, dict(LOOK["happy"], roll=-3, dy=0, cheek=0.9)) + stroke_path("M60 106 Q66 98 76 91", "#7cc17c", 2.6)
+    return (cat(STAND_F, dict(LOOK["rest"], wide=0.5, mouth="open", roll=-3, dy=0, cheek=0.9)) + stroke_path("M60 106 Q66 98 76 91", "#7cc17c", 2.6)
             + petals + '<circle cx="78" cy="88" r="3.4" fill="#ffd166"/>' + paw(53, 103, 6.5, 8, 15) + paw(66, 104, 6.5, 8, -15)
             + star(18, 46, 5, "#ffd166") + star(104, 44, 6, "#f4a7a7"))
 
@@ -658,7 +661,7 @@ def cute_birthday():
             '<path d="M60.3 72 Q66 80 62.5 84 Q60.3 86 58 84 Q54.5 80 60.3 72Z" fill="#ff8a3d"/>'
             '<path d="M60.3 77 Q63 81 61.5 83.5 Q60.3 85 59 83.5 Q57.5 81 60.3 77Z" fill="#ffd166"/>'
             + stroke_path("M52 75 l-4 -3 M68 75 l4 -3 M60.3 66 l0 -4", "#ffb347", 1.8))
-    return cat(SIT_F, dict(LOOK["happy"], dy=0, cheek=0.9)) + hat + cake
+    return cat(SIT_F, dict(LOOK["rest"], wide=0.5, mouth="open", dy=0, cheek=0.9)) + hat + cake
 
 
 def cute_meow():
@@ -1050,7 +1053,7 @@ GROUPS = [
     ("Vui và phấn khích", [("Haha!", None), ("Sướng quá~", None), ("Hì hì.", None), ("Meo~", None), ("Ú òa!", None), ("Đi chơi đi!", None), ("Hóng!", None)]),
     ("Buồn và lo", [("Huhu…", None), ("Deadline!", None)]),
     ("Bất ngờ và nghi ngờ", [("Ơ!", None), ("Ủa?", None), ("Để mình nghĩ…", None)]),
-    ("Trêu và lầy", [("Còn lâu!", None), ("Gớm!", None), ("Xỉu ngang!", None), ("Hừm.", None), ("Ai đợi đâu.", None), ("Giỏi quá.", None), ("Cuộc sống mà.", None)]),
+    ("Trêu và lầy", [("Còn lâu!", None), ("Gớm!", None), ("Xỉu ngang!", None), ("Hừm.", "Hứ!"), ("Ai đợi đâu.", None), ("Giỏi quá.", None), ("Cuộc sống mà.", None)]),
     ("Đáp lời", [("Ok nè!", None), ("Không nha.", None)]),
 ]
 ALL_DIR = os.path.join(os.path.dirname(os.path.abspath(OUT)), "list-draft")

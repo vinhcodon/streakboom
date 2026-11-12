@@ -9,14 +9,14 @@ Status: **Vinh chose a shortlist on 2026-11-12, dropped the three categories and
 |---|---|---|---|
 | 01 | Chào buổi sáng! | now | |
 | 02 | Ngủ ngon. | now | |
-| 03 | Buồn ngủ… | now | |
+| 03 | Buồn ngủ… | now, redrawn | a big yawn, eyes half open, a tear, no "z" (the "z" stays on "Ngủ ngon.") |
 | 04 | Thứ Sáu rồi! | new | |
 | 05 | **Yêu quá!** | new | was "Thương quá!" |
-| 06 | Cảm ơn nha! | now | |
+| 06 | Cảm ơn nha! | now, redrawn | open shiny eyes and sparkles instead of the floating hearts |
 | 07 | Xin lỗi nhé. | now | |
 | 08 | **Rất tiếc.** | now, redrawn | was "Quá sức mèo rồi."; now a shrug with a pout, eyes up, both palms spread open at the two sides of the body (no arms) |
-| 09 | Chúc mừng nha! | new | |
-| 10 | **Sinh nhật vui vẻ!** | new | was "Sinh nhật vui!"; taller candle, bigger flame |
+| 09 | Chúc mừng nha! | new, redrawn | open shiny eyes |
+| 10 | **Sinh nhật vui vẻ!** | new | was "Sinh nhật vui!"; taller candle, bigger flame; open shiny eyes |
 | 11 | Cố lên nha! | new | |
 | 12 | Haha! | now | |
 | 13 | Sướng quá~ | now | |
@@ -27,13 +27,13 @@ Status: **Vinh chose a shortlist on 2026-11-12, dropped the three categories and
 | 18 | Hóng! | new | |
 | 19 | Huhu… | now | |
 | 20 | Deadline! | new | |
-| 21 | Ơ! | now | |
+| 21 | Ơ! | now, redrawn | a real shock: eyes white with tiny pupils, the mouth wide open, the body leaning back, shock lines (so it differs from "Ủa?") |
 | 22 | Ủa? | new | |
 | 23 | Để mình nghĩ… | now | |
 | 24 | **Còn lâu!** | new, redrawn | the "lêu lêu" face: both lower eyelids pulled down (red crescents under the eyes) and a short tongue stuck out (the first try had a long tongue and a wink and did not read as "lêu lêu") |
 | 25 | Gớm! | new | |
 | 26 | Xỉu ngang! | new | |
-| 27 | Hừm. | now | |
+| 27 | **Hứ!** | now, redrawn | was "Hừm."; the head turned away, eyes shut, little puffs (so it differs from "Gớm!") |
 | 28 | Ai đợi đâu. | now | |
 | 29 | Giỏi quá. | now | |
 | 30 | Cuộc sống mà. | now | |
@@ -64,7 +64,7 @@ The 17 unchanged ones already have English and Japanese (`set-v1`). The 15 other
 | Xỉu ngang! | I'm dead! | もうだめ〜 |
 
 ## 3. Review: quotes or pictures that are close to each other
-Done on the 32 above. **Proposals only: nothing is changed until Vinh answers.** "Same meaning" means a person might hesitate between the two; "same picture" means they look alike at 120 px.
+Done on the 32 above. **Vinh answered on 2026-11-12 and the changes are applied (see the Edit column): open eyes for Chúc mừng, Sinh nhật and Cảm ơn; a big yawn for Buồn ngủ; sparkles instead of hearts for Cảm ơn; "Hứ!" turned away for Hừm; Ơ! made a real shock and kept next to Ủa?.** The tables below are the review as it was proposed. "Same meaning" means a person might hesitate between the two; "same picture" means they look alike at 120 px.
 
 ### 3.1 Close in meaning
 | Pair | What they share | Proposal |
