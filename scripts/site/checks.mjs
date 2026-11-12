@@ -68,6 +68,7 @@ const OUTDATED = [
   [/replaces? (your )?(friends|a therapist|professionals?)|thay (thế )?(bạn bè|chuyên gia)/i, "a claim to replace friends or professionals (ADR-0057)"],
   [/detects? (a )?(crisis|crises)|phát hiện (cơn )?khủng hoảng|危機を(検出|検知)/i, "a claim that Peak detects a crisis (it does not read your messages for that: it is a rule for how it answers; spec 12)"],
   [/safe for everyone|adults only|an toàn cho mọi người|成人限定/i, "'safe for everyone' or 'adults only' as a promise (the wording is 'Made for adults (18+)'; a lawyer has not seen it)"],
+  [/picks it on a Japanese Windows|tự chọn tiếng Nhật trên Windows tiếng Nhật|日本語のWindowsでは日本語になります/i, "'Auto picks it on a Japanese Windows' (0.4.1: Auto reads the whole list of the system's languages, and never the IP address or location; ADR-0066)"],
   [/first official release|bản phát hành chính thức đầu tiên|正式リリース第1弾/i, "'first official release (0.2)' (the app is at a later version; the notice states the current one)"],
 ];
 

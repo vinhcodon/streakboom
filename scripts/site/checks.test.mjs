@@ -380,3 +380,13 @@ test("the download buttons are the installer file of this version, in every lang
   assert.ok(c.files["llms.txt"].includes(url));
   fails((c2) => { const p = page(c2, "/"); p.html = p.html.replace(`id="download-btn" class="btn primary" href="${url}"`, 'id="download-btn" class="btn primary" href="https://github.com/vinhcodon/streakboom/releases/latest"'); }, /#download-btn is not the installer link/);
 });
+
+// ADR-0069: the site follows 0.4.1
+test("Auto reads the whole list of the system's languages, never the IP; the tray menu and the single Peak are said", () => {
+  fails((c) => { const p = page(c, "/how-it-works/"); p.html = p.html.replace("</main>", '<p>"Auto" picks it on a Japanese Windows.</p></main>'); }, /Auto picks it on a Japanese Windows/);
+  const c = clone();
+  assert.match(page(c, "/how-it-works/").html, /never from your IP address or location/);
+  assert.match(page(c, "/how-it-works/").html, /Starting Streakboom again never opens a second Peak/);
+  assert.match(page(c, "/vi/how-it-works/").html, /không sinh thêm Peak thứ hai/);
+  assert.match(page(c, "/ja/how-it-works/").html, /2匹目のPeakは出ず/);
+});
