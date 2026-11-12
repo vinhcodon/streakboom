@@ -201,6 +201,34 @@ export function check({ ctx, pages, files, out }) {
   }
   if (!files["llms.txt"].includes(ctx.installerUrl)) bad("llms.txt does not give the direct installer link");
 
+  // the language suggestion (ADR-0067): an inline script on the pages that have a same-page translation, none on the English-only
+  // pages; no strip in the static HTML; it reads only the browser's languages and the local storage; it never redirects or asks a server
+  {
+    const withTranslation = ["home", "how", "privacy", "stickers"];
+    for (const lang of LANGS) {
+      for (const kind of withTranslation) {
+        const p = byPath.get(PATHS[lang][kind]);
+        const m = p.html.match(/<script id="lang-suggest">([\s\S]*?)<\/script>/);
+        if (!m) { bad(p.path + ": the language suggestion script is missing"); continue; }
+        const code = m[1];
+        if (!code.includes("navigator.languages")) bad(p.path + ": the suggestion does not read navigator.languages");
+        for (const word of ["fetch", "XMLHttpRequest", "sendBeacon", "document.cookie", "location.replace", "location.assign", "location.href", "window.location", "sessionStorage", "indexedDB", "geolocation"]) {
+          if (code.includes(word)) bad(p.path + ": the suggestion script mentions " + word + " (no redirect, no request, no cookie, no location: ADR-0067)");
+        }
+        if ((code.match(/localStorage/g) || []).length !== 2) bad(p.path + ": the suggestion script uses local storage for more than the list of languages");
+        if (/class="lang-strip"/.test(p.html.replace(/<script[\s\S]*?<\/script>/g, ""))) bad(p.path + ": the suggestion strip is in the static HTML (crawlers must not see it)");
+        // each suggestion is a link to the same page in that language: the very link of the header's switcher
+        for (const l of LANGS.filter((x) => x !== lang)) {
+          const link = p.html.match(new RegExp('<a class="lang" href="([^"]+)" hreflang="' + l + '"'));
+          if (!link || !code.includes('"href":' + JSON.stringify(link[1]))) bad(p.path + ": the suggestion for " + l + " does not lead to the same page as the switcher");
+        }
+      }
+    }
+    for (const path of [PATHS.changelog, "/404.html"]) {
+      if (byPath.get(path) && byPath.get(path).html.includes('id="lang-suggest"')) bad(path + ": an English-only page must not offer a language suggestion");
+    }
+  }
+
   // the download counter (ADR-0052): off in local builds; when on, the number on every home page is the ledger's total, in the
   // language's own grouping, the ledger is published, and the sentence says downloads (never installs or people)
   if (ctx.downloads) {

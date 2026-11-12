@@ -1,6 +1,6 @@
 # ADR-0067: A dismissible language suggestion from the browser's languages, never a redirect, never the IP
 
-- **Status:** accepted (answered by the author on 2026-11-12); **not built yet** when this record is written
+- **Status:** accepted (answered by the author on 2026-11-12); **built on 2026-11-12** (committed; the live behaviour is checked after the push)
 - **Date:** 2026-11-12
 - **Decided by:** Vinh (author), with Claude (the website session), after the request in `docs/handoff/website-language-suggestion.md` and ADR-0066 (the app session)
 
@@ -17,8 +17,11 @@ ADR-0066 decided that no part of Streakboom looks at the IP address or the locat
 5. **The language buttons stay as short codes** (`EN`, `VI`, `JA`), the author's choice: they are compact on a phone and have the full name in the tooltip and the `aria-label`.
 6. **The text of the strip is in the suggested language** (so the person who needs it can read it), with the `lang` attribute of that language; the close button has a label in the same language. The Japanese sentence has no native reader (the Japanese pages are a beta).
 
-## What the build will check (when built)
-That the inline script exists on the four kinds of pages and not on the changelog and the 404 page; that the strip is not in the static HTML; that the script uses `navigator.languages` and no `fetch`, `XMLHttpRequest`, `sendBeacon`, cookie or `location.replace` / `location.assign` / `location.href =` redirect; that the link of each suggestion is the same-page translation (the `switchTo` of the page); that the pure function that picks the suggestion is tested (`vi-VN`, `ja`, `en-US, vi`, `fr`, an empty list, a language already dismissed, the page's own language).
+## What the build checks (built)
+That the inline script (`scripts/site/langsuggest.mjs`, `<script id="lang-suggest">`) exists on the four kinds of pages in three languages and not on the changelog and the 404 page; that the strip is not in the static HTML; that the script uses `navigator.languages` and no `fetch`, `XMLHttpRequest`, `sendBeacon`, cookie or `location.replace` / `location.assign` / `location.href =` redirect; that the link of each suggestion is the same-page translation (the `switchTo` of the page); that the pure function that picks the suggestion is tested (`vi-VN`, `ja`, `en-US, vi`, `fr`, an empty list, a language already dismissed, the page's own language).
+
+## Result (2026-11-12)
+Built as above. The pure function `pickSuggestion` is the same text in the tests and in the page; the inline script is also run in the tests against a fake page (shows, closes, follows, remembers, ignores a damaged list, survives blocked storage). The privacy page has a new section "This website" (three languages): no cookies, no analytics, the line, what is saved, nothing sent. Checked in the built-in browser (Chromium, an English browser): no strip; with the language list set to Japanese and to Vietnamese: the strip is the first element of the page, has the right text, language and link, closing it stores the language and a second run shows nothing. 101 tests in `scripts/site/`.
 
 ## Alternatives considered
 A fixed bar at the bottom of the screen (no push, but it covers a small screen and collides with the sticker and download toasts); no strip and only a clearer switcher (the simplest, but a visitor with a Vietnamese browser must find the button); remembering for the tab only (nothing stored, but the strip comes back for someone who said no); no memory; suggesting only Vietnamese and Japanese (the request's first wording; an English visitor on `/vi/` would get nothing); native names in the switcher (clearer, rejected for now: the codes are compact and have the full name for assistive technology).
@@ -26,7 +29,7 @@ A fixed bar at the bottom of the screen (no push, but it covers a small screen a
 ## Consequences
 - The visitor sees a short line and, if they choose, a link; the site's promise of no tracking and no cookies is unchanged (a local list in the browser, like the recent stickers of ADR-0060).
 - A visitor who follows the link gets a page in a language the AI-written Vietnamese and Japanese texts do not yet have a native reader for (W-1 to W-5): the suggestion makes those pages more visited.
-- Not verified when this record was written: all of it (nothing is built). To check when built: a phone, Safari, Firefox, Edge; a screen reader reading the strip (the language switch of the voice, the order: the strip comes before the header); the layout shift (Lighthouse) with and without the strip; a private window (blocked storage); a browser with several languages in a different order.
+- Not verified: a real phone, Safari, Firefox and Edge; a screen reader reading the strip (the language switch of the voice, the order: the strip comes before the header); a private window (blocked storage, tested only with a fake); a browser with several languages in another order in a real browser; the layout shift with a Vietnamese browser at the first paint (see W-43 for what was measured).
 
 ## Sources
 `docs/handoff/website-language-suggestion.md`, ADR-0066, ADR-0060, ADR-0031, ADR-0059, Google's advice on locale-adaptive pages and on visible language links, `scripts/site/pages.mjs` (the header).

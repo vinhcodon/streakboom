@@ -4,6 +4,7 @@ import { STRINGS, FEATURE_IDS, HTML_KEYS, STICKER_UI_KEYS, UI_KEYS, LANGS } from
 import { SCENES } from "../../site/scenes.js";
 import { AUTHOR, ORIGIN, RELEASES_URL, REPO_URL, fmtDate } from "./facts.mjs";
 import { formatCount } from "./downloads.mjs";
+import { inlineScript } from "./langsuggest.mjs";
 import { CC_URL, fontNames, needsReviewNote, stickerUrl } from "./stickers.mjs";
 
 export const PATHS = {
@@ -81,6 +82,13 @@ ${jsonld.map((o) => `  <script type="application/ld+json">${json(o)}</script>`).
 </head>`;
 }
 
+/** The language suggestion (ADR-0067): an inline script that builds a thin strip before the first paint, only for a visitor whose browser's
+ *  first language that the site has is not the page's own. Only the pages that have a same-page translation get it. */
+function langSuggest(lang, switchTo) {
+  const targets = Object.fromEntries(LANGS.filter((l) => l !== lang).map((l) => [l, { href: switchTo[l], text: STRINGS[l].ls_text, close: STRINGS[l].ls_close }]));
+  return `  <script id="lang-suggest">${inlineScript(lang, targets)}</script>`;
+}
+
 /** `switchTo` maps a language to the page that is the same page in that language (or its home page). */
 function header({ lang, ctx, switchTo }) {
   const s = (k) => tx(lang, k, ctx);
@@ -109,11 +117,12 @@ function footer({ lang, ctx }) {
   </footer>`;
 }
 
-function htmlDoc({ lang, ctx, switchTo, headArgs, main, script = true }) {
+function htmlDoc({ lang, ctx, switchTo, headArgs, main, script = true, suggest = true }) {
   return `<!doctype html>
 <html lang="${lang}">
 ${head({ lang, ctx, ...headArgs })}
 <body>
+${suggest ? langSuggest(lang, switchTo) : ""}
 
   ${header({ lang, ctx, switchTo })}
 
@@ -502,7 +511,7 @@ ${all}
     </article>
 `;
   return htmlDoc({
-    lang, ctx, switchTo: { vi: PATHS.vi.home, ja: PATHS.ja.home },
+    lang, ctx, switchTo: { vi: PATHS.vi.home, ja: PATHS.ja.home }, suggest: false,
     headArgs: { path: PATHS.changelog, title: raw(lang, "cl_page_title", ctx), description: raw(lang, "cl_desc", ctx), feed: true },
     main, script: false,
   });
@@ -519,7 +528,7 @@ export function notFoundPage(ctx) {
     </article>
 `;
   return htmlDoc({
-    lang, ctx, switchTo: { vi: PATHS.vi.home, ja: PATHS.ja.home },
+    lang, ctx, switchTo: { vi: PATHS.vi.home, ja: PATHS.ja.home }, suggest: false,
     headArgs: { path: "/404.html", title: `${raw(lang, "nf_title", ctx)} | Streakboom`, description: raw(lang, "nf_text", ctx), noindex: true },
     main, script: false,
   });
