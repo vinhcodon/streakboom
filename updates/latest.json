@@ -1,11 +1,11 @@
 {
-    "version":  "0.4.0",
-    "notes":  "Peak 0.4.0, the alignment release. Your absence now costs Peak nothing: no lonely mood, no counting of days away, no missed you. No streak and no Longest streak row. A bored Peak amuses itself instead of asking for attention. Three gentle new lines point toward people. A right click on Peak pushes it (a left click always pokes); the pets own menu is gone (use the tray icon). Made for adults (18+). New chat rules: a goodbye gets one short line; if you seem in danger Peak drops the jokes and points to real people; Settings, About has an If you need help now text. Peak makes no health claim. Full notes in CHANGELOG.md.",
-    "pub_date":  "2026-11-11T20:50:22Z",
+    "version":  "0.4.1",
+    "notes":  "Peak 0.4.1, a patch. Only one Peak runs at a time: starting Streakboom again no longer opens a second pet, and brings the running one back if it was hidden. The tray icon menu now follows your language. Auto language now reads your whole list of preferred languages, and the first card of the tour has a small language picker; your IP address or location is never used. Full notes in CHANGELOG.md.",
+    "pub_date":  "2026-11-12T07:46:21Z",
     "platforms":  {
                       "windows-x86_64":  {
-                                             "signature":  "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVUcHBlQXhYUlVURnRMTFJqVGJDWjNRU1ovR0QrN1JCYm54SWxhVllEZTBreVdQQ01GSTBndytmYWNnb2NpN1dqdSswNEtvcmNFQWVsNkl0SEY1d3J2ZlFNZGx0YU9VRkFBPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzk0NDMwMjIxCWZpbGU6U3RyZWFrYm9vbV8wLjQuMF94NjQtc2V0dXAuZXhlCXZlcnNpb246MC40LjAKdUo2U01qeW5tVC9abkZDL2J4Ym9CUEtBc2k1aFhPN2twRkhZMGl2WSs3aHdDZzQ2Tk9MZlExdWh6UkJ0dkI4SkZTMjN0dy9WcXQzM3hSeitzTnVWQWc9PQo=",
-                                             "url":  "https://api.github.com/repos/vinhcodon/streakboom/releases/assets/736885294"
+                                             "signature":  "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVUcHBlQXhYUlVURnRVdFFwSHFzR3FMUWk0TGdTN0NFTFdmSnpwWlJvS3hLUHZGaGNlTTVVNzF2c2F2cjhoQ3ZOUUdsR21xRElBZFkvN0xwZlJsR2lDTzdvVUcrZ0V0QndnPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzk0NDY5NTgwCWZpbGU6U3RyZWFrYm9vbV8wLjQuMV94NjQtc2V0dXAuZXhlCXZlcnNpb246MC40LjEKb1Q5VHIydTgzNnZGQnV6eEUzdEw0eTNWdXM1MWVYbSt1TFAzMG9ZcWZvM0ZUaVhIT0t4VGNDMC9LZUVJem9PalY3UVhTVVRBZEc4L2p0cXM4b3I0QUE9PQo=",
+                                             "url":  "https://api.github.com/repos/vinhcodon/streakboom/releases/assets/738561959"
                                          }
                   }
 }
