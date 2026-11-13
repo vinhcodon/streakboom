@@ -1152,6 +1152,9 @@ fn brain_set_model(state: State<AppState>, model: Option<String>) -> Result<Stri
 struct ChatReply {
     text: String,
     mood: String,
+    /// A skill the model named in a `[skill:name]` tag, if it is on the closed list (S4); the page checks it again.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    skill: Option<String>,
 }
 
 #[tauri::command]
@@ -1164,6 +1167,7 @@ async fn brain_chat(
     known: Option<Vec<String>>,
     follow_user: Option<bool>,
     event: Option<String>,
+    skills: Option<bool>,
 ) -> Result<ChatReply, AiError> {
     tauri::async_runtime::spawn_blocking(move || {
         let state = app.state::<AppState>();
@@ -1171,11 +1175,13 @@ async fn brain_chat(
         // A remark after a reflex (RX-7) uses the persona and the card of that event, never the user's notes.
         let system = match event.as_deref() {
             Some(ev) if brain::reaction_card(ev).is_some() => brain::persona_with_card(&lang, tier, gentle, ev),
-            _ => brain::persona_with(&lang, tier, gentle, known.as_deref().unwrap_or(&[]), follow_user.unwrap_or(false)),
+            _ => brain::persona_with_skills(&lang, tier, gentle, known.as_deref().unwrap_or(&[]), follow_user.unwrap_or(false), skills.unwrap_or(false)),
         };
         let raw = run_generate(&state, &key, &system, &history)?;
-        let (text, mood) = brain::split_mood(&raw);
-        Ok(ChatReply { text, mood })
+        let r = brain::split_reply(&raw);
+        // Without the skills layer the model was not told about the tag: a tag it still wrote is ignored, never acted on.
+        let skill = if skills.unwrap_or(false) { r.skill } else { None };
+        Ok(ChatReply { text: r.text, mood: r.mood, skill })
     })
     .await
     .map_err(|_| task_failed())?

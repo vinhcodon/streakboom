@@ -142,6 +142,20 @@ function stripFillers(t: string, names: readonly string[] | undefined): string {
   return cur;
 }
 
+/** A command the MODEL recognised (tier 2, spec 14 section 5) is taken only from a short message, a little longer than the table allows. */
+export const SKILL_MAX_WORDS = 10;
+
+/** May a message the model took for a command act? Short enough and not a question: a long sentence that merely mentions leaving never does. */
+export function shortEnoughForSkill(text: string): boolean {
+  if (/[?？]/.test(text)) return false;
+  const n = normalize(text);
+  if (!n) return false;
+  const words = n.split(" ").length;
+  if (words > SKILL_MAX_WORDS) return false;
+  if (words === 1 && [...n].length > MAX_JA_CHARS * 2) return false;
+  return true;
+}
+
 /** Is the message short enough, and not a question, to be a command at all? */
 export function mayBeCommand(text: string): boolean {
   if (/[?？]/.test(text)) return false;

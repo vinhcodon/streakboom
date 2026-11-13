@@ -5,6 +5,7 @@
   import { getVersion } from "@tauri-apps/api/app";
   import { channelOf, effectiveUpdateMode } from "$lib/channel";
   import { AWAY_MINUTES, FAREWELL_BUBBLE_MS, LEAVE_WALK_MAX_MS, RETRY_SECS, isLeaveCommand, mayLeave, nearerEdge, pickFarewell } from "$lib/farewell";
+  import { shortEnoughForSkill } from "$lib/intents";
   import { emitTo } from "@tauri-apps/api/event";
   import { getCurrentWebviewWindow } from "@tauri-apps/api/webviewWindow";
   import { onMount } from "svelte";
@@ -2078,15 +2079,28 @@
     replyMood = "neutral";
     enter("think"); // the pet tilts its head and looks up while it waits
     resetMenuTimer();
+    let leftByModel = false; // the model named the skill and Peak is leaving: no chat answer is shown
     try {
-      const out = await invoke<{ text: string; mood: string }>("brain_chat", {
+      // The model may name a skill (S4, spec 14) only on a Preview build, and not while Quiet or away.
+      if (!ownVersion) ownVersion = await getVersion().catch(() => "");
+      const out = await invoke<{ text: string; mood: string; skill?: string }>("brain_chat", {
         lang,
         tier: tierOf(data.closeness),
         gentle: data.settings.gentle,
         history,
         known: knownFor(mem, lang),
         followUser: true, // answer in the language the user writes in
+        skills: channelOf(ownVersion) === "preview" && !quiet && !away && !leaving,
       });
+      // The model's own word is checked again here: the name is on the closed list, the message is short and not a question,
+      // and the same gates as for the table (Preview, not Quiet, not carried, not in the air). Its words are not shown: Peak says
+      // one of its own goodbyes (ADR-0097).
+      if (out.skill === "leave" && shortEnoughForSkill(text) && mayLeave({ channel: channelOf(ownVersion), quiet, held: pose === "held", flying, away, leaving })) {
+        leftByModel = true;
+        history = history.slice(0, -1); // the command is not part of the talk
+        void startLeave();
+        return;
+      }
       const reply = clip(out.text);
       replyMood = out.mood;
       history = [...history, { role: "model" as const, text: reply }].slice(-8);
@@ -2103,6 +2117,7 @@
       clearTimeout(slowTimer);
       chatSlow = false;
       busy = false;
+      if (leftByModel) return; // startLeave closed the chat box and is saying its goodbye
       chatPhase = "reply";
       // If the chat was closed while waiting, still deliver the answer as a plain bubble.
       if (panel !== "chat") showBubble(chatReply, 5000);

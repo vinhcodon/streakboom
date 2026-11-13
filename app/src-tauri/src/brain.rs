@@ -184,6 +184,57 @@ pub fn split_mood(raw: &str) -> (String, String) {
     (text, mood)
 }
 
+/// The skills the model may name in a `[skill:name]` tag (spec 14, story S4): a closed list. Anything else in such a tag is removed
+/// and ignored, so a model that invents a skill does nothing. The page checks the name again before acting.
+pub const SKILLS: [&str; 1] = ["leave"];
+
+/// A reply split into its parts: the words to show, the feeling, and the skill the model named (if it is on the closed list).
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct Reply {
+    pub text: String,
+    pub mood: String,
+    pub skill: Option<String>,
+}
+
+/// Splits a reply: every `[skill:name]` tag, wherever it stands, is taken out (it must never reach the screen) and the first one
+/// whose name is on the closed list is returned; what is left goes through `split_mood`. A `[skill:` that has no closing
+/// bracket within a few characters is not a tag and stays in the text.
+pub fn split_reply(raw: &str) -> Reply {
+    const OPEN: &[u8] = b"[skill:";
+    let mut skill: Option<String> = None;
+    let mut out = String::with_capacity(raw.len());
+    let mut rest = raw;
+    loop {
+        let Some(i) = rest.as_bytes().windows(OPEN.len()).position(|w| w.eq_ignore_ascii_case(OPEN)) else {
+            out.push_str(rest);
+            break;
+        };
+        let after = &rest[i + OPEN.len()..];
+        match after.find(']') {
+            Some(j) if j <= 24 => {
+                let name = after[..j].trim().to_lowercase();
+                if skill.is_none() && SKILLS.contains(&name.as_str()) {
+                    skill = Some(name);
+                }
+                out.push_str(&rest[..i]);
+                rest = &after[j + 1..];
+            }
+            _ => {
+                // not a tag: keep the text up to and including the opening, go on after it
+                out.push_str(&rest[..i + OPEN.len()]);
+                rest = after;
+            }
+        }
+    }
+    let (text, mood) = split_mood(&out);
+    Reply { text, mood, skill }
+}
+
+/// The skills layer of the persona (S4): added only in a chat the user started, on a build that has the skills.
+pub fn skills_layer() -> PersonaLayer {
+    PersonaLayer { name: "skills", locked: false, text: include_str!("../persona/skills.md").trim().to_string() }
+}
+
 /// The language the pet speaks for an app language code ("vi", "ja"; anything else is English).
 pub fn language_name(lang: &str) -> &'static str {
     match lang {
@@ -264,7 +315,13 @@ pub fn hello_prompt(lang: &str) -> String {
 /// The persona plus what the user told the pet earlier. Background only: the model is told not
 /// to recite it or to invent more. Only ever used for chats the user started (never for the
 /// pet's unprompted lines, which may be on a shared screen).
+#[cfg_attr(not(test), allow(dead_code))] // the chat uses persona_with_skills; the tests and older callers use this
 pub fn persona_with(lang: &str, tier: u8, gentle: bool, known: &[String], follow_user: bool) -> String {
+    persona_with_skills(lang, tier, gentle, known, follow_user, false)
+}
+
+/// `persona_with`, and with `skills` the skills layer after everything else (S4). Without it the text is the same as before.
+pub fn persona_with_skills(lang: &str, tier: u8, gentle: bool, known: &[String], follow_user: bool, skills: bool) -> String {
     let mut s = persona(lang, tier, gentle);
     if follow_user {
         // In a chat the user started, answer in whatever language they write in, like any chat
@@ -289,6 +346,10 @@ pub fn persona_with(lang: &str, tier: u8, gentle: bool, known: &[String], follow
             s.push_str("\n- ");
             s.extend(k.chars().filter(|c| !c.is_control()).take(80));
         }
+    }
+    if skills {
+        s.push_str("\n\n");
+        s.push_str(&skills_layer().text);
     }
     s
 }
@@ -909,4 +970,137 @@ mod tests {
         assert!(persona("en", 1, true).contains("no sarcasm"));
         assert!(persona("en", 1, false).contains("under 2 sentences"));
     }
+
+    // ---------------------------------------------------------------- S4: the skill tag (spec 14, ADR-0097)
+
+    #[test]
+    fn a_skill_tag_is_taken_out_wherever_it_stands_and_only_a_listed_skill_is_returned() {
+        let r = split_reply("[neutral] [skill:leave] Ừ, mình đi dạo nhé.");
+        assert_eq!((r.text.as_str(), r.mood.as_str(), r.skill.as_deref()), ("Ừ, mình đi dạo nhé.", "neutral", Some("leave")));
+        let r = split_reply("[skill:leave] [warm] Okay, off I go.");
+        assert_eq!((r.text.as_str(), r.mood.as_str(), r.skill.as_deref()), ("Okay, off I go.", "warm", Some("leave")));
+        let r = split_reply("[happy] Bye then. [skill:leave]");
+        assert_eq!((r.text.trim(), r.mood.as_str(), r.skill.as_deref()), ("Bye then.", "happy", Some("leave")));
+        let r = split_reply("[SKILL: Leave ] [neutral] ok");
+        assert_eq!(r.skill.as_deref(), Some("leave"), "case and spaces do not matter");
+        // a skill that is not on the list is removed and ignored
+        let r = split_reply("[neutral] [skill:sleep] Night night.");
+        assert_eq!((r.text.as_str(), r.skill), ("Night night.", None));
+        let r = split_reply("[skill:rm -rf] hello");
+        assert_eq!((r.text.as_str(), r.skill), ("hello", None));
+        // no tag: the same as split_mood
+        let r = split_reply("[sassy] Hmph.");
+        assert_eq!((r.text.as_str(), r.mood.as_str(), r.skill), ("Hmph.", "sassy", None));
+        assert_eq!(split_reply("Plain text.").text, "Plain text.");
+    }
+
+    #[test]
+    fn a_skill_tag_alone_leaves_no_words_and_a_broken_one_stays_as_text() {
+        let r = split_reply("[skill:leave]");
+        assert_eq!((r.text.as_str(), r.skill.as_deref()), ("", Some("leave")));
+        // no closing bracket within a few characters: not a tag, nothing is taken out
+        let r = split_reply("About [skill: it is a long story about nothing at all that never closes");
+        assert_eq!(r.skill, None);
+        assert!(r.text.contains("[skill:"), "{}", r.text);
+        // the first listed skill wins, later ones are removed too
+        let r = split_reply("[skill:leave] and [skill:leave] again");
+        assert_eq!(r.skill.as_deref(), Some("leave"));
+        assert!(!r.text.contains("skill"), "{}", r.text);
+        // text with real brackets and non-ASCII text next to a tag
+        let r = split_reply("[neutral] arr[0] 消えて [skill:leave]");
+        assert_eq!(r.skill.as_deref(), Some("leave"));
+        assert!(r.text.contains("arr[0]") && r.text.contains("消えて"), "{}", r.text);
+    }
+
+    #[test]
+    fn the_skills_layer_is_added_only_when_asked_and_names_only_the_closed_list() {
+        let without = persona_with_skills("en", 2, false, &[], true, false);
+        assert_eq!(without, persona_with("en", 2, false, &[], true), "no skills: the persona as before");
+        assert!(!without.contains("[skill:"));
+        let with = persona_with_skills("en", 2, false, &[], true, true);
+        assert!(with.starts_with(&without), "the layer comes after everything else");
+        assert!(with.contains("[skill:leave]"));
+        // every tag the layer names is on the closed list
+        let mut rest = skills_layer().text;
+        let mut named = 0;
+        while let Some(i) = rest.find("[skill:") {
+            let after = &rest[i + 7..];
+            let j = after.find(']').unwrap();
+            assert!(SKILLS.contains(&&after[..j]), "{} is not on the list", &after[..j]);
+            named += 1;
+            rest = after[j + 1..].to_string();
+        }
+        assert!(named >= 1);
+        // the notes about the user stay before the layer
+        let with_notes = persona_with_skills("en", 2, false, &["has a cat named Mun".into()], false, true);
+        assert!(with_notes.find("has a cat named Mun").unwrap() < with_notes.find("[skill:leave]").unwrap());
+        // the persona itself (the fingerprint above) never carries the layer
+        for lang in ["vi", "en", "ja"] {
+            assert!(!persona(lang, 2, false).contains("skill:"));
+            assert!(persona_layers(lang, 2, false).iter().all(|l| l.name != "skills"));
+        }
+    }
+
+    // ---------------------------------------------------------------- H20: how reliably a real model names the skill (not run by `cargo test`)
+
+    /// The commands the model must tag, the near-commands and ordinary messages it must NOT tag. Written by the assistant as a first
+    /// set (about fifty); the real set is to be extended with the survey's phrases.
+    const SKILL_CASES: &[(&str, bool)] = &[
+        // commands (true: the model should put [skill:leave])
+        ("lượn đi", true), ("lượn đi nào em", true), ("thôi em đi chỗ khác chơi đi", true), ("biến đi cho anh làm việc", true), ("anh đang bận, em đi chơi đi", true),
+        ("đi chỗ khác đi", true), ("em ra ngoài chơi một lát đi", true), ("để anh yên một lúc nhé", true), ("peak đi dạo đi", true), ("em đi chỗ khác chơi nha", true),
+        ("go away", true), ("please go away for a while", true), ("go play somewhere else", true), ("leave me alone for a bit", true), ("scram, I need to focus", true),
+        ("go for a walk, little one", true), ("shoo", true), ("off you go, I'm working", true), ("could you go away for a while", true), ("give me some space please", true),
+        ("消えて", true), ("あっち行って", true), ("どっか行っててくれる？", true), ("ちょっと向こうに行ってて", true), ("しばらく一人にして", true),
+        // near-commands and others (false: the model must NOT tag)
+        ("hôm nay anh lượn đi họp", false), ("tôi sẽ đi chỗ khác làm việc", false), ("em có muốn đi chơi không?", false), ("đi ngủ đi", false), ("im đi một lát", false),
+        ("lượn đi lượn lại mãi mà không tìm thấy file", false), ("mai anh đi vắng", false), ("quay lại đi", false),
+        ("I'm going away for the weekend", false), ("my cat likes to go away and come back", false), ("do you ever want to go away?", false), ("go to sleep", false), ("be quiet", false),
+        ("I have to leave for a meeting", false), ("come back", false),
+        ("今日は会議で席を外すよ", false), ("おやすみ", false), ("静かにして", false), ("もう帰るの？", false),
+        ("hello", false), ("xin chào", false), ("what is your name", false), ("nóng quá", false), ("おはよう", false), ("tell me a joke", false), ("anh vừa uống cà phê xong", false),
+    ];
+
+    /// `cargo test -- --ignored skill_harness --nocapture` with the author's own key in the environment (the assistant never sees it):
+    ///   STREAKBOOM_HARNESS_PROVIDER = gemini | groq | claude | openai      STREAKBOOM_HARNESS_KEY = the key
+    ///   STREAKBOOM_HARNESS_MODEL = a model name (optional: the first model the key lists is used)
+    /// It asks the model each message with the real persona and the skills layer, reads the tag the way the app does, and prints
+    /// the misses and, above all, the false tags, with the rates. It sends nothing else and stores nothing.
+    #[test]
+    #[ignore]
+    fn skill_harness() {
+        let provider = std::env::var("STREAKBOOM_HARNESS_PROVIDER").ok().and_then(|p| Provider::parse(p.trim())).expect("set STREAKBOOM_HARNESS_PROVIDER");
+        let key = std::env::var("STREAKBOOM_HARNESS_KEY").expect("set STREAKBOOM_HARNESS_KEY");
+        let model = match std::env::var("STREAKBOOM_HARNESS_MODEL") {
+            Ok(m) if !m.trim().is_empty() => m,
+            _ => models_for(provider, &key).ok().and_then(|v| v.into_iter().next()).unwrap_or_else(|| provider.default_model().to_string()),
+        };
+        let system = persona_with_skills("vi", 2, false, &[], true, true);
+        let (mut should, mut hit, mut should_not, mut false_tag, mut errors) = (0, 0, 0, 0, 0);
+        let (mut missed, mut wrong): (Vec<&str>, Vec<&str>) = (Vec::new(), Vec::new());
+        for (text, command) in SKILL_CASES {
+            std::thread::sleep(std::time::Duration::from_millis(1500)); // be gentle with free tiers
+            let turns = vec![Turn { role: "user".into(), text: (*text).into() }];
+            let out = match generate_for(provider, &key, &model, &system, &turns) {
+                Ok(o) => o,
+                Err(_) => {
+                    errors += 1;
+                    continue;
+                }
+            };
+            let tagged = split_reply(&out).skill.as_deref() == Some("leave");
+            if *command {
+                should += 1;
+                if tagged { hit += 1 } else { missed.push(text) }
+            } else {
+                should_not += 1;
+                if tagged { false_tag += 1; wrong.push(text) }
+            }
+        }
+        println!("provider {} model {model}", provider.id());
+        println!("commands tagged: {hit} of {should}   false tags: {false_tag} of {should_not}   errors: {errors}");
+        println!("missed: {missed:?}");
+        println!("FALSE TAGS (the ones that matter): {wrong:?}");
+    }
 }
+

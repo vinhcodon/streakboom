@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { MAX_WORDS, SKILLS, TABLE, clashes, evaluate, fold, matchIntent, mayBeCommand, normalize, type Sample, type Skill } from "./intents.ts";
+import { MAX_WORDS, SKILLS, SKILL_MAX_WORDS, TABLE, clashes, evaluate, fold, matchIntent, mayBeCommand, normalize, shortEnoughForSkill, type Sample, type Skill } from "./intents.ts";
 
 const skillOf = (t: string) => matchIntent(t)?.skill ?? null;
 
@@ -178,4 +178,13 @@ test("fillers never turn an ordinary message into a command, and the core word i
     ["Mochi"],
   );
   assert.deepEqual(e.falsePositives, []);
+});
+
+test("a command named by the model acts only from a short message that is not a question (S4)", () => {
+  assert.equal(SKILL_MAX_WORDS, 10);
+  for (const t of ["lượn đi nào em", "thôi em đi chỗ khác chơi đi", "anh đang bận, em đi chơi đi", "one two three four five six seven eight nine ten", "どっか行っててくれる"]) assert.equal(shortEnoughForSkill(t), true, t);
+  for (const t of ["one two three four five six seven eight nine ten eleven", "em có muốn đi chơi không?", "can you go away？", "", "   ", "...", "ずっとここにいたいけどどこかに行ってほしいのでどうかお願いしますとても急いでいます"]) assert.equal(shortEnoughForSkill(t), false, JSON.stringify(t));
+  // longer than the table allows (6 words) but allowed for the model
+  assert.equal(mayBeCommand("thôi em đi chỗ khác chơi đi"), false);
+  assert.equal(shortEnoughForSkill("thôi em đi chỗ khác chơi đi"), true);
 });
