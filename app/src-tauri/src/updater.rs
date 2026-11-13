@@ -190,8 +190,10 @@ mod tests {
         for (v, ch) in [("0.4.2", Channel::Stable), ("0.5.0", Channel::Preview), ("0.6.0", Channel::Stable), ("0.7.3", Channel::Preview), ("junk", Channel::Stable)] {
             assert_eq!(channel_of(v), ch, "{v}");
         }
-        // Today's release line is Stable: it must keep reading latest.json.
-        assert_eq!(channel_of(env!("CARGO_PKG_VERSION")), Channel::Stable);
+        // The build in hand is on the channel its own middle number says (a Preview build made by CI carries an odd one).
+        let own = env!("CARGO_PKG_VERSION");
+        let minor: u64 = own.split('.').nth(1).and_then(|m| m.parse().ok()).expect("the crate version is major.minor.patch");
+        assert_eq!(channel_of(own), if minor % 2 == 1 { Channel::Preview } else { Channel::Stable });
     }
 
     #[test]

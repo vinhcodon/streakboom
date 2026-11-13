@@ -9,10 +9,15 @@
     2. signs it with the UPDATER key (the minisign key that never leaves this computer), after the Authenticode signature, as
        the updater signature covers the final bytes;
     3. verifies that signature against the public key in tauri.conf.json, as the installed app will (scripts\updater-verify);
-    4. writes dist\latest.json (the manifest), pointing at the draft's own installer asset;
+    4. writes dist\latest.json (the manifest), pointing at the draft's own installer asset (dist\preview.json for a Preview);
     5. with -Publish: uploads the manifest, publishes the release as the latest, copies the manifest to updates\latest.json and
        pushes it, and deletes the releases older than the previous one (ADR-0028). Without -Publish it stops after step 4: a
        rehearsal that changes nothing on GitHub or in the repository.
+  A PREVIEW tag (an odd middle number, ADR-0090) is finished the same way with these differences: its version need not be the
+  one in tauri.conf.json (main still says the last Stable; the CI wrote the Preview version into its build folder only), its
+  notes come from CHANGELOG-preview.md, it is published as a PRE-RELEASE (never the latest), its manifest goes to
+  updates\preview.json, and only the previous Preview is kept. updates\preview.json always shows the newest release of both
+  channels, so a Stable publish also writes it when the Stable version is higher than the one it holds.
   scripts\release.ps1 remains the all-local fallback (it builds, signs and publishes by itself).
   The key is passed by path and never printed. Needs `gh` logged in. Run it with powershell.exe -File.
 .EXAMPLE
@@ -35,7 +40,14 @@ $app = Join-Path $root "app"
 if ($Tag -notmatch '^v(\d+\.\d+\.\d+)$') { throw "The tag '$Tag' is not v<major>.<minor>.<patch>" }
 $version = $Matches[1]
 $conf = Get-Content (Join-Path $app "src-tauri\tauri.conf.json") -Raw | ConvertFrom-Json
-if ($conf.version -ne $version) { throw "tauri.conf.json says $($conf.version) but the tag is ${Tag}: check out the tagged commit (or one with the same version) first" }
+$channel = Get-ReleaseChannel -Version $version
+if ($channel -eq "stable" -and $conf.version -ne $version) { throw "tauri.conf.json says $($conf.version) but the tag is ${Tag}: check out the tagged commit (or one with the same version) first" }
+if ($channel -eq "preview") {
+  $bad = @(Test-PreviewVersion -Tag $Tag -Base $conf.version)
+  if ($bad.Count) { throw ($bad -join "; ") }
+}
+$changelogFile = if ($channel -eq "preview") { "CHANGELOG-preview.md" } else { "CHANGELOG.md" }
+$manifestName = if ($channel -eq "preview") { "preview.json" } else { "latest.json" }
 $product = $conf.productName
 $exeName = "${product}_${version}_x64-setup.exe"
 if (-not (Test-Path $KeyPath)) { throw "The updater key was not found: $KeyPath" }
@@ -47,7 +59,7 @@ if ($Publish -and $RehearseOnPublished) { throw "-RehearseOnPublished is for reh
 if ($Publish) {
   Push-Location $root
   try {
-    $dirty = git status --porcelain -- app scripts updates CHANGELOG.md
+    $dirty = git status --porcelain -- app scripts updates CHANGELOG.md CHANGELOG-preview.md
     if ($dirty) { throw "The git tree is not clean (ADR-0023: commit explicit paths first):`n$dirty" }
     $branch = (git rev-parse --abbrev-ref HEAD).Trim()
     if ($branch -ne "main") { throw "Publish from main (this is '$branch'): the manifest commit is pushed from here" }
@@ -109,12 +121,12 @@ $out | ForEach-Object { Write-Host "  $_" }
 if ($LASTEXITCODE -ne 0 -or -not ($out -match "^VALID")) { throw "The updater signature does not verify against the public key in tauri.conf.json: nothing is published" }
 
 # 4. the manifest, pointing at the draft's own installer (its asset id stays the same when the release is published)
-$notes = Get-ManifestNotes -Entry (Get-ChangelogEntry -Lines (Get-Content (Join-Path $root "CHANGELOG.md") -Encoding UTF8) -Version $version)
+$notes = Get-ManifestNotes -Entry (Get-ChangelogEntry -Lines (Get-Content (Join-Path $root $changelogFile) -Encoding UTF8) -Version $version)
 $manifest = New-UpdateManifest -Version $version -Notes $notes -Signature $signature -Url "https://api.github.com/repos/$Repo/releases/assets/$($asset.id)"
-$manifestPath = Join-Path $dist "latest.json"
+$manifestPath = Join-Path $dist $manifestName
 [System.IO.File]::WriteAllText($manifestPath, ($manifest | ConvertTo-Json -Depth 5), (New-Object System.Text.UTF8Encoding($false)))
 Write-Host ""
-Write-Host "Ready: $exe"
+Write-Host "Ready: $exe  ($channel channel)"
 Write-Host "       $manifestPath  (version $version, notes: $notes)"
 if (-not $Publish) {
   Write-Host ""
@@ -123,33 +135,62 @@ if (-not $Publish) {
 }
 
 # 5. publish
-& $gh release upload $Tag $manifestPath --repo $Repo --clobber
-if ($LASTEXITCODE -ne 0) { throw "gh release upload failed" }
-& $gh release edit $Tag --repo $Repo --draft=false --latest
+if ($channel -eq "stable") {
+  # the Stable manifest is also an asset of the release (the second address of the Stable copies of the app)
+  & $gh release upload $Tag $manifestPath --repo $Repo --clobber
+  if ($LASTEXITCODE -ne 0) { throw "gh release upload failed" }
+  & $gh release edit $Tag --repo $Repo --draft=false --latest
+} else {
+  # a Preview is a pre-release and never the latest, so that releases/latest and the website never point at it (ADR-0090)
+  & $gh release edit $Tag --repo $Repo --draft=false --prerelease --latest=false
+}
 if ($LASTEXITCODE -ne 0) { throw "gh release edit failed" }
+
+# the latest release must be the one we meant (a Preview must not have become it)
+$latestTag = ((& $gh api "repos/$Repo/releases/latest") | ConvertFrom-Json).tag_name
+if ($channel -eq "preview" -and $latestTag -eq $Tag) { throw "$Tag is a Preview but GitHub calls it the latest release: stop and fix it before anyone downloads it" }
+if ($channel -eq "stable" -and $latestTag -ne $Tag) { Write-Warning "GitHub's latest release is $latestTag, not $Tag" }
+
 Push-Location $root
 try {
   New-Item -ItemType Directory -Force (Join-Path $root "updates") | Out-Null
-  Copy-Item $manifestPath (Join-Path $root "updates\latest.json") -Force
-  git add updates/latest.json
-  git commit -m "Update manifest for $version"
-  git push origin HEAD
-  if ($LASTEXITCODE -ne 0) { throw "git push failed" }
+  $stage = @()
+  if ($channel -eq "stable") {
+    Copy-Item $manifestPath (Join-Path $root "updates\latest.json") -Force
+    $stage += "updates/latest.json"
+  }
+  # updates/preview.json always shows the newest release of both channels (the updater takes the first address that answers)
+  $previewPath = Join-Path $root "updates\preview.json"
+  $existing = ""
+  if (Test-Path $previewPath) { $existing = [string]((Get-Content $previewPath -Raw -Encoding UTF8 | ConvertFrom-Json).version) }
+  if (Test-ShouldWritePreviewManifest -NewVersion $version -ExistingVersion $existing) {
+    Copy-Item $manifestPath $previewPath -Force
+    $stage += "updates/preview.json"
+  } else {
+    Write-Host "updates/preview.json already shows $existing, which is newer than ${version}: left as it is"
+  }
+  if ($stage.Count) {
+    git add -- @stage
+    git commit -m "Update manifest for $version"
+    git push origin HEAD
+    if ($LASTEXITCODE -ne 0) { throw "git push failed" }
+  }
 
-  # keep the new release and the one before it; delete every older release and its tag (ADR-0028); left-over drafts of other tags go too
+  # keep the new release and the one before it IN THE SAME CHANNEL; delete every older release of that channel and its tag
+  # (ADR-0028); left-over drafts of the channel go too. The other channel is never touched.
   $plan = Select-ReleasesToPrune -Releases (((& $gh api "repos/$Repo/releases?per_page=100") | ConvertFrom-Json)) -CurrentTag $Tag
   foreach ($t in $plan.DeleteTags) {
     & $gh release delete $t --repo $Repo --cleanup-tag --yes
-    if ($LASTEXITCODE -ne 0) { Write-Warning "could not delete the old release $t" } else { Write-Host "Deleted the old release $t (notes stay in CHANGELOG.md)" }
+    if ($LASTEXITCODE -ne 0) { Write-Warning "could not delete the old release $t" } else { Write-Host "Deleted the old release $t (notes stay in $changelogFile)" }
   }
   foreach ($d in $plan.Drafts) {
     if ($d -match '^\d+$') { & $gh api -X DELETE "repos/$Repo/releases/$d" | Out-Null } else { & $gh release delete $d --repo $Repo --yes }
     if ($LASTEXITCODE -ne 0) { Write-Warning "could not delete the left-over draft release $d" } else { Write-Host "Deleted a left-over draft release ($d)" }
   }
-  if ($plan.Keep.Count) { Write-Host "Kept the previous release $($plan.Keep[0]) as a way back." }
+  if ($plan.Keep.Count) { Write-Host "Kept the previous $channel release $($plan.Keep[0]) as a way back." }
 } finally { Pop-Location }
 
 Write-Host ""
-Write-Host "Published $Tag. Check from here (the repository copy may lag a few minutes behind a cache):"
-Write-Host "  https://raw.githubusercontent.com/$Repo/main/updates/latest.json"
+Write-Host "Published ${Tag} (${channel}). Check from here (the repository copy may lag a few minutes behind a cache):"
+Write-Host "  https://raw.githubusercontent.com/$Repo/main/updates/$manifestName"
 Write-Host "  https://api.github.com/repos/$Repo/releases/assets/$($asset.id)   (send Accept: application/octet-stream)"

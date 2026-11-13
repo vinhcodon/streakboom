@@ -11,7 +11,11 @@
   Input: release objects as returned by `gh api repos/<repo>/releases` (tag_name, draft, created_at).
 #>
 function Select-ReleasesToPrune {
-  param([Parameter(Mandatory = $true)][object[]]$Releases, [Parameter(Mandatory = $true)][string]$CurrentTag)
+  param([Parameter(Mandatory = $true)][object[]]$Releases, [Parameter(Mandatory = $true)][string]$CurrentTag, [string]$Channel = "")
+  # Each channel (ADR-0090) keeps its own newest two and its own left-over drafts; the other channel is never touched.
+  # A tag that is not a version (a draft's "untagged-..." name) counts as Stable, as before.
+  if (-not $Channel) { $Channel = Get-ReleaseChannel -Version $CurrentTag }
+  $Releases = @($Releases | Where-Object { (Get-ReleaseChannel -Version $_.tag_name) -eq $Channel })
   $others = @($Releases | Where-Object { $_.tag_name -ne $CurrentTag })
   $published = @($others | Where-Object { -not $_.draft } | Sort-Object { [datetime]$_.created_at } -Descending)
   $drafts = @($others | Where-Object { $_.draft })
@@ -109,3 +113,76 @@ function New-UpdateManifest {
     platforms = [ordered]@{ "windows-x86_64" = [ordered]@{ signature = $Signature; url = $Url } }
   }
 }
+
+<#
+.SYNOPSIS
+  The release channel of a version or a tag (ADR-0090): an even middle number is "stable" (0.4.x, 0.6.x), an odd one is
+  "preview" (0.5.x, 0.7.x). Anything that is not major.minor.patch is "stable", the safe side. The app has the same rule in
+  src-tauri/src/updater.rs (channel_of) and src/lib/channel.ts.
+#>
+function Get-ReleaseChannel {
+  param([Parameter(Mandatory = $true)][AllowEmptyString()][string]$Version)
+  $v = $Version.Trim().TrimStart('v')
+  if ($v -match '^(\d+)\.(\d+)\.(\d+)(?:[-+].*)?$') {
+    if (([int64]$Matches[2] % 2) -eq 1) { return "preview" }
+  }
+  return "stable"
+}
+
+<#
+.SYNOPSIS
+  What is wrong with a Preview tag? It must be v<major>.<minor>.<patch> with an ODD middle number, and its version must be
+  greater than $Base (the version in tauri.conf.json on main, the last Stable), or the updater would not offer it.
+  Returns the problems (empty when fine). A Preview build is made from main, whose version files say $Base: the Preview version
+  is written only into the build folder (Set-WorkspaceVersion).
+#>
+function Test-PreviewVersion {
+  param([Parameter(Mandatory = $true)][string]$Tag, [string]$Base = "")
+  $problems = @()
+  if ($Tag -notmatch '^v(\d+\.\d+\.\d+)$') { return @("the tag '$Tag' is not v<major>.<minor>.<patch>") }
+  $v = $Matches[1]
+  if ((Get-ReleaseChannel -Version $v) -ne "preview") { $problems += "the tag '$Tag' is not on the Preview channel (the middle number must be odd)" }
+  if ($Base -match '^\d+\.\d+\.\d+$' -and ([version]$v) -le ([version]$Base)) {
+    $problems += "the Preview version $v is not greater than the version in tauri.conf.json ($Base): the updater would not offer it"
+  }
+  return $problems
+}
+
+<#
+.SYNOPSIS
+  Write $Version into the three version files and Cargo.lock under $Root (tauri.conf.json, Cargo.toml, package.json and the
+  streakboom entry of Cargo.lock, which `cargo test --locked` compares with Cargo.toml). Used by the CI build of a Preview, in
+  the build folder only; nothing is committed. Only the first version field of each file is changed; throws if one is missing.
+#>
+function Set-WorkspaceVersion {
+  param([Parameter(Mandatory = $true)][string]$Root, [Parameter(Mandatory = $true)][string]$Version)
+  $enc = New-Object System.Text.UTF8Encoding($false)
+  $targets = @(
+    @{ Path = "app\src-tauri\tauri.conf.json"; Pattern = '(?m)^(\s*"version"\s*:\s*")[^"]+(")' },
+    @{ Path = "app\src-tauri\Cargo.toml"; Pattern = '(?m)^(version\s*=\s*")[^"]+(")' },
+    @{ Path = "app\package.json"; Pattern = '(?m)^(\s*"version"\s*:\s*")[^"]+(")' },
+    @{ Path = "app\src-tauri\Cargo.lock"; Pattern = '(?ms)(name = "streakboom"\r?\nversion = ")[^"]+(")' }
+  )
+  foreach ($t in $targets) {
+    $p = Join-Path $Root $t.Path
+    if (-not (Test-Path $p)) { throw "Set-WorkspaceVersion: $p not found" }
+    $text = [System.IO.File]::ReadAllText($p)
+    $re = New-Object System.Text.RegularExpressions.Regex($t.Pattern)
+    if (-not $re.IsMatch($text)) { throw "Set-WorkspaceVersion: no version field found in $($t.Path)" }
+    $new = $re.Replace($text, ('${1}' + $Version + '${2}'), 1)
+    [System.IO.File]::WriteAllText($p, $new, $enc)
+  }
+}
+
+<#
+.SYNOPSIS
+  Should the manifest of a newly published release be written to updates/preview.json? preview.json always shows the NEWEST
+  release of both channels (the updater takes the first address that answers, not the highest version), so it is written when
+  the new version is greater than the one it holds now, or when there is none.
+#>
+function Test-ShouldWritePreviewManifest {
+  param([Parameter(Mandatory = $true)][string]$NewVersion, [string]$ExistingVersion = "")
+  if ($ExistingVersion -notmatch '^\d+\.\d+\.\d+$') { return $true }
+  return ([version]$NewVersion) -gt ([version]$ExistingVersion)
+}
+

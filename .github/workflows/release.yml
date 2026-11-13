@@ -2,7 +2,8 @@
 #
 # On a version tag vX.Y.Z (pushed by the owner) it checks that the tag, the three version files and CHANGELOG.md agree, runs
 # the tests, builds the Windows installer on a GitHub-hosted runner WITHOUT the updater key, and makes a DRAFT release with
-# the installer. The maintainer then finishes the release on his own computer (scripts/release-finish.ps1, story CI-2): the
+# the installer. A tag with an ODD middle number (v0.5.0) is a PREVIEW (ADR-0090): built from main with the Preview version
+# written only into the build folder, its notes from CHANGELOG-preview.md, and its draft marked as a pre-release. The maintainer then finishes the release on his own computer (scripts/release-finish.ps1, story CI-2): the
 # update key never goes to GitHub. By hand ("Run workflow") it is a rehearsal: it builds and uploads the installer as an
 # artifact and releases nothing.
 #
@@ -17,6 +18,11 @@ on:
   push:
     tags: ["v*"]
   workflow_dispatch:
+    inputs:
+      tag:
+        description: "Rehearse a Preview: a tag with an odd middle number, for example v0.5.0 (leave empty to rehearse the version in tauri.conf.json). Nothing is released."
+        required: false
+        default: ""
 
 permissions:
   contents: read
@@ -32,6 +38,7 @@ jobs:
     outputs:
       version: ${{ steps.prepare.outputs.version }}
       tag: ${{ steps.prepare.outputs.tag }}
+      channel: ${{ steps.prepare.outputs.channel }}
       installer-artifact-id: ${{ steps.upload-installer.outputs.artifact-id }}
       installer-name: ${{ steps.find.outputs.name }}
     steps:
@@ -47,15 +54,18 @@ jobs:
           git merge-base --is-ancestor $env:GITHUB_SHA origin/main
           if ($LASTEXITCODE -ne 0) { Write-Host "::error::the tag $env:GITHUB_REF_NAME is not on main"; exit 1 }
 
-      - name: Work out the tag (a rehearsal uses the version in tauri.conf.json)
+      - name: Work out the tag (a rehearsal uses the tag typed in, or the version in tauri.conf.json)
         id: tag
         shell: pwsh
+        env:
+          INPUT_TAG: ${{ github.event.inputs.tag }}
         run: |
           if ($env:GITHUB_REF_TYPE -eq 'tag') { $tag = $env:GITHUB_REF_NAME }
+          elseif ($env:INPUT_TAG) { $tag = $env:INPUT_TAG }
           else { $tag = 'v' + (Get-Content app/src-tauri/tauri.conf.json -Raw | ConvertFrom-Json).version }
           Add-Content $env:GITHUB_OUTPUT "tag=$tag"
 
-      - name: Check that the tag, the versions and CHANGELOG.md agree; write the release notes
+      - name: Check that the tag, the versions and the changelog agree (a Preview writes its version into this build folder only); write the release notes
         id: prepare
         shell: pwsh
         run: ./scripts/ci-release-prepare.ps1 -Tag "${{ steps.tag.outputs.tag }}" -NotesPath "$env:RUNNER_TEMP/release-notes.md"
@@ -108,7 +118,7 @@ jobs:
           Copy-Item $f.FullName out/
           $hash = (Get-FileHash $f.FullName -Algorithm SHA256).Hash
           Add-Content $env:GITHUB_OUTPUT "name=$($f.Name)"
-          Add-Content $env:GITHUB_STEP_SUMMARY "### $($f.Name)`n`nSHA-256 ``$hash`` ($([math]::Round($f.Length / 1KB)) KB). Built by CI from commit ``$env:GITHUB_SHA``; **not signed**, no update signature yet."
+          Add-Content $env:GITHUB_STEP_SUMMARY "### $($f.Name) ($('${{ steps.prepare.outputs.channel }}'))`n`nSHA-256 ``$hash`` ($([math]::Round($f.Length / 1KB)) KB). Built by CI from commit ``$env:GITHUB_SHA``; **not signed**, no update signature yet."
           Copy-Item "$env:RUNNER_TEMP/release-notes.md" out/release-notes.md -ErrorAction SilentlyContinue
 
       - name: Upload the installer
@@ -177,12 +187,15 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           TAG: ${{ needs.build.outputs.tag }}
           VERSION: ${{ needs.build.outputs.version }}
+          CHANNEL: ${{ needs.build.outputs.channel }}
           INSTALLER: ${{ needs.build.outputs.installer-name }}
         run: |
           $signed = Test-Path "signed/$env:INSTALLER"
           $file = if ($signed) { "signed/$env:INSTALLER" } else { "dist-in/$env:INSTALLER" }
           Write-Host "release file: $file (signed: $signed)"
-          gh release create $env:TAG $file --repo $env:GITHUB_REPOSITORY --draft --verify-tag --title "Streakboom $env:VERSION" --notes-file notes-in/release-notes.md
+          # a Preview is a pre-release from the start, so that releases/latest and the website never point at it (ADR-0090)
+          $extra = if ($env:CHANNEL -eq 'preview') { @('--prerelease') } else { @() }
+          gh release create $env:TAG $file --repo $env:GITHUB_REPOSITORY --draft --verify-tag --title "Streakboom $env:VERSION" --notes-file notes-in/release-notes.md @extra
           if ($LASTEXITCODE -ne 0) { Write-Host "::error::gh release create failed (a release for $env:TAG may already exist)"; exit 1 }
           $state = if ($signed) { 'signed by SignPath' } else { '**not signed** (SignPath is not active yet)' }
-          Add-Content $env:GITHUB_STEP_SUMMARY "### Draft release $env:TAG made`n`nThe installer is $state. **Next, on the maintainer's computer:** ``scripts\release-finish.ps1 -Tag $env:TAG`` (story CI-2) adds the update signature, writes the manifest and publishes."
+          Add-Content $env:GITHUB_STEP_SUMMARY "### Draft release $env:TAG made ($env:CHANNEL)`n`nThe installer is $state. **Next, on the maintainer's computer:** ``scripts\release-finish.ps1 -Tag $env:TAG`` (story CI-2) adds the update signature, writes the manifest and publishes."

@@ -59,4 +59,91 @@ Check "manifest: version, notes, date" ($j.version -eq "0.4.2" -and $j.notes -eq
 Check "manifest: the windows platform has the signature and the address" ($j.platforms."windows-x86_64".signature -eq "SIG" -and $j.platforms."windows-x86_64".url -match "/assets/9$")
 Check "manifest: a date is made when none is given" ((New-UpdateManifest -Version "1.0.0" -Notes "" -Signature "S" -Url "u").pub_date -match '^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$')
 
+# the channels (ADR-0090)
+Check "channel: an even middle number is stable" ((Get-ReleaseChannel "0.4.2") -eq "stable" -and (Get-ReleaseChannel "v0.6.0") -eq "stable")
+Check "channel: an odd middle number is preview" ((Get-ReleaseChannel "0.5.0") -eq "preview" -and (Get-ReleaseChannel "v0.7.3") -eq "preview")
+Check "channel: anything else is stable" ((Get-ReleaseChannel "untagged-abc") -eq "stable" -and (Get-ReleaseChannel "") -eq "stable" -and (Get-ReleaseChannel "0.5") -eq "stable")
+Check "preview version: a good tag above the base" ((Test-PreviewVersion -Tag "v0.5.0" -Base "0.4.2").Count -eq 0)
+Check "preview version: an even middle number is refused" ((Test-PreviewVersion -Tag "v0.6.0" -Base "0.4.2").Count -eq 1)
+Check "preview version: not above the base is refused" ((Test-PreviewVersion -Tag "v0.3.9" -Base "0.4.2").Count -eq 1)
+Check "preview version: a tag that is not a version is refused" ((Test-PreviewVersion -Tag "preview-1" -Base "0.4.2").Count -eq 1)
+Check "preview manifest: written when none exists or when newer" ((Test-ShouldWritePreviewManifest -NewVersion "0.5.0" -ExistingVersion "") -and (Test-ShouldWritePreviewManifest -NewVersion "0.5.1" -ExistingVersion "0.5.0") -and (Test-ShouldWritePreviewManifest -NewVersion "0.6.0" -ExistingVersion "0.5.9"))
+Check "preview manifest: not written when older or equal" ((-not (Test-ShouldWritePreviewManifest -NewVersion "0.4.3" -ExistingVersion "0.5.2")) -and (-not (Test-ShouldWritePreviewManifest -NewVersion "0.5.2" -ExistingVersion "0.5.2")))
+Check "preview manifest: 0.10.0 is greater than 0.9.0 (numbers, not text)" (Test-ShouldWritePreviewManifest -NewVersion "0.10.0" -ExistingVersion "0.9.0")
+
+# pruning keeps each channel apart
+function RelP($tag, $date, $draft = $false, $id = 0) { [pscustomobject]@{ tag_name = $tag; created_at = $date; draft = $draft; id = $id } }
+$mix = @(RelP "v0.6.0" "2026-12-01T10:00:00Z"; RelP "v0.4.2" "2026-11-13T10:00:00Z"; RelP "v0.4.1" "2026-11-12T10:00:00Z"; RelP "v0.5.3" "2026-11-30T10:00:00Z"; RelP "v0.5.2" "2026-11-29T10:00:00Z"; RelP "v0.5.1" "2026-11-28T10:00:00Z"; RelP "v0.7.0" "2026-12-02T10:00:00Z" $true 777)
+$r = Select-ReleasesToPrune -CurrentTag "v0.6.0" -Releases $mix
+Check "prune stable: keeps the previous Stable, deletes no Preview" (($r.Keep -join ",") -eq "v0.4.2" -and (($r.DeleteTags -join ",") -eq "v0.4.1"))
+Check "prune stable: a Preview draft is not touched" ($r.Drafts.Count -eq 0)
+$r = Select-ReleasesToPrune -CurrentTag "v0.5.3" -Releases $mix
+Check "prune preview: keeps the previous Preview and deletes the older one" (($r.Keep -join ",") -eq "v0.5.2" -and ($r.DeleteTags -join ",") -eq "v0.5.1")
+Check "prune preview: no Stable release is listed" (-not (@($r.DeleteTags) + @($r.Keep) | Where-Object { $_ -match "^v0\.(4|6)\." }))
+$r = Select-ReleasesToPrune -CurrentTag "v0.7.0" -Releases $mix
+Check "prune preview: the draft of its own tag is not a left-over" ($r.Drafts.Count -eq 0)
+
+# the version written into a build folder (a copy of the real files)
+$tmp = Join-Path ([System.IO.Path]::GetTempPath()) ("relver-" + [guid]::NewGuid().ToString("N"))
+$repoRoot = Split-Path -Parent $PSScriptRoot
+foreach ($f in @("app\src-tauri\tauri.conf.json", "app\src-tauri\Cargo.toml", "app\package.json", "app\src-tauri\Cargo.lock")) {
+  $dest = Join-Path $tmp $f; New-Item -ItemType Directory -Force (Split-Path $dest) | Out-Null; Copy-Item (Join-Path $repoRoot $f) $dest
+}
+$before = @{}; foreach ($f in @("app\src-tauri\tauri.conf.json", "app\src-tauri\Cargo.toml", "app\package.json", "app\src-tauri\Cargo.lock")) { $before[$f] = [System.IO.File]::ReadAllLines((Join-Path $tmp $f)) }
+Set-WorkspaceVersion -Root $tmp -Version "0.9.9"
+$changed = @{}; foreach ($f in $before.Keys) { $after = [System.IO.File]::ReadAllLines((Join-Path $tmp $f)); $n = 0; for ($i = 0; $i -lt $after.Count; $i++) { if ($after[$i] -ne $before[$f][$i]) { $n++ } }; $changed[$f] = @{ lines = $n; same = ($after.Count -eq $before[$f].Count) } }
+Check "version: one line changed in each of the four files" (($changed.Values | Where-Object { $_.lines -eq 1 -and $_.same }).Count -eq 4)
+Check "version: tauri.conf.json, Cargo.toml, package.json and Cargo.lock all say 0.9.9" (
+  ((Get-Content (Join-Path $tmp "app\src-tauri\tauri.conf.json") -Raw | ConvertFrom-Json).version -eq "0.9.9") -and
+  ((Get-Content (Join-Path $tmp "app\package.json") -Raw | ConvertFrom-Json).version -eq "0.9.9") -and
+  ((Get-Content (Join-Path $tmp "app\src-tauri\Cargo.toml") -Raw) -match '(?m)^version = "0.9.9"') -and
+  ((Get-Content (Join-Path $tmp "app\src-tauri\Cargo.lock") -Raw) -match 'name = "streakboom"\r?\nversion = "0.9.9"'))
+$problems = Test-ReleaseVersions -Tag "v0.9.9" -Conf ((Get-Content (Join-Path $tmp "app\src-tauri\tauri.conf.json") -Raw | ConvertFrom-Json).version) -Cargo "0.9.9" -Package "0.9.9"
+Check "version: the usual check of the three files passes after the write" ($problems.Count -eq 0)
+Remove-Item $tmp -Recurse -Force -ErrorAction SilentlyContinue
+
+# the CI step on a copy of the repository: a Preview tag and a Stable tag
+function NewCopy {
+  $t = Join-Path ([System.IO.Path]::GetTempPath()) ("relprep-" + [guid]::NewGuid().ToString("N"))
+  foreach ($f in @("app\src-tauri\tauri.conf.json", "app\src-tauri\Cargo.toml", "app\package.json", "app\src-tauri\Cargo.lock", "CHANGELOG.md")) {
+    $d = Join-Path $t $f; New-Item -ItemType Directory -Force (Split-Path $d) | Out-Null; Copy-Item (Join-Path $repoRoot $f) $d
+  }
+  return $t
+}
+function Prep($root, $tag) {
+  $notes = Join-Path $root "notes.md"
+  $out = & powershell.exe -NoProfile -File (Join-Path $PSScriptRoot "ci-release-prepare.ps1") -Tag $tag -NotesPath $notes -Root $root 2>&1
+  [pscustomobject]@{ Code = $LASTEXITCODE; Out = ($out -join "`n"); Notes = $notes }
+}
+$c = NewCopy
+[System.IO.File]::WriteAllText((Join-Path $c "CHANGELOG-preview.md"), "# Changelog of Preview builds`n`n## 0.5.0 (2026-11-14)`n- **A first Preview.** Notes.`n", (New-Object System.Text.UTF8Encoding($false)))
+$r = Prep $c "v0.5.0"
+Check "prepare: a Preview tag with an entry passes" ($r.Code -eq 0)
+Check "prepare: the notes come from CHANGELOG-preview.md" ((Test-Path $r.Notes) -and ((Get-Content $r.Notes -Raw) -match "A first Preview"))
+Check "prepare: the version files of the copy now say 0.5.0" (((Get-Content (Join-Path $c "app\src-tauri\tauri.conf.json") -Raw | ConvertFrom-Json).version -eq "0.5.0") -and ((Get-Content (Join-Path $c "app\package.json") -Raw | ConvertFrom-Json).version -eq "0.5.0"))
+Check "prepare: the real repository was not touched" (((Get-Content (Join-Path $repoRoot "app\src-tauri\tauri.conf.json") -Raw | ConvertFrom-Json).version) -ne "0.5.0")
+Remove-Item $c -Recurse -Force -ErrorAction SilentlyContinue
+
+$c = NewCopy
+$r = Prep $c "v0.5.0"
+Check "prepare: a Preview tag without an entry in CHANGELOG-preview.md fails" ($r.Code -ne 0 -and $r.Out -match "CHANGELOG-preview.md has no usable entry")
+Remove-Item $c -Recurse -Force -ErrorAction SilentlyContinue
+
+$c = NewCopy
+[System.IO.File]::WriteAllText((Join-Path $c "CHANGELOG-preview.md"), "## 0.3.0 (2026-11-14)`n- Old.`n", (New-Object System.Text.UTF8Encoding($false)))
+$r = Prep $c "v0.3.0"
+Check "prepare: a Preview tag not above the Stable version fails" ($r.Code -ne 0 -and $r.Out -match "not greater")
+Remove-Item $c -Recurse -Force -ErrorAction SilentlyContinue
+
+$c = NewCopy
+$r = Prep $c "v0.6.0"
+Check "prepare: a Stable tag that the files do not say fails as before" ($r.Code -ne 0 -and $r.Out -match "tauri.conf.json says")
+Remove-Item $c -Recurse -Force -ErrorAction SilentlyContinue
+
+$conf = (Get-Content (Join-Path $repoRoot "app\src-tauri\tauri.conf.json") -Raw | ConvertFrom-Json).version
+$c = NewCopy
+$r = Prep $c ("v" + $conf)
+Check "prepare: the current Stable tag still passes" ($r.Code -eq 0 -and $r.Out -match "\(stable\)")
+Remove-Item $c -Recurse -Force -ErrorAction SilentlyContinue
+
 if ($fail) { "$fail failed"; exit 1 } else { "all passed" }
