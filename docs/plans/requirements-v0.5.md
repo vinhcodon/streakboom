@@ -102,7 +102,7 @@ The handoffs asked for `spec/08-adaptive-peak.md`, `spec/08-customization.md` an
 
 ## 7. The order of work
 
-*(Reordered on 2026-11-13, ADR-0087: the closed alpha and the SignPath application are the last items, with no date.)*
+*(Reordered on 2026-11-13, ADR-0087 and ADR-0088: the closed alpha and the SignPath application are the last items, with no date; informal tryouts with a few adults are allowed at any time; the freeze of behaviour is for the formal alpha only.)*
 
 1. **Now, alone, no people:** the checks of R2 and R3 on the author's own machines (the stats script, the guardrails, his own baseline, the CPU, the second monitor); fill the sticker matrix by hand; read the Search Console status of the site.
 2. **With Vinh's go for each step:** the pure matcher and its tests (S1's module), the palette proof (C2), the wiring of `is_busy` to movement (AP-08), then the smallest "Lượn đi" for the author alone (S2).

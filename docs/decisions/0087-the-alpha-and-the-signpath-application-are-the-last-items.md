@@ -1,6 +1,6 @@
 # ADR-0087: The closed alpha and the SignPath application are the last items of the plan
 
-- **Status:** accepted (the author's instruction of 2026-11-13). **Amends** ADR-0071 (the alpha comes first, and the features freeze while it runs), ADR-0072 (apply after two CI releases) and point 2 of ADR-0086 (the alpha runs on 0.4.2). It does not touch the lawyer-after-the-alpha rule or the Product Hunt rule.
+- **Status:** accepted (the author's instruction of 2026-11-13). **Amends** ADR-0071 (the alpha comes first, and the features freeze while it runs), ADR-0072 (apply after two CI releases) and point 2 of ADR-0086 (the alpha runs on 0.4.2). It does not touch the lawyer-after-the-alpha rule or the Product Hunt rule. **Points 2 and 4 are refined the same day by ADR-0088** (the freeze belongs to the formal alpha only; informal tryouts are allowed).
 - **Date:** 2026-11-13
 - **Decided by:** Vinh (author), recorded by Claude (the app session)
 

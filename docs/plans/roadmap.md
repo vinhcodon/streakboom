@@ -1,6 +1,6 @@
 # Roadmap (version 2): from 0.4.1 to a closed alpha, and the gates to going public
 
-> **Reordered on 2026-11-13 (ADR-0087).** The author does not intend to test with people now: **the closed alpha (R4) and the SignPath application (AP-1, SP-1) are the last items of the plan, with no date**; he says when each starts. Everything that needs other people moves with them. Until then the work is R2, R3 on the author's own machines, and the steps of the adaptive and customization plans that need no one else, each approved before code. The freeze of R3 and R4 starts when the alpha is called. Where the text below says "now" or "next" about the alpha or the application, read this note first.
+> **Reordered on 2026-11-13 (ADR-0087).** The author does not intend to test with people now: **the closed alpha (R4) and the SignPath application (AP-1, SP-1) are the last items of the plan, with no date**; he says when each starts. Everything that needs other people moves with them. Until then the work is R2, R3 on the author's own machines, and the steps of the adaptive and customization plans that need no one else, each approved before code. The freeze of R3 and R4 belongs to the **formal alpha only** and starts when it is called (ADR-0088); informal tryouts with a few adults are allowed at any time. Where the text below says "now" or "next" about the alpha or the application, read this note first.
 
 **Status:** written 2026-11-12 after the review of the backlog (163 stories, about 93 done), with the author's answers of the same day (ADR-0071). It supersedes [`roadmap-v1.md`](roadmap-v1.md) (2026-11-08, "from 0.2.0 to the first outside users"), whose Phases 0 to 2 are done and whose Phase 5 is carried forward here. The stories are in [`backlog.md`](backlog.md); what is built but unchecked is in [`verification-debt.md`](verification-debt.md); the strategy and the evidence are in [`../PROJECT.md`](../PROJECT.md) and [`../foundation/`](../foundation/README.md). Durations are **estimates**, not promises: three of the steps depend on other people (a certificate, the testers, a lawyer).
 
@@ -46,7 +46,7 @@ Write what was learned (the engineering log and the hypotheses), set the **Bond 
 - **The website** (the website session): follows each release; no change needed for the alpha except the install guide's link.
 
 ## What is deliberately not in this roadmap
-Voice, a keyless trial through a proxy, selling anything, a stats backend (a place to send stats), the screen picture sense (TT-10), taught places (TT-8), content surfaces (TT-11), a macOS port, crash reporting. Each is either waiting for the alpha's answer or for a legal gate. Adding behaviour during R3 and R4 is out **from the day the alpha is called** (ADR-0087); until then new behaviour may be built, one approved step at a time (the adaptive and customization plans).
+Voice, a keyless trial through a proxy, selling anything, a stats backend (a place to send stats), the screen picture sense (TT-10), taught places (TT-8), content surfaces (TT-11), a macOS port, crash reporting. Each is either waiting for the alpha's answer or for a legal gate. Adding behaviour during the formal alpha is out **from the day it is called** (ADR-0087, ADR-0088); until then new behaviour may be built, one approved step at a time (the adaptive and customization plans), and tried informally by a few adults.
 
 ## Dependencies at a glance
 ```
@@ -67,4 +67,4 @@ Last: R4 (alpha, when the author calls it) -> AP-1, SP-1 (the SignPath applicati
 - **Alpha:** 5 to 8 acquaintances who speak Vietnamese.
 - **Signing:** first decided as "a certificate before the alpha" (ADR-0071), **amended the same day** (ADR-0072): SignPath Foundation only, releases built in CI, applied for after two CI releases, and **the alpha runs unsigned**.
 - **Lawyer:** after the alpha, before anything public.
-- **2026-11-13 (ADR-0087):** the alpha and the SignPath application are the last items, with no date; the alpha runs on whatever version is current when the author calls it; the freeze starts then.
+- **2026-11-13 (ADR-0087):** the alpha and the SignPath application are the last items, with no date; the alpha runs on whatever version is current when the author calls it; the freeze starts then. **2026-11-13 (ADR-0088):** the freeze belongs to the formal alpha only; informal tryouts (adults only) are allowed at any time; the survey S0 still waits for the alpha.

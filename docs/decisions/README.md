@@ -10,6 +10,7 @@ What was **decided**, why, and what was rejected. One short file per decision (a
 
 | ADR | Decision | Status | Date |
 |---|---|---|---|
+| [0088](0088-informal-tryouts-are-not-the-alpha-the-freeze-is-only-for-the-alpha.md) | Informal tryouts are not the alpha; the freeze of behaviour belongs to the formal alpha only; informal testers must be adults; S0 waits for the alpha; the build channel is still open | accepted | 2026-11-13 |
 | [0087](0087-the-alpha-and-the-signpath-application-are-the-last-items.md) | The closed alpha and the SignPath application are the last items of the plan (no date); what needs people moves with them; the freeze starts when the author calls the alpha | accepted | 2026-11-13 |
 | [0086](0086-answers-on-voice-order-the-alpha-build-the-return-and-customization.md) | Answers on the order of voice (after the alpha and the lawyer), the alpha build (0.4.2), the 20-minute return of "Lượn đi", the shared weekly limit and customization | accepted | 2026-11-13 |
 | [0087](0087-a-version-in-the-addresses-of-the-stylesheet-and-scripts.md) | A version (content hash) in the addresses of the stylesheet, the scripts and the search indexes, so a browser never keeps an old one past a deploy (the website session) | accepted, built | 2026-11-13 |
