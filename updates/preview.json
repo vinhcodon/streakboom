@@ -1,11 +1,11 @@
 {
-    "version":  "0.7.7",
-    "notes":  "Sending Peak away is no longer limited to Preview builds. This is the last build of the 0.7 line; the next regular version, 0.8.0, is cut from it. On a Preview copy nothing changes from 0.7.6.",
-    "pub_date":  "2026-11-13T21:37:11Z",
+    "version":  "0.9.0",
+    "notes":  "The first Preview after Stable 0.8.0. It has the same program as 0.7.7 and 0.8.0; nothing you can see has changed. It starts the next Preview line, where the new work will go. If you are on a 0.7 Preview, the update check shows the regular 0.8.0 first (a Preview copy is offered a regular version...",
+    "pub_date":  "2026-11-13T21:51:22Z",
     "platforms":  {
                       "windows-x86_64":  {
-                                             "signature":  "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVUcHBlQXhYUlVURnZubEhzQW9HWmE4L21ZYUxFVURVWkZ0a2pPU2lPTnVxcEd5TjRVQllhMC9qNjdXZklhZ3o5N3BrVndBc1kvT1luZGgvT2VpaWs1SlJDZnJOdEw2VHdBPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzk0NjA1ODMxCWZpbGU6U3RyZWFrYm9vbV8wLjcuN194NjQtc2V0dXAuZXhlCXZlcnNpb246MC43LjcKV291Y0NWTm80bi9nTVpUWFRhUWxpR2E4VTVZRG1HN0NFcnZyUjAvZVVyZ1hWRXlhQ09qamFWWElNV0l6NWk2aDN3ZmErRzhCRnluRkgzbFE0cVBwRGc9PQo=",
-                                             "url":  "https://api.github.com/repos/vinhcodon/streakboom/releases/assets/745270380"
+                                             "signature":  "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVUcHBlQXhYUlVURnJpNTl0NjBYTGZvb042V080dWV5aDNLVUpzWnJIb1l4YzFpV2hOZnRqM1RPbGRFWjl3bVduRkhNazdTVFZpMkhwR3Q1S3ErWUYyVWxhK0U3N0Z6cFE4PQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzk0NjA2NjgxCWZpbGU6U3RyZWFrYm9vbV8wLjkuMF94NjQtc2V0dXAuZXhlCXZlcnNpb246MC45LjAKRmlaNTlWRHViM0R0TWV0bVdOL1Q5YzZ0eGE5Skt4Y2dHdXY5aHF3dTJGbVZ2UXpIckN5dWRjK1ZjdHRZM2dhSVF3SWRBdWx1cVlsUElxTHZhdmloREE9PQo=",
+                                             "url":  "https://api.github.com/repos/vinhcodon/streakboom/releases/assets/745308181"
                                          }
                   }
 }
