@@ -3,7 +3,7 @@
 // the English addresses of set-v2.
 import test from "node:test";
 import assert from "node:assert/strict";
-import { distance, search } from "../../site/search.js";
+import { distance, scriptOf, search } from "../../site/search.js";
 import { normalize } from "../../site/normalize.js";
 import { buildCatalog, loadVocabulary } from "./catalog.mjs";
 import { buildSearchIndex } from "./search-index.mjs";
@@ -14,7 +14,8 @@ const vocab = loadVocabulary();
 const catalog = buildCatalog(set, vocab);
 const index = buildSearchIndex(set, catalog, vocab);
 const slugOf = new Map(catalog.stickers.map((c) => [c.id, c.slug]));
-const run = (lang, q) => search(lang, index[lang].items, q).map((r) => slugOf.get(r.id));
+// the search does not depend on the language of the page: a query reads the index of its own script
+const run = (_pageLang, q) => { const kind = scriptOf(q); return search(kind, index[kind].items, q).map((r) => slugOf.get(r.id)); };
 
 /** [query, expected slug or [any of them], top1?] */
 const EN = [
@@ -105,30 +106,63 @@ test("the distance counts a swap of neighbours as one edit and stops early", () 
 
 test("the rules of the matching", () => {
   // an empty or marks-only query matches nothing (the page shows everything)
-  for (const q of ["", "   ", "!!!"]) assert.deepEqual(search("en", index.en.items, q), []);
+  for (const q of ["", "   ", "!!!"]) assert.deepEqual(search("latin", index.latin.items, q), []);
   // gibberish matches nothing
-  assert.deepEqual(search("en", index.en.items, "zzzzqq"), []);
-  assert.deepEqual(search("vi", index.vi.items, "xyzxyz"), []);
+  assert.deepEqual(search("latin", index.latin.items, "zzzzqq"), []);
+  assert.deepEqual(search("latin", index.latin.items, "xyzxyz"), []);
   // typed with or without marks, the same stickers in the same order
-  assert.deepEqual(search("vi", index.vi.items, "mệt rồi"), search("vi", index.vi.items, "met roi"));
-  assert.deepEqual(search("vi", index.vi.items, "CHÀO BUỔI SÁNG"), search("vi", index.vi.items, "chao buoi sang"));
+  assert.deepEqual(search("latin", index.latin.items, "mệt rồi"), search("latin", index.latin.items, "met roi"));
+  assert.deepEqual(search("latin", index.latin.items, "CHÀO BUỔI SÁNG"), search("latin", index.latin.items, "chao buoi sang"));
   // the stickers that match the most words win: "good morning" is the one with both words, not every "good"
-  const r = search("en", index.en.items, "good morning");
+  const r = search("latin", index.latin.items, "good morning");
   assert.equal(slugOf.get(r[0].id), "good-morning");
   assert.ok(r.every((x) => x.matched === r[0].matched), "only the best-matching stickers are shown");
   // when a word matches nothing, the others still find stickers ("roi" is in no sticker)
-  assert.ok(search("vi", index.vi.items, "met roi").length > 0);
+  assert.ok(search("latin", index.latin.items, "met roi").length > 0);
   // a single letter is an exact word only, not a prefix of everything
-  assert.ok(search("vi", index.vi.items, "o").length <= 3);
+  assert.ok(search("latin", index.latin.items, "o").length <= 3);
 });
 
 test("a catalogue of 3,000 stickers is searched in well under a second, and its index is small", () => {
   const items = [];
   for (let i = 0; i < 3000; i++) items.push({ id: String(i), t: `sticker ${i} nhan vat`, x: `chu ${i} tren hinh`, s: ["tu dong nghia mot", "tu dong nghia hai", "met", "vui"], g: ["vui", "cong viec"] });
   const t0 = performance.now();
-  const r = search("vi", items, "cong viec met");
+  const r = search("latin", items, "cong viec met");
   const ms = performance.now() - t0;
   assert.ok(r.length > 0);
   assert.ok(ms < 1000, `${ms.toFixed(0)} ms`);
   assert.ok(JSON.stringify({ v: 1, items }).length < 600 * 1024, "the raw index stays under the budget before compression");
+});
+
+// the search is by meaning: any language typed, any language of the page; the stickers found are the same
+test("the same meaning typed in English, Vietnamese or Japanese finds the same stickers", () => {
+  const groups = [
+    { want: ["sleepy", "im-dead"], any: ["tired", "met", "mệt", "mệt rồi", "眠い", "ねむい", "sleepy", "buon ngu"] },
+    { want: "thank-you", top1: true, any: ["thanks", "thank you", "cam on", "cảm ơn", "ありがとう", "感謝"] },
+    { want: "deadline", top1: true, any: ["deadline", "han chot", "hạn chót", "締め切り", "期限"] },
+    { want: "happy-birthday", top1: true, any: ["birthday", "sinh nhat", "sinh nhật", "誕生日"] },
+    { want: "sorry", top1: true, any: ["sorry", "xin loi", "xin lỗi", "ごめん", "謝る"] },
+    { want: "love-you", any: ["love", "yeu", "yêu", "大好き", "だいすき"] },
+    { want: "friday", top1: true, any: ["friday", "thu sau", "thứ sáu", "金曜日", "週末"] },
+    { want: "boohoo", any: ["cry", "khoc", "khóc", "泣く", "うえーん"] },
+    { want: "good-morning", any: ["wake up", "buoi sang", "buổi sáng", "朝", "おはよう"] },
+  ];
+  const failed = [];
+  for (const g of groups) {
+    const wanted = Array.isArray(g.want) ? g.want : [g.want];
+    for (const q of g.any) {
+      const got = run("any", q);
+      const window = g.top1 ? got.slice(0, 1) : got.slice(0, 3);
+      if (!wanted.some((w) => window.includes(w))) failed.push(`${JSON.stringify(q)} wanted ${wanted.join("|")}, got ${got.slice(0, 4).join(", ") || "nothing"}`);
+    }
+  }
+  assert.deepEqual(failed, []);
+  // the example of the request: "tired" and "mệt" give the same list of stickers
+  const ids = (q) => search(scriptOf(q), index[scriptOf(q)].items, q).map((r) => r.id).sort();
+  assert.deepEqual(ids("tired"), ids("mệt"));
+  assert.deepEqual(ids("tired"), ids("met"));
+  assert.equal(scriptOf("tired"), "latin");
+  assert.equal(scriptOf("ねむい"), "ja");
+  assert.equal(scriptOf("tired 眠い"), "ja");
+  assert.equal(scriptOf("ｵｯｹｰ"), "ja", "half-width kana are Japanese too");
 });

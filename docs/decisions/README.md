@@ -10,6 +10,7 @@ What was **decided**, why, and what was rejected. One short file per decision (a
 
 | ADR | Decision | Status | Date |
 |---|---|---|---|
+| [0082](0082-the-search-is-by-meaning-in-any-language.md) | The sticker search is by meaning: any language typed on any page (an index per script, Latin and Japanese; the website session) | accepted, built | 2026-11-13 |
 | [0081](0081-the-sticker-list-33-one-group-no-arms-three-languages.md) | The sticker list: 33 stickers in one list, no categories, no arms, three languages, two meme stickers (Binz, a flat "good idea") | accepted | 2026-11-13 |
 | [0080](0080-peak-adapts-instead-of-asking-and-its-skills-are-body-language.md) | Peak adapts instead of asking, and its skills are body language (A1 to A6; a direction, no code approved) | accepted (direction) | 2026-11-13 |
 | [0079](0079-saved-stickers-and-peaks-lines.md) | Saved stickers (kept by slug, saved from the line after a copy) and Peak's lines on the sticker page (the website session; plan v0.3 and v0.4) | accepted, built | 2026-11-13 |

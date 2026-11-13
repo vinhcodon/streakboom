@@ -18,7 +18,7 @@ import { changelogFeed, llms, llmsFull, robots, sitemap } from "./site/files.mjs
 import { check } from "./site/checks.mjs";
 import { assertInstaller, liveData } from "./site/downloads.mjs";
 import { buildCatalog, loadVocabulary } from "./site/catalog.mjs";
-import { buildSearchIndex, indexPath } from "./site/search-index.mjs";
+import { KINDS, buildSearchIndex, indexPath } from "./site/search-index.mjs";
 
 export const OUT = join(ROOT, "_site");
 const SITE = join(ROOT, "site");
@@ -73,7 +73,7 @@ export function build({ out = OUT, downloads = null, stickerDir } = {}) {
   const files = { "sitemap.xml": sitemap(ctx), "robots.txt": robots(), "llms.txt": llms(ctx), "llms-full.txt": llmsFull(ctx), "changelog.xml": changelogFeed(ctx) };
   // the search index of the sticker pages: one file per language, read when the search box is first used (plan v0.2)
   const searchIndex = buildSearchIndex(ctx.stickers, ctx.catalog, loadVocabulary());
-  for (const lang of LANGS) files[indexPath(lang)] = JSON.stringify(searchIndex[lang]);
+  for (const kind of KINDS) files[indexPath(kind)] = JSON.stringify(searchIndex[kind]);
   if (downloads) files["downloads.json"] = JSON.stringify(downloads, null, 2) + "\n";
   for (const p of pages) write(out, p.file, p.html);
   for (const [name, text] of Object.entries(files)) write(out, name, text);

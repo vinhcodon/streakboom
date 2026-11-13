@@ -5,7 +5,7 @@
 // Clear button. The search reads a small index file of the site itself. There is no other request than the pictures and that file.
 // Without this script the pictures are still there (real <img> elements).
 import { t } from "./ui.js";
-import { search } from "./search.js";
+import { scriptOf, search } from "./search.js";
 
 const COPY_PX = 360; // the copy is the picture as it is: 360 px, as sharp as it can be (ADR-0075; 180 and 128 were tried and were too small and soft)
 // To try other sizes in a chat, open the page with ?px=NN (48 to 360); nothing is stored, and without it the size is COPY_PX.
@@ -219,29 +219,29 @@ async function copy(button) {
 
 document.querySelectorAll(".sticker").forEach((b) => b.addEventListener("click", () => copy(b)));
 
-// ---- the search (plan v0.2): the index of this language is read from the site the first time the box is used; it filters and orders the
-// pictures already on the page, and nothing is sent anywhere (the request is for a file of the site itself)
-const lang = document.documentElement.lang || "en";
+// ---- the search (plan v0.2): by meaning, whatever language is typed and whatever language the page is in; the index (Latin letters, or
+// Japanese) is read from the site the first time a query of that script is typed; it filters and orders the pictures already on the page
+// (which are in the page's language), and nothing is sent anywhere (the request is for a file of the site itself)
 const searchBox = document.getElementById("sticker-search");
 const query = document.getElementById("sticker-q");
 const searchStatus = document.getElementById("sticker-search-status");
 const page = document.querySelector(".stickers-page");
 const itemById = new Map([...document.querySelectorAll(".sticker-grid:not(.recent-grid) .sticker")].map((b) => [b.dataset.id, b.closest(".sticker-item")]));
-let indexItems = null;
-let loading = null;
+const loaded = {}; // the items of each index, by script
+const loading = {};
 let noneShown = 0; // the line for "nothing found" changes each time nothing is found again, not on every key
 let wasNone = false;
 let noneLine = "";
-function loadIndex() {
-  loading ||= fetch(`/assets/stickers/search-${lang}.json`).then((r) => {
+function loadIndex(kind) {
+  loading[kind] ||= fetch(`/assets/stickers/search-${kind}.json`).then((r) => {
     if (!r.ok) throw new Error("index");
     return r.json();
   }).then((j) => {
-    if (j.v !== 1 || !Array.isArray(j.items)) throw new Error("index version");
-    indexItems = j.items;
-    return indexItems;
+    if (j.v !== 2 || !Array.isArray(j.items)) throw new Error("index version");
+    loaded[kind] = j.items;
+    return loaded[kind];
   });
-  return loading;
+  return loading[kind];
 }
 function showAll() {
   for (const li of itemById.values()) { li.hidden = false; li.style.order = ""; }
@@ -251,7 +251,8 @@ function showAll() {
 function applySearch() {
   const text = query.value;
   if (!text.trim()) { showAll(); searchStatus.textContent = ""; return; }
-  const found = search(lang, indexItems, text);
+  const kind = scriptOf(text);
+  const found = search(kind, loaded[kind], text);
   const rank = new Map(found.map((r, i) => [r.id, i + 1]));
   for (const [id, li] of itemById) { li.hidden = !rank.has(id); li.style.order = rank.has(id) ? String(rank.get(id)) : ""; }
   page.classList.add("searching");
@@ -272,8 +273,8 @@ function searchOff() {
   searchStatus.textContent = t("st_search_off");
 }
 if (searchBox && query) {
-  query.addEventListener("focus", () => { loadIndex().catch(() => {}); }, { once: true });
-  query.addEventListener("input", () => { loadIndex().then(applySearch, searchOff); });
+  query.addEventListener("focus", () => { loadIndex("latin").catch(() => {}); }, { once: true });
+  query.addEventListener("input", () => { loadIndex(scriptOf(query.value)).then(applySearch, searchOff); });
   query.addEventListener("keydown", (e) => { if (e.key === "Escape" && query.value) { query.value = ""; applySearch(); } });
   searchBox.hidden = false;
 }

@@ -223,20 +223,25 @@ export function check({ ctx, pages, files, out }) {
   }
   if (!files["llms.txt"].includes(CODE_SIGNING_URL)) bad("llms.txt does not link to the Code signing policy");
 
-  // the search index of the sticker pages (plan v0.2): one file per language, every sticker in it, its words normalised by the very
-  // function the page uses, small enough to read at once
-  for (const lang of LANGS) {
-    const name = "assets/stickers/search-" + lang + ".json";
+  // the search index of the sticker pages (plan v0.2): by meaning, so per script and not per page language: a Latin file (English and
+  // Vietnamese) and a Japanese file, every sticker in each, every word normalised by the very function the page uses, small enough to read at once
+  for (const kind of ["latin", "ja"]) {
+    const name = "assets/stickers/search-" + kind + ".json";
     const raw = files[name];
     if (!raw) { bad(name + " was not built"); continue; }
     let idx;
     try { idx = JSON.parse(raw); } catch { bad(name + " is not valid JSON"); continue; }
-    if (idx.v !== 1 || !Array.isArray(idx.items) || idx.items.length !== ctx.stickers.stickers.length) bad(name + ": the index does not list every sticker of the set");
+    if (idx.v !== 2 || !Array.isArray(idx.items) || idx.items.length !== ctx.stickers.stickers.length) bad(name + ": the index does not list every sticker of the set");
     if (gzipSync(raw).length > 150 * 1024) bad(name + " is over 150 KB gzipped (spec 13: split the index)");
+    const lang = kind === "ja" ? "ja" : "en";
     for (const it of idx.items || []) {
-      for (const [k, v] of Object.entries({ t: it.t, x: it.x })) if (v !== normalize(lang, v)) bad(name + ": sticker " + it.id + " field " + k + " is not normalised");
-      for (const w of [...(it.s || []), ...(it.g || [])]) if (w !== normalize(lang, w)) bad(name + ": sticker " + it.id + " has a word that is not normalised: " + w);
+      for (const k of ["t", "x", "s", "g"]) {
+        if (!Array.isArray(it[k]) || !it[k].length) bad(name + ": sticker " + it.id + " has no " + k);
+        for (const w of it[k] || []) if (w !== normalize(lang, w)) bad(name + ": sticker " + it.id + " has a word that is not normalised: " + w);
+      }
     }
+  }
+  for (const lang of LANGS) {
     const html = byPath.get(PATHS[lang].stickers).html;
     if (!html.includes('id="sticker-q"') || !html.includes('id="sticker-search" class="sticker-search" hidden')) bad(PATHS[lang].stickers + ": the search box is missing or not reserved");
     if (!html.includes('<label class="visually-hidden" for="sticker-q">')) bad(PATHS[lang].stickers + ": the search box has no label");

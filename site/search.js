@@ -10,6 +10,9 @@ import { normalize } from "./normalize.js";
 
 const WEIGHT = { t: 3, x: 3, s: 2, g: 2 };
 
+/** Which index a query reads: "ja" if it has kana or kanji, otherwise "latin" (English, Vietnamese and any other Latin text). */
+export const scriptOf = (query) => (/[\u3040-\u30ff\u3400-\u9fff\uff66-\uff9f]/.test(String(query || "")) ? "ja" : "latin");
+
 /** Edit distance with swaps of neighbours (a typed "teh" for "the" is one edit), stopping when it must exceed `max`. */
 export function distance(a, b, max) {
   if (Math.abs(a.length - b.length) > max) return max + 1;
@@ -55,12 +58,14 @@ function textQuality(q, f) {
   return coverage >= 0.6 ? 0.5 * coverage : 0;
 }
 
-/** The ids of the stickers that match, best first: [{ id, matched, score }]. An empty query matches nothing (the page shows all). */
-export function search(lang, items, query) {
+/** The ids of the stickers that match, best first: [{ id, matched, score }]. `kind` is the script of the index ("latin" or "ja", see scriptOf).
+ *  An empty query matches nothing (the page shows all). */
+export function search(kind, items, query) {
+  const lang = kind === "ja" ? "ja" : "en";
   const q = normalize(lang, query);
   if (!q) return [];
   const out = [];
-  if (lang === "ja") {
+  if (kind === "ja") {
     const text = q.replace(/ /g, "");
     items.forEach((it, order) => {
       let best = 0;
