@@ -16,6 +16,7 @@ import { loadStickers } from "./site/stickers.mjs";
 import { LANGS } from "../site/strings.mjs";
 import { changelogFeed, llms, llmsFull, robots, sitemap } from "./site/files.mjs";
 import { check } from "./site/checks.mjs";
+import { versionOf, versionScripts } from "./site/assetversion.mjs";
 import { assertInstaller, liveData } from "./site/downloads.mjs";
 import { buildCatalog, loadVocabulary } from "./site/catalog.mjs";
 import { KINDS, buildSearchIndex, indexPath } from "./site/search-index.mjs";
@@ -57,6 +58,12 @@ export function build({ out = OUT, downloads = null, stickerDir } = {}) {
   // the Peak stickers: one folder of the repository, read at build time (ADR-0053); the manifest decides the count and the order
   ctx.stickers = loadStickers(stickerDir);
   ctx.catalog = buildCatalog(ctx.stickers); // the tags of each sticker, given by the rules (ADR-0077)
+  // the search index of the sticker pages: one file per language, read when the search box is first used (plan v0.2)
+  const searchIndex = buildSearchIndex(ctx.stickers, ctx.catalog, loadVocabulary());
+  const indexText = Object.fromEntries(KINDS.map((kind) => [kind, JSON.stringify(searchIndex[kind])]));
+  // a version in the addresses of the stylesheet, the scripts and the indexes (ADR-0087): the browser asks again exactly when they changed
+  ctx.assetVersion = versionOf(out, KINDS.map((k) => indexText[k]));
+  versionScripts(out, ctx.assetVersion);
   for (const lang of LANGS) {
     mkdirSync(join(out, "assets", "stickers", lang), { recursive: true });
     for (const st of ctx.stickers.stickers) cpSync(join(ctx.stickers.dir, lang, `${st.id}.png`), join(out, "assets", "stickers", lang, `${st.id}.png`));
@@ -71,9 +78,7 @@ export function build({ out = OUT, downloads = null, stickerDir } = {}) {
     { path: "/404.html", file: "404.html", lang: "en", html: notFoundPage(ctx) },
   ];
   const files = { "sitemap.xml": sitemap(ctx), "robots.txt": robots(), "llms.txt": llms(ctx), "llms-full.txt": llmsFull(ctx), "changelog.xml": changelogFeed(ctx) };
-  // the search index of the sticker pages: one file per language, read when the search box is first used (plan v0.2)
-  const searchIndex = buildSearchIndex(ctx.stickers, ctx.catalog, loadVocabulary());
-  for (const kind of KINDS) files[indexPath(kind)] = JSON.stringify(searchIndex[kind]);
+  for (const kind of KINDS) files[indexPath(kind)] = indexText[kind];
   if (downloads) files["downloads.json"] = JSON.stringify(downloads, null, 2) + "\n";
   for (const p of pages) write(out, p.file, p.html);
   for (const [name, text] of Object.entries(files)) write(out, name, text);

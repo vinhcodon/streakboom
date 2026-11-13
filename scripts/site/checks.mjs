@@ -302,6 +302,14 @@ export function check({ ctx, pages, files, out }) {
     if (files["downloads.json"]) bad("downloads.json without a ledger");
   }
 
+  // the stylesheet and the page script of every page carry the version of the build (ADR-0087), so a browser never keeps an old one past a deploy
+  if (ctx.assetVersion) {
+    for (const p of pages) {
+      if (!p.html.includes(`<link rel="stylesheet" href="/style.css?v=${ctx.assetVersion}">`)) bad(`${p.path}: the stylesheet has no version in its address (ADR-0087)`);
+      for (const m of p.html.matchAll(/<script[^>]*\ssrc="(\/[^"]*)"/g)) if (!m[1].endsWith(`?v=${ctx.assetVersion}`)) bad(`${p.path}: the script ${m[1]} has no version in its address (ADR-0087)`);
+    }
+  }
+
   // the menu stays short (ADR-0053): four links in the header, the rest in the footer
   for (const p of pages) {
     const nav = (p.html.match(/<nav aria-label="Main">([\s\S]*?)<\/nav>/) || [])[1];
@@ -358,6 +366,13 @@ export function check({ ctx, pages, files, out }) {
     if ((js.match(/localStorage/g) || []).length !== 3 || !js.includes("streakboom-stickers-mine") || !js.includes("streakboom-sticker-recent")) bad("stickers.js: local storage is only for the recent stickers (one key, by slug: read, write, remove; the older keys are only dropped)");
     if (!js.includes("COPY_PX = 360") || !js.includes("COPY_SIDE")) bad("stickers.js: the copied picture is no longer the full 360 px, or the test parameter is gone (ADR-0075)");
     // the pictures stay real images that the system menu can act on (a long press, a right click)
+    if (ctx.assetVersion) {
+      for (const f of jsFiles(out)) {
+        const text = readFileSync(f, "utf8");
+        for (const m of text.matchAll(/\bfrom\s*["'](\.{1,2}\/[^"']+\.js(\?v=\w+)?)["']/g)) if (!m[1].endsWith(`?v=${ctx.assetVersion}`)) bad(`${f.slice(out.length + 1)}: the import ${m[1]} has no version (ADR-0087)`);
+      }
+      if (!js.includes(`.json?v=${ctx.assetVersion}`)) bad("stickers.js: the search index is asked for without a version (ADR-0087)");
+    }
     const css = readFileSync(join(out, "style.css"), "utf8");
     for (const m of css.matchAll(/([^{}]*\.sticker[^{}]*)\{([^}]*)\}/g)) {
       if (/touch-callout:\s*none|user-select:\s*none|pointer-events:\s*none/.test(m[2]) && !/\.paw/.test(m[1]) && !/\.sticker-status/.test(m[1])) bad(`style.css: the rule "${m[1].trim()}" blocks the system menu on a sticker (touch-callout, user-select or pointer-events none)`);

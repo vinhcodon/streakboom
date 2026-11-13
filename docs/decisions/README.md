@@ -11,6 +11,7 @@ What was **decided**, why, and what was rejected. One short file per decision (a
 | ADR | Decision | Status | Date |
 |---|---|---|---|
 | [0086](0086-answers-on-voice-order-the-alpha-build-the-return-and-customization.md) | Answers on the order of voice (after the alpha and the lawyer), the alpha build (0.4.2), the 20-minute return of "Lượn đi", the shared weekly limit and customization | accepted | 2026-11-13 |
+| [0087](0087-a-version-in-the-addresses-of-the-stylesheet-and-scripts.md) | A version (content hash) in the addresses of the stylesheet, the scripts and the search indexes, so a browser never keeps an old one past a deploy (the website session) | accepted, built | 2026-11-13 |
 | [0085](0085-the-arrangement-of-the-sticker-regions.md) | The arrangement of the regions of the sticker pages: sideways rows and 3 columns on a phone, grid on a wide screen, light boundaries (the website session) | accepted, built | 2026-11-13 |
 | [0084](0084-the-editorial-row-peaks-picks.md) | The editorial row "Peak's picks" on the sticker pages: Vinh's eight, not a count (the website session; plan v0.8) | accepted, built | 2026-11-13 |
 | [0083](0083-no-permalink-pages-and-no-stories-for-now.md) | No permalink page per sticker and no story behind each sticker, for now (the website session; plan v0.5 dropped) | accepted, done | 2026-11-13 |

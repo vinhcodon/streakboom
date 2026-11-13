@@ -6,6 +6,7 @@ import { AUTHOR, ORIGIN, RELEASES_URL, REPO_URL, fmtDate } from "./facts.mjs";
 import { formatCount } from "./downloads.mjs";
 import { inlineScript } from "./langsuggest.mjs";
 import { loadPopular } from "./catalog.mjs";
+import { withVersion } from "./assetversion.mjs";
 import { CC_URL, fontNames, needsReviewNote, stickerUrl } from "./stickers.mjs";
 
 export const PATHS = {
@@ -76,7 +77,7 @@ ${ogAlt ? ogAlt + "\n" : ""}  <meta property="og:image" content="${image.url}">
   <meta name="twitter:title" content="${esc(title)}">
   <meta name="twitter:description" content="${esc(description)}">
   <meta name="twitter:image" content="${image.url}">
-  <link rel="stylesheet" href="/style.css">
+  <link rel="stylesheet" href="${withVersion("/style.css", ctx)}">
   <script>document.documentElement.classList.toggle("not-windows", !(/windows/i.test((navigator.userAgentData && navigator.userAgentData.platform) || navigator.userAgent) && !/phone|mobile/i.test(navigator.userAgent)));</script>
 ${jsonld.map((o) => `  <script type="application/ld+json">${json(o)}</script>`).join("\n")}
   <script type="application/json" id="ui-strings">${json(ui)}</script>
@@ -132,7 +133,7 @@ ${main}
   </main>
 
   ${footer({ lang, ctx })}
-${script ? `\n  <script type="module" src="${script === true ? "/app.js" : script}"></script>\n` : ""}</body>
+${script ? `\n  <script type="module" src="${withVersion(script === true ? "/app.js" : script, ctx)}"></script>\n` : ""}</body>
 </html>
 `;
 }
