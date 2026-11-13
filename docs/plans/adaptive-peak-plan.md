@@ -1,6 +1,6 @@
 # Adaptive Peak: the order of work, cheapest first, to settle H18 and H19
 
-**Status:** proposed 2026-11-13, **waiting for Vinh**. **Reordered 2026-11-13 (ADR-0087):** the author does not intend to test with people now, so S0, S3 and the readings that depend on the survey wait until he calls the alpha; S0 is written and kept ready, **nothing is sent**. Spec: [`../../spec/14-adaptive-peak.md`](../../spec/14-adaptive-peak.md). Analysis: [`adaptive-peak-feasibility.md`](adaptive-peak-feasibility.md). Decision: ADR-0080. **No app code is written until Vinh approves the step that writes it.** Steps S0 and S1 need no change to the app.
+**Status:** proposed 2026-11-13, **waiting for Vinh**. **Reordered 2026-11-13 (ADR-0088):** the author does not intend to test with people now, so S0, S3 and the readings that depend on the survey wait until he calls the alpha; S0 is written and kept ready, **nothing is sent**. Spec: [`../../spec/14-adaptive-peak.md`](../../spec/14-adaptive-peak.md). Analysis: [`adaptive-peak-feasibility.md`](adaptive-peak-feasibility.md). Decision: ADR-0080. **No app code is written until Vinh approves the step that writes it.** Steps S0 and S1 need no change to the app.
 
 **What the two hypotheses are** (the handoff's H2 and H3; registered as H18 and H19 because the register already has H2 and H3):
 - **H18:** a local table of phrases in en / vi / ja covers most real commands, so a model is needed only for the vague ones.
@@ -26,7 +26,7 @@
 - S3 rides on the alpha that roadmap v2 already plans (R4); it does not delay the release line or the signing work.
 - The model, the hotkey and the recording are the expensive and the riskiest parts, and none of them is needed to know whether the table and the leave are worth having.
 
-## What can be done now, and what waits for the alpha (ADR-0087)
+## What can be done now, and what waits for the alpha (ADR-0088)
 
 **Now, alone, each step approved before code:** the pure matcher and its tests (S1's module), using phrases the author writes himself and a negative set of ordinary lines; this proves the machinery but **not H18**, which needs other people's words. Then S2, "Lượn đi" for the author alone (a 20-minute return, the tray to call it back, ADR-0086), which gives H19 its n = 1 reading.
 

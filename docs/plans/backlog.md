@@ -31,6 +31,7 @@ Status: **proposed 2026-11-08, asked by Vinh to be carried out story by story.**
 | E19 | Alpha readiness and signing (roadmap v2, ADR-0071, ADR-0072) | 6 / 13 | The signed installer, the guardrail counters, the tester consent text, a strict CSP; the checks themselves are in E6 (ME-1 to ME-4), E7 (VE-2, VE-3, VE-8), E5 (PF-3), E1 (PR-8) and E3 (PE-1, PE-4) |
 | E20 | Adaptive Peak: skills of the body and suggestions (spec/14, ADR-0080, plan `adaptive-peak-plan.md`) | 0 / 6 | A direction decided by the author; drafted, **nothing approved to build**: the phrase survey, the offline table, the smallest "Lượn đi", the alpha reading, the model tag, later suggestions and voice |
 | E21 | Customization after the adaptive turn (spec/15, plan `customization-plan.md`) | 1 / 7 | Colour, accessory and voice that Peak changes in itself and offers; the code reading is done, the rest waits for Vinh's approval |
+| E22 | Stable and Preview channels (ADR-0090, plan `preview-channel-plan.md`) | 0 / 9 | Two release channels told apart by the middle version number, in-app updates for both; nothing built, each step waits for Vinh's approval |
 | E13 | Fresh words: more variety in the scripted lines | 6 / 9 | Lines more varied: the shuffle bag, tokens, the smallest pools raised (LN-1 to LN-3, LN-5 partly, 0.3.1); the line factory script is built and waits for the author to run it (LN-4); rare lines blocked; the brain's top-up declined for now |
 | E12 | Reactions: one way to express what happens | 10 / 11 | Spec 09 and ADR-0041: events, appraisal, beats, words after the body, escalation, the persona in layers, the remark after a fall (RX-1 to RX-8; the first part released in 0.3.1, the remark and the gate not yet); RX-9 later |
 | E11 | Reach: languages and brains | 4 / 5 | Groq is the fourth brain and Japanese is built in full, both released in 0.3.0 (BR-1, JA-1 to JA-3, ADR-0037, ADR-0038); BR-2 needs a key |
@@ -104,7 +105,7 @@ Open question for CO-3: the "rest rhythm" idea (using the habit counts for more 
 | ME-1 | Save the author's own "Copy stats" as a personal baseline (the earlier counters were wiped) | S | ready (consent must be on) | |
 | ME-2 | Verify what was not verified: the `chat` counter with a real chat, `quiet`, midnight rollover, the exported JSON on the clipboard, a fresh install's consent card | S | ready | |
 | ME-3 | A small script that computes BD7, D3, D7 and the engagement rate from a folder of exports | S | ready | |
-| ME-4 | The alpha kit: who to recruit, an install guide, the observation protocol (with a question about liking the character), how testers send their stats, a consent explanation | M | **later: written when the alpha is called (ADR-0087)** | |
+| ME-4 | The alpha kit: who to recruit, an install guide, the observation protocol (with a question about liking the character), how testers send their stats, a consent explanation | M | **later: written when the alpha is called (ADR-0088)** | |
 | ME-5 | Run the closed alpha with 5 to 10 first-time users and write the baseline (Phase 5) | L | blocked (Phase 4, ME-3, ME-4) | |
 | ME-6 | Set thresholds for the north star and the guardrails from the baseline | S | blocked (ME-5) | ME-5 |
 
@@ -301,13 +302,13 @@ Why: the closed alpha is the next real gate (roadmap R4). This epic holds the st
 | CP-4 | Ship a `THIRD-PARTY-NOTICES` file (generated in the build) in the installer and the repository: MIT, Apache-2.0 and BSD ask that their notices travel with a binary; not a SignPath condition but a duty (`dependency-licenses.md`) | S | done 2026-11-12 (`scripts/gen-third-party-notices.mjs`, `THIRD-PARTY-NOTICES.md`, installed next to the program through `bundle.resources`, kept current by the audit); the installer content is checked by a test build (V-119) | CP-3 |
 | CI-1 | `.github/workflows/release.yml`: on a version tag, checks, tests, the NSIS installer built on a GitHub-hosted runner without the updater key, uploaded as an artifact, a draft release; a first run by hand; the signing step is added after approval (SP-1) | M | built and **rehearsed on GitHub 2026-11-12** (run 43254985466: the build job passed in about 12 minutes and made the installer artifact; the draft-release job has not run, it needs a real tag; the YAML mistake found on the first push is V-118); the installer from CI was not yet installed and run | |
 | CI-2 | `scripts/release-finish.ps1`: download the draft release's installer, check its signature when signing is on, sign it with the updater key, write `latest.json`, publish, push the manifest, prune; reusing `release.ps1` and `release-lib.ps1`; `release.ps1` stays as the fallback | M | built 2026-11-12 (`scripts/release-finish.ps1`, `scripts/updater-verify`, helpers and tests in `release-lib.ps1`); steps 1 to 4 rehearsed on the published 0.4.1 release with the real key (SHA-256 equal, the new signature VALID against the app's public key, a tampered copy refused); **the draft-release download and the publish part were not run** | CI-1 |
-| CI-3 | Two real releases built by CI and finished with CI-2 (each ordered by the author) | M | **1 of 2 done: 0.4.2 (2026-11-13)**; the second comes with the next release worth publishing, not on purpose (ADR-0087) | CI-2 |
+| CI-3 | Two real releases built by CI and finished with CI-2 (each ordered by the author) | M | **1 of 2 done: 0.4.2 (2026-11-13)**; the second comes with the next release worth publishing, not on purpose (ADR-0088) | CI-2 |
 | CP-2 | A note to the website session: the "Code signing policy" section on the home and download pages (honest wording until approval) and the privacy link | S | done 2026-11-12 by the website session (ADR-0076, W-48: the home page in three languages and a pointer under the Download button; checked on a built copy, **the live site not yet looked at by us**) | CP-1 |
-| AP-1 | Apply to SignPath Foundation (<https://signpath.org/apply>) with the evidence of reputation; the author confirms GitHub 2FA first | S | **deferred to the end by the author (ADR-0087), no date**; he says when | CI-3, CP-2 |
-| SP-1 | After approval: the SignPath project, artifact configuration, release signing policy with manual approval, the trusted GitHub build system, the API token as a GitHub secret only, the signing step in CI-1, the first signed release, the exact attribution line; then a clean-machine install of the signed build | M | blocked (AP-1, which is deferred to the end, ADR-0087) | AP-1 |
+| AP-1 | Apply to SignPath Foundation (<https://signpath.org/apply>) with the evidence of reputation; the author confirms GitHub 2FA first | S | **deferred to the end by the author (ADR-0088), no date**; he says when | CI-3, CP-2 |
+| SP-1 | After approval: the SignPath project, artifact configuration, release signing policy with manual approval, the trusted GitHub build system, the API token as a GitHub secret only, the signing step in CI-1, the first signed release, the exact attribution line; then a clean-machine install of the signed build | M | blocked (AP-1, which is deferred to the end, ADR-0088) | AP-1 |
 | GR-1 | The guardrails beyond chat share, from what is counted: the share of use at night (23:00 to 05:00) and the long tail of active minutes, in the opt-in local stats and the script of ME-3 | M | ready | |
-| AL-1 | A plain consent text for the alpha testers (what is collected, by hand through Copy stats, they can stop and have it deleted), in Vietnamese | S | **later: with the alpha kit (ADR-0087)** | ME-4 |
-| AL-2 | What is done about the foundation's call for consent of its own and an outside reviewer for a small test among acquaintances, and what a lawyer must still say (`foundation/legal-questions.md`, items 8 and 9) | S | **later: with the alpha kit (ADR-0087)** | AL-1 |
+| AL-1 | A plain consent text for the alpha testers (what is collected, by hand through Copy stats, they can stop and have it deleted), in Vietnamese | S | **later: with the alpha kit (ADR-0088)** | ME-4 |
+| AL-2 | What is done about the foundation's call for consent of its own and an outside reviewer for a small test among acquaintances, and what a lawyer must still say (`foundation/legal-questions.md`, items 8 and 9) | S | **later: with the alpha kit (ADR-0088)** | AL-1 |
 | CS-1 | A strict Content-Security-Policy for the three windows, tried on each (V-113) | S | ready | |
 
 ## E16. The sticker test on Zalo (spec/06 section 7, plan `sticker-test.md`, ADR-0049)
@@ -328,10 +329,10 @@ Why: the author wants Peak to notice and suggest instead of asking, and to answe
 
 | ID | Story | Size | Status | Depends on |
 |---|---|---|---|---|
-| AP-S0 | The phrase survey: a form and a sheet for the alpha people (phrases to send Peak away, call it back, put it to sleep; ordinary short chat lines), no private text | S | **form drafted 2026-11-13** (`adaptive-peak-survey.md`); **not to be sent until the author calls the alpha (ADR-0087)** | none |
+| AP-S0 | The phrase survey: a form and a sheet for the alpha people (phrases to send Peak away, call it back, put it to sleep; ordinary short chat lines), no private text | S | **form drafted 2026-11-13** (`adaptive-peak-survey.md`); **not to be sent until the author calls the alpha (ADR-0088)** | none |
 | AP-S1 | The intent table as data and a pure matcher with tests, run offline on the two halves of the survey and the negative set; the verdict on H18 | S | proposed; needs Vinh's go for the module | AP-S0 |
 | AP-S2 | The smallest "Lượn đi" (tier 1, typed, walk to the edge, hide, timed return, call back from the tray, `is_busy` on the return, the leave counters), behind a test switch; the author looks at it before it is committed | M | proposed; needs Vinh's approval to code and the answers to Q1, N8, N9 | AP-S1 |
-| AP-S3 | The alpha reading of H18 and H19: tier counters, leave counters in "Copy stats", five end-of-week questions | S | **later: needs the alpha (ADR-0087)** | AP-S2, roadmap R4 |
+| AP-S3 | The alpha reading of H18 and H19: tier counters, leave counters in "Copy stats", five end-of-week questions | S | **later: needs the alpha (ADR-0088)** | AP-S2, roadmap R4 |
 | AP-S4 | The skill tag (`skills.md` layer, one parser) and the harness of labelled messages per brain; the verdict on H20 | M | proposed; Q7 and N3 | AP-S3 |
 | AP-S5 | Later: local behaviour counters and suggestions (H17, H22), the hotkey spike (H21), the recording with its own ADR | L | not started; after the answers to S1 to S3 | AP-S4 |
 
@@ -341,10 +342,25 @@ Why: different people like Peak in different ways; one Peak with a few surface l
 | ID | Story | Size | Status | Depends on |
 |---|---|---|---|---|
 | CU-C0 | Read the code for every colour and every anchor (H24 on paper) | S | done 2026-11-13 (`spec/15-customization.md` section 2) | none |
-| CU-C1 | The colour question in the alpha form (question 8) and three recoloured character sheets for a look | S | question written into the form; sheets not drawn; **the asking waits for the alpha (ADR-0087)** | AP-S0 |
+| CU-C1 | The colour question in the alpha form (question 8) and three recoloured character sheets for a look | S | question written into the form; sheets not drawn; **the asking waits for the alpha (ADR-0088)** | AP-S0 |
 | CU-C2 | The palette proof: a `Palette` parameter in `draw.ts`, `skins.ts`, a pixel comparison that the default is unchanged, a contrast test | M | proposed; needs Vinh's approval to code | CU-C1 |
 | CU-C3 | Sticker variants in the new colours (the website session builds the page part) and the choice as a demand signal | M | proposed | CU-C1 |
 | CU-C4 | Ask once in the app: the choice card with swatches, counts of chosen and not now | S | proposed; shares the weekly limit with the adaptive suggestions | CU-C2 |
 | CU-C5 | One accessory on the head anchor; looked at in every pose; CPU A/B | M | proposed | CU-C2 |
 | CU-C6 | The internal dial of dryness (selector weight, a second persona layer), heard in vi, en, ja | M | proposed; N13 | CU-C4 |
+
+## E22. Stable and Preview channels (ADR-0090, `preview-channel-plan.md`)
+Why: the author keeps building features and lets a few adults try them (ADR-0089); the public release line is every copy's update channel, so unfinished work needs a channel of its own. Everything waits for Vinh's approval, step by step.
+
+| ID | Story | Size | Status | Depends on |
+|---|---|---|---|---|
+| PV-0 | Check the unknowns without shipping: NSIS over a higher or lower version, the updater's comparison, `releases/latest` and a pre-release | S | proposed | none |
+| PV-1 | `channelOf(version)`, the manifest address by channel in `updater.rs`, "Preview" in About and the update prompt, tests | S | proposed | PV-0 |
+| PV-2 | The data rule: Stable reads files written by Preview (a test); the additive-only rule in the docs | S | proposed | none |
+| PV-3 | The Preview build in CI: odd-minor tags, the version written in the workspace only, notes from `CHANGELOG-preview.md`, pre-release draft | M | proposed | PV-1 |
+| PV-4 | `release-finish.ps1` for Preview: `updates/preview.json`, `--prerelease`, never `--latest`, pruning per channel, tests | M | proposed | PV-3 |
+| PV-5 | The website stays true (a note to the website session; the site by that session) | S | note written 2026-11-13 | none |
+| PV-6 | The first Preview (0.5.0) as an end-to-end rehearsal, then 0.5.1 by the in-app update | M | proposed; a release is ordered by name | PV-4 |
+| PV-7 | A release branch of the Stable line for a fix while `main` carries unfinished work | M | later; only when needed | PV-4 |
+| PV-8 | Docs with each step: `releasing.md`, `PROJECT.md`, `README.md`, `CONTRIBUTING.md` | S | with each step | all |
 

@@ -1,6 +1,6 @@
 # ADR-0072: Free code signing from SignPath Foundation, releases built in CI, a hybrid for the updater key
 
-- **Status:** accepted (answered by the author on 2026-11-12); carried out through CI-2 and CP-1 to CP-4 by 2026-11-13; **the application and the setup (AP-1, SP-1) moved to the end of the plan by ADR-0087**
+- **Status:** accepted (answered by the author on 2026-11-12); carried out through CI-2 and CP-1 to CP-4 by 2026-11-13; **the application and the setup (AP-1, SP-1) moved to the end of the plan by ADR-0088**
 - **Date:** 2026-11-12
 - **Decided by:** Vinh (author), with Claude (the app session)
 
