@@ -55,4 +55,6 @@ npm run tauri build -- --bundles nsis # signed installer (needs the signing key,
 # (a test build with the debug port, to drive the app from the debugger: window.__pet.hop(dx, dy), .fall(d), .perch(map), .perchPretend())
 ```
 
+**Two release channels (ADR-0090).** An even middle number in the version is Stable (0.4.x, 0.6.x), an odd one is Preview (0.5.x, 0.7.x); the app reads its own version to choose its update manifest (`channel_of` in `src-tauri/src/updater.rs`, `channelOf` in `src/lib/channel.ts`, the same table in both tests). Stable and Preview share `pet.json` and `memory.json`, so **a new field in either file may only be added**: never rename or delete a field, and never change what an existing field means, until that version is promoted to Stable. `src/lib/channel-data.test.ts` shows that a build which does not know a field reads a file that has it, keeps what it knows, and writes a valid file back (it drops the fields it does not know). The plan for building and publishing Preview is `docs/plans/preview-channel-plan.md`; nothing is published on it yet.
+
 A first release build compiles all Rust dependencies and takes a while; set `CARGO_TARGET_DIR` to a folder outside the repo to keep that cache between clones.

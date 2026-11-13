@@ -37,6 +37,7 @@ A change to code is not done until the tests for its pure logic pass, the spec a
 | A measurement, a spike, what was learned | `docs/engineering-log.md` (appended, never rewritten) |
 | Something built but not checked | `docs/plans/verification-debt.md` |
 | A note from another session | `docs/handoff/` (never edit a note after receipt; the index says what became of it) |
+| A new field in `pet.json` or `memory.json` | **Add only**: never rename, delete or change the meaning of an existing field (Stable and Preview share the files, ADR-0090); read it with a default so an older build still works; the test is `app/src/lib/channel-data.test.ts` |
 | A user-visible change | `CHANGELOG.md` (`## x.y.z (date)`, then lines starting with `- `, the first one a short bold sentence) and the README if it changes a promise |
 
 ## Style
