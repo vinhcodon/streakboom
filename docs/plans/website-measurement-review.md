@@ -91,3 +91,18 @@ Points that disagree with "tracking without limits" (to approve, then update):
 | 8 | The app's files (README line "no telemetry unless you opt in"; `docs/privacy.md`; `PROJECT.md`) | true of the app, silent about the site | a note for the app session (sent); wording is theirs |
 | 9 | Home page and README positioning (local-first, "no telemetry") against a site full of trackers | consistent only if the privacy page separates the app from the site clearly | already how the privacy page is built; keep that separation |
 | 10 | Law (not a document mismatch): tracking with cookies or identifiers usually needs consent in the EU, and rules exist in Vietnam and Japan; Cloudflare does not replace that | no consent notice on the site | a lawyer's question (added) and a decision on a consent banner |
+
+## 8. Third part (2026-11-14, night): what Bot Fight Mode costs, and a shorter paragraph proposed
+
+**Lighthouse on the live pages** (this machine, mobile, one run each, noisy), with Cloudflare's two added scripts:
+
+| Page | Performance | Accessibility | Best practices | SEO | CLS | TBT | LCP |
+|---|---|---|---|---|---|---|---|
+| `/` | 97 | 100 | **81** | 100 | 0 | 180 ms | 1.5 s |
+| `/stickers/` | 96 | 100 | **81** | 100 | 0 | 210 ms | 1.4 s |
+| `/vi/stickers/` | 91 | 100 | **81** | 100 | 0 | 350 ms | 1.3 s |
+
+Best practices fell from 100 to 81 because of two deprecation warnings (the Fenced Frame API and `StorageType.persistent`) that come from `/cdn-cgi/challenge-platform/scripts/jsd/main.js`, the bot-protection script; that script takes about 470 ms of the main thread and the analytics beacon about 90 ms. The budget of spec 13 (100 for best practices, 99 for performance, TBT under 50 ms) is **not met on the live site** while that script is there; it was met on the local build. The cost of Bot Fight Mode is therefore: the live check in the workflow is blind (403), the budget above, and in return a basic bot filter on a static page whose origin (GitHub Pages) a bot cannot harm. The author decides between keeping it (and relaxing the budget) and switching it off (the script goes, the check works again).
+
+**A shorter paragraph "This website" (proposal, English, about 125 words instead of 282 with every switch on; Vietnamese and Japanese follow when approved):** "This website sets no cookies of its own. Cloudflare, which delivers the site, runs its bot protection (a small script that may keep a technical cookie to tell people from bots) and Cloudflare Web Analytics, which counts visits and load times without cookies; visitors in the EU are not counted. When you copy a sticker, the page sends one note to a counter, the sticker's name and the page language and nothing else; the counter adds one to that day's total and keeps no list of visitors. The language suggestion and the recent stickers stay in this browser only, and Clear removes them."
+The other long parts of the privacy page (the 304 words on what Peak notices, the 126 on the AI provider) are the app's facts, copied from the app's own documents; cutting them would cut facts, so they are not proposed. The How it works page (1,615 words with the menu and footer) was not re-read for this proposal.
