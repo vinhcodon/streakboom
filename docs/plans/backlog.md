@@ -30,6 +30,7 @@ Status: **proposed 2026-11-08, asked by Vinh to be carried out story by story.**
 | E18 | Language and one instance (ADR-0066, ADR-0068, ADR-0055 amendment) | 3 / 3, released in 0.4.1 | The tray menu in the chosen language; the default language from the system's list of preferred languages and a picker in the tour (never the IP); one Peak per user. Open: the author's checks (V-108 to V-110) and the in-app update to 0.4.1 |
 | E19 | Alpha readiness and signing (roadmap v2, ADR-0071, ADR-0072) | 6 / 13 | The signed installer, the guardrail counters, the tester consent text, a strict CSP; the checks themselves are in E6 (ME-1 to ME-4), E7 (VE-2, VE-3, VE-8), E5 (PF-3), E1 (PR-8) and E3 (PE-1, PE-4) |
 | E20 | Adaptive Peak: skills of the body and suggestions (spec/14, ADR-0080, plan `adaptive-peak-plan.md`) | 0 / 6 | A direction decided by the author; drafted, **nothing approved to build**: the phrase survey, the offline table, the smallest "Lượn đi", the alpha reading, the model tag, later suggestions and voice |
+| E21 | Customization after the adaptive turn (spec/15, plan `customization-plan.md`) | 1 / 7 | Colour, accessory and voice that Peak changes in itself and offers; the code reading is done, the rest waits for Vinh's approval |
 | E13 | Fresh words: more variety in the scripted lines | 6 / 9 | Lines more varied: the shuffle bag, tokens, the smallest pools raised (LN-1 to LN-3, LN-5 partly, 0.3.1); the line factory script is built and waits for the author to run it (LN-4); rare lines blocked; the brain's top-up declined for now |
 | E12 | Reactions: one way to express what happens | 10 / 11 | Spec 09 and ADR-0041: events, appraisal, beats, words after the body, escalation, the persona in layers, the remark after a fall (RX-1 to RX-8; the first part released in 0.3.1, the remark and the gate not yet); RX-9 later |
 | E11 | Reach: languages and brains | 4 / 5 | Groq is the fourth brain and Japanese is built in full, both released in 0.3.0 (BR-1, JA-1 to JA-3, ADR-0037, ADR-0038); BR-2 needs a key |
@@ -333,3 +334,17 @@ Why: the author wants Peak to notice and suggest instead of asking, and to answe
 | AP-S3 | The alpha reading of H18 and H19: tier counters, leave counters in "Copy stats", five end-of-week questions | S | proposed | AP-S2, roadmap R4 |
 | AP-S4 | The skill tag (`skills.md` layer, one parser) and the harness of labelled messages per brain; the verdict on H20 | M | proposed; Q7 and N3 | AP-S3 |
 | AP-S5 | Later: local behaviour counters and suggestions (H17, H22), the hotkey spike (H21), the recording with its own ADR | L | not started; after the answers to S1 to S3 | AP-S4 |
+
+## E21. Customization (spec 15, `customization-plan.md`)
+Why: different people like Peak in different ways; one Peak with a few surface layers answers that without a second character, and without a Settings page (ADR-0080, A1). Everything waits for Vinh's approval step by step.
+
+| ID | Story | Size | Status | Depends on |
+|---|---|---|---|---|
+| CU-C0 | Read the code for every colour and every anchor (H24 on paper) | S | done 2026-11-13 (`spec/15-customization.md` section 2) | none |
+| CU-C1 | The colour question in the alpha form (question 8) and three recoloured character sheets for a look | S | question written into the form; sheets not drawn | AP-S0 |
+| CU-C2 | The palette proof: a `Palette` parameter in `draw.ts`, `skins.ts`, a pixel comparison that the default is unchanged, a contrast test | M | proposed; needs Vinh's approval to code | CU-C1 |
+| CU-C3 | Sticker variants in the new colours (the website session builds the page part) and the choice as a demand signal | M | proposed | CU-C1 |
+| CU-C4 | Ask once in the app: the choice card with swatches, counts of chosen and not now | S | proposed; shares the weekly limit with the adaptive suggestions | CU-C2 |
+| CU-C5 | One accessory on the head anchor; looked at in every pose; CPU A/B | M | proposed | CU-C2 |
+| CU-C6 | The internal dial of dryness (selector weight, a second persona layer), heard in vi, en, ja | M | proposed; N13 | CU-C4 |
+

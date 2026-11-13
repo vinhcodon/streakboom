@@ -23,6 +23,7 @@
 > **5.** Viết ra **10 câu ngắn bạn thường gõ cho một trợ lý hay một người bạn** khi làm việc (không dán nội dung riêng tư; ví dụ kiểu "hôm nay trời nóng quá", "tôi sẽ đi họp lát"). Đây là để biết Peak **không** nên hiểu nhầm câu thường ngày thành lệnh.
 > **6.** Bạn nói tiếng nào là chính khi gõ? (Việt / Anh / Nhật / pha trộn)
 > **7.** (Không bắt buộc) Bạn có thích hay không thích cách nó "đi chỗ khác" như thế nào? Một câu thôi.
+> **8.** (Không bắt buộc) Nếu được đổi **một thứ** về ngoại hình của Peak (màu lông, một món đồ đeo, hay giọng khô hơn), bạn muốn đổi gì? Nếu là màu thì màu nào? Một câu thôi. *(Câu này phục vụ giả thuyết H23 của `spec/15-customization.md`, bước C1; không liên quan tới câu lệnh.)*
 
 English and Japanese versions of the same seven questions are made from this one when needed; the meaning of questions 1 to 5 is what matters.
 
@@ -40,7 +41,7 @@ One row per phrase in a sheet (a plain file kept by Vinh, **not committed** unti
 ## 4. How it is read (fixed before any answer is seen)
 
 - **Split by person, not by phrase.** With so few people, a split by phrase would leak (the same person's habits would be in both halves). Use **leave-one-person-out**: for each person, build the table from everyone else's phrases and test it on that person's phrases; report the average and the worst person.
-- **Coverage** = the share of the held-out `leave` (and `return`, `sleep`, `quiet`) phrases that the table sends to the right skill. **False positives** = the share of the `none` phrases (question 5, and any other ordinary lines) that the table sends to any skill. The matcher is the one in the plan's step S1 (whole message only, about six words or fewer, no question mark).
+- **Coverage** = the share of the held-out `leave` (and `return`, `sleep`, `quiet`) phrases that the table sends to the right skill. **False positives** = the share of the `none` phrases (question 5, and any other ordinary lines); question 8 is not part of this reading that the table sends to any skill. The matcher is the one in the plan's step S1 (whole message only, about six words or fewer, no question mark).
 - Both numbers are reported with the **list of misses and of false positives**, so that Vinh sees what kind of words they are.
 - A phrase that belongs to two intents (for example one person's "đi đi" meaning both leave and sleep) is listed and **not** added to either table.
 - **Thresholds were set by Vinh on 2026-11-13, before any answer:** supported at 70 % coverage or more with 2 % false positives or fewer; refuted under 40 % coverage; between the two Vinh reads the misses and decides.
