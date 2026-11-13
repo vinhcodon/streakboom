@@ -11,11 +11,11 @@ binding = "DB"
 database_name = "streakboom-count"
 database_id = "1f407624-3210-42ea-a6f5-0b2461d2a75a"   # printed by `wrangler d1 create streakboom-count` (not a secret)
 
-# A limit per address, kept by Cloudflare (this code stores no address): 30 copies a minute is far above a person.
+# A limit per address, kept by Cloudflare (this code stores no address): 120 copies a minute per address leaves room for a class or an office on one network; a person does a few.
 [[ratelimits]]
 name = "LIMITER"
 namespace_id = "1001"
 
   [ratelimits.simple]
-  limit = 30
+  limit = 120
   period = 60
