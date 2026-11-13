@@ -1,11 +1,11 @@
 {
-    "version":  "0.7.0",
-    "notes":  "The first Preview after Stable 0.6.0. It has the same program as 0.5.1 and 0.6.0; nothing you can see has changed. It starts the next Preview line: from here the new work goes, and the app offers the next 0.7.x by itself. You stay on Preview, and the Stable 0.6.0 is skipped because 0.7.0 contains...",
-    "pub_date":  "2026-11-13T16:17:17Z",
+    "version":  "0.7.1",
+    "notes":  "Peak keeps still and quiet while you are in something full-screen, presenting, or the screen is locked. Before, it could start a walk, a hop or a perch while you watched a full-screen video or gave a presentation; now it starts nothing, stops a walk in progress and says nothing until you are out...",
+    "pub_date":  "2026-11-13T17:36:43Z",
     "platforms":  {
                       "windows-x86_64":  {
-                                             "signature":  "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVUcHBlQXhYUlVURmhMSTBNeUFxMm5EQml3MUJKUlNhbVp2bmhzeVcxTlo1MHZ4aVpkKzZRVVZ6cDVZRFdRZlNnaERNZ0hBeHEvRVZyMy9vWThpc3Q4Y1NIKzZyelB0alE4PQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzk0NTg2NjM3CWZpbGU6U3RyZWFrYm9vbV8wLjcuMF94NjQtc2V0dXAuZXhlCXZlcnNpb246MC43LjAKeUtLNUVhSUJmendWSEJGYUNaTHNVMXlmZEdRRXhYNG5HaDhwc0VWWmRMdHluZTBBV0d1K1M1UHo3ajEyTCs3a0tDZ2xGODRHRDVWN2JmQWZYaStPRFE9PQo=",
-                                             "url":  "https://api.github.com/repos/vinhcodon/streakboom/releases/assets/744299765"
+                                             "signature":  "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVUcHBlQXhYUlVURmc1T3dJVjV5S2tNWXpUZVUwR3REMDVyMlo5ZVdUVnBqMU91c1htTFltVVBFOXBuR1dyOUcvSVV5OWZKcXdnWExHNDhXMU5YSWQ4MnBSQnM4TkIvTEFFPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzk0NTkxNDAzCWZpbGU6U3RyZWFrYm9vbV8wLjcuMV94NjQtc2V0dXAuZXhlCXZlcnNpb246MC43LjEKamtLUk1QWVIrMEc2cHJ4ejRlMmV5OHhCMlVDR0d6U0tlWldieS93TDliWDlIb3VraVJQMFU4WVlmbHhTaktTVlVSMEptM0MwaktHQ2RtclRrU3JLQUE9PQo=",
+                                             "url":  "https://api.github.com/repos/vinhcodon/streakboom/releases/assets/744555321"
                                          }
                   }
 }
