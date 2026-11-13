@@ -226,7 +226,9 @@ test("invariants over thousands of random probes", () => {
       assert.ok(i.pointer && !i.pointer.over && i.pointer.dist < NEAR_PX, "crowded needs the pointer near and off the cat");
       assert.ok(!i.busy && !i.quiet, "not while hidden");
     } else if (i.pointer && !i.pointer.over && i.pointer.dist < NEAR_PX && i.idleMs !== null && i.idleMs < CROWD_OFF_MS && !i.busy && !i.quiet) sawHeld = true;
-    if (i.idleMs !== null) {
+    if (i.busy) {
+      assert.ok(!o.walkAllowed && !o.keepWalking && !o.speakAllowed && !o.crowded, "busy keeps the cat still and quiet");
+    } else if (i.idleMs !== null) {
       assert.equal(o.walkAllowed, i.idleMs >= CALM_MS);
       assert.equal(o.speakAllowed, i.idleMs >= LINE_MS);
     } else assert.ok(o.walkAllowed && o.speakAllowed && !o.crowded);
@@ -252,4 +254,41 @@ test("a sleeping cat wakes to make way only after being crowded for several seco
   assert.equal(wakesToMakeWay(true, SLEEP_CROWD_MS * 5, room - 1), false); // nowhere to go: it stays curled up
   assert.equal(wakesToMakeWay(false, SLEEP_CROWD_MS * 5, room * 5), false); // an awake cat is handled by making way
   assert.ok(SLEEP_CROWD_MS > CROWD_MS, "waking needs more than the hold that makes it crowded");
+});
+
+// AP-08 (spec 14): fullscreen, presentation mode or a locked session keeps the cat still and quiet.
+test("busy: no walk may start, a walk in progress stops and no line is shown, however long the user has been idle", () => {
+  for (const idleMs of [0, 500, CALM_MS, LINE_MS, 10 * 60_000]) {
+    const { out } = decideFocus(initialFocus(), input({ idleMs, busy: true, pointer: null }), 1000);
+    assert.equal(out.walkAllowed, false, `walk, idle ${idleMs}`);
+    assert.equal(out.keepWalking, false, `keep walking, idle ${idleMs}`);
+    assert.equal(out.speakAllowed, false, `speak, idle ${idleMs}`);
+    assert.equal(out.crowded, false);
+  }
+});
+
+test("busy holds even when the idle time is unknown (the probe cannot read it)", () => {
+  const { out } = decideFocus(initialFocus(), input({ idleMs: null, busy: true }), 1000);
+  assert.equal(out.walkAllowed, false);
+  assert.equal(out.keepWalking, false);
+  assert.equal(out.speakAllowed, false);
+});
+
+test("not busy changes nothing: the same answers as before this rule", () => {
+  const a = decideFocus(initialFocus(), input({ idleMs: CALM_MS, busy: false, pointer: null }), 1000).out;
+  assert.equal(a.walkAllowed, true);
+  assert.equal(a.speakAllowed, CALM_MS >= LINE_MS);
+  const b = decideFocus(initialFocus(), input({ idleMs: null, busy: false }), 1000).out;
+  assert.equal(b.walkAllowed && b.keepWalking && b.speakAllowed, true);
+});
+
+test("when busy ends the cat may act again at once and the hold on feeling crowded starts over", () => {
+  let s = initialFocus();
+  s = decideFocus(s, input({ idleMs: 0 }), 0).state;
+  const busy = decideFocus(s, input({ idleMs: 0, busy: true }), CROWD_MS + 10);
+  assert.equal(busy.state.crowded, false);
+  assert.equal(busy.state.nearSince, null);
+  const after = decideFocus(busy.state, input({ idleMs: LINE_MS + 1, busy: false, pointer: null }), CROWD_MS + 20).out;
+  assert.equal(after.walkAllowed, true);
+  assert.equal(after.speakAllowed, true);
 });

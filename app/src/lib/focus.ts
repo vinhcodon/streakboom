@@ -92,13 +92,19 @@ interface Rest {
  *   is on the cat or far or unknown, or when the user has been idle for CROWD_OFF_MS. Fullscreen, presentation, a
  *   locked session and Quiet mode keep it off (those rules already hide the cat).
  * - leaveDir: away from the pointer (the pointer to the right means walk left).
- * - unknown idle time: no restriction at all (a platform without the probe behaves as before).
+ * - busy (fullscreen, presentation mode or a locked session, spec 14 AP-08): the cat starts no walk, hop or perch, stops a
+ *   walk in progress and shows no unprompted line, whatever the idle time and whether or not it is known. This comes first.
+ * - unknown idle time (and not busy): no restriction at all (a platform without the probe behaves as before).
  */
 export function decideFocus(prev: FocusState, input: FocusInput, now: number): { state: FocusState; out: FocusOut } {
   const p = input.pointer;
   const dist = p !== null && Number.isFinite(p.dist) ? p.dist : null;
   const leaveDir: -1 | 1 = p !== null && typeof p.dx === "number" && p.dx > 0 ? -1 : 1;
   const idle = input.idleMs;
+  if (input.busy) {
+    // The person is in something full-screen, presenting, or away from a locked screen: Peak keeps still and quiet.
+    return done({ crowded: false, nearSince: null }, { walkAllowed: false, keepWalking: false, speakAllowed: false, active: known(idle) && idle < ACTIVE_MS, leaveDir, dist });
+  }
   if (!known(idle)) {
     return done({ crowded: false, nearSince: null }, { walkAllowed: true, keepWalking: true, speakAllowed: true, active: false, leaveDir, dist });
   }

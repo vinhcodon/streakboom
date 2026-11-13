@@ -111,6 +111,9 @@ struct AppState {
     focus_dy: AtomicU64,
     /// The pointer reading is valid (the pet window is visible and the pointer was read).
     focus_ptr: AtomicBool,
+    /// Fullscreen, presentation mode or a locked session (`busy_now`), read by the hit-test thread about once a second so
+    /// that `focus_probe` still makes no system call; the page keeps the cat still and quiet while it holds (spec 14, AP-08).
+    focus_busy: AtomicBool,
     /// The pointer is on the cat (inside its hit region).
     focus_over: AtomicBool,
     /// The cat's centre in logical px of the screen (physical px divided by the window's scale): the common frame of
@@ -201,6 +204,12 @@ fn save_memory(state: State<AppState>, json: String) -> Result<(), String> {
 /// or a locked/absent session (Windows only; false elsewhere).
 #[tauri::command]
 fn is_busy() -> bool {
+    busy_now()
+}
+
+/// The system's answer to "is the person in something full-screen, presenting, or away?" (a shell call, about once a second
+/// from the hit-test thread, never from `focus_probe`).
+fn busy_now() -> bool {
     #[cfg(windows)]
     {
         use windows_sys::Win32::UI::Shell::SHQueryUserNotificationState;
@@ -236,6 +245,8 @@ struct FocusProbe {
     button_down: bool,
     /// The last click away from the cat, if any.
     click: Option<ClickInfo>,
+    /// The person is in something full-screen, presenting, or the session is locked (read about once a second).
+    busy: bool,
 }
 
 /// Where and how long ago the user last clicked away from the cat (logical px of the screen).
@@ -295,6 +306,7 @@ fn focus_probe(state: State<AppState>) -> FocusProbe {
         cat_x: ptr.then(|| f64::from_bits(state.focus_cat_x.load(Ordering::Relaxed))),
         cat_y: ptr.then(|| f64::from_bits(state.focus_cat_y.load(Ordering::Relaxed))),
         button_down: state.button_down.load(Ordering::Relaxed),
+        busy: state.focus_busy.load(Ordering::Relaxed),
         click: {
             let at = state.click_at.load(Ordering::Relaxed);
             (at != 0).then(|| ClickInfo {
@@ -676,6 +688,8 @@ fn drag_end(state: State<AppState>) {
 
 /// How long a hidden bubble window is kept before it is destroyed to free its memory.
 const BUBBLE_IDLE_DESTROY: Duration = Duration::from_secs(45);
+/// How often the hit-test thread asks the system whether the person is busy (fullscreen, presenting, locked): about once a second.
+const BUSY_READ_EVERY: Duration = Duration::from_millis(1000);
 
 /// A transparent topmost window of its own, so the bubble is never clipped by the small pet
 /// window and can sit on whichever side of the pet has room.
@@ -1267,8 +1281,13 @@ fn spawn_hit_test(app: AppHandle, win: WebviewWindow) {
         let mut cover_checked = Instant::now();
         let mut cover_told = Instant::now();
         let mut was_covered = false;
+        let mut busy_checked = Instant::now() - Duration::from_secs(5); // read at once on the first round
         loop {
             let state = app.state::<AppState>();
+            if busy_checked.elapsed() >= BUSY_READ_EVERY {
+                state.focus_busy.store(busy_now(), Ordering::Relaxed);
+                busy_checked = Instant::now();
+            }
             let mut delay = 150;
             let mut ptr_ok = false;
             let mut offset: Option<(f64, f64)> = None;
@@ -1532,6 +1551,7 @@ pub fn run() {
                 focus_dx: AtomicU64::new(0),
                 focus_dy: AtomicU64::new(0),
                 focus_ptr: AtomicBool::new(false),
+                focus_busy: AtomicBool::new(false),
                 focus_over: AtomicBool::new(false),
                 focus_cat_x: AtomicU64::new(0),
                 focus_cat_y: AtomicU64::new(0),

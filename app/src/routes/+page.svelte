@@ -458,6 +458,7 @@
         catX: number | null;
         catY: number | null;
         click: { x: number; y: number; ageMs: number } | null;
+        busy?: boolean; // fullscreen, presentation or a locked session (is_busy), read in the same probe (AP-08)
       }>("focus_probe");
       const now = Date.now();
       // "moving" = the pointer travelled more than a few px since the last reading a moment ago
@@ -478,7 +479,7 @@
         laneOut = NO_LANE;
       }
       const pointer = p.dx !== null && p.dy !== null ? { dist: Math.hypot(p.dx, p.dy), over: p.over, moving, dx: p.dx } : null;
-      const r = decideFocus(focusState, { idleMs: p.idleMs, pointer, busy: false, quiet }, now);
+      const r = decideFocus(focusState, { idleMs: p.idleMs, pointer, busy: p.busy === true, quiet }, now);
       focusState = r.state;
       focusOut = r.out;
       const am = stepAttention(attn, { idleMs: p.idleMs, pointerNear: pointer === null ? null : pointer.over || pointer.dist < NEAR_PX }, now);
