@@ -112,10 +112,10 @@ From the handoff (section 10):
 - **Q5.** Does the multi-provider version change the settings structure? *Answered by the code: it is committed; the settings carry `lang`, `gentle`, the brain choice and so on; a skin and an accessory are two more saved strings (section 2.3).*
 
 New:
-- **N11.** May a skin be asked for in words (a skill of spec 14), or only offered by Peak?
-- **N12.** Does Peak remark on its own new look, or never?
-- **N13.** May Peak move the dryness dial itself from what the person reacts to, or only ask?
-- **N14.** Pixel-identical default (CU-1): is "looks the same to the eye" enough, or must it be exact?
+- **N11.** *Answered 2026-11-13 (ADR-0086): yes, the person may ask for a look in words, as one entry of the closed skill list (not part of the first slice).*
+- **N12.** *Answered 2026-11-13 (ADR-0086): Peak does not remark on its new look.*
+- **N13.** *Answered 2026-11-13 (ADR-0086): Peak only asks about the dryness; it never changes it by itself.*
+- **N14.** *Answered 2026-11-13 (ADR-0086): the default must be pixel-identical.*
 
 ## 8. What could not be verified
 

@@ -145,7 +145,7 @@ RAM 120 MB at most; idle at about 0 % CPU (a skill must not add idle cost; a wal
 ## 13. Open questions (recorded; Vinh decides, nothing is assumed)
 
 From the handoff (section 13):
-- **Q1.** After "lượn đi", how long until Peak is back, and how is it called back while hidden (tray, hotkey, where to click)? *Facts:* a hidden window has no click and no chat; the tray icon and menu exist now. A fixed return of N minutes, or a return by the next time the person touches the keyboard after a while, or only by the tray: three options to choose from.
+- **Q1.** *Answered 2026-11-13 (ADR-0086): Peak is back after **20 minutes**, at the edge it left by; the person calls it back at once with the tray (Show).*
 - **Q2.** Is the phone animation in the first slice, together with the hotkey? (Now: no.)
 - **Q3.** What is the second skill: phone, go to sleep at a place, or transformation?
 - **Q4.** The list of signals Peak learns from (section 8): approve or cut.
