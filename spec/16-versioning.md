@@ -45,7 +45,7 @@ The update paths the rule gives (the author's principle, adjusted):
 | From | Offered | By which manifest |
 |---|---|---|
 | Stable 0.6.p | 0.6.p+1 (a fix), or the next Stable 0.8.0 | `updates/latest.json` |
-| Preview 0.7.p | 0.7.p+1, or the next Stable, or the next Preview line | `updates/preview.json` (always the newest release of both channels) |
+| Preview 0.7.p | 0.7.p+1, or the next Stable, or the next Preview line | `updates/preview.json` (only the newest Preview) and `updates/latest.json` (only the newest Stable), by the rule of section 11 |
 
 ## 4. Definitions
 
@@ -64,7 +64,7 @@ The update paths the rule gives (the author's principle, adjusted):
 | documents, the website, stickers, scripts that are not part of the app | no release at all | none |
 | a change that only affects Preview builds (the label, the channel code) | a Preview | the Preview patch moves |
 
-**A Preview tester after a promotion (the gap).** A Preview tester who takes the promotion (0.5.k to 0.6.0) becomes a Stable user: an even middle number reads `latest.json`, so the next Preview 0.7.0 is not offered to a Stable copy. Two ways to handle it, the author chooses (question 2): the tester **returns to Stable** at each promotion and installs the next Preview installer by hand to come back; or the next Preview is published **together with** the Stable (0.6.0 and 0.7.0 on the same day), `preview.json` then says 0.7.0 (the newest), and Preview testers **skip the Stable and stay on Preview**, since 0.7.0 contains everything 0.6.0 does.
+**A Preview tester after a promotion (the gap).** *(Revised by ADR-0095, 2026-11-14.)* A Preview tester who is offered the promotion (0.5.k to 0.6.0) is offered the **Stable first**: a Preview copy sees a higher Stable before a Preview. Taking it makes the copy Stable; the next check by hand on that copy says "up to date", and a Preview is reached again through "Test builds..." or a Preview installer. A tester who wants to stay on the Preview line does not take the Stable (the Ask card can be declined and Auto asks on a Preview copy); the next Preview line is still published on the day of the Stable, so that a Preview exists to be shown. *(The first rule, that testers skip the Stable because `preview.json` points past it, ended with the two separate manifests: `preview.json` no longer holds a Stable.)*
 
 ## 6. Where the version is written and who changes it
 
@@ -76,7 +76,7 @@ The update paths the rule gives (the author's principle, adjusted):
 | `CHANGELOG-preview.md` | one entry per **Preview** build | before the tag of that build |
 | the tag | `vMAJOR.MINOR.PATCH`, on a commit that is on `main` | the author's order, by name |
 | the installer name | `Streakboom_<version>_x64-setup.exe` | built from the version |
-| `updates/latest.json`, `updates/preview.json` | the manifests (`preview.json` = the newest of both channels) | `release-finish.ps1` |
+| `updates/latest.json`, `updates/preview.json` | the manifests: `latest.json` only the newest Stable, `preview.json` only the newest Preview (ADR-0094, built as PV-12) | `release-finish.ps1` |
 
 A version number is **never reused**, never taken back, and may be skipped. A tag is never moved after its release is published.
 
@@ -96,7 +96,7 @@ A version number is **never reused**, never taken back, and may be skipped. A ta
 ## 9. Decisions of the author (answered 2026-11-13, ADR-0093: every default was chosen)
 
 1. **A fix to a Stable while `main` already carries unfinished Preview work.** (a) **Only when `main` is shippable; otherwise the fix waits for the next promotion, which may be brought forward.** (b) A release branch for the Stable line (`stable-0.6`) from the last Stable tag, the fix cherry-picked there, the release workflow accepting tags on `stable-*` (plan step PV-7). (a) is simpler and enough while there are few users; (b) is needed the day a Stable fix cannot wait.
-2. **Preview testers across a promotion.** (a) **They stay on Preview: the next Preview line is published on the same day as the Stable, and `preview.json` points at it.** (b) They return to Stable at each promotion and reinstall a Preview by hand to come back (the author's first principle, literally).
+2. **Preview testers across a promotion.** (a) **They stay on Preview: the next Preview line is published on the same day as the Stable, and `preview.json` points at it.** *(Revised by ADR-0095: with the two separate manifests a Preview copy is offered the Stable first; see section 5.)* (b) They return to Stable at each promotion and reinstall a Preview by hand to come back (the author's first principle, literally).
 3. **How a Stable is cut.** (a) **From the commit of the last Preview, with the version files and the release documents changed** (what the testers used is what everyone gets). (b) From the head of `main` at that time (may include later Preview work).
 4. **MAJOR.** Keep 0 until the author orders 1.0 by an ADR (**recommended**), or move to 1 at the first public launch automatically.
 
@@ -128,7 +128,7 @@ A Stable cut from a Preview line contains the code of that line up to its last P
 | **Off** | no background check |
 | **Check by hand** (Settings) | works in every mode and shows the one version of the table |
 
-**Manifests:** `updates/latest.json` holds only the newest **Stable**, `updates/preview.json` only the newest **Preview**. A Stable copy reads `latest.json` (and `preview.json` only after the confirmation of "Test builds..."); a Preview copy reads both. This replaces the earlier rule that `preview.json` shows the newest of both channels (sections 3 and 6, and ADR-0093 point 3, are amended by ADR-0094 and ADR-0095). **It takes effect only after the app can read the two manifests by this rule and has been released in a Preview** (plan PV-10 to PV-12); until then the earlier rule stands, and the copies built before (0.5.0 to 0.7.1) keep reading only `preview.json`. **No downgrade by the updater**; a lower Stable is installed by hand.
+**Manifests:** `updates/latest.json` holds only the newest **Stable**, `updates/preview.json` only the newest **Preview**. A Stable copy reads `latest.json` (and `preview.json` only after the confirmation of "Test builds..."); a Preview copy reads both. This replaces the earlier rule that `preview.json` shows the newest of both channels (sections 3 and 6, and ADR-0093 point 3, are amended by ADR-0094 and ADR-0095). **This is built (PV-10 and PV-11 released in Preview 0.7.2, PV-12 in the release script):** `preview.json` now holds only a Preview and `latest.json` only a Stable. The copies built before 0.7.2 (0.5.0 to 0.7.1) read only `preview.json`, as the older rule needed; they stay on the Preview line and are not offered a Stable. **No downgrade by the updater**; a lower Stable is installed by hand.
 
 ## 12. Not verified
 

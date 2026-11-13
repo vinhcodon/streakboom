@@ -1,6 +1,6 @@
 # ADR-0093: The rules for managing version numbers
 
-- **Status:** accepted (answered by the author on 2026-11-13 as multiple choice); **point 3's `preview.json` rule is amended by ADR-0094** (2026-11-14); the rules are written in [`../../spec/16-versioning.md`](../../spec/16-versioning.md). Completes ADR-0090 (the channels) and settles its open point 9 (a Stable fix while `main` carries unfinished work). No code is changed by this record; the checks of spec 16 section 10 are a later story (PV-9).
+- **Status:** accepted (answered by the author on 2026-11-13 as multiple choice); **point 3 is revised by ADR-0094 and ADR-0095** (2026-11-14: the manifests are separate and a Preview copy is offered the Stable first, so testers no longer skip it; the next Preview line is still published on the day of a Stable); the rules are written in [`../../spec/16-versioning.md`](../../spec/16-versioning.md). Completes ADR-0090 (the channels) and settles its open point 9 (a Stable fix while `main` carries unfinished work). No code is changed by this record; the checks of spec 16 section 10 are a later story (PV-9).
 - **Date:** 2026-11-13
 - **Decided by:** Vinh (author), recorded by Claude (the app session)
 

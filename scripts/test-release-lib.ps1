@@ -103,6 +103,11 @@ Check "version: the usual check of the three files passes after the write" ($pro
 Remove-Item $tmp -Recurse -Force -ErrorAction SilentlyContinue
 
 # the CI step on a copy of the repository: a Preview tag and a Stable tag
+# the Preview and Stable tags below are worked out from the version in tauri.conf.json, so these checks stay true as the Stable moves
+$confVer = [version]((Get-Content (Join-Path $repoRoot "app\src-tauri\tauri.conf.json") -Raw | ConvertFrom-Json).version)
+$pver = "$($confVer.Major).$($confVer.Minor + 1).0"          # the first Preview line after this Stable
+$ptag = "v$pver"
+$badStable = "v$($confVer.Major).$($confVer.Minor + 2).0"      # a Stable tag the version files do not say
 function NewCopy {
   $t = Join-Path ([System.IO.Path]::GetTempPath()) ("relprep-" + [guid]::NewGuid().ToString("N"))
   foreach ($f in @("app\src-tauri\tauri.conf.json", "app\src-tauri\Cargo.toml", "app\package.json", "app\src-tauri\Cargo.lock", "CHANGELOG.md")) {
@@ -116,16 +121,16 @@ function Prep($root, $tag) {
   [pscustomobject]@{ Code = $LASTEXITCODE; Out = ($out -join "`n"); Notes = $notes }
 }
 $c = NewCopy
-[System.IO.File]::WriteAllText((Join-Path $c "CHANGELOG-preview.md"), "# Changelog of Preview builds`n`n## 0.5.0 (2026-11-14)`n- **A first Preview.** Notes.`n", (New-Object System.Text.UTF8Encoding($false)))
-$r = Prep $c "v0.5.0"
+[System.IO.File]::WriteAllText((Join-Path $c "CHANGELOG-preview.md"), "# Changelog of Preview builds`n`n## $pver (2026-11-14)`n- **A first Preview.** Notes.`n", (New-Object System.Text.UTF8Encoding($false)))
+$r = Prep $c $ptag
 Check "prepare: a Preview tag with an entry passes" ($r.Code -eq 0)
 Check "prepare: the notes come from CHANGELOG-preview.md" ((Test-Path $r.Notes) -and ((Get-Content $r.Notes -Raw) -match "A first Preview"))
-Check "prepare: the version files of the copy now say 0.5.0" (((Get-Content (Join-Path $c "app\src-tauri\tauri.conf.json") -Raw | ConvertFrom-Json).version -eq "0.5.0") -and ((Get-Content (Join-Path $c "app\package.json") -Raw | ConvertFrom-Json).version -eq "0.5.0"))
-Check "prepare: the real repository was not touched" (((Get-Content (Join-Path $repoRoot "app\src-tauri\tauri.conf.json") -Raw | ConvertFrom-Json).version) -ne "0.5.0")
+Check "prepare: the version files of the copy now say the Preview version" (((Get-Content (Join-Path $c "app\src-tauri\tauri.conf.json") -Raw | ConvertFrom-Json).version -eq $pver) -and ((Get-Content (Join-Path $c "app\package.json") -Raw | ConvertFrom-Json).version -eq $pver))
+Check "prepare: the real repository was not touched" (((Get-Content (Join-Path $repoRoot "app\src-tauri\tauri.conf.json") -Raw | ConvertFrom-Json).version) -ne $pver)
 Remove-Item $c -Recurse -Force -ErrorAction SilentlyContinue
 
 $c = NewCopy
-$r = Prep $c "v0.5.0"
+$r = Prep $c $ptag
 Check "prepare: a Preview tag without an entry in CHANGELOG-preview.md fails" ($r.Code -ne 0 -and $r.Out -match "CHANGELOG-preview.md has no usable entry")
 Remove-Item $c -Recurse -Force -ErrorAction SilentlyContinue
 
@@ -136,7 +141,7 @@ Check "prepare: a Preview tag not above the Stable version fails" ($r.Code -ne 0
 Remove-Item $c -Recurse -Force -ErrorAction SilentlyContinue
 
 $c = NewCopy
-$r = Prep $c "v0.6.0"
+$r = Prep $c $badStable
 Check "prepare: a Stable tag that the files do not say fails as before" ($r.Code -ne 0 -and $r.Out -match "tauri.conf.json says")
 Remove-Item $c -Recurse -Force -ErrorAction SilentlyContinue
 
@@ -145,5 +150,13 @@ $c = NewCopy
 $r = Prep $c ("v" + $conf)
 Check "prepare: the current Stable tag still passes" ($r.Code -eq 0 -and $r.Out -match "\(stable\)")
 Remove-Item $c -Recurse -Force -ErrorAction SilentlyContinue
+
+# which manifests a publish writes (ADR-0095): the two files are separate
+Check "manifests: a Stable writes latest.json and nothing else" ((@(Get-ManifestFilesToWrite -Channel "stable" -NewVersion "0.8.0" -ExistingPreviewVersion "0.9.0") -join ",") -eq "latest.json")
+Check "manifests: a Preview newer than the one held writes preview.json only" ((@(Get-ManifestFilesToWrite -Channel "preview" -NewVersion "0.9.1" -ExistingPreviewVersion "0.9.0") -join ",") -eq "preview.json")
+Check "manifests: a Preview that is not newer writes nothing" ((@(Get-ManifestFilesToWrite -Channel "preview" -NewVersion "0.9.0" -ExistingPreviewVersion "0.9.0")).Count -eq 0)
+Check "manifests: an older Preview writes nothing and never latest.json" ((@(Get-ManifestFilesToWrite -Channel "preview" -NewVersion "0.7.2" -ExistingPreviewVersion "0.9.0")).Count -eq 0)
+Check "manifests: a Preview with no preview.json yet writes it" ((@(Get-ManifestFilesToWrite -Channel "preview" -NewVersion "0.5.0" -ExistingPreviewVersion "")) -join "," -eq "preview.json")
+Check "manifests: a Stable version left in preview.json by the older rule does not block a Preview" ((@(Get-ManifestFilesToWrite -Channel "preview" -NewVersion "0.7.0" -ExistingPreviewVersion "0.8.0") -join ",") -eq "preview.json")
 
 if ($fail) { "$fail failed"; exit 1 } else { "all passed" }
