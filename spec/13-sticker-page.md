@@ -114,6 +114,9 @@ Rules:
 
 ## 4. Pages, URLs and search engines
 
+**Decided 2026-11-13 (ADR-0083): no permalink page and no tag page for now, and no story behind the stickers.** This section is kept as the proposal to come back to when there is data (Search Console, the first counts, the moderated sessions).
+
+
 | Page | Address | Content |
 |---|---|---|
 | Hub | `/stickers/`, `/vi/stickers/`, `/ja/stickers/` (as now) | the search box, the shelves (v1), the first 60 stickers **in the static HTML** (the rest from the index), the chips of emotions and situations (links to tag pages), the licence line, the recent and favourite row. |
