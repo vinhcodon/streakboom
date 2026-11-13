@@ -103,6 +103,11 @@ struct AppState {
     /// Bumped whenever the bubble is shown or hidden; lets the delayed "destroy when idle"
     /// know whether the bubble was used again in the meantime.
     bubble_gen: AtomicU64,
+    /// "Lượn đi" (spec 14, story S2): Peak has walked off and its window is hidden until a timer runs out or the person calls it
+    /// back (the tray, or starting the program again). Never saved: after a restart Peak is simply on screen. `away_gen`
+    /// numbers each leaving, so that a timer of an earlier leaving does nothing.
+    away: AtomicBool,
+    away_gen: AtomicU64,
     /// Latest focus-safety readings (spec/06 section 3.2, ADR-0029), written by the hit-test thread (which
     /// already wakes every 30 to 150 ms and already reads the pointer) and read by `focus_probe`.
     /// `u32::MAX` = the idle time is unknown; the offsets are `f64` bits.
@@ -1450,8 +1455,68 @@ fn toggle_visibility(app: &AppHandle) {
             bubble_hide(app.clone(), app.state::<AppState>());
         } else {
             let _ = win.show();
+            end_away(app);
         }
     }
+}
+
+/// The person showed Peak (the tray, or starting the program again) while it was away: the leaving is over, its timer is
+/// cancelled and the page is told, so that it stretches and goes on.
+fn end_away(app: &AppHandle) {
+    let state = app.state::<AppState>();
+    if state.away.swap(false, Ordering::SeqCst) {
+        state.away_gen.fetch_add(1, Ordering::SeqCst);
+        let _ = app.emit_to("main", "away-ended", ());
+    }
+}
+
+/// Peak walks off (S2): hide the pet window and its bubble and start the return timer. The page decides whether it may leave.
+#[tauri::command]
+fn pet_leave(app: AppHandle, state: State<AppState>, minutes: u32) -> bool {
+    let Some(win) = app.get_webview_window("main") else { return false };
+    if !win.is_visible().unwrap_or(false) || state.away.swap(true, Ordering::SeqCst) {
+        return false;
+    }
+    let _ = win.hide();
+    bubble_hide(app.clone(), app.state::<AppState>());
+    arm_return(&app, Duration::from_secs(u64::from(minutes.clamp(1, 24 * 60)) * 60));
+    true
+}
+
+/// Peak comes back (S2): show the pet window where it left. False if it was not away.
+#[tauri::command]
+fn pet_return(app: AppHandle, state: State<AppState>) -> bool {
+    if !state.away.swap(false, Ordering::SeqCst) {
+        return false;
+    }
+    state.away_gen.fetch_add(1, Ordering::SeqCst);
+    if let Some(win) = app.get_webview_window("main") {
+        let _ = win.show();
+    }
+    true
+}
+
+/// The page found the moment of the return not right (a full-screen program, for example): ask again later.
+#[tauri::command]
+fn pet_away_retry(app: AppHandle, state: State<AppState>, secs: u32) {
+    if state.away.load(Ordering::SeqCst) {
+        arm_return(&app, Duration::from_secs(u64::from(secs.clamp(10, 3600))));
+    }
+}
+
+/// Start (or restart) the return timer of the current leaving; when it runs out and the same leaving still holds, the page is
+/// told with "away-due" (the page keeps the rules about when Peak may reappear).
+fn arm_return(app: &AppHandle, after: Duration) {
+    let state = app.state::<AppState>();
+    let turn = state.away_gen.fetch_add(1, Ordering::SeqCst) + 1;
+    let app = app.clone();
+    std::thread::spawn(move || {
+        std::thread::sleep(after);
+        let state = app.state::<AppState>();
+        if state.away.load(Ordering::SeqCst) && state.away_gen.load(Ordering::SeqCst) == turn {
+            let _ = app.emit_to("main", "away-due", ());
+        }
+    });
 }
 
 fn build_tray(app: &AppHandle, quiet: bool) -> tauri::Result<()> {
@@ -1513,6 +1578,7 @@ pub fn run() {
             if let Some(win) = app.get_webview_window("main") {
                 if !win.is_visible().unwrap_or(true) {
                     let _ = win.show();
+                    end_away(app);
                 }
             }
         }))
@@ -1567,6 +1633,8 @@ pub fn run() {
                 tray_items: Mutex::new(None),
                 settings_section: Mutex::new(None),
                 bubble_gen: AtomicU64::new(0),
+                away: AtomicBool::new(false),
+                away_gen: AtomicU64::new(0),
             });
 
             let win = app.get_webview_window("main").expect("main window");
@@ -1601,6 +1669,9 @@ pub fn run() {
             set_hit_rect,
             get_prefs,
             move_by,
+            pet_leave,
+            pet_return,
+            pet_away_retry,
             drag_start,
             drag_move,
             drag_end,

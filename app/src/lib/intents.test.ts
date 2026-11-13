@@ -42,6 +42,8 @@ test("polite endings are taken off", () => {
   assert.equal(skillOf("消えてください"), "leave");
   assert.equal(skillOf("静かにね"), "quiet");
   assert.equal(skillOf("quay lại đi nha"), "return");
+  assert.equal(skillOf("luon di nhe"), "leave", "an ending typed without its diacritics");
+  assert.equal(skillOf("quay lai di nha"), "return");
 });
 
 test("full-width letters and the apostrophe of I'm back are folded", () => {

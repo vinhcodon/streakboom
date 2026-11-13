@@ -92,12 +92,15 @@ export function fold(text: string): string {
   return text.toLowerCase().normalize("NFD").replace(/\p{M}+/gu, "").replace(/đ/g, "d").normalize("NFC");
 }
 
+// the same endings without diacritics ("nhe" for "nhé"), for a message typed without them
+const VI_ENDINGS_FOLDED = new Set(VI_ENDINGS.map((e) => fold(e)));
+
 function stripEndings(t: string): string {
   let cur = t;
   for (let i = 0; i < 3; i++) {
     const words = cur.split(" ");
     const last = words[words.length - 1];
-    if (words.length > 1 && (VI_ENDINGS.includes(last) || EN_ENDINGS.includes(last))) {
+    if (words.length > 1 && (VI_ENDINGS.includes(last) || VI_ENDINGS_FOLDED.has(last) || EN_ENDINGS.includes(last))) {
       cur = words.slice(0, -1).join(" ");
       continue;
     }

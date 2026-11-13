@@ -4,6 +4,7 @@
   import { invoke } from "@tauri-apps/api/core";
   import { getVersion } from "@tauri-apps/api/app";
   import { channelOf, effectiveUpdateMode } from "$lib/channel";
+  import { AWAY_MINUTES, FAREWELL_BUBBLE_MS, LEAVE_WALK_MAX_MS, RETRY_SECS, isLeaveCommand, mayLeave, nearerEdge, pickFarewell } from "$lib/farewell";
   import { emitTo } from "@tauri-apps/api/event";
   import { getCurrentWebviewWindow } from "@tauri-apps/api/webviewWindow";
   import { onMount } from "svelte";
@@ -132,6 +133,11 @@
   let gaze = $state<{ x: number; y: number } | null>(null); // where the cursor is over the cat (eyes follow)
   let tilt = $state(0); // degrees the pet leans while it is carried (follows the cursor's speed)
   let quiet = $state(false); // "Quiet mode": pet sleeps and says nothing
+  // "Lượn đi" (spec 14, S2): Peak has walked off and its window is hidden until the timer in Rust runs out or the person shows it.
+  let away = false;
+  let leaving = false; // on the way out: the goodbye, then the walk to the edge
+  let awayWalkActive = false; // the next walk is the walk to the edge
+  let lastFarewell: string | null = null;
   let data = $state<PetData>(defaultData(Date.now()));
   let mem = $state<Memory>(defaultMemory()); // what the pet remembers (its own file, memory.json)
   let inputField = $state<MemField>("petName");
@@ -420,6 +426,7 @@
   }
 
   function showBubble(text: string, minMs = 0, exclaim = false) {
+    if (away) return; // its window is hidden: nothing is shown while it is away
     bubbleText = text;
     bubbleExclaim = exclaim;
     bubbleOn = true;
@@ -730,6 +737,11 @@
   let wakeThen: PetState | null = null; // what to do once the pet has finished waking up
 
   function enter(requested: PetState) {
+    // something else took over while it was leaving (picked up, touched, a hop, a fall): it does not leave
+    if (leaving && requested !== "walk" && requested !== "nod" && requested !== "idle" && requested !== "look") {
+      leaving = false;
+      awayWalkActive = false;
+    }
     if (requested === "held") {
       leavePerch(); // carried away: it is no longer where it perched
     }
@@ -771,6 +783,7 @@
 
   function scheduleNext() {
     clearTimeout(nextTimer);
+    if (away) return; // nothing moves or speaks while it is away
     nextTimer = setTimeout(pickNext, rand(4_000, 11_000));
   }
 
@@ -1244,6 +1257,7 @@
   }
 
   function startWalk() {
+    if (awayWalkActive) return runLeaveWalk();
     const plan = walkPlan;
     walkPlan = null;
     const leaving = plan !== null; // walking away from the user's work
@@ -1419,7 +1433,7 @@
   /** The window under the cat is gone: it startles (freeze, jolt, a cry), then falls to the ground below (or only startles when there is no room). */
   async function groundLost() {
     const now = Date.now();
-    if (quiet || panel !== null || flying || !mayReact(gate, EVENTS.ground_lost, now)) return;
+    if (quiet || away || panel !== null || flying || !mayReact(gate, EVENTS.ground_lost, now)) return;
     if (pose !== "idle" && pose !== "look" && pose !== "peek" && pose !== "ledge" && !isDozing(pose)) return; // a sleeping cat on a perch that goes is startled out of its sleep
     gate = startReaction(gate, EVENTS.ground_lost, now);
     await probeFocus(); // the mode at this moment decides whether it cries out
@@ -1596,6 +1610,7 @@
 
   // ---------------------------------------------------------------- panels
   function openPanel(p: Exclude<Panel, null>) {
+    if (away) return;
     if (pose === "walk") stopWalking();
     panel = p;
     resetMenuTimer();
@@ -1938,9 +1953,107 @@
     }
   }
 
+  // ---------------------------------------------------------------- "Lượn đi" (spec 14, story S2, ADR-0086)
+  // The person types a plain command to go away. Peak says one short goodbye, walks to the nearer side edge, leaves (Rust hides
+  // its window and starts a timer) and comes back after AWAY_MINUTES at the edge it left by, stretching and saying nothing; or
+  // at once when the person shows it from the tray. Only on a Preview build. Counted as `leave` and `callback`, apart from
+  // Bond Days. Nothing here is saved: after a restart Peak is simply on screen.
+  async function tryLeaveFromChat(text: string): Promise<boolean> {
+    if (!isLeaveCommand(text)) return false;
+    if (!ownVersion) ownVersion = await getVersion().catch(() => "");
+    if (!mayLeave({ channel: channelOf(ownVersion), quiet, held: pose === "held", flying, away, leaving })) return false;
+    void startLeave();
+    return true;
+  }
+
+  async function startLeave() {
+    leaving = true;
+    count("leave");
+    closePanel(); // the chat box goes
+    const line = pickFarewell(lang, lastFarewell);
+    lastFarewell = line;
+    showBubble(line, FAREWELL_BUBBLE_MS);
+    enter("nod");
+    await new Promise((r) => setTimeout(r, FAREWELL_BUBBLE_MS));
+    if (!leaving) return; // something took over (it was picked up, for example)
+    let roomLeft = 0;
+    let roomRight = 0;
+    try {
+      roomLeft = await invoke<number>("edge_room", { dir: -1 });
+      roomRight = await invoke<number>("edge_room", { dir: 1 });
+    } catch {
+      /* unknown: it walks right */
+    }
+    if (!leaving) return;
+    dir = nearerEdge(roomLeft, roomRight);
+    awayWalkActive = true;
+    enter("walk"); // startWalk sees awayWalkActive and runs the walk to the edge
+  }
+
+  /** The walk to the edge: straight on, at the usual pace, until the window cannot go further (or the time is up). */
+  function runLeaveWalk() {
+    const scale = window.devicePixelRatio || 1;
+    const fullStep = (WALK_SPEED * scale * WALK_TICK_MS) / 1000;
+    let ticks = 0;
+    let carry = 0;
+    walkTimer = setInterval(async () => {
+      try {
+        ticks++;
+        const s = takeSteps(carry, fullStep * rampIn(ticks * WALK_TICK_MS));
+        carry = s.carry;
+        if (s.move === 0) return;
+        const hitEdge = await invoke<boolean>("move_by", { dx: dir * s.move });
+        if (hitEdge) await finishLeave();
+      } catch {
+        await finishLeave();
+      }
+    }, WALK_TICK_MS);
+    walkEndTimer = setTimeout(() => void finishLeave(), LEAVE_WALK_MAX_MS);
+  }
+
+  async function finishLeave() {
+    if (!leaving || away) return;
+    clearInterval(walkTimer);
+    clearTimeout(walkEndTimer);
+    leaving = false;
+    awayWalkActive = false;
+    away = true; // from here nothing moves or speaks (scheduleNext, showBubble and the proactive line look at it)
+    enter("idle");
+    const left = await invoke<boolean>("pet_leave", { minutes: AWAY_MINUTES }).catch(() => false);
+    if (!left) {
+      away = false; // the window could not be hidden: Peak simply stays
+      scheduleNext();
+    }
+  }
+
+  /** The timer ran out. Peak comes back unless the person is in something full-screen or presenting; then it asks again later. */
+  async function onAwayDue() {
+    if (!away) return;
+    const busyNow = await invoke<boolean>("is_busy").catch(() => false);
+    if (busyNow) {
+      await invoke("pet_away_retry", { secs: RETRY_SECS }).catch(() => {});
+      return;
+    }
+    const back = await invoke<boolean>("pet_return").catch(() => false);
+    if (back) endAway(false);
+  }
+
+  /** Peak is back (the timer, or the person showed it): a stretch, no line. */
+  function endAway(byPerson: boolean) {
+    if (!away) return;
+    away = false;
+    leaving = false;
+    awayWalkActive = false;
+    if (byPerson) count("callback");
+    enter("wake");
+  }
+
   async function sendChat(raw: string) {
     const text = raw.trim();
-    if (!text || busy || !canChat) return;
+    if (!text) return;
+    // A plain command to go away is Peak's own business, not a message to the model: no key, no chat turn counted (spec 14, A5).
+    if (!busy && (await tryLeaveFromChat(text))) return;
+    if (busy || !canChat) return;
     const gate = aiGate(data, "chat", Date.now());
     if (gate !== "ok") {
       chatUser = text;
@@ -2225,6 +2338,7 @@
     const fo = await probeFocus();
     const blocked =
       quiet ||
+      away ||
       busyNow ||
       isNight(hour) ||
       pose === "held" ||
@@ -2428,6 +2542,8 @@
       cleanups.push(await win.listen<{ kind: string; on?: boolean }>("percept", (e) => onPercept(e.payload)));
       cleanups.push(await win.listen("bubble-ready", resendView));
       cleanups.push(await win.listen("settings-ready", pushSettings));
+      cleanups.push(await win.listen("away-due", () => void onAwayDue()));
+      cleanups.push(await win.listen("away-ended", () => endAway(true)));
       cleanups.push(await win.listen<SettingsPatch>("settings-patch", (e) => onSettingsPatch(e.payload)));
       cleanups.push(await win.listen<BrainChange>("brain-changed", (e) => onBrainChanged(e.payload)));
 
