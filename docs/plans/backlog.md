@@ -327,7 +327,7 @@ Why: the author wants Peak to notice and suggest instead of asking, and to answe
 
 | ID | Story | Size | Status | Depends on |
 |---|---|---|---|---|
-| AP-S0 | The phrase survey: a form and a sheet for the alpha people (phrases to send Peak away, call it back, put it to sleep; ordinary short chat lines), no private text | S | proposed; needs Vinh to send it | none |
+| AP-S0 | The phrase survey: a form and a sheet for the alpha people (phrases to send Peak away, call it back, put it to sleep; ordinary short chat lines), no private text | S | **form drafted 2026-11-13** (`adaptive-peak-survey.md`); needs Vinh to send it | none |
 | AP-S1 | The intent table as data and a pure matcher with tests, run offline on the two halves of the survey and the negative set; the verdict on H18 | S | proposed; needs Vinh's go for the module | AP-S0 |
 | AP-S2 | The smallest "Lượn đi" (tier 1, typed, walk to the edge, hide, timed return, call back from the tray, `is_busy` on the return, the leave counters), behind a test switch; the author looks at it before it is committed | M | proposed; needs Vinh's approval to code and the answers to Q1, N8, N9 | AP-S1 |
 | AP-S3 | The alpha reading of H18 and H19: tier counters, leave counters in "Copy stats", five end-of-week questions | S | proposed | AP-S2, roadmap R4 |
