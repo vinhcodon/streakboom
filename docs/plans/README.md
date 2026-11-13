@@ -54,6 +54,7 @@ The files are grouped here, not in folders (decided at gate 2 of the foundation 
 
 | File | What | Status |
 |---|---|---|
+| [`sticker-page-plan.md`](sticker-page-plan.md) | The sticker page as a picker: phase 0 (the chat table, the answers, Search Console), v0 (tags, search, favourites, permalinks, moderated tests) and v1 (counting if approved, HOT, tag pages, scale, Peak, PWA), each with its done criteria and how it is measured | proposed 2026-11-13 by the website session; **waiting for Vinh's approval**; spec 13 |
 | [`bond-days.md`](bond-days.md) | Implementing the north star counters: steps, files, risks, test plan, what could not be verified | built and released in 0.1.15; some checks not verified |
 
 Rules: each plan lists its steps in order, the files affected, the risks, the tests (automatic and by hand) and what could not be verified. No code for a plan starts before Vinh has approved it.
