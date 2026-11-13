@@ -74,7 +74,13 @@ export async function previousLedger({ url = `${ORIGIN}/downloads.json`, fetchFn
     throw new Error(`downloads: could not read the previous ledger (${e.message}); not publishing a total that may have lost its history`);
   }
   if (res.status === 404) return null;
-  if (!res.ok) throw new Error(`downloads: the previous ledger answered ${res.status}; not publishing a total that may have lost its history`);
+  if (!res.ok) {
+    // what answered, to tell the site's own host from something in front of it (a proxy that turns a build away): the server name, the ray id and the first words of the body
+    const h = (n) => res.headers?.get?.(n) || "-";
+    let body = "";
+    try { body = (await res.text()).replace(/s+/g, " ").slice(0, 160); } catch { /* no body to show */ }
+    throw new Error(`downloads: the previous ledger answered ${res.status} (server ${h("server")}, cf-ray ${h("cf-ray")}, cf-mitigated ${h("cf-mitigated")}, body "${body}"); not publishing a total that may have lost its history`);
+  }
   return checkLedger(await res.json());
 }
 
