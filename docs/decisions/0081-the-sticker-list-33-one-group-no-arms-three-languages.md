@@ -23,3 +23,6 @@ The website page must show 33 and has no tabs. The Zalo route (ADR-0049) would n
 
 ## Addendum (2026-11-13)
 Vinh asked for a "No idea" sticker, which the list lacked; "Không biết nha." (an empty thought bubble above a blank face) was added after "Để mình nghĩ…", so the list is **34**, not 33 (the file name of this ADR keeps the number it was written with).
+
+## Addendum 3 (2026-11-13)
+The caption stays **baked into the image** (not composed in the browser). A test showed no visible loss with a canvas (`docs/plans/sticker-list.md`, section 8), but the baked images are simpler (no font to load, nothing to draw before the copy button) and the stores need them anyway. "Tuyệt vời!" was drawn and dropped; the list stays at 34.
