@@ -14,6 +14,9 @@ The page has four regions: the search, the recent stickers (up to 10, only when 
 4. **Order:** search, recent (only when there is something), Peak's picks, all stickers. A first-time visitor sees the picks right under the search; a returning one sees their own first.
 5. **No sticky search on a phone:** the on-screen keyboard makes a fixed box jump. The confirmation after a copy was already a fixed box at the bottom of the screen, so it is seen wherever the tapped sticker is.
 
+## Amendment (2026-11-13, after Vinh saw it)
+Vinh saw three faults: the tiles of the recent row and of Peak's picks had different sizes on a wide screen (84 to 100 px and 108 to 124 px); a full row of 8 or 10 wrapped to a second line with one tile; and a desktop window narrowed to phone width showed a sideways scroll bar, which looks bad. Now: **one tile size for both rows** (up to 112 px, same on a phone: 88 px); **from 900 px 8 in one line, from 640 px 4 by 4** (8 is two full lines, never an orphan); the recent row **shows its first 8 on a wide screen** (10 are still kept and all 10 are swiped on a phone); the **scroll bar of the sideways line is hidden** (the cut last tile is the cue; a touch screen has no bar anyway). The tiles of the full list stay as they were.
+
 ## Consequences
 - The build checks the heading of the full list on all three languages.
 - **Not verified:** all widths come from the CSS and the built-in browser at phone width, not from a real phone (swipe feel, whether the cut tile reads as "more", 3 columns with the on-screen keyboard open, Android and iOS); the Vietnamese and Japanese heading texts have no native reader.
