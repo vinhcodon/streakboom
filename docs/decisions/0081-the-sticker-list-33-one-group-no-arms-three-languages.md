@@ -23,6 +23,3 @@ The website page must show 33 and has no tabs. The Zalo route (ADR-0049) would n
 
 ## Addendum (2026-11-13)
 Vinh asked for a "No idea" sticker, which the list lacked; "Không biết nha." (an empty thought bubble above a blank face) was added after "Để mình nghĩ…", so the list is **34**, not 33 (the file name of this ADR keeps the number it was written with).
-
-## Addendum 2 (2026-11-13)
-"Tuyệt vời!" (sunglasses, a toothy grin, a thumbs-up at each side; the first sticker with teeth) was added after "Ờ mây zing, gút chóp!": the list is **35**.

@@ -34,7 +34,7 @@ The files are grouped here, not in folders (decided at gate 2 of the foundation 
 | [`sticker-set-v1-direction.md`](sticker-set-v1-direction.md) | The direction for the second pass of the sticker set (about 29% sarcasm, the lounging and the curled cat) | the sticker session's file; decided in ADR-0050 |
 | [`sticker-expression-audit.md`](sticker-expression-audit.md) | The audit of how different the emotions of the sticker set are, and the choices that followed | the sticker session's file, 2026-11-11 |
 | [`sticker-packs-three-categories.md`](sticker-packs-three-categories.md) | The sticker packs in three categories of 20 (Cute, Friends, Office): the lists, the voice of each, and the first pass of the ten new Cute stickers | the sticker session's file; approved by the author on 2026-11-12 (its row was added by the app session during the documents audit) |
-| [`sticker-list.md`](sticker-list.md) | The author's list of 35 stickers in one list (the three-category split was dropped on 2026-11-12) | the sticker session's file; its row was added by the app session during the roadmap work |
+| [`sticker-list.md`](sticker-list.md) | The author's list of 34 stickers in one list (the three-category split was dropped on 2026-11-12) | the sticker session's file; its row was added by the app session during the roadmap work |
 
 ### Website (the website session's file)
 

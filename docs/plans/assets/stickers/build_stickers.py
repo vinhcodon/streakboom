@@ -1077,25 +1077,9 @@ def no_idea():
 
 ART["Không biết nha."] = (no_idea, dict(scale=2.3, dy=14))
 
-def awesome():
-    """"Tuyệt vời!": round black sunglasses with a gloss, a wide grin that bares a row of teeth, a thumbs-up fist at each side of the body.
-    (Peak's first teeth: a flat white band in the grin.) No arms."""
-    lens = "".join(f'<ellipse cx="{x}" cy="66" rx="14" ry="10" fill="{INK}"/><path d="M{x - 8} 63 l9 -4 M{x - 3} 69 l9 -4" stroke="#fff" stroke-width="2.2" stroke-linecap="round" opacity="0.75"/>' for x in (42, 78))
-    frame = f'<path d="M56 64 Q60 61 64 64 M28 62 l-8 -3 M92 62 l8 -3" fill="none" stroke="{INK}" stroke-width="2.4" stroke-linecap="round"/>'
-    mouth = (f'<path d="M40 80 Q60 106 80 80 Q60 88 40 80Z" fill="#7a2f3a"/>'
-             '<path d="M42.5 81.5 Q60 91 77.5 81.5 L75 90.5 Q60 99 45 90.5Z" fill="#fff"/>'
-             '<path d="M52 85.5 l0.6 9 M60 87 l0 9.6 M68 85.5 l-0.6 9" stroke="#d6d6d6" stroke-width="1" stroke-linecap="round"/>'
-             f'<path d="M40 80 Q60 88 80 80" fill="none" stroke="{MOUTH}" stroke-width="1.6" stroke-linecap="round"/>')
-    fists = (f'<g transform="translate(9,8) scale(1.1)">{thumbs_up(96, 98)}</g>'
-             f'<g transform="translate(111,8) scale(-1.1,1.1)">{thumbs_up(96, 98)}</g>')
-    return cat(STAND_F, dict(LOOK["rest"], lid=0.06, mouth="none", cheek=0.8, roll=2)) + lens + frame + mouth + fists + star(12, 34, 6, "#ffd166") + star(108, 30, 6, "#ffd166")
-
-
-ART["Tuyệt vời!"] = (awesome, dict(scale=2.3, dy=10))
-
 GROUPS = [
     ("Chào hỏi và ngày tháng", [("Chào buổi sáng!", None), ("Ngủ ngon.", None), ("Buồn ngủ…", None), ("Thứ Sáu rồi!", None)]),
-    ("Yêu thương và lời tử tế", [("Thương quá!", "Yêu quá!"), ("Cảm ơn nha!", None), ("Xin lỗi nhé.", None), ("Chúc mừng nha!", None), ("Sinh nhật vui!", "Sinh nhật vui vẻ!"), ("Cố lên nha!", None), ("Ờ mây zing, gút chóp!", None), ("Tuyệt vời!", None)]),
+    ("Yêu thương và lời tử tế", [("Thương quá!", "Yêu quá!"), ("Cảm ơn nha!", None), ("Xin lỗi nhé.", None), ("Chúc mừng nha!", None), ("Sinh nhật vui!", "Sinh nhật vui vẻ!"), ("Cố lên nha!", None), ("Ờ mây zing, gút chóp!", None)]),
     ("Vui và phấn khích", [("Haha!", None), ("Sướng quá~", None), ("Hì hì.", None), ("Meo~", None), ("Ú òa!", None), ("Đi chơi đi!", None), ("Hóng!", None)]),
     ("Buồn và lo", [("Huhu…", None), ("Deadline!", None)]),
     ("Bất ngờ và nghi ngờ", [("Ơ!", None), ("Ủa?", None), ("Để mình nghĩ…", None), ("Không biết nha.", None)]),
@@ -1148,7 +1132,6 @@ V2 = [
     (("Sinh nhật vui vẻ", "Happy birthday", "お誕生日"), ("đội nón tiệc, cây nến sáng trên miếng bánh", "wearing a party hat, a lit candle on a cake", "パーティーハットをかぶり、火のついたろうそくのケーキがある"), ("Happy birthday!", "お誕生日おめでとう！")),
     (("Cố lên", "You got this", "がんばって"), ("băng đô đỏ, hai chân nắm lại trước ngực, tia sáng", "a red headband, paws held at the chest, sparks", "赤いはちまきをして、両手を胸の前で握っている"), ("You got this!", "がんばって！")),
     (("Ờ mây zing", "Amazing", "アメイジング"), ("mắt hình ngôi sao, miệng há ra kinh ngạc, tia sáng vàng tỏa phía sau", "star-shaped eyes, mouth open in awe, golden rays bursting behind", "目が星になって口を開け、後ろに金色の光が広がっている"), ("Amazing, good job!", "アメイジング！グッジョブ！")),
-    (("Tuyệt vời", "Awesome", "最高"), ("đeo kính đen, cười toe để lộ răng, giơ ngón cái ở hai bên", "wears black sunglasses, grins showing its teeth, a thumbs-up on each side", "黒いサングラスで歯を見せて笑い、両側で親指を立てている"), ("Awesome!", "最高！")),
     (("Haha", "Haha", "あはは"), ("cười lớn, nước mắt vui", "laughs out loud with tears of joy", "涙を浮かべて大笑いしている"), ("Haha!", "あはは！")),
     (("Sướng quá", "Bliss", "きもちいい"), ("nhắm mắt sung sướng, được gãi đầu", "eyes shut in bliss, being scratched", "うっとり目を閉じて頭をなでられている"), ("So good~", "きもちいい〜")),
     (("Hì hì", "Hehe", "ふふっ"), ("khúc khích sau bàn chân", "giggles behind a paw", "手で口をおさえてくすくす笑っている"), ("Hehe.", "ふふっ。")),
