@@ -34,6 +34,11 @@ Summarise what changed, list what you did not verify (the state on the Pages hos
 
 ---
 
+## 0.6.0 (the first Stable after two Preview builds, published 2026-11-13): nothing to change on the site
+- **The Pages build:** the README only changed its status line (v0.6.0); `CHANGELOG.md` has a new first entry whose first sentence is the short bold **"Nothing you can see changes."** (the home page shows it); `tauri.conf.json` says 0.6.0, so the build's check that a release `v0.6.0` is published (ADR-0065) passes once it is. **Between the push of the version files and the publishing of the release, the Pages build is red on purpose** (the same accepted flow as before); the push of the update manifest that follows deploys it.
+- **Behaviour to know about:** none visible. Two release channels now exist (ADR-0090, ADR-0093, spec 16): a Stable has an even middle number (this one), a Preview an odd one. **Previews are GitHub pre-releases and must never become the download, the version or the changelog on the site**; `releases/latest` skips them (tried on 2026-11-13). Their notes are in `CHANGELOG-preview.md`, which the site must not read. The note `website-preview-channel.md` has the details.
+- **GitHub keeps the newest two releases of each channel:** Stable `v0.6.0` and `v0.4.2` (`v0.4.1` is deleted when 0.6.0 is published); Preview `v0.7.0` and `v0.5.1`.
+
 ## 0.4.2 (a small patch, published 2026-11-13): nothing to change on the site
 - **The Pages build stays green:** the README only changed its status line (v0.4.2). The behaviour of the app is the same as 0.4.1; the installer now also installs `THIRD-PARTY-NOTICES.md` next to the program. It is the first release built by GitHub's CI (finished on the author's computer); it is still not code-signed, so the honest "Code signing policy" wording stays.
 - **GitHub keeps the newest two releases:** `v0.4.2` and `v0.4.1` (`v0.4.0` is deleted when 0.4.2 is published).

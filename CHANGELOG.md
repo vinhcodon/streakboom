@@ -2,6 +2,11 @@
 
 Release notes of every version of Streakboom, newest first. **GitHub keeps the latest release and the one right before it** (installer and update manifest; the previous one is a way back if the newest is bad); when a new version is published, anything older is deleted together with its tag and its notes stay here (ADR-0028). The git history keeps every commit.
 
+## 0.6.0 (2026-11-13)
+- **Nothing you can see changes.** This version finishes the groundwork for two kinds of builds: Stable (this one, for everyone) and Preview (a build for a few testers). The program now knows which one it is from its version number, and a Preview says so beside the version in Settings, About. A Stable copy keeps reading the same update file as before.
+- Behind the scenes, the way releases are built, published and updated was reworked and tried on two Preview builds (0.5.0 and 0.5.1); this is the first Stable built after that.
+- Not yet tried: updating a Stable copy from 0.4.2 to this version inside the app.
+
 ## 0.4.2 (2026-11-13)
 - **The licenses of the open-source packages now travel with the program.** `THIRD-PARTY-NOTICES.md`, the license notices of the Rust crates and the JavaScript packages that Streakboom is built from, is installed next to the program, as their licenses ask. Nothing else changes for you: Peak behaves as in 0.4.1.
 - This version is built by GitHub's CI from the public source and finished on the author's computer (the update signature is added there). The installer is still not code-signed.
