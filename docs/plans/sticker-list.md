@@ -30,7 +30,7 @@ Status: **approved by Vinh on 2026-11-12 (31 stickers, the English and Japanese 
 | 21 | Ơ! | now, redrawn | a real shock: eyes white with tiny pupils, the mouth wide open, the body leaning back, shock lines (so it differs from "Ủa?") |
 | 22 | Ủa? | new | |
 | 23 | Để mình nghĩ… | now | |
-| 24 | **Không biết nha.** | new | "No idea": a blank, dazed face with a flat mouth and an empty thought bubble of three growing circles above the head (Vinh's choice A of three, 2026-11-13) |
+| 24 | **Không biết nha.** | new | "No idea": the shrug of the usual "I have no idea" emoji: eyes glancing aside, uneven brows (one raised), a sheepish closed smile, both paws open at the sides of the body, pads up (Vinh sent the emoji; the first version, an empty thought bubble, looked too much like "Để mình nghĩ…" and was replaced the same day) |
 | 25 | **Còn lâu!** | new, redrawn | the "lêu lêu" face: both lower eyelids pulled down (red crescents under the eyes) and a short tongue stuck out (the first try had a long tongue and a wink and did not read as "lêu lêu") |
 | 26 | Gớm! | new | |
 | 27 | Xỉu ngang! | new | |

@@ -1068,11 +1068,12 @@ ART["Ý kiến hay."] = (meme_idea, dict(scale=2.3, dy=12))
 ART["Ờ mây zing, gút chóp!"] = (meme_amazing, dict(scale=2.3, dy=12))
 
 def no_idea():
-    """"No idea": a blank, dazed face (flat mouth) and an empty thought bubble of three growing circles above the head. No arms."""
-    grey, white = "#b8c2cc", "#ffffff"
-    circles = ((28, 44, 2.6), (35, 34, 4.2), (48, 17, 11.5))
-    bub = "".join(f'<circle cx="{x}" cy="{y}" r="{r + 1.3}" fill="{grey}"/>' for x, y, r in circles) + "".join(f'<circle cx="{x}" cy="{y}" r="{r}" fill="{white}"/>' for x, y, r in circles)
-    return cat(STAND_F, dict(LOOK["rest"], wide=0.2, mouth="flat", cheek=0.4, roll=4, dy=4, gx=1)) + bub
+    """"No idea", the shrug of the usual emoji: eyes glancing aside, the brows uneven (one raised), a sheepish closed smile and both paws open at the
+    sides of the body, pads up. No arms. (The first version, an empty thought bubble, looked too much like "Để mình nghĩ…".)"""
+    brows = stroke_path("M33 53 Q42 47 52 52", INK, 2.6) + stroke_path("M69 45 Q79 36 90 44", INK, 2.6)
+    smile = stroke_path("M48 85 Q58 91 68 83", MOUTH, 2.2)
+    return (cat(STAND_F, dict(LOOK["rest"], wide=0.3, gx=5, gy=0, mouth="none", cheek=0.6, roll=-3, dy=1)) + brows + smile
+            + paw(14, 92, 11, 13, -80, True) + paw(106, 92, 11, 13, 80, True) + arcs("M3 74 q-3 6 0 12", "M117 74 q3 6 0 12"))
 
 
 ART["Không biết nha."] = (no_idea, dict(scale=2.3, dy=14))
