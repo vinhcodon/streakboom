@@ -1,6 +1,6 @@
 # ADR-0071: Roadmap version 2: the closed alpha first, a signed installer before it, the lawyer after it
 
-- **Status:** accepted (answered by the author on 2026-11-12); not yet carried out; **point 3 amended by ADR-0072** (SignPath only, the alpha runs unsigned)
+- **Status:** accepted (answered by the author on 2026-11-12); not yet carried out; **point 3 amended by ADR-0072** (SignPath only, the alpha runs unsigned); **the alpha itself moved to the end of the plan by ADR-0087** (2026-11-13)
 - **Date:** 2026-11-12
 - **Decided by:** Vinh (author), with Claude (the app session)
 

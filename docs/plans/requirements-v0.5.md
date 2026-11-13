@@ -77,7 +77,7 @@ The handoffs asked for `spec/08-adaptive-peak.md`, `spec/08-customization.md` an
 
 ### Contradictions and conflicts of order
 1. **Voice against the roadmap.** Roadmap v2 puts voice outside the alpha ("waiting for the alpha's answer or a legal gate") and the foundation (ADR-0059) allows it only after the legal gate; spec 14's plan puts it last, which agrees, but the adaptive handoff lists it as R5 with an order "Vinh decides". **Settled 2026-11-13 (ADR-0086): the hotkey and voice come after the alpha and the lawyer.**
-2. **The alpha against the adaptive test build.** The alpha is planned on the unsigned **0.4.2** installer. Reading H19 (step S3) needs a build with "Lượn đi" and its counters. **Settled 2026-11-13 (ADR-0086): the alpha stays on 0.4.2; S0 and S1 run beside it; S2 is for the author alone; a build with the skill is the second round.**
+2. **The alpha against the adaptive test build.** *(Superseded the same day by ADR-0087: the alpha is the last item and runs on whatever version is current when the author calls it.)* The alpha was planned on the unsigned **0.4.2** installer. Reading H19 (step S3) needs a build with "Lượn đi" and its counters. **Settled 2026-11-13 (ADR-0086): the alpha stays on 0.4.2; S0 and S1 run beside it; S2 is for the author alone; a build with the skill is the second round.**
 3. **One budget of unprompted moments.** Peak's unprompted slot (10 to 15 minutes, `free` or `play` only) is already used by lines, the name question, the start-with-Windows question, milestones, the update offer and up to 6 brain remarks a day. The adaptive suggestions (spec 14), the skin question (spec 15) and any later offer all want it. **They share one weekly limit** (settled 2026-11-13, ADR-0086), or Peak would break charter article 2; spec 14 section 8 holds the rule.
 4. **Permalinks and tag pages.** The sticker handoff asks for them; ADR-0083 (the author's answer) says no for now. Not a contradiction but a record: the handoff is out of date here.
 5. **A dial of dryness against "few settings".** The customization handoff's R4 is a dial; the charter forbids a setting for an amount of behaviour. Resolved by making it internal (spec 15); `gentle` stays because it is a value Peak cannot infer.
@@ -102,12 +102,14 @@ The handoffs asked for `spec/08-adaptive-peak.md`, `spec/08-customization.md` an
 
 ## 7. The order of work
 
-1. **Now, no code:** send the phrase survey (S0, with the colour question 8); fill the sticker matrix by hand; read the Search Console status of the site.
-2. **With the alpha (R4) on 0.4.2:** collect the answers; Vinh sets nothing further (the H18 and H19 thresholds are already set).
-3. **After the answers, with Vinh's go:** S1 (the offline table), C2 (the palette proof), then S2 (the smallest "Lượn đi", for the author alone).
-4. **Second alpha round, if H18 and H19 hold:** the skill build, the leave counters, then the model tag (H20) and the colour question in the app (C4).
-5. **After the alpha and the lawyer:** the learned places and suggestions, the hotkey spike, voice with its ADR, accessories and the dryness dial.
-6. **In parallel, as before:** the second CI release (CI-3), then the SignPath application (AP-1); the second CI release needs a change worth releasing.
+*(Reordered on 2026-11-13, ADR-0087: the closed alpha and the SignPath application are the last items, with no date.)*
+
+1. **Now, alone, no people:** the checks of R2 and R3 on the author's own machines (the stats script, the guardrails, his own baseline, the CPU, the second monitor); fill the sticker matrix by hand; read the Search Console status of the site.
+2. **With Vinh's go for each step:** the pure matcher and its tests (S1's module), the palette proof (C2), the wiring of `is_busy` to movement (AP-08), then the smallest "Lượn đi" for the author alone (S2).
+3. **Releases as they come:** each one ordered by name and built by CI as 0.4.2 was; the second CI release is not a goal on its own.
+4. **Later, when the author calls the alpha:** the phrase survey (S0, written, not sent) and the colour question, then the alpha on the current version, with the freeze of new behaviour starting that day; the readings of H18 and H19 (S3) and the demand for skins (C1, C3, C4).
+5. **Last:** the SignPath application (AP-1) and setup (SP-1); then R5 (decide) and R6 (the lawyer, then anything public).
+6. **After the alpha and the lawyer:** the learned places and suggestions, the hotkey spike, voice with its ADR, accessories and the dryness dial.
 
 ## Not verified
 

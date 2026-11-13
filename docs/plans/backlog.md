@@ -9,7 +9,7 @@ Status: **proposed 2026-11-08, asked by Vinh to be carried out story by story.**
 4. **Done means:** tests for the pure logic, the spec and README updated in the same commit, the engineering-log entry saying what was **not** verified **and the same items added to [`verification-debt.md`](verification-debt.md)** (the one list of everything built but not yet checked; tick or remove a row when it is checked), explicit-path commit (ADR-0023). Behavior the website describes also gets the website session told (README, Release and auto-update, step 1). A release is a separate step the author orders.
 5. Statuses: `done`, `doing`, `ready` (can start), `needs Vinh` (a decision or an action only Vinh can do), `blocked` (waits for something named), `later`.
 
-## Progress (2026-11-12, version 0.4.1; counts exclude stories merged into others)
+## Progress (2026-11-13, version 0.4.2; counts exclude stories merged into others)
 
 | Epic | Quality | Done / stories | Where it stands |
 |---|---|---|---|
@@ -104,7 +104,7 @@ Open question for CO-3: the "rest rhythm" idea (using the habit counts for more 
 | ME-1 | Save the author's own "Copy stats" as a personal baseline (the earlier counters were wiped) | S | ready (consent must be on) | |
 | ME-2 | Verify what was not verified: the `chat` counter with a real chat, `quiet`, midnight rollover, the exported JSON on the clipboard, a fresh install's consent card | S | ready | |
 | ME-3 | A small script that computes BD7, D3, D7 and the engagement rate from a folder of exports | S | ready | |
-| ME-4 | The alpha kit: who to recruit, an install guide, the observation protocol (with a question about liking the character), how testers send their stats, a consent explanation | M | ready | |
+| ME-4 | The alpha kit: who to recruit, an install guide, the observation protocol (with a question about liking the character), how testers send their stats, a consent explanation | M | **later: written when the alpha is called (ADR-0087)** | |
 | ME-5 | Run the closed alpha with 5 to 10 first-time users and write the baseline (Phase 5) | L | blocked (Phase 4, ME-3, ME-4) | |
 | ME-6 | Set thresholds for the north star and the guardrails from the baseline | S | blocked (ME-5) | ME-5 |
 
@@ -301,13 +301,13 @@ Why: the closed alpha is the next real gate (roadmap R4). This epic holds the st
 | CP-4 | Ship a `THIRD-PARTY-NOTICES` file (generated in the build) in the installer and the repository: MIT, Apache-2.0 and BSD ask that their notices travel with a binary; not a SignPath condition but a duty (`dependency-licenses.md`) | S | done 2026-11-12 (`scripts/gen-third-party-notices.mjs`, `THIRD-PARTY-NOTICES.md`, installed next to the program through `bundle.resources`, kept current by the audit); the installer content is checked by a test build (V-119) | CP-3 |
 | CI-1 | `.github/workflows/release.yml`: on a version tag, checks, tests, the NSIS installer built on a GitHub-hosted runner without the updater key, uploaded as an artifact, a draft release; a first run by hand; the signing step is added after approval (SP-1) | M | built and **rehearsed on GitHub 2026-11-12** (run 43254985466: the build job passed in about 12 minutes and made the installer artifact; the draft-release job has not run, it needs a real tag; the YAML mistake found on the first push is V-118); the installer from CI was not yet installed and run | |
 | CI-2 | `scripts/release-finish.ps1`: download the draft release's installer, check its signature when signing is on, sign it with the updater key, write `latest.json`, publish, push the manifest, prune; reusing `release.ps1` and `release-lib.ps1`; `release.ps1` stays as the fallback | M | built 2026-11-12 (`scripts/release-finish.ps1`, `scripts/updater-verify`, helpers and tests in `release-lib.ps1`); steps 1 to 4 rehearsed on the published 0.4.1 release with the real key (SHA-256 equal, the new signature VALID against the app's public key, a tampered copy refused); **the draft-release download and the publish part were not run** | CI-1 |
-| CI-3 | Two real releases built by CI and finished with CI-2 (each ordered by the author) | M | **1 of 2 done: 0.4.2 (2026-11-13)**; one more | CI-2 |
+| CI-3 | Two real releases built by CI and finished with CI-2 (each ordered by the author) | M | **1 of 2 done: 0.4.2 (2026-11-13)**; the second comes with the next release worth publishing, not on purpose (ADR-0087) | CI-2 |
 | CP-2 | A note to the website session: the "Code signing policy" section on the home and download pages (honest wording until approval) and the privacy link | S | done 2026-11-12 by the website session (ADR-0076, W-48: the home page in three languages and a pointer under the Download button; checked on a built copy, **the live site not yet looked at by us**) | CP-1 |
-| AP-1 | Apply to SignPath Foundation (<https://signpath.org/apply>) with the evidence of reputation; the author confirms GitHub 2FA first | S | needs Vinh, after CI-3 and CP-2 | CI-3, CP-2 |
-| SP-1 | After approval: the SignPath project, artifact configuration, release signing policy with manual approval, the trusted GitHub build system, the API token as a GitHub secret only, the signing step in CI-1, the first signed release, the exact attribution line; then a clean-machine install of the signed build | M | blocked (AP-1) | AP-1 |
+| AP-1 | Apply to SignPath Foundation (<https://signpath.org/apply>) with the evidence of reputation; the author confirms GitHub 2FA first | S | **deferred to the end by the author (ADR-0087), no date**; he says when | CI-3, CP-2 |
+| SP-1 | After approval: the SignPath project, artifact configuration, release signing policy with manual approval, the trusted GitHub build system, the API token as a GitHub secret only, the signing step in CI-1, the first signed release, the exact attribution line; then a clean-machine install of the signed build | M | blocked (AP-1, which is deferred to the end, ADR-0087) | AP-1 |
 | GR-1 | The guardrails beyond chat share, from what is counted: the share of use at night (23:00 to 05:00) and the long tail of active minutes, in the opt-in local stats and the script of ME-3 | M | ready | |
-| AL-1 | A plain consent text for the alpha testers (what is collected, by hand through Copy stats, they can stop and have it deleted), in Vietnamese | S | ready | ME-4 |
-| AL-2 | What is done about the foundation's call for consent of its own and an outside reviewer for a small test among acquaintances, and what a lawyer must still say (`foundation/legal-questions.md`, items 8 and 9) | S | ready | AL-1 |
+| AL-1 | A plain consent text for the alpha testers (what is collected, by hand through Copy stats, they can stop and have it deleted), in Vietnamese | S | **later: with the alpha kit (ADR-0087)** | ME-4 |
+| AL-2 | What is done about the foundation's call for consent of its own and an outside reviewer for a small test among acquaintances, and what a lawyer must still say (`foundation/legal-questions.md`, items 8 and 9) | S | **later: with the alpha kit (ADR-0087)** | AL-1 |
 | CS-1 | A strict Content-Security-Policy for the three windows, tried on each (V-113) | S | ready | |
 
 ## E16. The sticker test on Zalo (spec/06 section 7, plan `sticker-test.md`, ADR-0049)
@@ -328,10 +328,10 @@ Why: the author wants Peak to notice and suggest instead of asking, and to answe
 
 | ID | Story | Size | Status | Depends on |
 |---|---|---|---|---|
-| AP-S0 | The phrase survey: a form and a sheet for the alpha people (phrases to send Peak away, call it back, put it to sleep; ordinary short chat lines), no private text | S | **form drafted 2026-11-13** (`adaptive-peak-survey.md`); needs Vinh to send it | none |
+| AP-S0 | The phrase survey: a form and a sheet for the alpha people (phrases to send Peak away, call it back, put it to sleep; ordinary short chat lines), no private text | S | **form drafted 2026-11-13** (`adaptive-peak-survey.md`); **not to be sent until the author calls the alpha (ADR-0087)** | none |
 | AP-S1 | The intent table as data and a pure matcher with tests, run offline on the two halves of the survey and the negative set; the verdict on H18 | S | proposed; needs Vinh's go for the module | AP-S0 |
 | AP-S2 | The smallest "Lượn đi" (tier 1, typed, walk to the edge, hide, timed return, call back from the tray, `is_busy` on the return, the leave counters), behind a test switch; the author looks at it before it is committed | M | proposed; needs Vinh's approval to code and the answers to Q1, N8, N9 | AP-S1 |
-| AP-S3 | The alpha reading of H18 and H19: tier counters, leave counters in "Copy stats", five end-of-week questions | S | proposed | AP-S2, roadmap R4 |
+| AP-S3 | The alpha reading of H18 and H19: tier counters, leave counters in "Copy stats", five end-of-week questions | S | **later: needs the alpha (ADR-0087)** | AP-S2, roadmap R4 |
 | AP-S4 | The skill tag (`skills.md` layer, one parser) and the harness of labelled messages per brain; the verdict on H20 | M | proposed; Q7 and N3 | AP-S3 |
 | AP-S5 | Later: local behaviour counters and suggestions (H17, H22), the hotkey spike (H21), the recording with its own ADR | L | not started; after the answers to S1 to S3 | AP-S4 |
 
@@ -341,7 +341,7 @@ Why: different people like Peak in different ways; one Peak with a few surface l
 | ID | Story | Size | Status | Depends on |
 |---|---|---|---|---|
 | CU-C0 | Read the code for every colour and every anchor (H24 on paper) | S | done 2026-11-13 (`spec/15-customization.md` section 2) | none |
-| CU-C1 | The colour question in the alpha form (question 8) and three recoloured character sheets for a look | S | question written into the form; sheets not drawn | AP-S0 |
+| CU-C1 | The colour question in the alpha form (question 8) and three recoloured character sheets for a look | S | question written into the form; sheets not drawn; **the asking waits for the alpha (ADR-0087)** | AP-S0 |
 | CU-C2 | The palette proof: a `Palette` parameter in `draw.ts`, `skins.ts`, a pixel comparison that the default is unchanged, a contrast test | M | proposed; needs Vinh's approval to code | CU-C1 |
 | CU-C3 | Sticker variants in the new colours (the website session builds the page part) and the choice as a demand signal | M | proposed | CU-C1 |
 | CU-C4 | Ask once in the app: the choice card with swatches, counts of chosen and not now | S | proposed; shares the weekly limit with the adaptive suggestions | CU-C2 |

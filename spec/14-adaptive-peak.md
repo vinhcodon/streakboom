@@ -84,7 +84,7 @@ Known gap: `is_busy` is today used only before an unprompted line and before an 
 
 **Lines.** A new pool of goodbye and return lines in the three languages, under the existing banned-patterns test: no guilt, no counting of time away, no "missed you", no reproach, no "come back soon" (a character that needs the person is forbidden).
 
-**To decide (Vinh):** how long it stays away, and how it is called back (Q1). **Cost:** no new art; the walk, the nod, the hide and a timer.
+**Decided (Vinh, 2026-11-13, ADR-0086):** it stays away **20 minutes** and is called back at once with the tray (Show). **Cost:** no new art; the walk, the nod, the hide and a timer.
 
 **What is measured:** leaves a day; returns by timer against calls back by the person; the same person's Quiet starts and hides before and after; Bond Days of leavers against non-leavers. All as counts, and **separate from Bond Days** (A5).
 

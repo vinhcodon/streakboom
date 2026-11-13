@@ -1,6 +1,6 @@
 # Adaptive Peak, step S0: the phrase survey (the form, the sheet, how it is read)
 
-**Status:** drafted 2026-11-13, **ready for Vinh to send**; nothing has been sent and no answer exists. Part of [`adaptive-peak-plan.md`](adaptive-peak-plan.md) (step S0); it feeds step S1 and the verdict on H18. **No app code is involved.**
+**Status:** drafted 2026-11-13, **kept ready; not to be sent until the author calls the alpha (ADR-0087)**; nothing has been sent and no answer exists. Part of [`adaptive-peak-plan.md`](adaptive-peak-plan.md) (step S0); it feeds step S1 and the verdict on H18. **No app code is involved.**
 
 **What it is for.** To learn what people really type when they want to send Peak away, call it back or put it to sleep, so that a table of phrases can be written from real words, and tested on words it has not seen. Invented phrases (including ones written by a model) would only test the author's imagination.
 

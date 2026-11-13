@@ -27,7 +27,7 @@ So today there are three different "less of Peak": **Quiet** (on screen, asleep,
 
 **Cost summary:** small, no animation work, about the size of Quiet mode plus a timer. The expensive things in the handoff (a phone to the ear, going to a favourite spot to sleep, a transformation) are not part of the first slice and are costed in the spec.
 
-**Vinh decides:** how long Peak stays away, and how the person calls it back (Q1 of the handoff). Facts for the choice: a hidden window cannot be clicked and has no chat, so the only calls available now are the tray icon and the tray menu; a global hotkey would add one (item 4) but is not built and is not part of the first slice.
+**Decided later the same day (ADR-0086):** Peak stays away 20 minutes and the person calls it back at once with the tray (Q1 of the handoff). Facts for the choice: a hidden window cannot be clicked and has no chat, so the only calls available now are the tray icon and the tray menu; a global hotkey would add one (item 4) but is not built and is not part of the first slice.
 
 ## 2. The local intent table: structure, coverage, ambiguity
 

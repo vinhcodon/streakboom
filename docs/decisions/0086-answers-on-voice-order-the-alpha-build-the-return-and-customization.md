@@ -1,6 +1,6 @@
 # ADR-0086: Answers on the order of voice, the alpha build, the return from "Lượn đi", the shared budget and customization
 
-- **Status:** accepted (answered by the author on 2026-11-13 as multiple choice); amends nothing; completes the open questions of [`../../spec/14-adaptive-peak.md`](../../spec/14-adaptive-peak.md) and [`../../spec/15-customization.md`](../../spec/15-customization.md). **No code is approved by it.**
+- **Status:** accepted (answered by the author on 2026-11-13 as multiple choice); **point 2 (the alpha runs on 0.4.2) is replaced by ADR-0087** (the alpha runs on whatever version is current when the author calls it); completes the open questions of [`../../spec/14-adaptive-peak.md`](../../spec/14-adaptive-peak.md) and [`../../spec/15-customization.md`](../../spec/15-customization.md). **No code is approved by it.**
 - **Date:** 2026-11-13
 - **Decided by:** Vinh (author), recorded by Claude (the app session)
 
