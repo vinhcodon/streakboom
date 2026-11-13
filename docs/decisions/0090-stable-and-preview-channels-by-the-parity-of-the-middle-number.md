@@ -22,4 +22,4 @@ The author wants to keep building features and let a few adults try them (ADR-00
 - ADR-0089's open question (the build channel) is closed by this record.
 - The website session is told (handoff note) that Preview releases are pre-releases and never the download, and that their notes are not in `CHANGELOG.md`.
 - A person on Preview cannot be moved down to Stable by the updater (it never downgrades); they wait for the next Stable or install it by hand.
-- Not verified, listed in `verification-debt.md`: that the NSIS installer installs over a higher or lower version, that the updater's comparison offers 0.5.x to 0.6.0 and not 0.4.x to 0.5.x, and that `releases/latest` ignores pre-releases as GitHub documents.
+- **PV-0 (2026-11-13):** the NSIS installer installs a lower version over a higher one silently, with the data untouched; the updater offers a release only if its version is greater (semver), so Preview and Stable must keep **separate manifests** and `preview.json` must show the newest release of both channels (plan, PV-0 results). Still **not tried**: that `releases/latest` ignores a published pre-release (GitHub's REST documentation says it does).

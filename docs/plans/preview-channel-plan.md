@@ -18,8 +18,21 @@
 | PV-7 | **A Stable fix while `main` carries unfinished work.** A release branch of the Stable line (for example `stable-0.4`), the check "the tag is on main" relaxed for it, and a rule that the fix is merged forward | Yes (workflow) | M | Needed only the day a Stable fix cannot wait for `main` |
 | PV-8 | **Docs in the same commit as each step:** `releasing.md`, `PROJECT.md`, `README.md` (a line on the two channels, and the install guide's link to Preview, which the site shows only if Vinh decides), `CONTRIBUTING.md` | Docs | S | The documents stay true |
 
+## PV-0 results (2026-11-13)
+
+| Question | Result | How it was found |
+|---|---|---|
+| How does the updater compare versions? | `release.version > current_version` as **semver** (`tauri-plugin-updater` 2.14.1, `update_from_release`), after stripping a leading `v`. So 0.5.x is offered 0.5.x+1 and 0.6.0; 0.4.x is offered 0.4.x+1 and 0.6.0 **if its manifest lists them**. The plugin also has an `allowDowngrades` behaviour, which we do not use. | Read the plugin source in the cargo registry; not run |
+| Does the NSIS installer install a **lower** version over a higher one? | **Yes, silently.** 0.4.1 (the CI rehearsal build) over 0.4.2: exit code 0, installed exe and the uninstall entry both became 0.4.1; then 0.4.2 over 0.4.1 the same way. `pet.json`, `memory.json` and `state.json` kept their size and time. A left-over `THIRD-PARTY-NOTICES.md` stayed after the downgrade (harmless). `tauri-utils` documents `allowDowngrades` as defaulting to true; it is not set in `tauri.conf.json`. | A script run on the author's computer (`dist/pv0-nsis-check.ps1`), then the app was started again (one process) |
+| Does `releases/latest` skip a pre-release? | **GitHub's REST documentation says yes:** "the most recent non-prerelease, non-draft release". **Not tried:** the throwaway pre-release that would prove it (and the web address `/releases/latest`, which the updater's second address and the website's button use) was refused by the permission check as a public surface; Vinh decides whether to allow it. | Documentation only |
+
+### What PV-0 changes in the plan
+1. **The manifest of a Preview must show the newest release of both channels.** The updater takes the first address that answers; it does not choose the highest. So `updates/preview.json` is rewritten at **every** publish, Preview or Stable, to the newest manifest overall (a Preview line leads to the next Stable, so after 0.6.0 is published `preview.json` says 0.6.0, and the next Preview 0.7.0 is higher). A Preview user on 0.5.3 is then offered 0.5.4 or 0.6.0, as the principle says. PV-4 must do this.
+2. **A Preview's addresses:** the repository copy `updates/preview.json` first and the Stable address (`releases/latest/download/latest.json`) second. The second can only offer a Stable that is newer than the Preview in hand. A Preview release has no `latest.json` asset of its own at a stable address, so it has no release-asset fallback; the raw file is the single address, and its outage means no Preview update that day. PV-1 must keep this in mind.
+3. **Going back from Preview to Stable by hand works** (a lower version installs silently over a higher), so the "wait for the next Stable" rule in ADR-0090 is a convenience, not a limit. The data files are left as they are, which is why the additive-only rule matters.
+
 ## Order and gates
-PV-0 first (it can kill or change the plan), then PV-1 and PV-2 together, then PV-3 and PV-4, then PV-5, then PV-6. PV-7 only when needed. **Gate:** after PV-6 the author decides whether to hand the Preview installer to anyone (adults only, ADR-0089).
+PV-0 (**done**, one point left: the pre-release proof) first, then PV-1 and PV-2 together, then PV-3 and PV-4, then PV-5, then PV-6. PV-7 only when needed. **Gate:** after PV-6 the author decides whether to hand the Preview installer to anyone (adults only, ADR-0089).
 
 ## Risks
 - **`releases/latest` choosing a Preview** if one is published without the pre-release flag: the first rehearsal checks it, and the publish step refuses an odd-minor tag without it.
