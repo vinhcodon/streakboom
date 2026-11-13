@@ -461,6 +461,7 @@ export function stickersPage(lang, ctx) {
 ${popular}
         </ul>
       </div>
+      <h2 id="sticker-all" class="sticker-all">${s("st_all")} (${set.stickers.length})</h2>
       <ul class="sticker-grid">
 ${items}
       </ul>

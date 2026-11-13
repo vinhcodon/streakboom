@@ -462,6 +462,7 @@ export function check({ ctx, pages, files, out }) {
       const html = byPath.get(PATHS[lang].stickers).html;
       const m = html.match(/<div id="sticker-popular"[\s\S]*?<\/ul>/);
       if (!m) { bad(PATHS[lang].stickers + ": the row of picks is missing"); continue; }
+      if (!html.includes('<h2 id="sticker-all" class="sticker-all">')) bad(PATHS[lang].stickers + ": the heading of the full list is missing (ADR-0085)");
       const shown = [...m[0].matchAll(/data-slug="([^"]*)"/g)].map((x) => x[1]);
       if (JSON.stringify(shown) !== JSON.stringify(slugOrder)) bad(PATHS[lang].stickers + ": the row of picks is not the list of popular.json, in its order");
     }

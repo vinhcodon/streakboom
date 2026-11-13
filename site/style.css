@@ -269,3 +269,16 @@ summary h3 { display: inline; font-size: inherit; font-weight: 600; margin: 0; }
 .sticker-popular { margin-bottom: 24px; }
 .stickers-page.searching .sticker-popular { display: none; }
 .popular-grid { grid-template-columns: repeat(auto-fill, minmax(108px, 124px)); }
+/* the arrangement of the regions (ADR-0085): a heading and room for each; on a phone the two small rows are one line that is swiped
+   sideways (the last tile is cut at the edge to show there is more) and the full list has 3 columns; wider, the rows wrap as a grid */
+.sticker-recent, .sticker-popular { margin-bottom: 32px; }
+.sticker-mine-foot { margin-top: -22px; }
+.sticker-all { font-size: 1.05rem; margin: 0 0 10px; padding-top: 24px; border-top: 1px solid var(--line); }
+.stickers-page.searching .sticker-all { display: none; }
+@media (max-width: 639px) {
+  .sticker-grid:not(.recent-grid) { grid-template-columns: repeat(3, 1fr); gap: 10px; }
+  .sticker-grid:not(.recent-grid) .sticker { padding: 4px; }
+  .sticker-grid:not(.recent-grid) .sticker-title { font-size: .8rem; line-height: 1.25; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+  .recent-grid { display: flex; gap: 10px; overflow-x: auto; scroll-snap-type: x proximity; overscroll-behavior-x: contain; padding-bottom: 8px; }
+  .recent-grid .sticker-item { flex: 0 0 88px; scroll-snap-align: start; }
+}
