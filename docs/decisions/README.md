@@ -10,6 +10,7 @@ What was **decided**, why, and what was rejected. One short file per decision (a
 
 | ADR | Decision | Status | Date |
 |---|---|---|---|
+| [0092](0092-measure-sticker-copies-with-a-worker-for-thirty-days.md) | Measure sticker copies with a small Cloudflare Worker, switched off until the author deploys it; a thirty-day reading before any HOT row; supersedes the pause of 0091 (the website session) | accepted, built (off) | 2026-11-13 |
 | [0091](0091-sticker-counting-is-paused-peaks-picks-stays.md) | Counting of sticker uses is paused; Peak's picks stays; the test of W-57 is the evidence (the website session) | accepted | 2026-11-13 |
 | [0090](0090-stable-and-preview-channels-by-the-parity-of-the-middle-number.md) | Two channels, Stable (even middle number) and Preview (odd), built from main on the author's order, with in-app updates for both, shared data (Preview only adds fields), Preview as GitHub pre-releases | accepted (direction) | 2026-11-13 |
 | [0089](0089-informal-tryouts-are-not-the-alpha-the-freeze-is-only-for-the-alpha.md) | Informal tryouts are not the alpha; the freeze of behaviour belongs to the formal alpha only; informal testers must be adults; S0 waits for the alpha; the build channel is still open | accepted | 2026-11-13 |

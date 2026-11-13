@@ -4,6 +4,7 @@ import { existsSync, readFileSync, readdirSync } from "node:fs";
 import { gzipSync } from "node:zlib";
 import { join } from "node:path";
 import { ORIGIN, RELEASES_URL, ROOT, fmtDate } from "./facts.mjs";
+import { countingOn, countingProblems } from "./counting.mjs";
 import { catalogProblems, loadOverrides, loadPopular, loadVocabulary, normalize, popularProblems, proposalMarkdown } from "./catalog.mjs";
 import { STICKER_DIR } from "./stickers.mjs";
 import { formatCount } from "./downloads.mjs";
@@ -363,6 +364,26 @@ export function check({ ctx, pages, files, out }) {
     if (!js) bad("stickers.js was not built");
     for (const word of ["cookie", "sessionStorage", "sendBeacon", "XMLHttpRequest", "analytics", "indexedDB"]) if (js.includes(word)) bad(`stickers.js mentions ${word}: the page may keep only the recent list in localStorage (ADR-0060)`);
     // the one thing kept: a short list of sticker numbers in this browser (ADR-0060), under one key, with a way to clear it
+    // the counting of copies (ADR-0092): the page sends only if the build says so in the text; the one request it may make is listed here
+    if ((js.match(/\bfetch\(/g) || []).length !== 3) bad("stickers.js: it makes a request that ADR-0092 does not list (the picture, the search index and the counted copy)");
+    if (ctx.counting) {
+      for (const p of countingProblems(ctx.counting)) bad(p);
+      for (const lang of LANGS) {
+        const st = byPath.get(PATHS[lang].stickers).html, pv = byPath.get(PATHS[lang].privacy).html;
+        const hasEndpoint = st.includes("data-count=");
+        const stText = st.includes(esc(STRINGS[lang].st_privacy_on)), pvText = pv.includes(esc(STRINGS[lang].pv_site_on));
+        if (countingOn(ctx)) {
+          if (!st.includes(`data-count="${ctx.counting.endpoint}"`)) bad(PATHS[lang].stickers + ": counting is on but the page has no address to send to");
+          if (!stText) bad(PATHS[lang].stickers + ": counting is on but the page does not say a copy is counted");
+          if (!pvText) bad(PATHS[lang].privacy + ": counting is on but the privacy page does not say a copy is counted");
+          if (/no analytics|không có công cụ phân tích|アクセス解析も行いません/.test(pv)) bad(PATHS[lang].privacy + ": counting is on but the page still says there is no analytics");
+          if (st.includes(esc(STRINGS[lang].st_privacy))) bad(PATHS[lang].stickers + ": counting is on but the page still says nothing is sent");
+        } else {
+          if (hasEndpoint) bad(PATHS[lang].stickers + ": the page has an address to send to while counting is off");
+          if (stText || pvText) bad(PATHS[lang].stickers + ": the text says a copy is counted while counting is off");
+        }
+      }
+    }
     if ((js.match(/localStorage/g) || []).length !== 3 || !js.includes("streakboom-stickers-mine") || !js.includes("streakboom-sticker-recent")) bad("stickers.js: local storage is only for the recent stickers (one key, by slug: read, write, remove; the older keys are only dropped)");
     if (!js.includes("COPY_PX = 360") || !js.includes("COPY_SIDE")) bad("stickers.js: the copied picture is no longer the full 360 px, or the test parameter is gone (ADR-0075)");
     // the pictures stay real images that the system menu can act on (a long press, a right click)

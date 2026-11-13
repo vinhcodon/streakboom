@@ -17,6 +17,7 @@ import { LANGS } from "../site/strings.mjs";
 import { changelogFeed, llms, llmsFull, robots, sitemap } from "./site/files.mjs";
 import { check } from "./site/checks.mjs";
 import { versionOf, versionScripts } from "./site/assetversion.mjs";
+import { loadCounting } from "./site/counting.mjs";
 import { assertInstaller, liveData } from "./site/downloads.mjs";
 import { buildCatalog, loadVocabulary } from "./site/catalog.mjs";
 import { KINDS, buildSearchIndex, indexPath } from "./site/search-index.mjs";
@@ -55,6 +56,7 @@ export function build({ out = OUT, downloads = null, stickerDir } = {}) {
 
   const ctx = context();
   ctx.downloads = downloads;
+  ctx.counting = loadCounting(); // the anonymous counting of sticker copies: off while its endpoint is empty (ADR-0092)
   // the Peak stickers: one folder of the repository, read at build time (ADR-0053); the manifest decides the count and the order
   ctx.stickers = loadStickers(stickerDir);
   ctx.catalog = buildCatalog(ctx.stickers); // the tags of each sticker, given by the rules (ADR-0077)

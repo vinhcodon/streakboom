@@ -146,6 +146,20 @@ async function shrink(blob) {
   }
 }
 
+// the counting of copies (ADR-0092): only when the page carries an address for it; the build puts that address there together with the text that
+// says a copy is counted. One note per sticker and page view: the name of the sticker and the language of the page, nothing else.
+const COUNT_URL = document.querySelector(".stickers-page")?.dataset.count || "";
+const counted = new Set();
+function countCopy(slug) {
+  if (!COUNT_URL || !slug || counted.has(slug) || navigator.webdriver) return;
+  counted.add(slug);
+  try {
+    fetch(COUNT_URL, { method: "POST", body: `${slug} ${document.documentElement.lang}`, mode: "no-cors", credentials: "omit", cache: "no-store", referrerPolicy: "no-referrer", keepalive: true }).catch(() => {});
+  } catch {
+    // a lost count does not matter
+  }
+}
+
 async function copy(button) {
   if (!canCopy) {
     say(t("st_copy_failed"));
@@ -171,6 +185,7 @@ async function copy(button) {
   clearTimeout(resetTimer);
   resetTimer = setTimeout(() => button.classList.remove("copied"), 1600);
   remember(button);
+  countCopy(button.dataset.slug);
   let file = null;
   try {
     file = new File([await blobPromise], `${title}.png`, { type: "image/png" });

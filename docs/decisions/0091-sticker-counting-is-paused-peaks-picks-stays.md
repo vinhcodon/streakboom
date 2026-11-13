@@ -1,6 +1,6 @@
 # ADR-0091: Counting of sticker uses is paused; Peak's picks stays
 
-- **Status:** accepted (Vinh chose "Tạm dừng, giữ hàng Peak gợi ý" on 2026-11-13)
+- **Status:** accepted (Vinh chose "Tạm dừng, giữ hàng Peak gợi ý" on 2026-11-13); **superseded the same day by ADR-0092** (Vinh wants the numbers: a Worker, thirty days)
 - **Date:** 2026-11-13
 - **Decided by:** Vinh (author)
 

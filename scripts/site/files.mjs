@@ -1,5 +1,6 @@
 // The files for crawlers and assistants: sitemap.xml, robots.txt, llms.txt and llms-full.txt (ADR-0034).
 // llms.txt files are plain Markdown summaries of the same facts as the pages, never a different story.
+import { privacySections } from "./counting.mjs";
 import { STRINGS } from "../../site/strings.mjs";
 import { AUTHOR, ORIGIN, RELEASES_URL, REPO_URL, fmtDate } from "./facts.mjs";
 import { FEATURE_IDS } from "../../site/strings.mjs";
@@ -106,7 +107,7 @@ ${bullets(STRINGS.en.not_items, ctx)}
 }
 
 export function llmsFull(ctx) {
-  const sections = STRINGS.en.pv_sections.map((s) => `### ${s.h}\n\n${s.p.join("\n\n")}`).join("\n\n");
+  const sections = privacySections("en", ctx).map((s) => `### ${s.h}\n\n${s.p.join("\n\n")}`).join("\n\n");
   const faq = faqPairs("en", ctx).map((p) => `### ${p.q}\n\n${p.a}`).join("\n\n");
   const recent = ctx.entries.slice(0, 1).map((e) => `### Streakboom ${e.version} (${e.date})${e.title ? ", " + e.title : ""}\n\n${e.items.map((i) => `- ${i}`).join("\n")}`).join("\n\n");
   return `# Streakboom: facts for assistants

@@ -7,6 +7,7 @@ import { formatCount } from "./downloads.mjs";
 import { inlineScript } from "./langsuggest.mjs";
 import { loadPopular } from "./catalog.mjs";
 import { withVersion } from "./assetversion.mjs";
+import { countingOn, privacySections } from "./counting.mjs";
 import { CC_URL, fontNames, needsReviewNote, stickerUrl } from "./stickers.mjs";
 
 export const PATHS = {
@@ -441,7 +442,7 @@ export function stickersPage(lang, ctx) {
   const fonts = esc(raw(lang, "st_fonts", ctx).replace("{fonts}", fontNames(set, lang)));
   const aiNote = needsReviewNote(set, lang) ? `\n      <p class="note">${s("st_ai_note")}</p>` : "";
   const main = `
-    <section class="section stickers-page">
+    <section class="section stickers-page"${countingOn(ctx) ? ` data-count="${esc(ctx.counting.endpoint)}"` : ""}>
       <h1>${s("st_title")}</h1>
       <p class="lead">${s("st_lead")}</p>
       <p id="sticker-hint" class="hint" hidden>${s("st_hint")}</p>
@@ -477,7 +478,7 @@ ${items}
       </ol>
       <p class="licence">${s("st_license")}</p>
       <p class="note">${fonts}</p>${aiNote}
-      <p class="note">${s("st_privacy")}</p>
+      <p class="note">${s(countingOn(ctx) ? "st_privacy_on" : "st_privacy")}</p>
     </section>
 
     <section class="section">
@@ -500,7 +501,7 @@ export function privacyPage(lang, ctx) {
   const s = (k) => tx(lang, k, ctx);
   const S = STRINGS[lang];
   const path = PATHS[lang].privacy;
-  const sections = S.pv_sections
+  const sections = privacySections(lang, ctx)
     .map((sec) => `      <section>\n        <h2>${esc(sec.h)}</h2>\n${sec.p.map((p) => `        <p>${esc(p)}</p>`).join("\n")}\n      </section>`).join("\n");
   const main = `
     <article class="section prose">
