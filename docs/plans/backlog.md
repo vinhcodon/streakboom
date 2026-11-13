@@ -363,5 +363,5 @@ Why: the author keeps building features and lets a few adults try them (ADR-0089
 | PV-6 | The first Preview (0.5.0) as an end-to-end rehearsal, then 0.5.1 by the in-app update | M | **mostly done 2026-11-13** (0.5.0 and 0.5.1 published as pre-releases; the in-app update between them taken and seamless; left: Preview to Stable, a Stable after a Preview, pruning past two) | PV-4 |
 | PV-7 | A release branch of the Stable line for a fix while `main` carries unfinished work | M | later; only when needed | PV-4 |
 | PV-8 | Docs with each step: `releasing.md`, `PROJECT.md`, `README.md`, `CONTRIBUTING.md` | S | with each step | all |
-| PV-9 | The rules for managing version numbers (`spec/16-versioning.md`): what each number means, when it moves, how a Preview line is promoted; the author answers four questions, then an ADR and the checks of its section 10 | S | **proposal written 2026-11-13, waiting for the author's approval** | PV-6 |
+| PV-9 | The rules for managing version numbers (`spec/16-versioning.md`): what each number means, when it moves, how a Preview line is promoted; the author answers four questions, then an ADR and the checks of its section 10 | S | **approved 2026-11-13 (ADR-0093); the checks of spec 16 section 10 are not built** | PV-6 |
 

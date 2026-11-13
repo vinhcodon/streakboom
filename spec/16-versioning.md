@@ -1,6 +1,6 @@
 # 16. Version numbers: what each number means, when it moves, and how a build becomes Stable
 
-**Status:** **proposal for the author's approval, 2026-11-13.** Nothing is decided until he answers the questions in section 9; the rule of the channels itself is decided (ADR-0090: an even middle number is Stable, an odd one is Preview). This spec writes down how the numbers are *managed* so that every release, by anyone, follows the same logic. It changes no code. Companions: [`../docs/plans/preview-channel-plan.md`](../docs/plans/preview-channel-plan.md), [`../docs/releasing.md`](../docs/releasing.md), the code in `app/src-tauri/src/updater.rs`, `app/src/lib/channel.ts` and `scripts/release-lib.ps1`.
+**Status:** **approved by the author on 2026-11-13 (ADR-0093)**; the four questions of section 9 are answered with the defaults. The rule of the channels is ADR-0090 (an even middle number is Stable, an odd one is Preview). This spec writes down how the numbers are *managed* so that every release, by anyone, follows the same logic. It changes no code. Companions: [`../docs/plans/preview-channel-plan.md`](../docs/plans/preview-channel-plan.md), [`../docs/releasing.md`](../docs/releasing.md), the code in `app/src-tauri/src/updater.rs`, `app/src/lib/channel.ts` and `scripts/release-lib.ps1`.
 
 ## 1. The format and the one rule
 
@@ -93,7 +93,7 @@ A version number is **never reused**, never taken back, and may be skipped. A ta
 - **Copies built before the channel code** (every release up to 0.4.2) always read `latest.json`; the channel is read from the version only by builds from 0.5.0 on, so an old odd-numbered copy (a 0.3.x) cannot be moved to Preview by mistake.
 - **1.0:** the author decides when, by an ADR; it must be a Stable (1.0.0, an even middle number). After it the cycle continues with 1.1.x (Preview) and 1.2.0 (Stable).
 
-## 9. Decisions for the author (the proposal's defaults in bold)
+## 9. Decisions of the author (answered 2026-11-13, ADR-0093: every default was chosen)
 
 1. **A fix to a Stable while `main` already carries unfinished Preview work.** (a) **Only when `main` is shippable; otherwise the fix waits for the next promotion, which may be brought forward.** (b) A release branch for the Stable line (`stable-0.6`) from the last Stable tag, the fix cherry-picked there, the release workflow accepting tags on `stable-*` (plan step PV-7). (a) is simpler and enough while there are few users; (b) is needed the day a Stable fix cannot wait.
 2. **Preview testers across a promotion.** (a) **They stay on Preview: the next Preview line is published on the same day as the Stable, and `preview.json` points at it.** (b) They return to Stable at each promotion and reinstall a Preview by hand to come back (the author's first principle, literally).
