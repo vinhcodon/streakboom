@@ -6,7 +6,7 @@
 
 ## 1. Chuẩn bị
 
-1. **Ba sticker thử** (từ trang `https://streakboom.com/stickers/`, bản tiếng Việt cho Zalo, bản tiếng Anh cho Teams), chọn **theo tên chứ không theo số** (số thứ tự đổi khi thêm sticker vào giữa danh sách; bộ có 33 sticker từ 2026-11-13): **"Chào buổi sáng!"** (hình dài, chữ to), **"Sinh nhật vui vẻ!"** (chữ nhỏ hơn), **"Không nha."** (nhiều chi tiết). Dùng đúng ba sticker này ở mọi ô để so sánh được.
+1. **Ba sticker thử** (từ trang `https://streakboom.com/stickers/`, bản tiếng Việt cho Zalo, bản tiếng Anh cho Teams), chọn **theo tên chứ không theo số** (số thứ tự đổi khi thêm sticker vào giữa danh sách; bộ có 34 sticker từ 2026-11-13): **"Chào buổi sáng!"** (hình dài, chữ to), **"Sinh nhật vui vẻ!"** (chữ nhỏ hơn), **"Không nha."** (nhiều chi tiết). Dùng đúng ba sticker này ở mọi ô để so sánh được.
 2. **Ba biến thể:**
    - **T** = ảnh gốc trong suốt 360 px (mặc định của trang, chép bằng cách bấm vào sticker).
    - **W** = cùng ảnh trên nền trắng vuông 360 px. Chưa có sẵn trên trang: tạo tay bằng Paint hoặc bất kỳ phần mềm nào (dán sticker lên khung trắng 360×360, lưu PNG, ví dụ `chao-buoi-sang-W.png`), rồi chép ảnh đó ra clipboard hoặc kéo-thả file/ảnh vào khung chat.

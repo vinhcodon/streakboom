@@ -69,6 +69,7 @@ const GOLDEN = {
   "oh": "shocked||0",
   "huh": "confused||0",
   "let-me-think": "thinking||0",
+  "no-idea": "confused||0",
   "nyah-nyah": "teasing|refusal|1",
   "ugh-really": "annoyed||1",
   "im-dead": "exhausted|work-day|2",

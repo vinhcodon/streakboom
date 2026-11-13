@@ -10,7 +10,7 @@
     "sleepy": { "en": ["sleepy", "sweet dreams", "yawns", "nods off", "asleep"], "vi": ["buồn ngủ", "ngủ ngon"], "ja": ["ねむい", "おやすみ"] },
     "sad": { "en": ["boohoo", "cries"], "vi": ["huhu"], "ja": ["うえーん"] },
     "shocked": { "en": ["oh", "shock"], "vi": ["ơ"], "ja": ["えっ"] },
-    "confused": { "en": ["huh", "question marks"], "vi": ["ủa"], "ja": ["あれ"] },
+    "confused": { "en": ["huh", "question marks", "no idea"], "vi": ["ủa", "không biết"], "ja": ["あれ", "さあね"] },
     "thinking": { "en": ["let me think", "thinking"], "vi": ["để mình nghĩ"], "ja": ["考え中"] },
     "teasing": { "en": ["nyah", "teasing", "pretending"], "vi": ["còn lâu", "ai đợi đâu"], "ja": ["べーっ", "待ってないし"] },
     "annoyed": { "en": ["ugh", "hmph", "gloom"], "vi": ["gớm", "hứ"], "ja": ["うわぁ", "むっ"] },
