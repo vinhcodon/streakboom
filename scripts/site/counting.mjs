@@ -25,6 +25,8 @@ export const webAnalyticsManual = (ctx) => webAnalyticsMode(ctx) === "manual";
 export const excludesEu = (ctx) => webAnalyticsMode(ctx) === "auto" && ctx?.measurement?.excludeEu === true;
 /** True when the privacy words and the live check accept Cloudflare's own bot-protection script (JavaScript detections). */
 export const allowsBotScript = (ctx) => ctx?.measurement?.allowBotScript === true;
+/** True when the site is meant to be served through Cloudflare's proxy (the default); the live check then insists that a page it reads came through it. */
+export const behindCloudflare = (ctx) => ctx?.measurement?.behindCloudflare !== false;
 /** What the build refuses about that switch. */
 export function measurementProblems(m) {
   const problems = [];
@@ -35,6 +37,7 @@ export function measurementProblems(m) {
   else if (mode === "manual" && !/^[0-9a-f]{32}$/.test(t)) problems.push("measurement.json: manual mode needs the 32 hex characters of a Cloudflare Web Analytics site tag");
   else if (mode !== "manual" && t) problems.push("measurement.json: a token is only for manual mode (an unused token is a mistake)");
   if (m?.allowBotScript !== undefined && typeof m.allowBotScript !== "boolean") problems.push("measurement.json: allowBotScript must be true or false");
+  if (m?.behindCloudflare !== undefined && typeof m.behindCloudflare !== "boolean") problems.push("measurement.json: behindCloudflare must be true or false");
   if (m?.excludeEu !== undefined && typeof m.excludeEu !== "boolean") problems.push("measurement.json: excludeEu must be true or false");
   if (m?.excludeEu === true && mode !== "auto") problems.push("measurement.json: excludeEu is only for auto mode (it is a setting of the Cloudflare dashboard)");
   return problems;

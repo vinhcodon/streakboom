@@ -44,13 +44,20 @@ test("manual mode needs its tag on the page", () => {
 });
 
 test("a page turned away is reported as not checked, not as clean; another error is a problem", async () => {
-  const fake = (status) => async () => new Response("x", { status, headers: { server: "cloudflare" } });
+  const fake = (status) => async () => new Response("x", { status, headers: { server: "cloudflare", "cf-ray": "abc" } });
   const r = await checkLive({ origin: "https://x.example", fetchFn: fake(403), ctx: off });
   assert.equal(r.problems.length, 0);
   assert.equal(r.skipped.length, 7);
   assert.match(r.skipped[0], /answered 403 \(cloudflare\), not checked/);
   const r2 = await checkLive({ origin: "https://x.example", fetchFn: fake(500), ctx: off });
   assert.equal(r2.problems.length, 7);
-  const r3 = await checkLive({ origin: "https://x.example", fetchFn: async () => new Response(page(), { status: 200 }), ctx: off });
-  assert.deepEqual(r3, { problems: [], skipped: [] });
+  const viaCf = async () => new Response(page(), { status: 200, headers: { "cf-ray": "abc" } });
+  assert.deepEqual(await checkLive({ origin: "https://x.example", fetchFn: viaCf, ctx: off }), { problems: [], skipped: [] });
+  // a page that came straight from GitHub (the resolver bypassed Cloudflare) is not checked, never a pass
+  const direct = await checkLive({ origin: "https://x.example", fetchFn: async () => new Response(page(), { status: 200, headers: { server: "GitHub.com" } }), ctx: off });
+  assert.equal(direct.problems.length, 0);
+  assert.equal(direct.skipped.length, 7);
+  assert.match(direct.skipped[0], /not answered through Cloudflare \(server GitHub\.com\)/);
+  // unless the site is meant to be served without the proxy
+  assert.deepEqual(await checkLive({ origin: "https://x.example", fetchFn: async () => new Response(page(), { status: 200, headers: { server: "GitHub.com" } }), ctx: { measurement: { webAnalytics: "off", behindCloudflare: false } } }), { problems: [], skipped: [] });
 });

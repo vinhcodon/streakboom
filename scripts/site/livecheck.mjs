@@ -6,7 +6,7 @@
 import { fileURLToPath } from "node:url";
 import { resolve } from "node:path";
 import { ORIGIN } from "./facts.mjs";
-import { BEACON_SRC, allowsBotScript, loadMeasurement, webAnalyticsManual, webAnalyticsMode } from "./counting.mjs";
+import { BEACON_SRC, allowsBotScript, behindCloudflare, loadMeasurement, webAnalyticsManual, webAnalyticsMode } from "./counting.mjs";
 
 const PAGES = ["/", "/vi/", "/ja/", "/stickers/", "/vi/stickers/", "/ja/stickers/", "/privacy/"];
 
@@ -38,6 +38,8 @@ export async function checkLive({ origin = ORIGIN, fetchFn = fetch, ctx = { meas
     const res = await fetchFn(origin + path, { headers: { "User-Agent": "streakboom-site-livecheck", "Accept": "text/html,application/xhtml+xml", "Cache-Control": "no-cache" } });
     if ([403, 429, 503].includes(res.status)) { skipped.push(`${path}: answered ${res.status} (${res.headers.get("server") || "?"}), not checked`); continue; }
     if (!res.ok) { problems.push(`${path}: answered ${res.status}`); continue; }
+    // a page that did not come through Cloudflare (a resolver that still hands out the GitHub address, a cache) shows nothing of what Cloudflare adds: that is not a pass
+    if (behindCloudflare(ctx) && !res.headers.get("cf-ray")) { skipped.push(`${path}: not answered through Cloudflare (server ${res.headers.get("server") || "?"}), so what Cloudflare adds cannot be seen; try another network, or curl --resolve to a Cloudflare address`); continue; }
     problems.push(...liveProblems(path, await res.text(), res.headers, ctx));
   }
   return { problems, skipped };

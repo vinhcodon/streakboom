@@ -3,5 +3,6 @@
   "webAnalytics": "auto",
   "excludeEu": true,
   "allowBotScript": true,
+  "behindCloudflare": true,
   "webAnalyticsToken": ""
 }
