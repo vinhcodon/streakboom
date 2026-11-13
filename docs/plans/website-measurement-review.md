@@ -72,3 +72,22 @@ The question is whether the privacy promise is about the **app** only or also ab
 - Which Cloudflare setting produces each of the three items, and that Bot Fight Mode is what turns the build away.
 - The legal reading of any of this; the Vietnamese and Japanese words.
 - That the privacy words stay true after a Cloudflare setting is changed (hence the guard).
+
+## 7. Second review (2026-11-14, evening): the author wants the site to carry the usual tracking tools
+
+The author does not remember deciding "no analytics" and says a site that promotes a product should carry full tracking tools, with Cloudflare in front as the safety. **Where the "no analytics" came from:** D7 of ADR-0034 (2026-11-09) was option A of a multiple choice in which the website session recommended A and wrote the reason itself ("a script on the site conflicts with a product whose selling point is privacy"); the author chose A. ADR-0051 item 5 and `docs/handoff/website-stickers.md` section 6 (2026-11-11, from the app and sticker side) then wrote "the app's rule holds on the site": no cookies, no third-party script, no fingerprinting, nothing per person. ADR-0077 Q7 and ADR-0092 allowed a counter only with those limits. So the restriction is a chain of earlier choices, not a statement of the charter.
+
+Points that disagree with "tracking without limits" (to approve, then update):
+
+| # | Where | What it says now | Proposed |
+|---|---|---|---|
+| 1 | ADR-0034 title and D7; `website-seo-geo.md` lines 33, 75-76, 151, 258 | no visitor tracking, no analytics script, would not add one | a new ADR supersedes D7; the plan says tools are chosen by the author |
+| 2 | ADR-0051 item 5; `docs/handoff/website-stickers.md` section 6 (a received note, not edited) | "privacy as in the app": no cookies, nothing per person, no third-party scripts | the new ADR says the app's rule is the app's only; the handoff stays as received |
+| 3 | ADR-0052 consequence; ADR-0067 consequence | no request to a third party; "no tracking and no cookies" | pointers to the new ADR; ADR-0067 keeps its own design (the strip makes no request) |
+| 4 | ADR-0077 Q7, ADR-0092, `spec/13` section 6 and the technology row, sticker plan v1.1 | the counter: no identifier, no cookie, no IP, one event, ranks not numbers; a hosted counter "not proposed" | the limits become the counter's own design, not a site rule; the spec says other tools are allowed |
+| 5 | ADR-0096 (written today) | an allowed list; "not allowed: identifiers, cross-site cookies, advertising links" | rewritten: the author chooses the tools; the list of allowed vendors stays explicit |
+| 6 | Public words: the privacy page "This website", the sticker note, `st_privacy`, `llms-full.txt` | no cookies, no analytics, "nothing is sent" | composed from the real tools (more tools, more sentences, a cookie notice if cookies are used) |
+| 7 | Build and tests: the ban on any third-party script; the words banned in `stickers.js`; `livecheck.mjs`; the worker's one-event rule | refuse anything not on the list | an explicit list of approved vendors in one file; anything else still refused |
+| 8 | The app's files (README line "no telemetry unless you opt in"; `docs/privacy.md`; `PROJECT.md`) | true of the app, silent about the site | a note for the app session (sent); wording is theirs |
+| 9 | Home page and README positioning (local-first, "no telemetry") against a site full of trackers | consistent only if the privacy page separates the app from the site clearly | already how the privacy page is built; keep that separation |
+| 10 | Law (not a document mismatch): tracking with cookies or identifiers usually needs consent in the EU, and rules exist in Vietnam and Japan; Cloudflare does not replace that | no consent notice on the site | a lawyer's question (added) and a decision on a consent banner |
