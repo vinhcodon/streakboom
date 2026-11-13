@@ -136,6 +136,15 @@ def eye_svg(e, look):
         x0, y0 = e["x"], e["y"]
         d = f"M{f(x0)} {f(y0)} m0 0 a2 2 0 1 1 3 -2 a4.5 4.5 0 1 1 -7 3 a7 7 0 1 1 11 -5"
         return stroke_path(d, INK, 2.2)
+    if look.get("deadpan"):  # heavy flat lids, the pupil slid to one side: unimpressed (sticker art)
+        x0, y0, rx0, ry0 = e["x"], e["y"], e["rx"], e["ry"]
+        d = f"M{f(x0 - rx0)} {f(y0)} L{f(x0 + rx0)} {f(y0 + 0.6)} A{f(rx0)} {f(ry0 * 0.62)} 0 0 1 {f(x0 - rx0)} {f(y0)}Z"
+        return (f'<path d="{d}" fill="{INK}"/>' + ell(x0 + look.get("gx_eye", 0) + rx0 * 0.2, y0 + 3.2, rx0 * 0.2, rx0 * 0.2, "#fff")
+                + stroke_path(f"M{f(x0 - rx0 - 0.6)} {f(y0)} L{f(x0 + rx0 + 0.6)} {f(y0 + 0.6)}", INK, 2.2))
+    if look.get("stareyes"):  # star-shaped eyes (sticker art)
+        k0 = e["rx"] / 7.5 * 1.3
+        pts = " ".join(f"{f(math.cos(a * math.pi / 5 - math.pi / 2) * (7 if a % 2 == 0 else 3))},{f(math.sin(a * math.pi / 5 - math.pi / 2) * (7 if a % 2 == 0 else 3))}" for a in range(10))
+        return f'<polygon transform="translate({f(e["x"])},{f(e["y"])}) scale({f(k0)})" points="{pts}" fill="#ffd166" stroke="#e0a93a" stroke-width="1"/>'
     if look.get("shock"):  # a white eye with a tiny pupil: a shock (sticker art)
         return (ell(e["x"], e["y"], e["rx"] * 1.2, e["ry"] * 1.1, "#fff") + f'<ellipse cx="{f(e["x"])}" cy="{f(e["y"])}" rx="{f(e["rx"] * 1.2)}" ry="{f(e["ry"] * 1.1)}" fill="none" stroke="{INK}" stroke-width="1.8"/>'
                 + ell(e["x"], e["y"], 2.4, 2.4, INK))
@@ -1038,13 +1047,33 @@ for _lst in (CUTE_NEW, FRIENDS_NEW, OFFICE_NEW):
     for _text, _art, _opt in _lst:
         ART[_text] = (_art, _opt)
 # (group, key in ART, the text printed on the image if it changes)
+# ---- the two meme stickers (2026-11-13): "Ý kiến hay." (a flat, unimpressed face) and "Ờ mây zing, gút chóp!" (Binz, Rap Việt 2020) ----
+def meme_idea():
+    """"Good idea", said flatly: heavy lids, a pout and a dull, switched-off lightbulb above the head. No arms."""
+    pout_ = ell(60, 84, 6.5, 2.8, "#e79aa0") + stroke_path("M54 84 L66 84", "#a8636b", 1.2)
+    bulb_ = ('<g transform="translate(100,30) scale(1.1)"><circle cx="0" cy="0" r="9" fill="#d5dbe1" stroke="#8a97a6" stroke-width="1.6"/>'
+             '<rect x="-4.5" y="8" width="9" height="6" rx="1.5" fill="#8a97a6"/><path d="M-3 -2 q3 4 6 0" fill="none" stroke="#aab6c2" stroke-width="1.4"/></g>')
+    return (cat(STAND_F, dict(LOOK["rest"], deadpan=1, gx_eye=-2, mouth="none", cheek=0.3, roll=3)) + pout_ + bulb_
+            + stroke_path("M88 18 l-4 -5 M102 14 l0 -6 M114 20 l5 -4", "#c0c9d2", 2))
+
+
+def meme_amazing():
+    """"Amazing, good job": star-shaped eyes, a mouth open in awe, golden rays bursting behind the cat. No arms."""
+    rays = "".join(f'<path d="M60 70 L{f(60 + 80 * math.cos(a))} {f(70 + 80 * math.sin(a))} L{f(60 + 80 * math.cos(a + 0.12))} {f(70 + 80 * math.sin(a + 0.12))}Z" fill="#fff0b8"/>'
+                   for a in [i_ * math.pi / 8 for i_ in range(16)])
+    return rays + cat(STAND_F, dict(LOOK["rest"], stareyes=1, mouth="open", cheek=1.0)) + star(18, 30, 6, "#ffd166") + star(104, 28, 7, "#ffd166")
+
+
+ART["Ý kiến hay."] = (meme_idea, dict(scale=2.3, dy=12))
+ART["Ờ mây zing, gút chóp!"] = (meme_amazing, dict(scale=2.3, dy=12))
+
 GROUPS = [
     ("Chào hỏi và ngày tháng", [("Chào buổi sáng!", None), ("Ngủ ngon.", None), ("Buồn ngủ…", None), ("Thứ Sáu rồi!", None)]),
-    ("Yêu thương và lời tử tế", [("Thương quá!", "Yêu quá!"), ("Cảm ơn nha!", None), ("Xin lỗi nhé.", None), ("Chúc mừng nha!", None), ("Sinh nhật vui!", "Sinh nhật vui vẻ!"), ("Cố lên nha!", None)]),
+    ("Yêu thương và lời tử tế", [("Thương quá!", "Yêu quá!"), ("Cảm ơn nha!", None), ("Xin lỗi nhé.", None), ("Chúc mừng nha!", None), ("Sinh nhật vui!", "Sinh nhật vui vẻ!"), ("Cố lên nha!", None), ("Ờ mây zing, gút chóp!", None)]),
     ("Vui và phấn khích", [("Haha!", None), ("Sướng quá~", None), ("Hì hì.", None), ("Meo~", None), ("Ú òa!", None), ("Đi chơi đi!", None), ("Hóng!", None)]),
     ("Buồn và lo", [("Huhu…", None), ("Deadline!", None)]),
     ("Bất ngờ và nghi ngờ", [("Ơ!", None), ("Ủa?", None), ("Để mình nghĩ…", None)]),
-    ("Trêu và lầy", [("Còn lâu!", None), ("Gớm!", None), ("Xỉu ngang!", None), ("Hừm.", "Hứ!"), ("Ai đợi đâu.", None), ("Giỏi quá.", None), ("Cuộc sống mà.", None)]),
+    ("Trêu và lầy", [("Còn lâu!", None), ("Gớm!", None), ("Xỉu ngang!", None), ("Hừm.", "Hứ!"), ("Ai đợi đâu.", None), ("Giỏi quá.", None), ("Ý kiến hay.", None), ("Cuộc sống mà.", None)]),
     ("Đáp lời", [("Ok nè!", None), ("Không nha.", None)]),
 ]
 ALL_DIR = os.path.join(os.path.dirname(os.path.abspath(OUT)), "list-draft")
@@ -1092,6 +1121,7 @@ V2 = [
     (("Chúc mừng", "Congrats", "おめでとう"), ("mắt long lanh, cầm bông hoa hồng trước ngực", "shiny eyes, holding a pink flower at the chest", "きらきらの目で、ピンクの花を胸の前で持っている"), ("Congrats!", "おめでとう！")),
     (("Sinh nhật vui vẻ", "Happy birthday", "お誕生日"), ("đội nón tiệc, cây nến sáng trên miếng bánh", "wearing a party hat, a lit candle on a cake", "パーティーハットをかぶり、火のついたろうそくのケーキがある"), ("Happy birthday!", "お誕生日おめでとう！")),
     (("Cố lên", "You got this", "がんばって"), ("băng đô đỏ, hai chân nắm lại trước ngực, tia sáng", "a red headband, paws held at the chest, sparks", "赤いはちまきをして、両手を胸の前で握っている"), ("You got this!", "がんばって！")),
+    (("Ờ mây zing", "Amazing", "アメイジング"), ("mắt hình ngôi sao, miệng há ra kinh ngạc, tia sáng vàng tỏa phía sau", "star-shaped eyes, mouth open in awe, golden rays bursting behind", "目が星になって口を開け、後ろに金色の光が広がっている"), ("Amazing, good job!", "アメイジング！グッジョブ！")),
     (("Haha", "Haha", "あはは"), ("cười lớn, nước mắt vui", "laughs out loud with tears of joy", "涙を浮かべて大笑いしている"), ("Haha!", "あはは！")),
     (("Sướng quá", "Bliss", "きもちいい"), ("nhắm mắt sung sướng, được gãi đầu", "eyes shut in bliss, being scratched", "うっとり目を閉じて頭をなでられている"), ("So good~", "きもちいい〜")),
     (("Hì hì", "Hehe", "ふふっ"), ("khúc khích sau bàn chân", "giggles behind a paw", "手で口をおさえてくすくす笑っている"), ("Hehe.", "ふふっ。")),
@@ -1110,6 +1140,7 @@ V2 = [
     (("Hứ", "Hmph", "むっ"), ("quay đầu đi, mắt nhắm, thở ra mấy làn khói nhỏ", "turns its head away, eyes shut, little puffs of breath", "そっぽを向いて目を閉じ、小さく息をはいている"), ("Hmph.", "むっ。")),
     (("Ai đợi đâu", "Who's waiting?", "待ってないし"), ("đứng nghiêng, má đỏ, làm bộ không đợi", "stands sideways, cheeks pink, pretending not to wait", "横向きで頬を赤くして、待ってないふりをしている"), ("Who's waiting?", "待ってないし。")),
     (("Giỏi quá", "Good job", "すごいすごい"), ("giơ ngón cái, mặt thản nhiên", "gives a deadpan thumbs-up", "すました顔で親指を立てている"), ("Good job.", "すごいすごい。")),
+    (("Ý kiến hay", "Great idea", "いい考え"), ("mặt lạnh mắt lờ đờ, môi bĩu, bóng đèn tắt xám trên đầu", "a flat unimpressed face with heavy lids and pouting lips, a dull switched-off lightbulb above", "重たいまぶたととがった口元の冷めた顔で、頭の上に消えた電球が浮かんでいる"), ("Great idea.", "いい考えですね。")),
     (("Cuộc sống mà", "Life, you know", "人生ってさ"), ("nằm ngửa vắt chân, thản nhiên, bong bóng suy nghĩ có con cá", "lies back with crossed legs, deadpan, a thought bubble with a little fish", "足を組んで寝転び、すました顔で、小さな魚の入った吹き出しが浮かんでいる"), ("Life, you know.", "人生ってさ。")),
     (("Ok nè", "OK", "オッケー"), ("nháy mắt, làm dấu ok", "winks and makes an OK sign", "ウインクしてオッケーサインをしている"), ("OK!", "オッケー！")),
     (("Không nha", "Nope", "だめだよ"), ("cầm biển cấm đi ngược chiều", "holds a no-entry road sign", "進入禁止の標識を持っている"), ("Nope.", "だめだよ。")),
@@ -1150,21 +1181,5 @@ for lang in LANGS:  # a review sheet per language (not for the website)
         rpg.insert_image(r, filename=os.path.join(V2_DIR, lang, f"{gi + 1:02d}.png"))
     rpg.get_pixmap(dpi=72).save(os.path.join(os.path.dirname(os.path.abspath(OUT)), "direction-v1", f"set-v2_{lang}_sheet.png"))
 print("set-v2:", len(manifest2), "stickers x", len(LANGS), "languages in", V2_DIR)
-
-# ---- meme stickers (draft, not in the list yet): "Amazing, good job" (Binz, Rap Việt 2020) -------------------------------------
-def meme_amazing():
-    """A judge nodding in approval: sitting upright, chin up, eyes shut in a satisfied smile, the paws pressed together at the chest
-    like a polite clap, five stars above the head like a rating. No arms."""
-    stars = "".join(star(x, y, 5.5, "#ffd166") for x, y in ((24, 14), (42, 6), (60, 3), (78, 6), (96, 14)))
-    return (cat(SIT_F, dict(LOOK["purr"], roll=0, dy=-2, cheek=0.9, mouth="smile")) + paw(54, 103, 6.5, 8, 12, True) + paw(66, 103, 6.5, 8, -12, True)
-            + arcs("M36 90 q-6 4 -2 11", "M84 90 q6 4 2 11") + stars)
-
-
-MEME_DIR = os.path.join(os.path.dirname(os.path.abspath(OUT)), "pack-meme-draft")
-os.makedirs(MEME_DIR, exist_ok=True)
-for _lang, _text in (("vi", "Ờ mây zing, gút chóp!"), ("en", "Amazing, good job!"), ("ja", "アメイジング！グッジョブ！")):
-    png_from(wrap(meme_amazing(), (360 - 120 * 2.2) / 2, 82 - 20 * 2.2 + 8 + 22, 2.2), (360, 360), _text,
-             os.path.join(MEME_DIR, f"amazing-{_lang}.png"), font=LANG_FONT[_lang])
-print("pack-meme-draft: amazing in", MEME_DIR)
 
 print("done", len(made), "stickers in", OUT)

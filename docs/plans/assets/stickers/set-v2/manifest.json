@@ -255,6 +255,29 @@
     {
       "id": "11",
       "text": {
+        "vi": "Ờ mây zing, gút chóp!",
+        "en": "Amazing, good job!",
+        "ja": "アメイジング！グッジョブ！"
+      },
+      "title": {
+        "vi": "Ờ mây zing",
+        "en": "Amazing",
+        "ja": "アメイジング"
+      },
+      "alt": {
+        "vi": "Peak mắt hình ngôi sao, miệng há ra kinh ngạc, tia sáng vàng tỏa phía sau. Chữ trên ảnh: “Ờ mây zing, gút chóp!”",
+        "en": "Peak star-shaped eyes, mouth open in awe, golden rays bursting behind. Text on the image: \"Amazing, good job!\"",
+        "ja": "Peak（ねこ）が目が星になって口を開け、後ろに金色の光が広がっている。画像の文字：「アメイジング！グッジョブ！」"
+      },
+      "reviewed": {
+        "vi": true,
+        "en": false,
+        "ja": false
+      }
+    },
+    {
+      "id": "12",
+      "text": {
         "vi": "Haha!",
         "en": "Haha!",
         "ja": "あはは！"
@@ -276,7 +299,7 @@
       }
     },
     {
-      "id": "12",
+      "id": "13",
       "text": {
         "vi": "Sướng quá~",
         "en": "So good~",
@@ -299,7 +322,7 @@
       }
     },
     {
-      "id": "13",
+      "id": "14",
       "text": {
         "vi": "Hì hì.",
         "en": "Hehe.",
@@ -322,7 +345,7 @@
       }
     },
     {
-      "id": "14",
+      "id": "15",
       "text": {
         "vi": "Meo~",
         "en": "Meow~",
@@ -345,7 +368,7 @@
       }
     },
     {
-      "id": "15",
+      "id": "16",
       "text": {
         "vi": "Ú òa!",
         "en": "Peekaboo!",
@@ -368,7 +391,7 @@
       }
     },
     {
-      "id": "16",
+      "id": "17",
       "text": {
         "vi": "Đi chơi đi!",
         "en": "Let's go out!",
@@ -391,7 +414,7 @@
       }
     },
     {
-      "id": "17",
+      "id": "18",
       "text": {
         "vi": "Hóng!",
         "en": "Popcorn time!",
@@ -414,7 +437,7 @@
       }
     },
     {
-      "id": "18",
+      "id": "19",
       "text": {
         "vi": "Huhu…",
         "en": "Boohoo…",
@@ -437,7 +460,7 @@
       }
     },
     {
-      "id": "19",
+      "id": "20",
       "text": {
         "vi": "Deadline!",
         "en": "Deadline!",
@@ -460,7 +483,7 @@
       }
     },
     {
-      "id": "20",
+      "id": "21",
       "text": {
         "vi": "Ơ!",
         "en": "Oh!",
@@ -483,7 +506,7 @@
       }
     },
     {
-      "id": "21",
+      "id": "22",
       "text": {
         "vi": "Ủa?",
         "en": "Huh?",
@@ -506,7 +529,7 @@
       }
     },
     {
-      "id": "22",
+      "id": "23",
       "text": {
         "vi": "Để mình nghĩ…",
         "en": "Let me think…",
@@ -529,7 +552,7 @@
       }
     },
     {
-      "id": "23",
+      "id": "24",
       "text": {
         "vi": "Còn lâu!",
         "en": "Nyah nyah!",
@@ -552,7 +575,7 @@
       }
     },
     {
-      "id": "24",
+      "id": "25",
       "text": {
         "vi": "Gớm!",
         "en": "Ugh, really?",
@@ -575,7 +598,7 @@
       }
     },
     {
-      "id": "25",
+      "id": "26",
       "text": {
         "vi": "Xỉu ngang!",
         "en": "I'm dead!",
@@ -598,7 +621,7 @@
       }
     },
     {
-      "id": "26",
+      "id": "27",
       "text": {
         "vi": "Hứ!",
         "en": "Hmph.",
@@ -621,7 +644,7 @@
       }
     },
     {
-      "id": "27",
+      "id": "28",
       "text": {
         "vi": "Ai đợi đâu.",
         "en": "Who's waiting?",
@@ -644,7 +667,7 @@
       }
     },
     {
-      "id": "28",
+      "id": "29",
       "text": {
         "vi": "Giỏi quá.",
         "en": "Good job.",
@@ -667,7 +690,30 @@
       }
     },
     {
-      "id": "29",
+      "id": "30",
+      "text": {
+        "vi": "Ý kiến hay.",
+        "en": "Great idea.",
+        "ja": "いい考えですね。"
+      },
+      "title": {
+        "vi": "Ý kiến hay",
+        "en": "Great idea",
+        "ja": "いい考え"
+      },
+      "alt": {
+        "vi": "Peak mặt lạnh mắt lờ đờ, môi bĩu, bóng đèn tắt xám trên đầu. Chữ trên ảnh: “Ý kiến hay.”",
+        "en": "Peak a flat unimpressed face with heavy lids and pouting lips, a dull switched-off lightbulb above. Text on the image: \"Great idea.\"",
+        "ja": "Peak（ねこ）が重たいまぶたととがった口元の冷めた顔で、頭の上に消えた電球が浮かんでいる。画像の文字：「いい考えですね。」"
+      },
+      "reviewed": {
+        "vi": true,
+        "en": false,
+        "ja": false
+      }
+    },
+    {
+      "id": "31",
       "text": {
         "vi": "Cuộc sống mà.",
         "en": "Life, you know.",
@@ -690,7 +736,7 @@
       }
     },
     {
-      "id": "30",
+      "id": "32",
       "text": {
         "vi": "Ok nè!",
         "en": "OK!",
@@ -713,7 +759,7 @@
       }
     },
     {
-      "id": "31",
+      "id": "33",
       "text": {
         "vi": "Không nha.",
         "en": "Nope.",

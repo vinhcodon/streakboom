@@ -1,6 +1,6 @@
-# The sticker list: 31 stickers in one list (2026-11-12)
+# The sticker list: 33 stickers in one list (2026-11-12)
 
-Status: **approved by Vinh on 2026-11-12 (31 stickers, the English and Japanese lines as proposed); the three-language set is built: `assets/stickers/set-v2/` with a manifest and review sheets `assets/stickers/direction-v1/set-v2_vi_sheet.png`, `_en_` and `_ja_`; the handoff for the website session is updated (`docs/handoff/website-stickers.md`).** Earlier: Vinh chose a shortlist on 2026-11-12, dropped the three categories and asked for one single list.** [`sticker-packs-three-categories.md`](sticker-packs-three-categories.md) and [`sticker-pack-2-office.md`](sticker-pack-2-office.md) are superseded (they keep the reasoning and the drawings of what was not kept). **31 stickers, one group**: the order below follows the types only to keep similar ones together; there are no groups, tabs or categories on the page or in the manifest. All 32 on one page: [`assets/stickers/list-draft/contact_sheet.png`](assets/stickers/list-draft/contact_sheet.png) (files `01.png` to `31.png` in the same folder, in the order below, Vietnamese text). Rules that hold: PNG 360 x 360, transparent, flat, at most 4 words per frame, **no arms** (Vinh), CC BY 4.0.
+Status: **approved by Vinh on 2026-11-12 (31 stickers, the English and Japanese lines as proposed); the three-language set is built: `assets/stickers/set-v2/` with a manifest and review sheets `assets/stickers/direction-v1/set-v2_vi_sheet.png`, `_en_` and `_ja_`; the handoff for the website session is updated (`docs/handoff/website-stickers.md`).** Earlier: Vinh chose a shortlist on 2026-11-12, dropped the three categories and asked for one single list.** [`sticker-packs-three-categories.md`](sticker-packs-three-categories.md) and [`sticker-pack-2-office.md`](sticker-pack-2-office.md) are superseded (they keep the reasoning and the drawings of what was not kept). **33 stickers, one group**: the order below follows the types only to keep similar ones together; there are no groups, tabs or categories on the page or in the manifest. All 32 on one page: [`assets/stickers/list-draft/contact_sheet.png`](assets/stickers/list-draft/contact_sheet.png) (files `01.png` to `33.png` in the same folder, in the order below, Vietnamese text). Rules that hold: PNG 360 x 360, transparent, flat, at most 4 words per frame, **no arms** (Vinh), CC BY 4.0.
 
 ## 1. The list
 "Now" = on the website (`set-v1`); "new" = drawn in the first passes. "Edit" = Vinh's note.
@@ -17,31 +17,33 @@ Status: **approved by Vinh on 2026-11-12 (31 stickers, the English and Japanese 
 | 08 | Chúc mừng nha! | new, redrawn | open shiny eyes |
 | 09 | **Sinh nhật vui vẻ!** | new | was "Sinh nhật vui!"; taller candle, bigger flame; open shiny eyes |
 | 10 | Cố lên nha! | new | |
-| 11 | Haha! | now | |
-| 12 | Sướng quá~ | now | |
-| 13 | Hì hì. | now | |
-| 14 | Meo~ | new | |
-| 15 | Ú òa! | new | |
-| 16 | Đi chơi đi! | new | |
-| 17 | Hóng! | new | |
-| 18 | Huhu… | now | |
-| 19 | Deadline! | new | |
-| 20 | Ơ! | now, redrawn | a real shock: eyes white with tiny pupils, the mouth wide open, the body leaning back, shock lines (so it differs from "Ủa?") |
-| 21 | Ủa? | new | |
-| 22 | Để mình nghĩ… | now | |
-| 23 | **Còn lâu!** | new, redrawn | the "lêu lêu" face: both lower eyelids pulled down (red crescents under the eyes) and a short tongue stuck out (the first try had a long tongue and a wink and did not read as "lêu lêu") |
-| 24 | Gớm! | new | |
-| 25 | Xỉu ngang! | new | |
-| 26 | **Hứ!** | now, redrawn | was "Hừm."; the head turned away, eyes shut, little puffs (so it differs from "Gớm!") |
-| 27 | Ai đợi đâu. | now | |
-| 28 | Giỏi quá. | now | |
-| 29 | Cuộc sống mà. | now | |
-| 30 | Ok nè! | now | |
-| 31 | Không nha. | now | |
+| 11 | **Ờ mây zing, gút chóp!** | new (Binz) | star-shaped eyes, a mouth open in awe, golden rays behind (Vinh's choice A2 of three) |
+| 12 | Haha! | now | |
+| 13 | Sướng quá~ | now | |
+| 14 | Hì hì. | now | |
+| 15 | Meo~ | new | |
+| 16 | Ú òa! | new | |
+| 17 | Đi chơi đi! | new | |
+| 18 | Hóng! | new | |
+| 19 | Huhu… | now | |
+| 20 | Deadline! | new | |
+| 21 | Ơ! | now, redrawn | a real shock: eyes white with tiny pupils, the mouth wide open, the body leaning back, shock lines (so it differs from "Ủa?") |
+| 22 | Ủa? | new | |
+| 23 | Để mình nghĩ… | now | |
+| 24 | **Còn lâu!** | new, redrawn | the "lêu lêu" face: both lower eyelids pulled down (red crescents under the eyes) and a short tongue stuck out (the first try had a long tongue and a wink and did not read as "lêu lêu") |
+| 25 | Gớm! | new | |
+| 26 | Xỉu ngang! | new | |
+| 27 | **Hứ!** | now, redrawn | was "Hừm."; the head turned away, eyes shut, little puffs (so it differs from "Gớm!") |
+| 28 | Ai đợi đâu. | now | |
+| 29 | Giỏi quá. | now | |
+| 30 | **Ý kiến hay.** | new | a flat unimpressed face from the picture Vinh sent (heavy lids, a pout), a dull switched-off lightbulb above (Vinh's choice Y2 of three) |
+| 31 | Cuộc sống mà. | now | |
+| 32 | Ok nè! | now | |
+| 33 | Không nha. | now | |
 
-**17 stay as they are on the website and 14 are new.** "Ok sếp." and "Rất tiếc." are out (Vinh: the shrug-and-pout drawing was ugly and he dropped it). Also out, as before: "Làm chung nhé?", "Hoan hô!" and the stickers of the first passes that were not chosen (their pictures stay in `pack-cute-draft`, `pack-friends-draft`, `pack-office-draft`).
+**17 stay as they are on the website and 16 are new** (the 14 of the first passes and the two meme stickers of 2026-11-13). "Ok sếp." and "Rất tiếc." are out (Vinh: the shrug-and-pout drawing was ugly and he dropped it). Also out, as before: "Làm chung nhé?", "Hoan hô!" and the stickers of the first passes that were not chosen (their pictures stay in `pack-cute-draft`, `pack-friends-draft`, `pack-office-draft`).
 
-## 2. Languages: all 31 in Vietnamese, English and Japanese (Vinh, 2026-11-12)
+## 2. Languages: all 33 in Vietnamese, English and Japanese (Vinh, 2026-11-12)
 The 17 unchanged ones already have English and Japanese (`set-v1`). The 14 others need them; **proposed lines below, written by an AI, not read by a native speaker** (they go into the manifest with `"reviewed": false`, V-99). Each is a line in the same spirit, not a translation word for word.
 
 | Quote (vi) | English | Japanese |
@@ -91,15 +93,15 @@ Done on the 32 above (before "Rất tiếc." was dropped; the numbers in the tab
 - **The English and Japanese lines of section 2:** are they right to draw with? (He may change any.)
 
 ## 5. What this changes
-- **The website:** one pack of 31; the manifest has no category; the page must not assume 20. "Hoan hô!" and "Làm chung nhé?" leave the page when it moves. The website stays as it is until Vinh approves the list and a handoff is written.
-- **File numbers** are 01 to 31 in the order above.
+- **The website:** one pack of 33; the manifest has no category; the page must not assume 20. "Hoan hô!" and "Làm chung nhé?" leave the page when it moves. The website stays as it is until Vinh approves the list and a handoff is written.
+- **File numbers** are 01 to 33 in the order above.
 - **Zalo or Telegram** (not planned): 31 would be two sets for Zalo (for example 16 and 15) (12 to 20 each), not decided.
 
 ## 6. Not verified
 That "Còn lâu!" now reads as "lêu lêu" at 120 px (the lower lids are bright red); that the shut-eye share (a third) is really a problem; that the English and Japanese lines sound natural and right.
 
-## 7. Two meme stickers asked for on 2026-11-13 (not in the list yet)
+## 7. Two meme stickers asked for on 2026-11-13 (now in the list: 11 and 30)
 - **"Amazing, good job" (Binz).** The catchphrase is Binz's praise as a coach on Rap Việt 2020 ("Amazing", "Good job", or both), respelled by fans as "Ờ mây zing, gút chóp em" (Lag.vn, ZNews, Tiền Phong, Thanh Niên). Drawn as a draft: [`assets/stickers/pack-meme-draft/`](assets/stickers/pack-meme-draft/) (`amazing-vi.png`, `amazing-en.png`, `amazing-ja.png`): a judge nodding in approval, sitting upright with the chin up, eyes shut in a satisfied smile, the paws pressed together at the chest like a polite clap, five stars above the head like a rating; no arms. Texts: vi "Ờ mây zing, gút chóp!" (Vinh's pick, 4 words), en "Amazing, good job!", ja "アメイジング！グッジョブ！" (a katakana respelling that mirrors the meme, proposed by Claude). The articles do not describe his pose or face, so it is the cat's own picture, not a likeness (V-122).
 - **"Ý kiến hay" (Thành Phạm).** No source found for a youtuber of that name saying it (four searches, 2026-11-13); nothing is drawn. Vinh will send a link or describe the scene.
 - **Second round (2026-11-13):** Vinh sent a caricature of the youtuber's face (heavy half-lidded eyes, a flat unimpressed look, slightly pouting lips) and found the first "Amazing" draft unimpressive, so three options were drawn for each: [`assets/stickers/direction-v1/meme_options.png`](assets/stickers/direction-v1/meme_options.png). "Ý kiến hay.": Y1 the unimpressed side-eye alone, Y2 the same face with a dull, switched-off lightbulb, Y3 the same face with a paw on a paper with a tick. "Amazing": A1 a medal and sparkles, A2 star eyes and a sunburst, A3 a mic drop. The deadpan reading ("ý kiến hay" said flatly, as a sarcasm) comes from the picture Vinh sent, not from a source found online.
-- If both join the list it becomes 33 (or 32): the manifest, `set-v2` and the website handoff would change; to be done after Vinh approves the draft.
+- **Decided (Vinh, 2026-11-13): both are in the list, Y2 and A2; `set-v2` was rebuilt with 33 stickers.** English "Amazing, good job!" / "Great idea."; Japanese "アメイジング！グッジョブ！" / "いい考えですね。" (AI-written, unreviewed, V-122). The old draft folder `pack-meme-draft` is gone.
