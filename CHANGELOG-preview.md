@@ -2,6 +2,10 @@
 
 Release notes of the **Preview** builds (an odd middle number: 0.5.x, 0.7.x), newest first. A Preview is a build the author hands to a few adults (ADR-0089, ADR-0090). It is published on GitHub as a pre-release, **never** as the download of the website, and its notes are **not** in [`CHANGELOG.md`](CHANGELOG.md), which the website reads. The format is the same as there: `## x.y.z (YYYY-MM-DD)`, then lines starting with `- `, the first a short bold sentence. When a Preview line is promoted, the Stable version takes its entry in `CHANGELOG.md`.
 
+## 0.7.7 (2026-11-14)
+- **Sending Peak away is no longer limited to Preview builds.** This is the last build of the 0.7 line; the next regular version, 0.8.0, is cut from it. On a Preview copy nothing changes from 0.7.6.
+- Not yet tried: the model's habit of sending Peak away when you only mention leaving, measured on a real model.
+
 ## 0.7.6 (2026-11-14)
 - **Peak coming back by itself no longer takes the keyboard from what you are typing in, and it comes back on time even if the computer slept.** Two fixes to sending Peak away: it now reappears without becoming the active window, and its return timer follows the clock instead of one long sleep. Nothing else changes.
 - For testing only: starting Peak with the environment variable STREAKBOOM_AWAY_SECS (5 to 3600) shortens the time it stays away; docs/plans/lun-di-checklist.md lists what to look at.

@@ -1957,12 +1957,11 @@
   // ---------------------------------------------------------------- "Lượn đi" (spec 14, story S2, ADR-0086)
   // The person types a plain command to go away. Peak says one short goodbye, walks to the nearer side edge, leaves (Rust hides
   // its window and starts a timer) and comes back after AWAY_MINUTES at the edge it left by, stretching and saying nothing; or
-  // at once when the person shows it from the tray. Only on a Preview build. Counted as `leave` and `callback`, apart from
+  // at once when the person shows it from the tray. On every build (ADR-0100). Counted as `leave` and `callback`, apart from
   // Bond Days. Nothing here is saved: after a restart Peak is simply on screen.
   async function tryLeaveFromChat(text: string): Promise<boolean> {
     if (!isLeaveCommand(text, [mem.petName])) return false; // "peak" and the name the person gave it may stand around the command
-    if (!ownVersion) ownVersion = await getVersion().catch(() => "");
-    if (!mayLeave({ channel: channelOf(ownVersion), quiet, held: pose === "held", flying, away, leaving })) return false;
+    if (!mayLeave({ quiet, held: pose === "held", flying, away, leaving })) return false;
     void startLeave();
     return true;
   }
@@ -2081,8 +2080,7 @@
     resetMenuTimer();
     let leftByModel = false; // the model named the skill and Peak is leaving: no chat answer is shown
     try {
-      // The model may name a skill (S4, spec 14) only on a Preview build, and not while Quiet or away.
-      if (!ownVersion) ownVersion = await getVersion().catch(() => "");
+      // The model may name a skill (S4, spec 14), but not while Quiet or away.
       const out = await invoke<{ text: string; mood: string; skill?: string }>("brain_chat", {
         lang,
         tier: tierOf(data.closeness),
@@ -2090,12 +2088,12 @@
         history,
         known: knownFor(mem, lang),
         followUser: true, // answer in the language the user writes in
-        skills: channelOf(ownVersion) === "preview" && !quiet && !away && !leaving,
+        skills: !quiet && !away && !leaving,
       });
       // The model's own word is checked again here: the name is on the closed list, the message is short and not a question,
       // and the same gates as for the table (Preview, not Quiet, not carried, not in the air). Its words are not shown: Peak says
       // one of its own goodbyes (ADR-0097).
-      if (out.skill === "leave" && shortEnoughForSkill(text) && mayLeave({ channel: channelOf(ownVersion), quiet, held: pose === "held", flying, away, leaving })) {
+      if (out.skill === "leave" && shortEnoughForSkill(text) && mayLeave({ quiet, held: pose === "held", flying, away, leaving })) {
         leftByModel = true;
         history = history.slice(0, -1); // the command is not part of the talk
         void startLeave();

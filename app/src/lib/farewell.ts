@@ -2,12 +2,11 @@
 // nearest side edge, leaves, and comes back by itself after AWAY_MINUTES at the edge it left by, or at once when the person
 // shows it from the tray. Pure rules and the goodbye lines; the page does the walking and Rust hides and shows the window.
 //
-// Only on a Preview build for now (ADR-0097: the Stable gets it when it is promoted).
+// On a Preview build from the start (ADR-0097); on every build from Stable 0.8.0 on (ADR-0100: the Stable got it when its line was promoted).
 // The goodbyes are NOT part of the counted pools of scripted lines (the README says how many those are); they have their own
 // list and their own test against the banned patterns (banned.ts): no guilt, no counting of time, no "missed you", no "come
 // back soon". Peak asks nothing and promises nothing; it just goes for a walk.
 
-import type { Channel } from "./channel.ts";
 import { matchIntent } from "./intents.ts";
 
 export type FarewellLang = "vi" | "en" | "ja";
@@ -62,7 +61,6 @@ export function isLeaveCommand(text: string, names?: readonly string[]): boolean
 }
 
 export interface LeaveGate {
-  channel: Channel;
   quiet: boolean;
   held: boolean;
   flying: boolean;
@@ -71,9 +69,9 @@ export interface LeaveGate {
   leaving: boolean;
 }
 
-/** May Peak leave now? Only on a Preview build, and not while it is in Quiet mode, carried, in the air or already leaving. */
+/** May Peak leave now? Not while it is in Quiet mode, carried, in the air, away or already leaving (any build: ADR-0100). */
 export function mayLeave(g: LeaveGate): boolean {
-  return g.channel === "preview" && !g.quiet && !g.held && !g.flying && !g.away && !g.leaving;
+  return !g.quiet && !g.held && !g.flying && !g.away && !g.leaving;
 }
 
 /** Which side edge is nearer: -1 (left) or 1 (right), from the room left to each edge in px; a tie goes right. */

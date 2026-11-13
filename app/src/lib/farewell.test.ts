@@ -55,11 +55,10 @@ test("only an exact phrase to go away is the command; other skills and long sent
   for (const t of ["đi ngủ đi", "im đi", "quay lại đi", "go to sleep", "hôm nay tôi lượn đi họp", "lượn đi?", "", "hello", "go play outside"]) assert.equal(isLeaveCommand(t), false, t);
 });
 
-const ok: LeaveGate = { channel: "preview", quiet: false, held: false, flying: false, away: false, leaving: false };
+const ok: LeaveGate = { quiet: false, held: false, flying: false, away: false, leaving: false };
 
-test("Peak may leave only on a Preview build, and not in Quiet mode, carried, in the air, away or already leaving", () => {
+test("Peak may leave on any build (ADR-0100), but not in Quiet mode, carried, in the air, away or already leaving", () => {
   assert.equal(mayLeave(ok), true);
-  assert.equal(mayLeave({ ...ok, channel: "stable" }), false);
   for (const k of ["quiet", "held", "flying", "away", "leaving"] as const) assert.equal(mayLeave({ ...ok, [k]: true }), false, k);
 });
 
