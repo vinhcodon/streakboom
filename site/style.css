@@ -292,3 +292,13 @@ summary h3 { display: inline; font-size: inherit; font-weight: 600; margin: 0; }
 @media (min-width: 900px) {
   .recent-grid, .popular-grid { grid-template-columns: repeat(8, minmax(0, 112px)); }
 }
+/* the head of the sticker pages on a phone is tighter (ADR-0085, amended), so the recent stickers and Peak's picks come up the screen for the person who returns */
+@media (max-width: 639px) {
+  .stickers-page { padding-top: 14px; }
+  .stickers-page h1 { font-size: 1.5rem; margin-bottom: .3em; }
+  .stickers-page .lead { font-size: 1rem; margin: 0 0 10px; }
+  .stickers-page .hint { margin: 0 0 8px; }
+  .sticker-search { margin-bottom: 6px; }
+  .sticker-search-status { margin-top: 2px; }
+  .sticker-recent, .sticker-popular { margin-bottom: 20px; }
+}
