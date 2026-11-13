@@ -1,5 +1,5 @@
 # The counter of sticker copies (ADR-0092). Deploy from this folder: see README.md.
-name = "streakboom-count"
+name = "sticker-count"
 main = "count.mjs"
 compatibility_date = "2026-11-01"
 
