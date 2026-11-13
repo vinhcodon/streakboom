@@ -41,6 +41,7 @@ The files are grouped here, not in folders (decided at gate 2 of the foundation 
 | File | What | Status |
 |---|---|---|
 | [`website-seo-geo.md`](website-seo-geo.md) | A site structure friendly to search engines and AI answer engines: static facts, per-language URLs, a crawlable changelog, structured data, `llms.txt`, `robots.txt`, a way to measure; seven decisions as multiple choice | proposal 2026-11-09; the author chose D1 to D7 (ADR-0034); **built and deployed 2026-11-09**; the baseline, validators and Search Console are still open |
+| [`website-measurement-review.md`](website-measurement-review.md) | The website and measurement, reviewed 2026-11-14: what Cloudflare adds to the live site, what the documents promise about the app and about the site, an evaluation and a proposal (the author decides; no ADR yet) |
 
 ### Releases
 
