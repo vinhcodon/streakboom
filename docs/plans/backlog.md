@@ -360,7 +360,7 @@ Why: the author keeps building features and lets a few adults try them (ADR-0089
 | PV-3 | The Preview build in CI: odd-minor tags, the version written in the workspace only, notes from `CHANGELOG-preview.md`, pre-release draft | M | **done 2026-11-13** (rehearsed, then used for the real v0.5.0; one bug found and fixed in the real run) | PV-1 |
 | PV-4 | `release-finish.ps1` for Preview: `updates/preview.json`, `--prerelease`, never `--latest`, pruning per channel, tests | M | **done 2026-11-13** (published Preview 0.5.0; Stable-after-Preview and pruning not yet exercised) | PV-3 |
 | PV-5 | The website stays true (a note to the website session; the site by that session) | S | **note written 2026-11-13; the website session has not answered** | none |
-| PV-6 | The first Preview (0.5.0) as an end-to-end rehearsal, then 0.5.1 by the in-app update | M | **half done 2026-11-13** (v0.5.0 built and published as a pre-release; installing it and the in-app update to 0.5.1 are left) | PV-4 |
+| PV-6 | The first Preview (0.5.0) as an end-to-end rehearsal, then 0.5.1 by the in-app update | M | **mostly done 2026-11-13** (0.5.0 and 0.5.1 published as pre-releases; the in-app update between them taken and seamless; left: Preview to Stable, a Stable after a Preview, pruning past two) | PV-4 |
 | PV-7 | A release branch of the Stable line for a fix while `main` carries unfinished work | M | later; only when needed | PV-4 |
 | PV-8 | Docs with each step: `releasing.md`, `PROJECT.md`, `README.md`, `CONTRIBUTING.md` | S | with each step | all |
 
