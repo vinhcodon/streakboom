@@ -172,7 +172,15 @@ try {
     git add -- @stage
     git commit -m "Update manifest for $version"
     git push origin HEAD
-    if ($LASTEXITCODE -ne 0) { throw "git push failed" }
+    if ($LASTEXITCODE -ne 0) {
+      # another session pushed to main since the check at the start (the release is already published): put the manifest commit
+      # on top of it and push again, once
+      Write-Warning "git push was refused; rebasing the manifest commit onto origin/main and trying once more"
+      git pull --rebase origin main
+      if ($LASTEXITCODE -ne 0) { throw "git pull --rebase failed: the manifest commit ($($stage -join ', ')) is made but not pushed; release is published" }
+      git push origin HEAD
+      if ($LASTEXITCODE -ne 0) { throw "git push failed twice: the manifest commit is made but not pushed; the release is published, so push it and delete the old releases by hand" }
+    }
   }
 
   # keep the new release and the one before it IN THE SAME CHANNEL; delete every older release of that channel and its tag
