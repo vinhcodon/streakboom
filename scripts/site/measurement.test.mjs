@@ -55,13 +55,13 @@ test("auto: the build adds no script (Cloudflare does), the words name Web Analy
   const b = withSwitch(AUTO);
   for (const p of b.pages) assert.doesNotMatch(p.html, /cloudflareinsights|cdn-cgi/, p.path);
   for (const lang of ["en", "vi", "ja"]) assert.match(siteParagraph(lang, b.ctx), /Web Analytics/);
-  assert.match(siteParagraph("en", b.ctx), /European Union are not counted/);
+  assert.match(siteParagraph("en", b.ctx), /EU are not counted/);
   assert.match(b.pages.find((p) => p.path === "/stickers/").html, /counted as a visit by Cloudflare Web Analytics/);
   assert.doesNotThrow(tryRun(b, () => {}));
   assert.throws(tryRun(b, (c) => { const p = home(c); p.html = p.html.replace("</body>", `<script defer src="${BEACON_SRC}" data-cf-beacon='{"token": "${TOKEN}"}'></script></body>`); }), /a script from a third party/);
   // without the EU statement the paragraph does not say it
   const noEu = withSwitch({ webAnalytics: "auto", excludeEu: false });
-  assert.doesNotMatch(siteParagraph("en", noEu.ctx), /European Union/);
+  assert.doesNotMatch(siteParagraph("en", noEu.ctx), /EU are not counted/);
 });
 
 test("manual: every page has exactly one script of the visit count, with the token, and the words name it", () => {
@@ -72,7 +72,7 @@ test("manual: every page has exactly one script of the visit count, with the tok
     assert.ok(tags[0].includes(`src="${BEACON_SRC}"`) && tags[0].includes(`"token": "${TOKEN}"`), p.path);
   }
   for (const lang of ["en", "vi", "ja"]) assert.match(siteParagraph(lang, b.ctx), /Web Analytics/);
-  assert.doesNotMatch(siteParagraph("en", b.ctx), /no analytics|European Union/);
+  assert.doesNotMatch(siteParagraph("en", b.ctx), /no analytics|EU are not counted/);
   assert.doesNotThrow(tryRun(b, () => {}));
 });
 
@@ -93,7 +93,7 @@ test("the privacy words name Cloudflare's bot protection only when it is allowed
   assert.equal(allowsBotScript(off.ctx), false);
   assert.equal(allowsBotScript(bot.ctx), true);
   assert.doesNotMatch(siteParagraph("en", off.ctx), /bot protection/);
-  assert.match(siteParagraph("en", bot.ctx), /^This website sets no cookies\. The one exception is Cloudflare's own bot protection/);
+  assert.match(siteParagraph("en", bot.ctx), /^This website sets no cookies\. The one exception is Cloudflare's bot protection/);
   for (const lang of ["vi", "ja"]) assert.ok(siteParagraph(lang, bot.ctx).length > siteParagraph(lang, off.ctx).length, lang);
   assert.doesNotThrow(tryRun(bot, () => {}));
 });

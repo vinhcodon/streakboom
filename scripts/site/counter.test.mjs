@@ -103,7 +103,7 @@ test("counting on: the pages carry the address and the text that says a copy is 
   let off;
   try { off = build({ out: join(offDir, "_site") }); } finally { delete process.env.STREAKBOOM_COUNTING_FILE; }
   for (const p of off.pages.filter((x) => /stickers|privacy/.test(x.path))) assert.doesNotMatch(p.html, /data-count=|a copy is counted|bộ đếm|カウンター/, p.path);
-  assert.doesNotMatch(off.files["llms-full.txt"], /only adds one to that day/);
+  assert.doesNotMatch(off.files["llms-full.txt"], /adds one to that day.s total/);
   const on = () => ({ ...off.ctx, counting: { endpoint: "https://streakboom-count.x.workers.dev" } });
   // build the pages again with counting on, through the same function the build uses
   const dir = mkdtempSync(join(tmpdir(), "sb-cnt2-"));
@@ -118,7 +118,7 @@ test("counting on: the pages carry the address and the text that says a copy is 
       assert.match(st, /data-count="https:\/\/streakboom-count\.x\.workers\.dev"/);
       assert.doesNotMatch(pv, /no analytics|không có công cụ phân tích|アクセス解析も行いません/);
     }
-    assert.match(b.files["llms-full.txt"], /only adds one to that day/);
+    assert.match(b.files["llms-full.txt"], /adds one to that day.s total/);
     const run = (mutate) => { const c = { ctx: { ...b.ctx }, pages: b.pages.map((p) => ({ ...p })), files: { ...b.files }, out: b.out }; mutate(c); return () => check(c); };
     assert.doesNotThrow(run(() => {}));
     assert.throws(run((c) => { const p = c.pages.find((x) => x.path === "/stickers/"); p.html = p.html.replace(/ data-count="[^"]*"/, ""); }), /no address to send to/);
