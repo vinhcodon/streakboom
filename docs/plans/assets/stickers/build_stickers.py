@@ -1068,12 +1068,11 @@ ART["Ý kiến hay."] = (meme_idea, dict(scale=2.3, dy=12))
 ART["Ờ mây zing, gút chóp!"] = (meme_amazing, dict(scale=2.3, dy=12))
 
 def no_idea():
-    """"No idea", the shrug of the usual emoji: eyes glancing aside, the brows uneven (one raised), a sheepish closed smile and both paws open at the
-    sides of the body, pads up. No arms. (The first version, an empty thought bubble, looked too much like "Để mình nghĩ…".)"""
+    """"No idea", the shrug of the usual emoji: eyes glancing aside, the brows uneven (one raised), a sheepish closed smile. No paws and no arms: the
+    open paws of the emoji made it busy (the author, 2026-11-13). (The first version, an empty thought bubble, looked too much like "Để mình nghĩ…".)"""
     brows = stroke_path("M33 53 Q42 47 52 52", INK, 2.6) + stroke_path("M69 45 Q79 36 90 44", INK, 2.6)
     smile = stroke_path("M48 85 Q58 91 68 83", MOUTH, 2.2)
-    return (cat(STAND_F, dict(LOOK["rest"], wide=0.3, gx=5, gy=0, mouth="none", cheek=0.6, roll=-3, dy=1)) + brows + smile
-            + paw(14, 92, 11, 13, -80, True) + paw(106, 92, 11, 13, 80, True) + arcs("M3 74 q-3 6 0 12", "M117 74 q3 6 0 12"))
+    return cat(STAND_F, dict(LOOK["rest"], wide=0.3, gx=5, gy=0, mouth="none", cheek=0.6, roll=-3, dy=1)) + brows + smile
 
 
 ART["Không biết nha."] = (no_idea, dict(scale=2.3, dy=14))
@@ -1145,7 +1144,7 @@ V2 = [
     (("Ơ", "Oh", "えっ"), ("mắt trắng đồng tử nhỏ, miệng há to, người ngả ra sau, giật mình", "white eyes with tiny pupils, mouth wide open, leaning back in shock", "小さな瞳で目を見開き、口を大きく開けて、のけぞっておどろいている"), ("Oh!", "えっ！")),
     (("Ủa", "Huh", "あれ"), ("nghiêng đầu, hai dấu hỏi", "tilts its head with two question marks", "首をかしげて、はてなマークが浮かんでいる"), ("Huh?", "あれ？")),
     (("Để mình nghĩ", "Let me think", "考え中"), ("chống chân lên cằm, đang nghĩ", "paw on chin, thinking", "あごに手をあてて考えている"), ("Let me think…", "考え中…")),
-    (("Không biết", "No idea", "さあね"), ("nhún vai: mắt liếc sang bên, lông mày lệch, cười ngượng, hai bàn chân xòe ra hai bên", "a shrug: eyes glancing aside, uneven brows, a sheepish smile, both paws open at the sides", "肩をすくめるように、目は横を見て眉は左右でちがい、照れ笑いで両手を横に広げている"), ("No idea.", "さあね。")),
+    (("Không biết", "No idea", "さあね"), ("mắt liếc sang bên, lông mày lệch, cười ngượng, vẻ mặt không biết", "eyes glancing aside, uneven brows, a sheepish smile: a look of having no idea", "目は横を見て眉は左右でちがい、照れ笑いで、わからないという顔をしている"), ("No idea.", "さあね。")),
     (("Còn lâu", "Nyah nyah", "べーっだ"), ("kéo mí mắt dưới xuống và thè lưỡi ngắn, lêu lêu", "pulls down its lower eyelids and sticks out a short tongue, teasing", "あかんべえをして、短く舌を出している"), ("Nyah nyah!", "べーっだ！")),
     (("Gớm", "Ugh, really", "うわぁ"), ("mắt lim dim, miệng lượn sóng, vạch u ám trên trán", "half-closed eyes, a wavy mouth, gloom lines on the forehead", "半目で口が波うち、おでこに縦線が入っている"), ("Ugh, really?", "うわぁ…")),
     (("Xỉu ngang", "I'm dead", "もうだめ"), ("nằm bẹp, mắt xoáy, lè lưỡi, sao quay trên đầu", "flat on the floor, spiral eyes, tongue out, stars circling", "ぺちゃんと倒れて目がぐるぐる、舌を出し、星が回っている"), ("I'm dead!", "もうだめ〜")),
