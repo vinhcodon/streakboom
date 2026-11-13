@@ -90,7 +90,10 @@ ${FACTS}
 - [Changelog feed (Atom)](${ORIGIN}${PATHS.feed}): the same notes as a feed, newest first
 
 ## Source and downloads
-- [README](${REPO_URL}#readme): the reference text for features, privacy and status
+- [Project entry point](${REPO_URL}/blob/main/docs/PROJECT.md): mission, state, architecture and where everything is
+- [Features](${REPO_URL}/blob/main/docs/features.md) and [privacy](${REPO_URL}/blob/main/docs/privacy.md): the reference texts, in English
+- [README](${REPO_URL}#readme): a short introduction for developers
+- [Contributing](${REPO_URL}/blob/main/CONTRIBUTING.md), [Security policy](${REPO_URL}/blob/main/SECURITY.md) and [third-party notices](${REPO_URL}/blob/main/THIRD-PARTY-NOTICES.md)
 - [Installer for Windows, version ${ctx.version}](${ctx.installerUrl}): a direct download of the .exe
 - [Latest release](${RELEASES_URL}): release notes and other versions
 - [Code signing policy](${REPO_URL}/blob/main/CODE_SIGNING.md): the installers are not code-signed yet; who approves what; what the program sends
