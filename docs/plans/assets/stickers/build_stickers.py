@@ -1151,4 +1151,20 @@ for lang in LANGS:  # a review sheet per language (not for the website)
     rpg.get_pixmap(dpi=72).save(os.path.join(os.path.dirname(os.path.abspath(OUT)), "direction-v1", f"set-v2_{lang}_sheet.png"))
 print("set-v2:", len(manifest2), "stickers x", len(LANGS), "languages in", V2_DIR)
 
+# ---- meme stickers (draft, not in the list yet): "Amazing, good job" (Binz, Rap Việt 2020) -------------------------------------
+def meme_amazing():
+    """A judge nodding in approval: sitting upright, chin up, eyes shut in a satisfied smile, the paws pressed together at the chest
+    like a polite clap, five stars above the head like a rating. No arms."""
+    stars = "".join(star(x, y, 5.5, "#ffd166") for x, y in ((24, 14), (42, 6), (60, 3), (78, 6), (96, 14)))
+    return (cat(SIT_F, dict(LOOK["purr"], roll=0, dy=-2, cheek=0.9, mouth="smile")) + paw(54, 103, 6.5, 8, 12, True) + paw(66, 103, 6.5, 8, -12, True)
+            + arcs("M36 90 q-6 4 -2 11", "M84 90 q6 4 2 11") + stars)
+
+
+MEME_DIR = os.path.join(os.path.dirname(os.path.abspath(OUT)), "pack-meme-draft")
+os.makedirs(MEME_DIR, exist_ok=True)
+for _lang, _text in (("vi", "Ờ mây zing, gút chóp!"), ("en", "Amazing, good job!"), ("ja", "アメイジング！グッジョブ！")):
+    png_from(wrap(meme_amazing(), (360 - 120 * 2.2) / 2, 82 - 20 * 2.2 + 8 + 22, 2.2), (360, 360), _text,
+             os.path.join(MEME_DIR, f"amazing-{_lang}.png"), font=LANG_FONT[_lang])
+print("pack-meme-draft: amazing in", MEME_DIR)
+
 print("done", len(made), "stickers in", OUT)

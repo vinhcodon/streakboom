@@ -97,3 +97,8 @@ Done on the 32 above (before "Rất tiếc." was dropped; the numbers in the tab
 
 ## 6. Not verified
 That "Còn lâu!" now reads as "lêu lêu" at 120 px (the lower lids are bright red); that the shut-eye share (a third) is really a problem; that the English and Japanese lines sound natural and right.
+
+## 7. Two meme stickers asked for on 2026-11-13 (not in the list yet)
+- **"Amazing, good job" (Binz).** The catchphrase is Binz's praise as a coach on Rap Việt 2020 ("Amazing", "Good job", or both), respelled by fans as "Ờ mây zing, gút chóp em" (Lag.vn, ZNews, Tiền Phong, Thanh Niên). Drawn as a draft: [`assets/stickers/pack-meme-draft/`](assets/stickers/pack-meme-draft/) (`amazing-vi.png`, `amazing-en.png`, `amazing-ja.png`): a judge nodding in approval, sitting upright with the chin up, eyes shut in a satisfied smile, the paws pressed together at the chest like a polite clap, five stars above the head like a rating; no arms. Texts: vi "Ờ mây zing, gút chóp!" (Vinh's pick, 4 words), en "Amazing, good job!", ja "アメイジング！グッジョブ！" (a katakana respelling that mirrors the meme, proposed by Claude). The articles do not describe his pose or face, so it is the cat's own picture, not a likeness (V-122).
+- **"Ý kiến hay" (Thành Phạm).** No source found for a youtuber of that name saying it (four searches, 2026-11-13); nothing is drawn. Vinh will send a link or describe the scene.
+- If both join the list it becomes 33 (or 32): the manifest, `set-v2` and the website handoff would change; to be done after Vinh approves the draft.
