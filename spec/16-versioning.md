@@ -109,4 +109,4 @@ A version number is **never reused**, never taken back, and may be skipped. A ta
 
 ## 11. Not verified
 
-The update from a Preview to a Stable, a Stable published after a Preview (the `preview.json` rule), pruning with more than two releases in a channel, and the release-branch route have not been tried. The cycle above is reasoned from the code (`updater.rs` compares versions as semver and takes the first manifest address that answers) and from the two Previews published so far (0.5.0, 0.5.1).
+**Tried on 2026-11-13** with Preview 0.7.0 then Stable 0.6.0 on the same day: pruning per channel, `preview.json` staying at the newest version when a Stable is published after a Preview, and the Preview line starting before the Stable is published (testers skip it). **Not tried:** the in-app updates that cross the two (Stable 0.4.2 to 0.6.0, Preview 0.5.1 to 0.7.0), a Preview taking a Stable, and the release-branch route. The cycle above is reasoned from the code (`updater.rs` compares versions as semver and takes the first manifest address that answers) and from the two Previews published so far (0.5.0, 0.5.1).
