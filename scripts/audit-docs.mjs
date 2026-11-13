@@ -14,6 +14,7 @@
 // docs/ is named in docs/README.md.
 
 import { execFileSync } from "node:child_process";
+import { createHash } from "node:crypto";
 import { existsSync, readFileSync } from "node:fs";
 import { basename, dirname, join, normalize } from "node:path";
 
@@ -121,6 +122,14 @@ if (existsSync("docs/PROJECT.md")) {
   const snap = /version \*\*([\d.]+)\*\*, date \*\*(\d{4}-\d{2}-\d{2})\*\*/.exec(text("docs/PROJECT.md"));
   if (!snap) bad("docs/PROJECT.md has no snapshot line ('version **x.y.z**, date **YYYY-MM-DD**')");
   else if (snap[1] !== conf) bad(`docs/PROJECT.md snapshot says version ${snap[1]}, the app is ${conf}: update the snapshot and section 4`);
+}
+// 9a. the third-party notices that ship with the installer (ADR-0072, CP-4) match the lock files they were generated from
+if (!existsSync("THIRD-PARTY-NOTICES.md")) bad("THIRD-PARTY-NOTICES.md is missing: node scripts/gen-third-party-notices.mjs");
+else {
+  const norm = (t) => t.replace(/\r\n/g, "\n");
+  const fp = createHash("sha256").update(norm(text("app/src-tauri/Cargo.lock")) + "\0" + norm(text("app/package-lock.json"))).digest("hex");
+  const rec = /lock-files-sha256: ([0-9a-f]{64})/.exec(text("THIRD-PARTY-NOTICES.md"))?.[1];
+  if (rec !== fp) bad("THIRD-PARTY-NOTICES.md is out of date with Cargo.lock or package-lock.json: node scripts/gen-third-party-notices.mjs");
 }
 const README_MAX_LINES = 220;
 const readmeLines = text("README.md").split(String.fromCharCode(10)).length;

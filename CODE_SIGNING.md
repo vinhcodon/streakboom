@@ -54,7 +54,7 @@ Plainly, so that a reviewer or an antivirus engine can tell Peak from spyware (t
 
 ## Third-party code
 
-The dependencies and their licenses are listed in [`docs/dependency-licenses.md`](docs/dependency-licenses.md) (checked 2026-11-12: no proprietary component). Third-party binaries are not signed with our certificate.
+The dependencies and their licenses are listed in [`docs/dependency-licenses.md`](docs/dependency-licenses.md) (checked 2026-11-12: no proprietary component), and the license notices that their licenses ask for are in [`THIRD-PARTY-NOTICES.md`](THIRD-PARTY-NOTICES.md), which is installed next to the program. Third-party binaries are not signed with our certificate.
 
 ## Checking a download
 
