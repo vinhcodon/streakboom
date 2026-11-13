@@ -4,7 +4,7 @@
 
 **Numbering.** The handoff asked for `spec/08`; `spec/08-perception.md` exists, so this is spec 14 (**Vinh may renumber**).
 
-**Merged with `customization-hypothesis.md`: not done from the file.** That file is not in the repository. Section 7 below merges only what section 12 of the handoff says about it (three tiers: colour, accessory, voice, kept as the store of what Peak can change in itself; the way of speaking changes from "the person chooses" to "Peak proposes"; its R1 to R4 become the execution below; its H1 becomes H17). **To be checked against the file when it is found.**
+**Merged with `customization-hypothesis.md`.** That file was added to the repository later on 2026-11-13 and has been read; the merge is [`15-customization.md`](15-customization.md) (spec 15): the three tiers (colour, accessory, voice) are the store of what Peak can change in itself, the way of speaking changes from "the person chooses" to "Peak proposes", and its hypotheses became H23 to H26. Section 7.3 below only points there.
 
 ## 1. The idea
 
@@ -100,7 +100,7 @@ The real bottleneck is **new poses and states in the rig**, not the model's func
 
 ### 7.3 What Peak can change in itself (the merge)
 
-From section 12 of the handoff, taken to be the content of `customization-hypothesis.md` (**not read**): the store of what can change on Peak itself, in three tiers: **colour**, **accessory** and **voice**. The change of this spec is only in how it is reached: the person does not pick from a list; Peak **proposes** (section 8) and applies on yes. Nothing is sold (accessories as a future product stay an open question of the requirements draft, F3), and there is no content made by users. Not specified here until the file is read.
+The store of what can change on Peak itself, in three tiers: **colour**, **accessory** and **voice**, is specified in [`15-customization.md`](15-customization.md). The change of this spec is only in how it is reached: the person does not pick from a list; Peak **proposes** (section 8) and applies on yes, or the person asks in words (a skill of the closed list, which spec 15 asks Vinh to decide: N11). Nothing is sold, and there is no content made by users.
 
 ## 8. Learning from behaviour and making suggestions
 
@@ -164,8 +164,8 @@ New, from this analysis:
 - **N7.** Does a tier-2 leave act at once, or ask first with the `ask` card?
 - **N8.** What "đi ngủ đi" does until a `sleep` skill exists: yawn and go drowsy, or pass to chat.
 - **N9.** Whether "away" survives a restart (recommended: no).
-- **N10.** Where `customization-hypothesis.md` is, so that section 7.3 can be finished.
+- **N10.** *Answered 2026-11-13: the file was found and is read; see spec 15.*
 
 ## 14. What could not be verified
 
-See the end of the feasibility document. In short: no hotkey, microphone, audio format, screen-share behaviour, model reliability or walking cost was tried; the customization file was not read; the numbers in section 8 and the thresholds are proposals.
+See the end of the feasibility document. In short: no hotkey, microphone, audio format, screen-share behaviour, model reliability or walking cost was tried; the numbers in section 8 and the thresholds are proposals.

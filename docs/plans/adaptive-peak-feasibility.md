@@ -2,7 +2,7 @@
 
 **Status:** written 2026-11-13 from [`../handoff/adaptive-peak-and-skills.md`](../handoff/adaptive-peak-and-skills.md) (received 2026-11-13, dropped in by Vinh), read together with `requirements-draft-v0.4.md`, `north-star-bond-days.md` and `character-and-movement.md` (all in `../handoff/`) and checked against the code at 0.4.2. **Documents only: no app code was touched.** The spec is [`../../spec/14-adaptive-peak.md`](../../spec/14-adaptive-peak.md) (the handoff asked for `08`; that number is taken, see item 10), the order of work is [`adaptive-peak-plan.md`](adaptive-peak-plan.md).
 
-**Not read:** `customization-hypothesis.md`. It is not in the repository, the handoff folder, git history or the author's Desktop. Everything said here and in the spec about its three tiers (colour, accessory, voice) comes from section 12 of the handoff and is marked as such. Nothing was run: no skill was built, no hotkey or microphone was tried; every statement about Windows, WebView2 or an API's behaviour is a reading, listed in section "Not verified" at the end.
+**`customization-hypothesis.md`** was not in the repository when this was written; it was added later the same day and is read in [`../../spec/15-customization.md`](../../spec/15-customization.md). Where this document says it was not read, that is how things stood at the time. Nothing was run: no skill was built, no hotkey or microphone was tried; every statement about Windows, WebView2 or an API's behaviour is a reading, listed in section "Not verified" at the end.
 
 Where a point needs Vinh, it says **Vinh decides**; the full list is in section 13 of the spec.
 
