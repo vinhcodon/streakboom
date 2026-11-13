@@ -10,7 +10,7 @@ The author wants a counter of downloads and installs on the website. What can be
 - GitHub keeps only the newest two releases (ADR-0028), so the count of an older version disappears with its release. The total therefore cannot be read from GitHub alone.
 - The app's updater downloads the same installer file, so an update counts as a download: the number is higher than the number of people.
 - **Installs and active users cannot be counted from GitHub.** Nothing in the app calls home, by design: the privacy page says nothing is sent automatically except what the person sends to the AI provider they chose, and the update check. The count of `latest.json` downloads is too small and cannot tell an app from a check. Counting installs would need a server and an opt-in ping in the app (a consent in the sense of charter article 1 and the "few settings" rule), which is work for the app session and a change of the privacy text.
-- The site has no analytics on purpose (ADR-0034) and makes no request to a third party; a badge service or a visit counter would add one. *(Since ADR-0096 the site may count visits and copies with the tools it lists; the download counter itself still reads only GitHub.)*
+- The site has no analytics on purpose (ADR-0034) and makes no request to a third party; a badge service or a visit counter would add one. *(Since ADR-0096 the site may carry the measurement tools the author approves; the download counter itself still reads only GitHub.)*
 
 ## Decision
 1. **Count downloads, not installs.** The site shows the total number of downloads of the Windows installer from GitHub, and says what it counts: downloads from GitHub, including updates, not people. It does not say or imply "installs", "users" or "people".

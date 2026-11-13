@@ -36,7 +36,7 @@ What exists (spec 13 section 0.1): the grid of 31, the copy, the Share link, the
 
 ## Phase v1: growth (after v0; counting was approved by Vinh in Q7)
 
-> **2026-11-14 (ADR-0096):** the website may also count visits (Cloudflare Web Analytics, a script added by hand, switched off until its token is given); the copy counter is unchanged.
+> **2026-11-14 (ADR-0096):** the website may carry the measurement and tracking tools the author approves (Cloudflare Web Analytics first, switched off until its token is given); the copy counter is unchanged.
 >
 > **2026-11-13 (ADR-0092): counting is built but off until the author deploys the Worker** (v1.1: the switch, the texts and the Worker are done; v1.2 HOT waits for the thirty-day reading, v1.7). Earlier the same day ADR-0091 paused it.
 >

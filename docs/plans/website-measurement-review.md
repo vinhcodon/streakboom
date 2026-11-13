@@ -1,6 +1,6 @@
 # The website and measurement: a review (2026-11-14)
 
-Written by the website session at the author's request. It does not change anything; it says what was found, what the documents say today, what has to change if the author decides the website may measure, and what to ask. The decision is the author's: on 2026-11-14 he chose to allow cookie-free measurement and to add the Web Analytics script by hand; it is recorded in ADR-0096.
+Written by the website session at the author's request. It does not change anything; it says what was found, what the documents say today, what has to change if the author decides the website may measure, and what to ask. The decision is the author's: on 2026-11-14 he chose to allow cookie-free measurement and to add the Web Analytics script by hand; then, in a second review the same day, to lift the cookie-free limit (tools approved one by one, a consent notice for visitors outside Vietnam and Japan); it is recorded in ADR-0096.
 
 ## 1. What was found on the live site
 

@@ -1,6 +1,6 @@
 # Note from the website session to the app session: the website may measure (2026-11-14)
 
-**What happened.** `streakboom.com` is behind Cloudflare (the author's choice). Cloudflare added a Web Analytics script, a bot-detection script and error-reporting headers by itself, while the privacy page said "no analytics". The author decided (ADR-0096) that the website may measure with cookie-free tools named on the privacy page, and that **the app's privacy contract is unchanged and is about the app only**. Review: `docs/plans/website-measurement-review.md`.
+**What happened.** `streakboom.com` is behind Cloudflare (the author's choice). Cloudflare added a Web Analytics script, a bot-detection script and error-reporting headers by itself, while the privacy page said "no analytics". The author decided (ADR-0096) that the website may carry the measurement and tracking tools he approves one by one (with a consent notice for visitors outside Vietnam and Japan when a tool sets cookies), and that **the app's privacy contract is unchanged and is about the app only**; the earlier "no analytics on the site" (D7 of ADR-0034, ADR-0051 item 5) was a website decision, not the charter. Review: `docs/plans/website-measurement-review.md`.
 
 **What the website session did.** ADR-0096, the privacy page and sticker note composed from the build's switches, a guard on the live site, a note for the lawyer's list.
 

@@ -31,4 +31,4 @@ Nghiên cứu chỉ là thông tin. Phần lớn nguồn pháp lý chưa đượ
 
 ## Trang web (thêm 2026-11-14, ADR-0096)
 
-9. **Đo lượt truy cập không cookie và bộ đếm lượt chép sticker.** Trang web dùng Cloudflare Web Analytics (đo lượt truy cập và tốc độ tải, không cookie theo lời Cloudflare) và một bộ đếm ẩn danh theo ngày cho lượt chép sticker. Ở Việt Nam, Nhật Bản và EU: có cần thông báo hoặc cơ sở pháp lý riêng không, và câu chữ trên trang riêng tư (do AI viết, chưa có người bản ngữ đọc) đã đủ chưa?
+9. **Công cụ đo lường và tracking trên trang web.** Trang web dùng Cloudflare Web Analytics và một bộ đếm ẩn danh cho lượt chép sticker, và tác giả muốn thêm các công cụ tracking thông thường (từng cái một, ADR-0096). Ở Việt Nam, Nhật Bản và EU/UK: khi nào cần thông báo đồng ý (cookie hoặc mã nhận dạng), băng đồng ý chỉ cho khách ngoài Việt Nam và Nhật Bản có đủ không, cách xác định khách (múi giờ, ngôn ngữ) có chấp nhận được không, và câu chữ trên trang riêng tư (do AI viết, chưa có người bản ngữ đọc) đã đủ chưa?

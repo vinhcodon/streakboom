@@ -12,7 +12,7 @@ The author wants to publish the 20 stickers on the website so that people can us
 2. **The website session builds it** from a handoff (`docs/handoff/website-stickers.md`); the app session does not edit the site.
 3. **Licence: CC BY 4.0** (free to use and share, also commercially, with credit to Streakboom).
 4. **No submission** to Zalo, Telegram or LINE for now; a Telegram pack stays an option for later.
-5. **Privacy as in the app:** no cookies, no per-person counting; the effect on installs is counted in aggregate (the website session proposes how).
+5. **Privacy as in the app:** no cookies, no per-person counting; the effect on installs is counted in aggregate (the website session proposes how). *(Superseded for the website by ADR-0096, 2026-11-14: the app's rule is the app's only; the site may carry the tools the author approves.)*
 
 ## Alternatives considered
 A Telegram sticker pack as well (later); a ZIP download only, or Share and Download buttons (the author chose Copy only, to keep the page simple); a static demo page built by the app session (declined: the website has its own session); a custom licence of free personal use without resale (declined in favour of CC BY).
