@@ -13,6 +13,7 @@ The reference for what Peak does and how you use it. The short version is in the
 - 🍃 **Light on your computer.** About 100 to 120 MB of memory across its processes. Processor use, measured on one machine so far: about 4 to 6% of one core while it stands still and a median of about 9 to 11% in normal use (0.3.1 measured the same as 0.3.0); a hop costs about 0.34 seconds of one core. Getting it lower is an open item (`docs/plans/backlog.md`, PR-9).
 - 🎭 **It reacts like a cat, in time.** A reaction has a shape: when the window Peak stands on is closed, minimized or dragged away it freezes for a moment, jolts, cries out in a bigger speech bubble and falls to the bottom of the screen; when you poke, scratch or rub it, it moves first and speaks a moment later; repeat the same thing and it gets playful, then a little annoyed, then resigned, then forgives you. Lines are said once each before any repeats, and some use your name, the time or the weekday. Settings, Brain, **What Peak is told** shows, read-only, the notes a brain is given about who Peak is (the safety parts are marked as locked). How it is built: [`spec/09-reactions.md`](../spec/09-reactions.md).
 - 🤫 **Polite.** It stays quiet in fullscreen apps, at night and in Quiet mode, says nothing on its own while you work (it speaks unprompted only after about 45 seconds without you touching the computer, or while you play with it), and never takes the keyboard focus for plain speech.
+- 🚶 **It can go for a walk.** Type a plain command in the chat box (lượn đi, go away, 消えて) and Peak says a short goodbye, walks to the nearer side edge and leaves; after 20 minutes it comes back at the same edge, or at once when you show it from the tray. It does nothing in Quiet mode and needs a brain connected for the chat box.
 - 🔄 **Updates itself, your way.** Install automatically when you are idle, ask first (the default), or never check. It can also start with Windows (off by default; it asks once, politely).
 
 ## Using it
@@ -26,6 +27,7 @@ The reference for what Peak does and how you use it. The short version is in the
 | Double-click | open the chat bubble (a scripted "how are you" until it has a brain) |
 | Type or click near it | it stays still and quiet, then makes way (walks away) or hops to another row out of the path of your text |
 | The tray icon (click: show or hide; right-click: menu) | Settings, Quiet mode, Quit, Show / Hide |
+| Type lượn đi (or go away, 消えて) in the chat box | Peak says goodbye, walks to the nearer side edge and leaves for 20 minutes; show it from the tray to call it back at once |
 | Right-click the pet | a push away from the pointer: it staggers and huffs; near the end of a ledge it wobbles and may fall |
 
 On a fresh install the pet shows a four-card tour (replay it in Settings, About).
