@@ -2,6 +2,11 @@
 
 Release notes of every version of Streakboom, newest first. **GitHub keeps the latest release and the one right before it** (installer and update manifest; the previous one is a way back if the newest is bad); when a new version is published, anything older is deleted together with its tag and its notes stay here (ADR-0028). The git history keeps every commit.
 
+## 0.4.2 (2026-11-13)
+- **The licenses of the open-source packages now travel with the program.** `THIRD-PARTY-NOTICES.md`, the license notices of the Rust crates and the JavaScript packages that Streakboom is built from, is installed next to the program, as their licenses ask. Nothing else changes for you: Peak behaves as in 0.4.1.
+- This version is built by GitHub's CI from the public source and finished on the author's computer (the update signature is added there). The installer is still not code-signed.
+- Not yet tried: that the notices file lands in the install folder (it is checked after the first build that contains it).
+
 ## 0.4.1 (2026-11-12)
 - **Only one Peak runs at a time.** Before, every click on the program started another Peak, so you could end up with several pets on the screen. Now starting Streakboom again does not open a second pet; if the Peak that is running was hidden, it comes back. (ADR-0068.)
 - **The tray icon menu speaks your language.** Show / Hide, Settings, Quiet mode and Quit were always in English; they now follow the language you chose, and change at once when you change it in Settings.

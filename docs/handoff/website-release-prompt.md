@@ -34,6 +34,10 @@ Summarise what changed, list what you did not verify (the state on the Pages hos
 
 ---
 
+## 0.4.2 (a small patch, prepared 2026-11-13): nothing to change on the site
+- **The Pages build stays green:** the README only changed its status line (v0.4.2). The behaviour of the app is the same as 0.4.1; the installer now also installs `THIRD-PARTY-NOTICES.md` next to the program. It is the first release built by GitHub's CI (finished on the author's computer); it is still not code-signed, so the honest "Code signing policy" wording stays.
+- **GitHub keeps the newest two releases:** `v0.4.2` and `v0.4.1` (`v0.4.0` is deleted when 0.4.2 is published).
+
 ## 0.4.1 (a patch, published 2026-11-12): what to check on the site, nothing urgent
 - **The Pages build stays green:** the README keeps `263 hand-written lines per language`, "Your absence costs nothing" and the other phrases your build checks; only the status line (v0.4.1) and one sentence in the roadmap changed.
 - **Behaviour to know about:** only one Peak runs at a time (a second start of the program no longer opens a second pet, and brings the running one back if it was hidden: ADR-0068); the tray icon menu follows the app's language; the app's Auto language reads the system's whole list of preferred languages, with a picker on the first card of the tour, and **never** uses the IP address or location (ADR-0066, which is the app side of your ADR-0067).
