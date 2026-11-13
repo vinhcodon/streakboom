@@ -1,11 +1,11 @@
 {
-    "version":  "0.7.6",
-    "notes":  "Peak coming back by itself no longer takes the keyboard from what you are typing in, and it comes back on time even if the computer slept. Two fixes to sending Peak away: it now reappears without becoming the active window, and its return timer follows the clock instead of one long sleep. Nothing...",
-    "pub_date":  "2026-11-13T21:20:34Z",
+    "version":  "0.7.7",
+    "notes":  "Sending Peak away is no longer limited to Preview builds. This is the last build of the 0.7 line; the next regular version, 0.8.0, is cut from it. On a Preview copy nothing changes from 0.7.6.",
+    "pub_date":  "2026-11-13T21:37:11Z",
     "platforms":  {
                       "windows-x86_64":  {
-                                             "signature":  "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVUcHBlQXhYUlVURnVXS0ZEVW8xOSt1Ymh6cTMvdCtPemVpWXdTenFmOVgyTTZQeUsrLzc3MVVGNXNJeXN4ajlWZzdGZkpvK0wzc1ZFb1dHdnpRSnVJRjRzU0JIUmlFVlF3PQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzk0NjA0ODM0CWZpbGU6U3RyZWFrYm9vbV8wLjcuNl94NjQtc2V0dXAuZXhlCXZlcnNpb246MC43LjYKQ3UvcGdLUHBsUW1PbGtWcVlaL1VUR2lYM3VBV1Z3NHJvUGIzMmpmMjBOUStKa3FmYWlzZTc2VFdQOWZjZHBhSlZaSy9rWEJGb1VaUmhPeDhycnFCQ3c9PQo=",
-                                             "url":  "https://api.github.com/repos/vinhcodon/streakboom/releases/assets/745222578"
+                                             "signature":  "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVUcHBlQXhYUlVURnZubEhzQW9HWmE4L21ZYUxFVURVWkZ0a2pPU2lPTnVxcEd5TjRVQllhMC9qNjdXZklhZ3o5N3BrVndBc1kvT1luZGgvT2VpaWs1SlJDZnJOdEw2VHdBPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzk0NjA1ODMxCWZpbGU6U3RyZWFrYm9vbV8wLjcuN194NjQtc2V0dXAuZXhlCXZlcnNpb246MC43LjcKV291Y0NWTm80bi9nTVpUWFRhUWxpR2E4VTVZRG1HN0NFcnZyUjAvZVVyZ1hWRXlhQ09qamFWWElNV0l6NWk2aDN3ZmErRzhCRnluRkgzbFE0cVBwRGc9PQo=",
+                                             "url":  "https://api.github.com/repos/vinhcodon/streakboom/releases/assets/745270380"
                                          }
                   }
 }
