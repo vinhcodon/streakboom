@@ -1959,7 +1959,7 @@
   // at once when the person shows it from the tray. Only on a Preview build. Counted as `leave` and `callback`, apart from
   // Bond Days. Nothing here is saved: after a restart Peak is simply on screen.
   async function tryLeaveFromChat(text: string): Promise<boolean> {
-    if (!isLeaveCommand(text)) return false;
+    if (!isLeaveCommand(text, [mem.petName])) return false; // "peak" and the name the person gave it may stand around the command
     if (!ownVersion) ownVersion = await getVersion().catch(() => "");
     if (!mayLeave({ channel: channelOf(ownVersion), quiet, held: pose === "held", flying, away, leaving })) return false;
     void startLeave();

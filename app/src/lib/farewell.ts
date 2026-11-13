@@ -56,8 +56,8 @@ export function pickFarewell(lang: FarewellLang, last: string | null, rand: () =
 }
 
 /** Is this whole message the command to go away? Only an exact phrase of the table acts; a pattern match would need a confirmation (not built). */
-export function isLeaveCommand(text: string): boolean {
-  const m = matchIntent(text);
+export function isLeaveCommand(text: string, names?: readonly string[]): boolean {
+  const m = matchIntent(text, names);
   return m !== null && m.skill === "leave" && m.kind === "exact";
 }
 

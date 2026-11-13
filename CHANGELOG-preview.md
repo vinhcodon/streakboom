@@ -2,6 +2,10 @@
 
 Release notes of the **Preview** builds (an odd middle number: 0.5.x, 0.7.x), newest first. A Preview is a build the author hands to a few adults (ADR-0089, ADR-0090). It is published on GitHub as a pre-release, **never** as the download of the website, and its notes are **not** in [`CHANGELOG.md`](CHANGELOG.md), which the website reads. The format is the same as there: `## x.y.z (YYYY-MM-DD)`, then lines starting with `- `, the first a short bold sentence. When a Preview line is promoted, the Stable version takes its entry in `CHANGELOG.md`.
 
+## 0.7.4 (2026-11-14)
+- **Sending Peak away now understands more ways of saying it.** Words that only soften or address the command are ignored at both ends, so lượn đi nào, em lượn đi, thôi lượn đi, lượn đi peak, please go away and go away now work, and so does the name you gave Peak. A longer sentence that merely contains the words is still treated as chat. Anything the program does not recognise is still sent to the chat as before.
+- Not yet tried: the new wordings in a real chat, and sending Peak away on more than one monitor.
+
 ## 0.7.3 (2026-11-14)
 - **A first try of sending Peak away: type a plain command in the chat box, such as lượn đi, go away or 消えて.** Peak says one short goodbye, walks to the nearer side edge and leaves; after 20 minutes it comes back at the same edge with a stretch and says nothing, or at once when you show it from the tray (Show / Hide) or start the program again. It only exists on a Preview build, it needs a brain connected for the chat box to exist, and it does nothing while Quiet mode is on. If you are in a full-screen program when the time is up, it waits five minutes and tries again.
 - Not yet tried by anyone: the walk, the hide and the return on a real screen, the three languages of the goodbyes, and whether twenty minutes feels right.

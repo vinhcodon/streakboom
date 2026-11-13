@@ -149,3 +149,33 @@ test("ordinary chat lines of the three languages never match (a first negative s
   assert.deepEqual(e.falsePositives, []);
   assert.equal(e.falsePositiveRate, 0);
 });
+
+test("fillers around a command are taken off: the answer to a real try (2026-11-14) that Peak did not understand", () => {
+  for (const t of ["lượn đi nào", "lượn đi em", "em lượn đi", "peak lượn đi", "lượn đi peak", "lượn đi thôi", "thôi lượn đi", "thôi em lượn đi nào", "đi chơi đi nào", "Peak ơi lượn đi"]) {
+    // "peak ơi lượn đi" has a word that is not a filler: it must NOT match
+    assert.equal(skillOf(t), t === "Peak ơi lượn đi" ? null : "leave", t);
+  }
+  for (const t of ["please go away", "go away now", "ok go away", "hey go away", "go away peak", "peak go away please", "go away please now"]) assert.equal(skillOf(t), "leave", t);
+  assert.equal(skillOf("em im đi nào"), "quiet");
+  assert.equal(skillOf("thôi ngủ đi"), "sleep");
+  assert.equal(skillOf("em quay lại đi"), "return");
+});
+
+test("the name the person gave Peak may stand around a command too", () => {
+  assert.equal(matchIntent("mochi lượn đi", ["Mochi"])?.skill, "leave");
+  assert.equal(matchIntent("lượn đi mochi", ["Mochi"])?.skill, "leave");
+  assert.equal(matchIntent("mochi lượn đi"), null, "without the name it is only a word");
+  assert.equal(matchIntent("tí lượn đi", ["Tí"])?.skill, "leave");
+  assert.equal(matchIntent("lượn đi", ["x"])?.skill, "leave", "a one-letter name is ignored");
+  assert.equal(matchIntent("hôm nay mochi lượn đi họp", ["Mochi"]), null, "a sentence is still not a command");
+});
+
+test("fillers never turn an ordinary message into a command, and the core word is never a filler", () => {
+  for (const t of ["thôi", "em", "nào", "now", "please", "ok", "peak", "em nào", "thôi nào", "ok thanks", "hey peak", "đi", "đi nào", "đi thôi", "please come over to see the file now", "em ơi giúp anh với"]) assert.equal(matchIntent(t), null, t);
+  // the ordinary lines of the earlier test still match nothing with the names given
+  const e = evaluate(
+    ["hôm nay trời nóng quá", "tôi sẽ đi họp lát nữa", "ngủ ngon nhé", "mai là thứ hai rồi", "good morning", "see you tomorrow", "thank you", "おはよう", "ありがとう", "ちょっと休憩"].map((text) => ({ text, skill: null })),
+    ["Mochi"],
+  );
+  assert.deepEqual(e.falsePositives, []);
+});
