@@ -39,6 +39,7 @@
     { "id": "news", "kind": "situation", "names": { "en": "News and gossip", "vi": "Hóng chuyện", "ja": "噂話" }, "synonyms": { "en": ["gossip", "drama", "popcorn", "spill the tea"], "vi": ["hóng", "drama", "bóc phốt", "chuyện"], "ja": ["噂", "ゴシップ", "ドラマ"] } },
     { "id": "agreement", "kind": "situation", "names": { "en": "Agreement", "vi": "Đồng ý", "ja": "同意" }, "synonyms": { "en": ["ok", "okay", "sure", "agree"], "vi": ["ok", "được", "oke"], "ja": ["オッケー", "了解", "いいよ"] } },
     { "id": "refusal", "kind": "situation", "names": { "en": "Refusal", "vi": "Từ chối", "ja": "断る" }, "synonyms": { "en": ["no", "no way", "nope", "refuse"], "vi": ["không", "còn lâu", "đừng"], "ja": ["だめ", "ノー", "いや"] } },
+    { "id": "praise", "kind": "situation", "names": { "en": "Praise", "vi": "Khen", "ja": "称賛" }, "synonyms": { "en": ["compliment", "well done", "amazing", "nice work", "great idea"], "vi": ["khen", "giỏi", "tuyệt vời", "gút chóp", "ý kiến hay"], "ja": ["称賛", "ほめる", "グッジョブ", "すごい"] } },
     { "id": "funny-reply", "kind": "situation", "names": { "en": "Funny reply", "vi": "Cười đáp", "ja": "笑って返す" }, "synonyms": { "en": ["haha", "lol", "funny", "reply"], "vi": ["haha", "buồn cười", "trả lời", "hài"], "ja": ["爆笑", "あはは", "ウケる"] } }
   ]
 }

@@ -43,24 +43,53 @@ test("a phrase matches word by word in English and Vietnamese, as text in Japane
 });
 
 // what the rules give each sticker of set-v2: emotions | situations | cheekiness (the table Vinh skims in docs/plans/sticker-tags-proposed.md)
+// what the rules give each sticker of set-v2 (by address, so that a new sticker in the middle of the list moves nothing): emotions | situations | cheekiness
+// (the table Vinh skims in docs/plans/sticker-tags-proposed.md)
 const GOLDEN = {
-  "01": "happy,sleepy|morning|0", "02": "sleepy|night|0", "03": "sleepy||0", "04": "happy,excited|friday,work-day|0", "05": "loving||0",
-  "06": "grateful|thanks|0", "07": "sorry|apology|0", "08": "happy|celebration|0", "09": "happy|birthday,celebration|0", "10": "determined|work-day,encouragement|0",
-  "11": "laughing|funny-reply|0", "12": "blissful||0", "13": "laughing,playful|funny-reply|0", "14": "playful||0", "15": "playful||0",
-  "16": "happy,excited|invitation|0", "17": "excited|news|0", "18": "sad||0", "19": "stressed|work-day,deadline|0", "20": "shocked||0",
-  "21": "confused||0", "22": "thinking||0", "23": "teasing|refusal|1", "24": "annoyed||1", "25": "exhausted|work-day|2",
-  "26": "annoyed||1", "27": "teasing,shy|waiting|1", "28": "deadpan|work-day|2", "29": "deadpan||2", "30": "happy|agreement|0", "31": "firm|refusal|1",
+  "good-morning": "happy,sleepy|morning|0",
+  "sweet-dreams": "sleepy|night|0",
+  "sleepy": "sleepy||0",
+  "friday": "happy,excited|friday,work-day|0",
+  "love-you": "loving||0",
+  "thank-you": "grateful|thanks|0",
+  "sorry": "sorry|apology|0",
+  "congrats": "happy|celebration|0",
+  "happy-birthday": "happy|birthday,celebration|0",
+  "you-got-this": "determined|work-day,encouragement|0",
+  "amazing": "happy,excited|work-day,praise|0",
+  "haha": "laughing|funny-reply|0",
+  "bliss": "blissful||0",
+  "hehe": "laughing,playful|funny-reply|0",
+  "meow": "playful||0",
+  "peekaboo": "playful||0",
+  "lets-go-out": "happy,excited|invitation|0",
+  "popcorn-time": "excited|news|0",
+  "boohoo": "sad||0",
+  "deadline": "stressed|work-day,deadline|0",
+  "oh": "shocked||0",
+  "huh": "confused||0",
+  "let-me-think": "thinking||0",
+  "nyah-nyah": "teasing|refusal|1",
+  "ugh-really": "annoyed||1",
+  "im-dead": "exhausted|work-day|2",
+  "hmph": "annoyed||1",
+  "whos-waiting": "teasing,shy|waiting|1",
+  "good-job": "deadpan|work-day,praise|2",
+  "great-idea": "deadpan|work-day,praise|2",
+  "life-you-know": "deadpan||2",
+  "ok": "happy|agreement|0",
+  "nope": "firm|refusal|1",
 };
-const SLUGS = ["good-morning", "sweet-dreams", "sleepy", "friday", "love-you", "thank-you", "sorry", "congrats", "happy-birthday", "you-got-this", "haha", "bliss", "hehe", "meow", "peekaboo", "lets-go-out", "popcorn-time", "boohoo", "deadline", "oh", "huh", "let-me-think", "nyah-nyah", "ugh-really", "im-dead", "hmph", "whos-waiting", "good-job", "life-you-know", "ok", "nope"];
+const SLUGS = Object.keys(GOLDEN);
 
-test("the rules give each of the 31 stickers the tags, the cheekiness and the address of the golden table", () => {
+test("the rules give each sticker of the set the tags, the cheekiness and the address of the golden table", () => {
   const cat = buildCatalog(set);
   assert.deepEqual(cat.problems, []);
-  assert.equal(cat.stickers.length, 31);
-  for (const c of cat.stickers) assert.equal(`${c.emotions.join(",")}|${c.situations.join(",")}|${c.edge}`, GOLDEN[c.id], `sticker ${c.id} ${c.slug}`);
-  // an address never changes once published (ADR-0073 and spec 13): the list is a snapshot
-  assert.deepEqual(cat.stickers.map((c) => c.slug), SLUGS);
-  assert.equal(new Set(SLUGS).size, SLUGS.length);
+  assert.equal(cat.stickers.length, set.stickers.length, "every sticker of the manifest is in the catalogue");
+  for (const c of cat.stickers) assert.equal(`${c.emotions.join(",")}|${c.situations.join(",")}|${c.edge}`, GOLDEN[c.slug], `sticker ${c.id} ${c.slug}`);
+  // an address never changes once published (ADR-0073 and spec 13): every address of the table is still there, whatever the order of the set
+  assert.deepEqual([...cat.stickers.map((c) => c.slug)].sort(), [...SLUGS].sort());
+  assert.equal(new Set(cat.stickers.map((c) => c.slug)).size, cat.stickers.length);
   assert.deepEqual(catalogProblems(set, cat), []);
   for (const c of cat.stickers) for (const lang of ["en", "vi", "ja"]) assert.ok(c.synonyms[lang].length > 0, `${c.id} ${lang}`);
 });
@@ -117,5 +146,5 @@ test("the build keeps the proposal page up to date, and refuses an untagged stic
   assert.throws(run((ctx) => { ctx.catalog.stickers[0].edge = 2; }), /sticker-tags-proposed\.md is out of date/);
   assert.throws(run((ctx) => { ctx.catalog.stickers[4].emotions = []; ctx.catalog.stickers[4].situations = []; }), /sticker tags: sticker 05/);
   // the proposal is the one the generator writes
-  assert.ok(proposalMarkdown(set, buildCatalog(set)).includes("| 31 | `nope` | Nope. | Firm | Refusal | 1 cheeky |"));
+  assert.match(proposalMarkdown(set, buildCatalog(set)), /| d+ | `nope` | Nope. | Firm | Refusal | 1 cheeky |/);
 });

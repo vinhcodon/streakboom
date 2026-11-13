@@ -2,7 +2,7 @@
   "version": 1,
   "note": "The keyword rules (spec 13 section 2, Q9). A tag applies to a sticker when any phrase of the tag, in any language, is found in that language's words of the sticker: the English phrases are read against the English caption, title and alt text (the alt text describes what Peak does, so it gives visual cues such as 'deadpan'); the Vietnamese and Japanese phrases against the caption and the title in that language. English and Vietnamese phrases are compared word by word after the search's normalisation (no diacritics, no apostrophes, lower case); Japanese phrases are compared as text. A sticker no rule tags stops the build. The cheekiness level (edge) comes from the tags it got.",
   "rules": {
-    "happy": { "en": ["good morning", "friday", "congrats", "happy birthday", "winks", "cheerful", "smiling"], "vi": ["chào buổi sáng", "thứ sáu", "chúc mừng", "sinh nhật", "ok nè"], "ja": ["おはよう", "金曜日", "おめでとう", "オッケー"] },
+    "happy": { "en": ["amazing", "good morning", "friday", "congrats", "happy birthday", "winks", "cheerful", "smiling"], "vi": ["chào buổi sáng", "thứ sáu", "chúc mừng", "sinh nhật", "ok nè"], "ja": ["おはよう", "金曜日", "おめでとう", "オッケー"] },
     "laughing": { "en": ["haha", "laughs out loud", "hehe", "giggles"], "vi": ["haha", "hì hì"], "ja": ["あはは", "ふふ"] },
     "loving": { "en": ["love you", "heart-shaped"], "vi": ["yêu quá"], "ja": ["だいすき"] },
     "grateful": { "en": ["thank you", "saying thanks"], "vi": ["cảm ơn"], "ja": ["ありがとう"] },
@@ -14,8 +14,8 @@
     "thinking": { "en": ["let me think", "thinking"], "vi": ["để mình nghĩ"], "ja": ["考え中"] },
     "teasing": { "en": ["nyah", "teasing", "pretending"], "vi": ["còn lâu", "ai đợi đâu"], "ja": ["べーっ", "待ってないし"] },
     "annoyed": { "en": ["ugh", "hmph", "gloom"], "vi": ["gớm", "hứ"], "ja": ["うわぁ", "むっ"] },
-    "deadpan": { "en": ["deadpan", "life you know"], "vi": ["giỏi quá", "cuộc sống mà"], "ja": ["すごいすごい", "人生ってさ"] },
-    "excited": { "en": ["friday", "popcorn", "eyes wide", "asking to go out", "lets go out"], "vi": ["thứ sáu", "hóng", "đi chơi đi"], "ja": ["わくわく", "あそびに"] },
+    "deadpan": { "en": ["deadpan", "great idea", "life you know"], "vi": ["giỏi quá", "ý kiến hay", "cuộc sống mà"], "ja": ["すごいすごい", "いい考え", "人生ってさ"] },
+    "excited": { "en": ["amazing", "star shaped eyes", "friday", "popcorn", "eyes wide", "asking to go out", "lets go out"], "vi": ["mây zing", "thứ sáu", "hóng", "đi chơi đi"], "ja": ["アメイジング", "わくわく", "あそびに"] },
     "blissful": { "en": ["so good", "bliss", "being scratched"], "vi": ["sướng quá"], "ja": ["きもちいい"] },
     "playful": { "en": ["meow", "peekaboo", "peeks", "hehe"], "vi": ["meo", "ú òa", "hì hì"], "ja": ["にゃ", "いないいない", "ふふっ"] },
     "determined": { "en": ["you got this", "headband"], "vi": ["cố lên"], "ja": ["がんばって"] },
@@ -27,7 +27,7 @@
     "morning": { "en": ["good morning", "stretches"], "vi": ["chào buổi sáng"], "ja": ["おはよう"] },
     "night": { "en": ["sweet dreams", "asleep"], "vi": ["ngủ ngon"], "ja": ["おやすみ"] },
     "friday": { "en": ["friday"], "vi": ["thứ sáu"], "ja": ["金曜日"] },
-    "work-day": { "en": ["friday", "deadline", "good job", "you got this", "alarm clock", "im dead"], "vi": ["thứ sáu", "deadline", "giỏi quá", "cố lên", "xỉu ngang"], "ja": ["金曜日", "締め切り", "すごいすごい", "がんばって", "もうだめ"] },
+    "work-day": { "en": ["friday", "deadline", "great idea", "good job", "you got this", "alarm clock", "im dead"], "vi": ["thứ sáu", "deadline", "ý kiến hay", "giỏi quá", "cố lên", "xỉu ngang"], "ja": ["金曜日", "締め切り", "いい考え", "すごいすごい", "がんばって", "もうだめ"] },
     "deadline": { "en": ["deadline"], "vi": ["deadline"], "ja": ["締め切り"] },
     "birthday": { "en": ["happy birthday"], "vi": ["sinh nhật"], "ja": ["誕生日"] },
     "celebration": { "en": ["congrats", "happy birthday", "party hat"], "vi": ["chúc mừng", "sinh nhật"], "ja": ["おめでとう"] },
@@ -39,6 +39,7 @@
     "news": { "en": ["popcorn"], "vi": ["hóng"], "ja": ["わくわく"] },
     "agreement": { "en": ["ok", "ok sign"], "vi": ["ok nè"], "ja": ["オッケー"] },
     "refusal": { "en": ["nope", "no entry", "nyah"], "vi": ["không nha", "còn lâu"], "ja": ["だめだよ", "べーっ"] },
+    "praise": { "en": ["amazing", "good job", "great idea"], "vi": ["mây zing", "gút chóp", "ý kiến hay", "giỏi quá"], "ja": ["アメイジング", "グッジョブ", "いい考え", "すごいすごい"] },
     "funny-reply": { "en": ["haha", "laughs out loud", "hehe", "giggles"], "vi": ["haha", "hì hì"], "ja": ["あはは", "ふふ"] }
   },
   "edge": [

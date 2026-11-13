@@ -85,6 +85,8 @@ export function search(kind, items, query) {
         for (const [w, fieldWords] of fields) for (const fw of fieldWords) { const quality = wordQuality(word, fw); if (quality * w > best) best = quality * w; }
         if (best > 0) { matched++; score += best; }
       }
+      // the query is the whole title or the whole words on the picture: it comes first ("good job" before "Amazing, good job!")
+      if (matched === words.length && [...(it.t || []), ...(it.x || [])].some((f) => f === q)) score += 2;
       if (matched) out.push({ id: it.id, matched, score, order });
     });
   }

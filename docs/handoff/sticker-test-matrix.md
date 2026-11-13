@@ -6,10 +6,10 @@
 
 ## 1. Chuẩn bị
 
-1. **Ba sticker thử** (từ trang `https://streakboom.com/stickers/`, bản tiếng Việt cho Zalo, bản tiếng Anh cho Teams): **01 "Chào buổi sáng!"** (hình dài, chữ to), **09 "Sinh nhật vui vẻ!"** (chữ nhỏ hơn), **31 "Không nha"** (nhiều chi tiết). Dùng đúng số này ở mọi ô để so sánh được.
+1. **Ba sticker thử** (từ trang `https://streakboom.com/stickers/`, bản tiếng Việt cho Zalo, bản tiếng Anh cho Teams), chọn **theo tên chứ không theo số** (số thứ tự đổi khi thêm sticker vào giữa danh sách; bộ có 33 sticker từ 2026-11-13): **"Chào buổi sáng!"** (hình dài, chữ to), **"Sinh nhật vui vẻ!"** (chữ nhỏ hơn), **"Không nha."** (nhiều chi tiết). Dùng đúng ba sticker này ở mọi ô để so sánh được.
 2. **Ba biến thể:**
    - **T** = ảnh gốc trong suốt 360 px (mặc định của trang, chép bằng cách bấm vào sticker).
-   - **W** = cùng ảnh trên nền trắng vuông 360 px. Chưa có sẵn trên trang: tạo tay bằng Paint hoặc bất kỳ phần mềm nào (dán sticker lên khung trắng 360×360, lưu PNG, ví dụ `01-W.png`), rồi chép ảnh đó ra clipboard hoặc kéo-thả file/ảnh vào khung chat.
+   - **W** = cùng ảnh trên nền trắng vuông 360 px. Chưa có sẵn trên trang: tạo tay bằng Paint hoặc bất kỳ phần mềm nào (dán sticker lên khung trắng 360×360, lưu PNG, ví dụ `chao-buoi-sang-W.png`), rồi chép ảnh đó ra clipboard hoặc kéo-thả file/ảnh vào khung chat.
    - **S** = kích thước khác. Thêm `?px=NN` vào địa chỉ trang, ví dụ `https://streakboom.com/stickers/?px=240` rồi bấm sticker: ảnh chép ra có cạnh NN px (48 đến 360). Chỉ dùng để tìm cỡ vừa mắt ở cột "Kích thước tối ưu".
 3. **Ghi lại phiên bản** của trình duyệt, Zalo, Teams, hệ điều hành (cột cuối). Nếu Zalo hoặc Teams ở chế độ nền tối, ghi rõ (mục 3).
 4. **Cách làm mỗi route:**
@@ -86,7 +86,7 @@ Chỉ biến thể **T**. Cột: đến được chat (Y/N/P), nền, cỡ hiể
 
 ## 5. Chẩn đoán nền trắng (rất nên làm trước các ô trên)
 
-Mục đích: biết nền trắng đến từ **clipboard của Windows**, từ **trình duyệt**, hay từ **app chat**. Chép sticker 01 (T) rồi dán vào từng nơi sau, ghi nền:
+Mục đích: biết nền trắng đến từ **clipboard của Windows**, từ **trình duyệt**, hay từ **app chat**. Chép sticker "Chào buổi sáng!" (T) rồi dán vào từng nơi sau, ghi nền:
 
 | Dán vào | Nền thấy được | Ghi chú |
 |---|---|---|
@@ -99,7 +99,7 @@ Mục đích: biết nền trắng đến từ **clipboard của Windows**, từ
 Nếu chỉ Zalo (hoặc Teams) cho nền trắng còn các nơi khác giữ trong suốt thì nền trắng là do app đó; nếu mọi nơi đều trắng thì do đường clipboard. Kết quả quyết định có cần biến thể W trên trang không (spec 13 mục 1.5).
 
 ## 6. Quy ước đặt tên ảnh chụp
-`app-moitruong-route-bienthe-sticker.png`, ví dụ `zalo-pc-dan-T-01.png`, `teams-web-keotha-W-09.png` (không dấu trong tên file). Chưa có thư mục lưu quy định: chọn một thư mục ngoài repo hoặc nhờ phiên website thêm sau khi có kết quả.
+`app-moitruong-route-bienthe-sticker.png`, ví dụ `zalo-pc-dan-T-chao-buoi-sang.png`, `teams-web-keotha-W-sinh-nhat.png` (không dấu trong tên file). Chưa có thư mục lưu quy định: chọn một thư mục ngoài repo hoặc nhờ phiên website thêm sau khi có kết quả.
 
 ## 7. Đã biết cho tới nay (không phải ô của bảng, không thay cho bảng)
 

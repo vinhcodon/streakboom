@@ -12,7 +12,7 @@ const asked = Number(new URLSearchParams(location.search).get("px"));
 const COPY_SIDE = Number.isInteger(asked) && asked >= 48 && asked <= 360 ? asked : COPY_PX;
 
 // What is kept, by the sticker's English address (its slug), which never changes (ADR-0073 kept the lists per set because numbers change;
-// slugs do not). The lists of the older versions (numbers, per set) are moved here once and dropped.
+// slugs do not). The lists of the older versions (numbers, per set) are dropped.
 const MINE_KEY = "streakboom-stickers-mine";
 const LEGACY_KEY = "streakboom-sticker-recent";
 const SET_ID = (document.getElementById("sticker-recent") || { dataset: {} }).dataset.set || "";
@@ -30,7 +30,6 @@ const canCopy = !!(navigator.clipboard && navigator.clipboard.write && window.Cl
 const touch = matchMedia("(pointer: coarse)").matches;
 
 const mainButtons = new Map([...document.querySelectorAll(".sticker-grid:not(.recent-grid) .sticker")].map((b) => [b.dataset.slug, b]));
-const slugOfId = new Map([...mainButtons.values()].map((b) => [b.dataset.id, b.dataset.slug]));
 
 let resetTimer = 0;
 let doneTimer = 0;
@@ -54,21 +53,10 @@ function writeMine(mine) {
   if (mine.recent.length) store.set(MINE_KEY, JSON.stringify({ v: 1, recent: mine.recent }));
   else store.del(MINE_KEY);
 }
-// the older list of numbers, kept per set: moved by slug when there is none yet, then dropped
-(function migrate() {
-  const old = store.get(`${LEGACY_KEY}-${SET_ID}`);
-  if (old && !store.get(MINE_KEY)) {
-    try {
-      const ids = JSON.parse(old);
-      const recent = Array.isArray(ids) ? ids.map((id) => slugOfId.get(id)).filter(Boolean).slice(0, RECENT_MAX) : [];
-      if (recent.length) writeMine({ recent });
-    } catch {
-      // not a list: dropped
-    }
-  }
-  store.del(`${LEGACY_KEY}-${SET_ID}`);
-  store.del(LEGACY_KEY);
-})();
+// the older lists (sticker numbers, kept per set) are dropped, not moved: the numbers shift when a sticker is added to the middle of the list
+// (set-v2 went from 31 to 33), so they would show the wrong stickers
+store.del(`${LEGACY_KEY}-${SET_ID}`);
+store.del(LEGACY_KEY);
 
 const recentBox = document.getElementById("sticker-recent");
 const recentList = document.getElementById("sticker-recent-list");
