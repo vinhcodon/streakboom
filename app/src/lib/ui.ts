@@ -148,6 +148,7 @@ export interface UiStrings {
   /** The brain providers want an adult key holder (spec 12 section 5, ADR-0056). */
   brainAdult: string;
   versionLabel: string;
+  previewTag: string; // shown beside the version when this is a Preview build (ADR-0090)
   checkUpdates: string;
   checkingUpdates: string;
   upToDate: string;
@@ -378,6 +379,7 @@ export const UI: Record<Lang, UiStrings> = {
     helpText: "Peak is a small program, not a helper in a crisis. If you are in danger or thinking of harming yourself, please contact your local emergency number or a person you trust now. A directory of crisis lines by country: findahelpline.com",
     brainAdult: "The brain providers' terms require the key holder to be an adult (18+).",
     versionLabel: "Version",
+    previewTag: "Preview",
     checkUpdates: "Check for updates",
     checkingUpdates: "Checking…",
     upToDate: "You have the latest version.",
@@ -619,6 +621,7 @@ export const UI: Record<Lang, UiStrings> = {
     helpText: "Peak chỉ là một chương trình nhỏ, không giúp được khi bạn gặp khủng hoảng. Nếu bạn đang gặp nguy hiểm hoặc nghĩ đến việc tự làm hại mình, hãy gọi ngay số khẩn cấp ở nơi bạn sống hoặc liên lạc với một người bạn tin tưởng. Danh bạ đường dây hỗ trợ theo quốc gia: findahelpline.com",
     brainAdult: "Điều khoản của các nhà cung cấp bộ não yêu cầu người giữ khóa là người lớn (18+).",
     versionLabel: "Phiên bản",
+    previewTag: "bản thử",
     checkUpdates: "Kiểm tra cập nhật",
     checkingUpdates: "Đang kiểm tra…",
     upToDate: "Bạn đang dùng bản mới nhất.",
@@ -860,6 +863,7 @@ export const UI: Record<Lang, UiStrings> = {
     helpText: "Peakは小さなプログラムで、危機のときの助けにはなれません。危険を感じているとき、自分を傷つけたい気持ちがあるときは、いますぐお住まいの地域の緊急番号か、信頼できる人に連絡してください。国ごとの相談窓口の一覧：findahelpline.com",
     brainAdult: "脳のプロバイダーの利用規約では、キーの持ち主が成人（18歳以上）であることが必要です。",
     versionLabel: "バージョン",
+    previewTag: "プレビュー版",
     checkUpdates: "アップデートを確認",
     checkingUpdates: "確認中…",
     upToDate: "最新のバージョンだよ。",

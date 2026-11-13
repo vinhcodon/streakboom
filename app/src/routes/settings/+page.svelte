@@ -5,6 +5,7 @@
   // store, and is never sent to the pet window.
   import { invoke } from "@tauri-apps/api/core";
   import { getVersion } from "@tauri-apps/api/app";
+  import { channelOf } from "$lib/channel";
   import { emitTo } from "@tauri-apps/api/event";
   import { getCurrentWebviewWindow } from "@tauri-apps/api/webviewWindow";
   import { onMount, tick } from "svelte";
@@ -655,7 +656,7 @@
       </div>
       <div class="row">
         <span class="lbl">{ui.versionLabel}</span>
-        <b class="sel">{version}</b>
+        <b class="sel">{version}{channelOf(version) === "preview" ? " · " + ui.previewTag : ""}</b>
       </div>
       <div class="row">
         <button class="seg" onclick={() => invoke("open_website").catch(() => {})}>{ui.openWebsite}</button>
