@@ -1,11 +1,11 @@
 {
-    "version":  "0.4.1",
-    "notes":  "Peak 0.4.1, a patch. Only one Peak runs at a time: starting Streakboom again no longer opens a second pet, and brings the running one back if it was hidden. The tray icon menu now follows your language. Auto language now reads your whole list of preferred languages, and the first card of the tour has a small language picker; your IP address or location is never used. Full notes in CHANGELOG.md.",
-    "pub_date":  "2026-11-12T07:46:21Z",
+    "version":  "0.4.2",
+    "notes":  "The licenses of the open-source packages now travel with the program. THIRD-PARTY-NOTICES.md, the license notices of the Rust crates and the JavaScript packages that Streakboom is built from, is installed next to the program, as their licenses ask. Nothing else changes for you: Peak behaves as in...",
+    "pub_date":  "2026-11-13T07:47:57Z",
     "platforms":  {
                       "windows-x86_64":  {
-                                             "signature":  "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVUcHBlQXhYUlVURnRVdFFwSHFzR3FMUWk0TGdTN0NFTFdmSnpwWlJvS3hLUHZGaGNlTTVVNzF2c2F2cjhoQ3ZOUUdsR21xRElBZFkvN0xwZlJsR2lDTzdvVUcrZ0V0QndnPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzk0NDY5NTgwCWZpbGU6U3RyZWFrYm9vbV8wLjQuMV94NjQtc2V0dXAuZXhlCXZlcnNpb246MC40LjEKb1Q5VHIydTgzNnZGQnV6eEUzdEw0eTNWdXM1MWVYbSt1TFAzMG9ZcWZvM0ZUaVhIT0t4VGNDMC9LZUVJem9PalY3UVhTVVRBZEc4L2p0cXM4b3I0QUE9PQo=",
-                                             "url":  "https://api.github.com/repos/vinhcodon/streakboom/releases/assets/738561959"
+                                             "signature":  "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVUcHBlQXhYUlVURmsxQ2RLbDlURW1YRDBJTkUyRnY3MnFlcFFQQW1zUGUwaDJNakI1bllmWVdiNmpjU1hpZDMyZU9BbkVRdUdVVVJ4NGJ3bmtwbm1BazFRUkplbWZFS2dzPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzk0NTU2MDc3CWZpbGU6U3RyZWFrYm9vbV8wLjQuMl94NjQtc2V0dXAuZXhlCXZlcnNpb246MC40LjIKMStidlZja0tqdFZkY0FydmRFd09KMzNHb2VCWHZQTEFjTDRaeHBGZUZsc2pEcWxTMmxPS0h2MWFaeDlNU1lVbkJ2ZHU3Z3N1N1hzQmxDelNhMldaRHc9PQo=",
+                                             "url":  "https://api.github.com/repos/vinhcodon/streakboom/releases/assets/742749694"
                                          }
                   }
 }
