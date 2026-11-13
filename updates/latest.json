@@ -1,11 +1,11 @@
 {
-    "version":  "0.4.2",
-    "notes":  "The licenses of the open-source packages now travel with the program. THIRD-PARTY-NOTICES.md, the license notices of the Rust crates and the JavaScript packages that Streakboom is built from, is installed next to the program, as their licenses ask. Nothing else changes for you: Peak behaves as in...",
-    "pub_date":  "2026-11-13T07:47:57Z",
+    "version":  "0.6.0",
+    "notes":  "Nothing you can see changes. This version finishes the groundwork for two kinds of builds: Stable (this one, for everyone) and Preview (a build for a few testers). The program now knows which one it is from its version number, and a Preview says so beside the version in Settings, About. A Stable...",
+    "pub_date":  "2026-11-13T16:25:11Z",
     "platforms":  {
                       "windows-x86_64":  {
-                                             "signature":  "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVUcHBlQXhYUlVURmsxQ2RLbDlURW1YRDBJTkUyRnY3MnFlcFFQQW1zUGUwaDJNakI1bllmWVdiNmpjU1hpZDMyZU9BbkVRdUdVVVJ4NGJ3bmtwbm1BazFRUkplbWZFS2dzPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzk0NTU2MDc3CWZpbGU6U3RyZWFrYm9vbV8wLjQuMl94NjQtc2V0dXAuZXhlCXZlcnNpb246MC40LjIKMStidlZja0tqdFZkY0FydmRFd09KMzNHb2VCWHZQTEFjTDRaeHBGZUZsc2pEcWxTMmxPS0h2MWFaeDlNU1lVbkJ2ZHU3Z3N1N1hzQmxDelNhMldaRHc9PQo=",
-                                             "url":  "https://api.github.com/repos/vinhcodon/streakboom/releases/assets/742749694"
+                                             "signature":  "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVUcHBlQXhYUlVURmlHbHhaMGlPOU1LZEIzODNaVzAvVzNCMHBNaWxvVFFHS3U2NUg4cVRaMDN0NnpoNEsyYVo4cUdWb0xrQkduN1BKTzUrbmM1N28ya09wcUw2M2VwM2dnPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzk0NTg3MTExCWZpbGU6U3RyZWFrYm9vbV8wLjYuMF94NjQtc2V0dXAuZXhlCXZlcnNpb246MC42LjAKWi9kOFN2UEFHOFBTMzF6d0xMek4rVzBkVEdMdHlXay9HMDRFc0VWUXRCSXgyVTdyUWFzQ3FhcW9OTEIzMDh0ODgzUjVhVVZ6aDVXVGpIQXJBMmtnQmc9PQo=",
+                                             "url":  "https://api.github.com/repos/vinhcodon/streakboom/releases/assets/744325195"
                                          }
                   }
 }
