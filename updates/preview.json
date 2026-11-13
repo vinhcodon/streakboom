@@ -1,11 +1,11 @@
 {
-    "version":  "0.7.4",
-    "notes":  "Sending Peak away now understands more ways of saying it. Words that only soften or address the command are ignored at both ends, so lượn đi nào, em lượn đi, thôi lượn đi, lượn đi peak, please go away and go away now work, and so does the name you gave Peak. A longer sentence that merely contains...",
-    "pub_date":  "2026-11-13T20:27:24Z",
+    "version":  "0.7.5",
+    "notes":  "Sending Peak away can now be understood by the chat model too. When the model understands that you are telling it to go away, in any wording, Peak says one of its own goodbyes and leaves, as it does for the phrases it knows. This works only on a Preview build, when a brain is connected, from a sh...",
+    "pub_date":  "2026-11-13T20:44:55Z",
     "platforms":  {
                       "windows-x86_64":  {
-                                             "signature":  "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVUcHBlQXhYUlVURnFyRExhUnRjVitXbE9SbU9NVC9MRGcyKzFiVDVuOVJVY3ZSTUNLQVlBazZVeHBROWlFbmJTMExJSlI0VVdNS3ZSQWZQaE1mck9yR3RSTlVPZWVDQXdJPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzk0NjAxNjQzCWZpbGU6U3RyZWFrYm9vbV8wLjcuNF94NjQtc2V0dXAuZXhlCXZlcnNpb246MC43LjQKdWpwYnpYSmRNbFE4OXMyRkxJdTN6VFRNTThoQkJTQklLVFZUeFdrOUgzd3d0SlFtU2FrMExUOXhvZEdVd28xSFIyNklQcllyRnoweVgwNWVCVWNXREE9PQo=",
-                                             "url":  "https://api.github.com/repos/vinhcodon/streakboom/releases/assets/745067845"
+                                             "signature":  "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVUcHBlQXhYUlVURm5BK3hla2FwR1VUTXVXdnBHTjBFdjZLS0JnRmRCZCswMjVZTVZhNTY5Nkg3UklqWW9hQnQyeVNmS1pkUGlFZWVOajlVRWFKczQza0NIbEk3VWljcVFZPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzk0NjAyNjk0CWZpbGU6U3RyZWFrYm9vbV8wLjcuNV94NjQtc2V0dXAuZXhlCXZlcnNpb246MC43LjUKVjEyUENEN2l1NU9ZQUZVdkk1VUVXa1NJYTg3Z3daY1BidkZmOFl1UDU5Y0FjMHZXMkwrdTlubGpZT3dCZVRNUzZDUXJCUHJxYnlacm5SZjV4c3ZTQXc9PQo=",
+                                             "url":  "https://api.github.com/repos/vinhcodon/streakboom/releases/assets/745118429"
                                          }
                   }
 }
