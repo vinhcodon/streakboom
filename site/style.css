@@ -261,9 +261,7 @@ summary h3 { display: inline; font-size: inherit; font-weight: 600; margin: 0; }
 .sticker-search-status { margin: 6px 14px 0; min-height: 1.5em; font-size: .95rem; color: var(--muted); }
 .sticker-item[hidden] { display: none; }
 .stickers-page.searching .sticker-recent { display: none; }
-/* saved and recent stickers (plan v0.3): two small rows and one line with the single Clear */
-.sticker-saved h2::before { content: "♥ "; color: #d9667a; }
+/* the recent stickers (plan v0.3): a small row and one line with the Clear */
 .sticker-mine-foot { margin: -10px 0 24px; font-size: .9rem; color: var(--muted); }
 .sticker-mine-foot[hidden] { display: none; }
 .stickers-page.searching .sticker-mine-foot { display: none; }
-.sticker-keep { margin-left: 4px; }

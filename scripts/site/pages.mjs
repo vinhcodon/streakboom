@@ -444,10 +444,6 @@ export function stickersPage(lang, ctx) {
         <p id="sticker-search-status" class="sticker-search-status" role="status" aria-live="polite"></p>
       </div>
       <noscript><p class="note">${s("st_nojs")}</p></noscript>
-      <div id="sticker-saved" class="sticker-recent sticker-saved" hidden>
-        <h2>${s("st_saved")}</h2>
-        <ul id="sticker-saved-list" class="sticker-grid recent-grid"></ul>
-      </div>
       <div id="sticker-recent" class="sticker-recent" data-set="${esc(set.version)}" hidden>
         <h2>${s("st_recent")}</h2>
         <ul id="sticker-recent-list" class="sticker-grid recent-grid"></ul>

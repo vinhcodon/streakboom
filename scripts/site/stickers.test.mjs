@@ -139,7 +139,7 @@ test("the page script records nothing, and no rule blocks the system menu on a p
   const css0 = readFileSync(css, "utf8");
   try {
     writeFileSync(js, js0 + "\nlocalStorage.setItem('x', 1);\n");
-    assert.throws(run, /local storage is only for the saved and recent stickers/);
+    assert.throws(run, /local storage is only for the recent stickers/);
     writeFileSync(js, js0 + "\nsessionStorage.setItem('x', 1);\n");
     assert.throws(run, /stickers\.js mentions sessionStorage/);
     writeFileSync(js, js0.replace("COPY_PX = 360", "COPY_PX = 128"));

@@ -1,5 +1,6 @@
 # ADR-0079: Saved stickers (kept by slug) and Peak's lines on the sticker page
 
+- **Amended 2026-11-13: the Save button, the "Saved" row and the favourites were REMOVED at Vinh's word ("no one will press it"); only the recent row (by slug, one key, one Clear) and Peak's lines stay.**
 - **Status:** accepted (inside the plan Vinh approved on 2026-11-13, plan v0.3 and v0.4; the choices below are the website session's and are for Vinh to look at); **built on 2026-11-13** (committed; live after the push)
 - **Date:** 2026-11-13
 - **Decided by:** Claude (the website session), within `docs/plans/sticker-page-plan.md`

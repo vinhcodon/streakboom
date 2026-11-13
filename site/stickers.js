@@ -1,8 +1,7 @@
 // The sticker page (ADR-0051, ADR-0053, ADR-0060, plan v0.2 to v0.4): the picture itself is the button. Tap or click copies the PNG to the
 // clipboard (the picture as it is, 360 px; ?px=NN on the address can shrink it to try); where the phone supports it, the confirmation
-// carries a Share link, and a small "Save" keeps the sticker in a row of saved ones. The only things kept are two short lists in this
-// browser only (local storage, never sent anywhere): the stickers you saved and the last ones you used, by their address (slug), with one
-// Clear button. The search reads a small index file of the site itself. There is no other request than the pictures and that file.
+// carries a Share link. The only thing kept is a short list of the last stickers you used, in this browser only (local storage, never
+// sent anywhere), by their address (slug), with one Clear button. The search reads a small index file of the site itself. There is no other request than the pictures and that file.
 // Without this script the pictures are still there (real <img> elements).
 import { t } from "./ui.js";
 import { scriptOf, search } from "./search.js";
@@ -18,7 +17,6 @@ const MINE_KEY = "streakboom-stickers-mine";
 const LEGACY_KEY = "streakboom-sticker-recent";
 const SET_ID = (document.getElementById("sticker-recent") || { dataset: {} }).dataset.set || "";
 const RECENT_MAX = 10;
-const SAVED_MAX = 50;
 const store = {
   get(key) { try { return localStorage.getItem(key); } catch { return null; } },
   set(key, value) { try { localStorage.setItem(key, value); } catch { /* blocked (a private window): nothing is remembered */ } },
@@ -40,13 +38,12 @@ let copies = 0; // copies in this visit, so that the line after a copy changes w
 
 // ---- the saved and the last used stickers (this browser only)
 function readMine() {
-  const out = { recent: [], fav: [] };
+  const out = { recent: [] };
   try {
     const j = JSON.parse(store.get(MINE_KEY) || "null");
     if (j && j.v === 1) {
       const clean = (list, max) => (Array.isArray(list) ? list.filter((x) => typeof x === "string").slice(0, max) : []);
       out.recent = clean(j.recent, RECENT_MAX);
-      out.fav = clean(j.fav, SAVED_MAX);
     }
   } catch {
     // a damaged list is ignored
@@ -54,7 +51,7 @@ function readMine() {
   return out;
 }
 function writeMine(mine) {
-  if (mine.recent.length || mine.fav.length) store.set(MINE_KEY, JSON.stringify({ v: 1, recent: mine.recent, fav: mine.fav }));
+  if (mine.recent.length) store.set(MINE_KEY, JSON.stringify({ v: 1, recent: mine.recent }));
   else store.del(MINE_KEY);
 }
 // the older list of numbers, kept per set: moved by slug when there is none yet, then dropped
@@ -64,7 +61,7 @@ function writeMine(mine) {
     try {
       const ids = JSON.parse(old);
       const recent = Array.isArray(ids) ? ids.map((id) => slugOfId.get(id)).filter(Boolean).slice(0, RECENT_MAX) : [];
-      if (recent.length) writeMine({ recent, fav: [] });
+      if (recent.length) writeMine({ recent });
     } catch {
       // not a list: dropped
     }
@@ -73,8 +70,6 @@ function writeMine(mine) {
   store.del(LEGACY_KEY);
 })();
 
-const savedBox = document.getElementById("sticker-saved");
-const savedList = document.getElementById("sticker-saved-list");
 const recentBox = document.getElementById("sticker-recent");
 const recentList = document.getElementById("sticker-recent-list");
 const mineFoot = document.getElementById("sticker-mine-foot");
@@ -96,11 +91,9 @@ function showMine() {
   if (!recentBox || !recentList) return;
   const mine = readMine();
   const recent = mine.recent.filter((s) => mainButtons.has(s));
-  const saved = mine.fav.filter((s) => mainButtons.has(s));
   fill(recentList, recent);
   recentBox.hidden = recent.length === 0;
-  if (savedBox && savedList) { fill(savedList, saved); savedBox.hidden = saved.length === 0; }
-  if (mineFoot) mineFoot.hidden = recent.length === 0 && saved.length === 0;
+  if (mineFoot) mineFoot.hidden = recent.length === 0;
 }
 function remember(button) {
   const slug = button.dataset.slug;
@@ -111,15 +104,6 @@ function remember(button) {
   // a sticker tapped inside a row stays where it is until the next visit (it would move under the finger)
   if (!button.dataset.recent) showMine();
 }
-const isSaved = (slug) => readMine().fav.includes(slug);
-function toggleSaved(slug) {
-  const mine = readMine();
-  mine.fav = mine.fav.includes(slug) ? mine.fav.filter((x) => x !== slug) : [slug, ...mine.fav].slice(0, SAVED_MAX);
-  writeMine(mine);
-  showMine();
-  return mine.fav.includes(slug);
-}
-
 // ---- what Peak says after a copy (a line that changes with the sticker and the visit; a quiet one late at night, by the person's own clock)
 function copyLine(slug) {
   const hour = new Date().getHours();
@@ -131,7 +115,7 @@ function copyLine(slug) {
   return lines[(h + copies) % lines.length];
 }
 
-function say(text, shareFile, onShared, slug) {
+function say(text, shareFile, onShared) {
   status.textContent = "";
   status.append(text);
   status.dataset.on = "1";
@@ -150,14 +134,6 @@ function say(text, shareFile, onShared, slug) {
       }
     });
     status.append(" ", share);
-  }
-  if (slug) {
-    const keep = document.createElement("button");
-    keep.type = "button";
-    keep.className = "sticker-share sticker-keep";
-    keep.textContent = isSaved(slug) ? t("st_unkeep") : t("st_keep");
-    keep.addEventListener("click", () => { keep.textContent = toggleSaved(slug) ? t("st_unkeep") : t("st_keep"); });
-    status.append(" ", keep);
   }
   clearTimeout(doneTimer);
   doneTimer = setTimeout(() => { status.dataset.on = ""; status.textContent = ""; }, 7000);
@@ -213,7 +189,7 @@ async function copy(button) {
   } catch {
     // no File constructor: no Share
   }
-  say(copyLine(button.dataset.slug || ""), file, () => remember(button), button.dataset.slug);
+  say(copyLine(button.dataset.slug || ""), file, () => remember(button));
   copies++;
 }
 
