@@ -357,7 +357,7 @@ Why: the author keeps building features and lets a few adults try them (ADR-0089
 | PV-0 | Check the unknowns without shipping: NSIS over a higher or lower version, the updater's comparison, `releases/latest` and a pre-release | S | **done 2026-11-13** (results in the plan) | none |
 | PV-1 | `channelOf(version)`, the manifest address by channel in `updater.rs`, "Preview" in About and the update prompt, tests | S | **built 2026-11-13** (tests pass; the label not yet seen on a Preview build) | PV-0 |
 | PV-2 | The data rule: Stable reads files written by Preview (a test); the additive-only rule in the docs | S | **built 2026-11-13** (`channel-data.test.ts`; the rule is in `development.md` and `AGENTS.md`) | none |
-| PV-3 | The Preview build in CI: odd-minor tags, the version written in the workspace only, notes from `CHANGELOG-preview.md`, pre-release draft | M | **built 2026-11-13; never run on GitHub** (the rehearsal is PV-6) | PV-1 |
+| PV-3 | The Preview build in CI: odd-minor tags, the version written in the workspace only, notes from `CHANGELOG-preview.md`, pre-release draft | M | **built 2026-11-13; the CI build was rehearsed on GitHub with the `tag` input (no release); the publish step (PV-4) never ran** (the rehearsal is PV-6) | PV-1 |
 | PV-4 | `release-finish.ps1` for Preview: `updates/preview.json`, `--prerelease`, never `--latest`, pruning per channel, tests | M | **built 2026-11-13; never run on GitHub** (the rehearsal is PV-6) | PV-3 |
 | PV-5 | The website stays true (a note to the website session; the site by that session) | S | note written 2026-11-13 | none |
 | PV-6 | The first Preview (0.5.0) as an end-to-end rehearsal, then 0.5.1 by the in-app update | M | proposed; a release is ordered by name | PV-4 |
