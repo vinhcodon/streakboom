@@ -4,7 +4,7 @@ import { existsSync, readFileSync, readdirSync } from "node:fs";
 import { gzipSync } from "node:zlib";
 import { join } from "node:path";
 import { ORIGIN, RELEASES_URL, ROOT, fmtDate } from "./facts.mjs";
-import { BEACON_SRC, countingOn, countingProblems, measurementProblems, siteParagraph, stickerNote, webAnalyticsOn } from "./counting.mjs";
+import { BEACON_SRC, countingOn, countingProblems, measurementProblems, siteParagraph, stickerNote, webAnalyticsManual, webAnalyticsOn } from "./counting.mjs";
 import { catalogProblems, loadOverrides, loadPopular, loadVocabulary, normalize, popularProblems, proposalMarkdown } from "./catalog.mjs";
 import { STICKER_DIR } from "./stickers.mjs";
 import { formatCount } from "./downloads.mjs";
@@ -317,10 +317,10 @@ export function check({ ctx, pages, files, out }) {
     for (const p of measurementProblems(ctx.measurement)) bad(p);
     for (const p of pages) {
       const tags = [...p.html.matchAll(/<script[^>]*\ssrc="(https?:[^"]*)"[^>]*>/g)];
-      for (const t of tags) if (!(webAnalyticsOn(ctx) && t[1] === BEACON_SRC)) bad(`${p.path}: a script from a third party: ${t[1]} (ADR-0096 lists the only one allowed)`);
+      for (const t of tags) if (!(webAnalyticsManual(ctx) && t[1] === BEACON_SRC)) bad(`${p.path}: a script from a third party: ${t[1]} (ADR-0096 lists the only one allowed)`);
       const beacons = tags.filter((t) => t[1] === BEACON_SRC);
-      if (webAnalyticsOn(ctx) && beacons.length !== 1) bad(`${p.path}: the visit count is on but the page has ${beacons.length} of its scripts (one is needed)`);
-      if (webAnalyticsOn(ctx) && beacons[0] && !beacons[0][0].includes(`"token": "${ctx.measurement.webAnalyticsToken}"`)) bad(`${p.path}: the script of the visit count has another token than measurement.json`);
+      if (webAnalyticsManual(ctx) && beacons.length !== 1) bad(`${p.path}: the visit count is in manual mode but the page has ${beacons.length} of its scripts (one is needed)`);
+      if (webAnalyticsManual(ctx) && beacons[0] && !beacons[0][0].includes(`"token": "${ctx.measurement.webAnalyticsToken}"`)) bad(`${p.path}: the script of the visit count has another token than measurement.json`);
       if (/cloudflareinsights|\/cdn-cgi\//.test(p.html.replace(/<script[^>]*\ssrc="https:\/\/static\.cloudflareinsights\.com\/beacon\.min\.js"[^>]*><\/script>/, ""))) bad(`${p.path}: the page mentions a Cloudflare script of its own (ADR-0096)`);
     }
     for (const lang of LANGS) {
@@ -378,7 +378,7 @@ export function check({ ctx, pages, files, out }) {
       // what the author does not want: a Download button per sticker, a ZIP, a copy icon of two squares
       if (/<a\b[^>]*\sdownload(=|\s|>)|\.zip["' ]|\bzip\b/i.test(html.replace(/<script[\s\S]*?<\/script>/g, ""))) bad(`${p.path}: a download or a ZIP of the stickers (the author does not want them)`);
       // no third-party script or tracker
-      for (const m of html.matchAll(/<script[^>]*\ssrc="([^"]*)"/g)) if (!m[1].startsWith("/") && !(webAnalyticsOn(ctx) && m[1] === BEACON_SRC)) bad(`${p.path}: a script from outside the site: ${m[1]}`);
+      for (const m of html.matchAll(/<script[^>]*\ssrc="([^"]*)"/g)) if (!m[1].startsWith("/") && !(webAnalyticsManual(ctx) && m[1] === BEACON_SRC)) bad(`${p.path}: a script from outside the site: ${m[1]}`);
     }
     // the page script records nothing and stores nothing
     const js = existsSync(join(out, "stickers.js")) ? readFileSync(join(out, "stickers.js"), "utf8") : "";

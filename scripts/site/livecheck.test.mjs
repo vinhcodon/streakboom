@@ -5,30 +5,33 @@ import { BEACON_SRC } from "./counting.mjs";
 import { checkLive, liveProblems } from "./livecheck.mjs";
 
 const TOKEN = "0123456789abcdef0123456789abcdef";
-const off = { measurement: { webAnalyticsToken: "" } }, on = { measurement: { webAnalyticsToken: TOKEN } };
+const off = { measurement: { webAnalytics: "off" } }, auto = { measurement: { webAnalytics: "auto", excludeEu: true } }, manual = { measurement: { webAnalytics: "manual", webAnalyticsToken: TOKEN } };
 const H = (o = {}) => new Headers(o);
 const page = (extra = "") => `<html><body><script type="module" src="/app.js?v=1"></script>${extra}</body></html>`;
 const tag = `<script defer src="${BEACON_SRC}" data-cf-beacon='{"token": "${TOKEN}"}'></script>`;
+const autoTag = `<script type="module" src="${BEACON_SRC}/vcc0123" data-cf-beacon='{"version":"2024"}'></script>`;
 
-test("a clean page is clean, with the switch off or on", () => {
+test("a clean page is clean in every mode", () => {
   assert.deepEqual(liveProblems("/", page(), H(), off), []);
-  assert.deepEqual(liveProblems("/", page(tag), H(), on), []);
+  assert.deepEqual(liveProblems("/", page(autoTag), H(), auto), []);
+  assert.deepEqual(liveProblems("/", page(), H(), auto), [], "auto does not require the script on every page");
+  assert.deepEqual(liveProblems("/", page(tag), H(), manual), []);
 });
 
-test("what Cloudflare can add is found: the automatic analytics script, the bot script, error reporting, a cookie, any other script", () => {
-  const auto = `<script defer src="${BEACON_SRC}/vcc0123" data-cf-beacon='{"x":1}'></script>`;
-  assert.match(liveProblems("/", page(auto), H(), off).join(), /automatic copy of the analytics script/);
-  assert.match(liveProblems("/", page(tag + auto), H(), on).join(), /automatic copy/);
-  assert.match(liveProblems("/", page("<script>var u='/cdn-cgi/challenge-platform/scripts/jsd/main.js'</script>"), H(), off).join(), /bot-detection script/);
-  assert.match(liveProblems("/", page(), H({ nel: "{}" }), off).join(), /Network Error Logging/);
-  assert.match(liveProblems("/", page(), H({ "report-to": "{}" }), off).join(), /Network Error Logging/);
-  assert.match(liveProblems("/", page(), H({ "set-cookie": "__cf_bm=1; path=/" }), off).join(), /a cookie is set \(__cf_bm\)/);
-  assert.match(liveProblems("/", page('<script src="https://stats.example.com/a.js"></script>'), H(), on).join(), /a script from a third party/);
+test("what Cloudflare can add is found: a script the mode does not allow, the bot script, error reporting, a cookie, any other script", () => {
+  assert.match(liveProblems("/", page(autoTag), H(), off).join(), /automatic copy of the analytics script/);
+  assert.match(liveProblems("/", page(autoTag), H(), manual).join(), /automatic copy/);
+  assert.match(liveProblems("/", page(tag), H(), auto).join(), /tag of manual mode is on the page/);
+  assert.match(liveProblems("/", page(tag), H(), off).join(), /tag of manual mode is on the page/);
+  assert.match(liveProblems("/", page("<script>var u='/cdn-cgi/challenge-platform/scripts/jsd/main.js'</script>"), H(), auto).join(), /bot-detection script/);
+  assert.match(liveProblems("/", page(), H({ nel: "{}" }), auto).join(), /Network Error Logging/);
+  assert.match(liveProblems("/", page(), H({ "report-to": "{}" }), auto).join(), /Network Error Logging/);
+  assert.match(liveProblems("/", page(), H({ "set-cookie": "__cf_bm=1; path=/" }), auto).join(), /a cookie is set \(__cf_bm\)/);
+  assert.match(liveProblems("/", page('<script src="https://stats.example.com/a.js"></script>'), H(), auto).join(), /a script from a third party/);
 });
 
-test("the analytics script must match the switch: absent when off, present with the token when on", () => {
-  assert.match(liveProblems("/", page(tag), H(), off).join(), /no token/);
-  assert.match(liveProblems("/", page(), H(), on).join(), /is not on the page/);
+test("manual mode needs its tag on the page", () => {
+  assert.match(liveProblems("/", page(), H(), manual).join(), /is not on the page/);
 });
 
 test("a page turned away is reported as not checked, not as clean; another error is a problem", async () => {

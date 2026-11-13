@@ -1,4 +1,6 @@
 {
-  "note": "Cloudflare Web Analytics on the pages (ADR-0096). Empty token = no script on the pages and the privacy words say there is no page analytics. With the site token of Cloudflare Web Analytics (32 hex characters; it is public, it is in the page) the build adds exactly one script, the one of static.cloudflareinsights.com, and the privacy words say what it counts. Both change together or the build fails. Turn off the automatic injection in the Cloudflare dashboard first, or the script comes twice.",
+  "note": "Cloudflare Web Analytics (ADR-0096). Mode off: no script, the privacy words say there is no page analytics. Mode auto: Cloudflare adds its script itself (the dashboard option Enable, excluding visitor data in the EU, when excludeEu is true); the build adds nothing, the privacy words say what it counts, and the check of the live pages allows exactly that script. Mode manual: the build adds one script tag with webAnalyticsToken (32 hex characters, public). The words follow the mode; the build and the live check refuse what the mode does not allow. excludeEu is a statement about the Cloudflare setting, which the build cannot see: set it to true only after choosing that option in the dashboard.",
+  "webAnalytics": "auto",
+  "excludeEu": true,
   "webAnalyticsToken": ""
 }

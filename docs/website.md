@@ -3,7 +3,7 @@
 The static website (streakboom.com) is owned by the website session; the app session does not edit `site/` or `scripts/site/` and tells it what changed through [`handoff/website-release-prompt.md`](handoff/website-release-prompt.md). **This file is the website session's: it is rewritten when the site changes (last checked 2026-11-13).**
 
 ## What it is
-Static pages with no framework, no bundler, no npm dependency and no third-party script except the measurement tools the author has approved and listed in ADR-0096 (today, when switched on, the Cloudflare Web Analytics script), built by `node scripts/build-site.mjs` (Node 24) into `_site/` and served by **GitHub Pages** (ADR-0034). Every fact is in the HTML, so no script is needed to read it.
+Static pages with no framework, no bundler, no npm dependency and no third-party script except the measurement tools the author has approved and listed in ADR-0096 (today the Cloudflare Web Analytics script, added by Cloudflare itself in `auto` mode), built by `node scripts/build-site.mjs` (Node 24) into `_site/` and served by **GitHub Pages** (ADR-0034). Every fact is in the HTML, so no script is needed to read it.
 
 | Pages | Addresses |
 |---|---|
