@@ -1,6 +1,6 @@
 # 13. The sticker page: a place to pick a Peak sticker and send it from the browser
 
-**Status:** a proposal for Vinh to approve (2026-11-13). Nothing in this spec is built. It answers `docs/handoff/sticker-page-hypothesis.md` (v0.2). The file is numbered 13 and not 09 because `spec/09-reactions.md` already exists.
+**Status:** a proposal, **with Vinh's answers to Q3 to Q10 of 2026-11-13 recorded in section 10 and in ADR-0077**; the plan as a whole is not yet approved. Nothing in this spec is built. It answers `docs/handoff/sticker-page-hypothesis.md` (v0.2). The file is numbered 13 and not 09 because `spec/09-reactions.md` already exists.
 **Owner of the work:** the session that owns `site/` (the website session). **No code of the app is touched.** Every change to the page goes through this spec and the plan ([`../docs/plans/sticker-page-plan.md`](../docs/plans/sticker-page-plan.md)) and is looked at by Vinh before it is committed.
 **Related:** ADR-0051 (the page, copy and share, CC BY 4.0), ADR-0053 (one list, per-language images, no ZIP), ADR-0060 (recent stickers kept in the browser), ADR-0073 to ADR-0075 (set-v2, the copy is the original 360 px PNG), `docs/handoff/website-stickers.md`, `docs/plans/website-seo-geo.md`, the charter (the three questions of the filter).
 
@@ -41,11 +41,12 @@ Principles for every flow: the page does the copy **inside the click** (the blob
 4. Fallback: right-click the picture, Copy image (always works, from the browser).
 
 ### 1.2 Mobile (Android and iOS; Zalo and Teams apps)
-Two choices for the main action on a touch device. **Proposed default: B.**
+Two choices for the main action on a touch device. **Answered (Q8): B, after a test on a phone;** until then A stays.
 - **A. As today:** a tap copies, the confirmation carries a Share link (tap 1 copy, tap 2 Share, then pick the app in the sheet: three taps before the chat).
 - **B. Share first:** on a touch device where `navigator.canShare({files})` is true, **a tap opens the share sheet at once** (tap 1, then pick the app); where it is false, a tap copies and the line says "paste it in the chat". A small, text-only "Copy" stays available in the sticker's permalink page. This needs a decision (it changes ADR-0051's "tap copies") and a real-device test (V2): until then A stays.
 
 ### 1.3 What is known about the chat apps (nothing is claimed beyond this)
+- **Quick test of all platforms by Vinh, 2026-11-13 (a summary, no cell details):** Vinh tried Zalo and Microsoft Teams on all the platforms he has (the desktop app, the web and the phones) and found the result **OK**; Teams "will go into real use and issues will be fixed later". No cell of the matrix was filled, so what "OK" means per app (transparency, size, drag-and-drop, dark theme) is **not recorded and not verified here**.
 - **Zalo, one device, not recorded which** (reported by Vinh, 2026-11-12): pasting or sharing the sticker worked; the picture looked **much larger than Zalo's own stickers**; **the background was white, not transparent**; at 180 px it was still large, at 128 px it was **too small and of low quality**, so the original 360 px PNG was restored (ADR-0075). The website session checked that the source files are transparent (RGBA) and that the picture put on the clipboard is still transparent (checked in a browser, not in Zalo); so the white background is probably added by the receiving side (the clipboard route of the operating system or the chat app flattening the picture). **Not proven.** The matrix tells where it happens (paste the same copy into Paint and into other apps).
 - **Teams:** nothing is known. Not looked up for this spec.
 - **Messenger, Telegram, WhatsApp:** nothing is known for still pictures. (The handoff's notes on animated stickers are about a later phase.)
@@ -89,6 +90,7 @@ Rules:
 - **`slug`** is per language (the address of the permalink) and **never changes** once published (a retired sticker keeps its address and says it is retired). The stable key of a sticker is its **English slug**; the recent and favourite lists store it (not a number).
 - **Tags are a controlled list** (`tags.json` has the vocabulary): an id, a name per language, a slug per language, and **one or two sentences of introduction per language** (a tag page without its own words is thin content, section 4). A tag used by fewer than six stickers does not get a page.
 - **`emotions`** are the feeling (sleepy, proud, fed up, delighted), **`situations`** are the occasion (Monday morning, 11:30, Friday afternoon, deadline, meeting, thanks, birthday). A sticker has one to three of each.
+- **Tags are given by the system, not by hand (Q9, answered):** a **keyword dictionary** (`tag-rules.json`: for each emotion, situation and cheekiness level, the words and phrases, per language, that point to it) is applied **at build time** to the sticker's caption, title and alt text, and fills `emotions`, `situations`, `synonyms` and `edge`. The result is **deterministic and tested** (a table of captions with the expected tags). A sticker whose words match nothing makes the build name it, so the dictionary is extended (no sticker is published without tags). The build also writes **`tags.proposed.md`**, a one-page list of every sticker with the tags it got, for Vinh to skim once (and after each new batch); a correction is a line in an `overrides` file that wins over the rules. No AI service is called by the build (a secret key, a cost, and results that change between builds were refused). The website session writes the first dictionary for the 31 stickers.
 - **`edge`** (how cheeky): `0` gentle, `1` cheeky ("lầy"), `2` very cheeky ("lầy muốn tắt thở"). The names shown are a decision of the author per language. The charter still applies: a sticker is a **reply** (sorry, too much for me), never a need of Peak ("I miss you", hunger); the build refuses a text with the words the audit refuses (health claims, "lonely"...).
 - **`synonyms`** are words a person would type for the feeling, per language, without needing diacritics.
 - **`layers`** (optional, v1 or later): `{ "art": "...", "box": {x, y, w, h}, "align": "center", "maxLines": 2, "font": "..." }` for stickers whose caption is drawn on the client (section 8). Absent means the caption is part of the picture, as in set-v2.
@@ -135,7 +137,9 @@ Peak is a companion on this page, not a feature: it **never covers the grid, nev
 
 ## 6. Measurement (section 11 of the handoff)
 
-**The conflict to decide first.** Today the sticker page promises "nothing is sent or recorded anywhere when you copy or share" (ADR-0051, ADR-0053, ADR-0060; the page says so in three languages). Most of the metrics need an event sent when someone copies. So **the page cannot measure without changing its own promise**, and that is Vinh's decision (Q7). What can be measured under each choice:
+**Decided (Q7, 2026-11-13): anonymous counting from v1, with a small Cloudflare Worker (option 2 below); v0 counts nothing.** The privacy text of the sticker pages and of the privacy page changes **first**. The paragraph that follows explains what the decision changes.
+
+**The conflict that was to be decided.** Today the sticker page promises "nothing is sent or recorded anywhere when you copy or share" (ADR-0051, ADR-0053, ADR-0060; the page says so in three languages). Most of the metrics need an event sent when someone copies. So **the page cannot measure without changing its own promise**, and that is Vinh's decision (Q7). What can be measured under each choice:
 
 | Metric (handoff section 11) | Without any counting (today's promise) | With the minimal anonymous counting proposed below |
 |---|---|---|
@@ -194,27 +198,29 @@ No cause is concluded. **Checked in the repository and on the live site on 2026-
 | **V6** the least dependent counting | **Options written** (section 6) with what each knows and does not know. | After a choice: a test on the deployed page, and the privacy wording read by a person. |
 | **V7** why not indexed | The repository and live checks (section 7). | **Search Console and Bing data**: only Vinh can read them. |
 
-## 10. Open questions for Vinh, with a default each
+## 10. Questions for Vinh and his answers (2026-11-13, ADR-0077)
 
-| # | Question | Proposed default |
+| # | Question | Answer |
 |---|---|---|
-| **Q3** | Which languages after Vietnamese and English? (The page has Japanese, a beta with no native reader.) | **No new language until v1 has Search Console country data and the first counts.** Keep Vietnamese, English, Japanese. Teams and global office use suggests English first, so English gets the most care. |
-| **Q4** | Where is the website and who deploys? | **Answered in section 0:** this repository (`site/`, `scripts/site/`), GitHub Pages, deployed by the workflow on every push to `main` and daily; Vinh owns the repository, the website session edits the site. Confirm that is what you meant. |
+| **Q3** | Which languages after Vietnamese and English? | **None added yet;** decide with Search Console country data and the first counts. Keep Vietnamese, English and Japanese. |
+| **Q4** | Where is the website and who deploys? | **Confirmed:** this repository (`site/`, `scripts/site/`), GitHub Pages, the workflow on every push to `main` and daily; Vinh owns it, the website session edits it. |
 | **Q5** | Captions drawn on the client from v0, or hand-placed first? | **Hand-placed (as now) for v0;** decide layers at the start of v1 after Safari and build-time tests (section 8). |
-| **Q6** | The handoff says "download" as a secondary path; ADR-0053 says no per-sticker Download and no ZIP. | **Keep no Download button.** The fallback is the browser's own menu (right-click Copy or Save image, long press), which the real `<img>` keeps. |
-| **Q7** | May the sticker page send anonymous counts (section 6)? It changes the page's promise "nothing is sent or recorded". | **Not in v0** (editorial "popular" row, moderated tests, Search Console). Decide for v1 **after v0's matrix**, with the privacy wording ready and the lawyer's list updated. |
-| **Q8** | On a phone, a tap opens the share sheet at once (B) or copies first (A, today)? | **B on touch devices that can share files**, after the phone test (V2). Until then A. |
-| **Q9** | Names and number of the "cheekiness" levels, and who tags the stickers? | `edge` 0, 1, 2; the names are yours per language; **the sticker session proposes tags with each new sticker and Vinh edits them** (a sticker without tags is not published). |
-| **Q10** | A white-background variant (W)? | **Only after the matrix** shows an app where it is needed; until then a test file made by hand. |
+| **Q6** | A Download button per sticker? | **No Download button** (ADR-0053 holds). The fallback is the browser's own menu. |
+| **Q7** | Anonymous counting, and the page's promise? | **Yes, from v1,** with a small Cloudflare Worker; the promise and the privacy texts change first; v0 counts nothing (section 6). |
+| **Q8** | Tap behaviour on a phone? | **Share sheet at once (B), after a phone test;** until then A. |
+| **Q9** | Who tags the stickers and gives the cheekiness? | **The system, automatically:** a keyword dictionary at build time plus a proposal file for Vinh to skim (section 2). |
+| **Q10** | A white-background variant (W)? | **No,** unless an app is later found to show the transparent picture wrongly. Vinh's quick test found Zalo and Teams OK. |
+
+Still open (not a Q of the handoff): the Search Console and Bing facts for the indexing question (spec section 7); Vinh chose to give them later.
 
 ## 11. Constraints and how this spec meets them
 
 - **v0 is still PNG only;** animated stickers are not in this spec.
 - **No account, no user content.** The only things kept are lists in the visitor's own browser (recent, favourites, a "no thanks" to the app invitation).
-- **Backend: none in v0;** if Q7 is approved, one small counter service (section 6, option 2).
+- **Backend: none in v0;** from v1 one small counter service (Q7 approved; section 6, option 2).
 - **Peak never covers the grid** and has a budget (section 5).
 - **Not another chat tool.** The page lets a person take a sticker; it does not send, store or show messages, has no feed, no reactions, no sharing of the person's choices. **The three questions:** *can another assistant do it with a prompt?* no (it is a catalogue of pictures of Peak); *does it make Peak bond more?* a little, it brings the character into the person's own conversations; *is it lovable with the AI off?* yes, it has no AI at all.
-- **The site's promises hold:** no cookies, no third-party script, no tracking of copy or share unless Q7 is approved and the privacy text changes first; CC BY 4.0 and the credits stay; no "Zalo sticker" or "Telegram sticker" claim (they are pictures, not packs); the English and Japanese words keep their "not read by a native speaker" note until the manifest says reviewed.
+- **The site's promises hold:** no cookies, no third-party script, no tracking of copy or share in v0, and from v1 only the listed anonymous counts, after the privacy text changes; CC BY 4.0 and the credits stay; no "Zalo sticker" or "Telegram sticker" claim (they are pictures, not packs); the English and Japanese words keep their "not read by a native speaker" note until the manifest says reviewed.
 
 ## 12. Not in this spec
 Animated stickers; the "Nói đại đi" free-text matching and embeddings (R7: later, and a matching service would be a new dependency and a privacy question); a PWA and its offline cache (planned for v1 in the plan, detailed then); a store submission to Zalo or Telegram (the author's call; ADR-0051).

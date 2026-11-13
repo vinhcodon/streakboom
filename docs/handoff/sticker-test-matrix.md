@@ -107,5 +107,8 @@ Nếu chỉ Zalo (hoặc Teams) cho nền trắng còn các nơi khác giữ tro
 - File gốc có nền **trong suốt** thật (RGBA, khoảng 60% điểm ảnh trong suốt) và ảnh trang đặt lên clipboard vẫn trong suốt (kiểm bằng trình duyệt, không phải bằng Zalo).
 - Chưa biết gì về Teams, Messenger, Telegram, WhatsApp cho ảnh tĩnh.
 
+## 7b. Tóm tắt của Vinh (2026-11-13)
+Vinh đã **test nhanh** trên tất cả nền tảng của mình (Zalo và Teams: app máy tính, web, điện thoại) và thấy **ok**; Teams sẽ đưa vào dùng thật, có lỗi sẽ sửa sau. **Chưa có ô nào của bảng được điền**, nên "ok" cụ thể ra sao (nền, cỡ, kéo-thả, chủ đề tối, nền trắng) chưa được ghi lại và chưa được kiểm chứng ở đây. Bảng vẫn dùng được khi có lỗi cần khoanh vùng.
+
 ## 8. Sau khi điền
 Gửi lại cho phiên website (hoặc báo "xong ô nào"). Phiên website sẽ cập nhật spec 13 mục 1 (luồng) và kế hoạch giai đoạn 0.4, và ghi các ô chưa thử vào `docs/plans/verification-debt.md`.
