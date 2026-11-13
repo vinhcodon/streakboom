@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="vi"><head><meta charset="utf-8"><title>Text test</title>
+<style>
+@font-face { font-family: "BVP"; src: url("../../fonts/BeVietnamPro-Bold.ttf"); }
+body { font-family: sans-serif; background: #f3f3f3; margin: 12px; }
+.row { display: flex; gap: 14px; align-items: flex-start; margin-bottom: 14px; }
+.cell { background: #fff; padding: 6px; border: 1px solid #ddd; }
+.cell h4 { margin: 0 0 4px; font-size: 12px; font-weight: 600; }
+img, canvas { display: block; }
+.small { width: 120px; height: 120px; }
+</style></head><body>
+<div id="out"></div>
+<script>
+const items = [["amazing", "Ờ mây zing, gút chóp!"], ["life", "Cuộc sống mà."], ["faint", "Xỉu ngang!"]];
+const out = document.getElementById("out");
+document.fonts.load('44px "BVP"').then(async () => {
+  for (const [name, text] of items) {
+    const row = document.createElement("div"); row.className = "row";
+    const base = new Image(); base.src = name + ".png"; await base.decode();
+    const c = document.createElement("canvas"); c.width = 360; c.height = 360;
+    const ctx = c.getContext("2d"); ctx.drawImage(base, 0, 0);
+    let fs = 44; ctx.font = fs + 'px "BVP"';
+    while (ctx.measureText(text).width > 336 && fs > 10) { fs -= 1; ctx.font = fs + 'px "BVP"'; }
+    ctx.textAlign = "center"; ctx.lineJoin = "round"; ctx.miterLimit = 2;
+    ctx.lineWidth = 8; ctx.strokeStyle = "#fff"; ctx.strokeText(text, 180, 52);
+    ctx.fillStyle = "#2b2220"; ctx.fillText(text, 180, 52);
+    const mk = (title, el, small) => { const d = document.createElement("div"); d.className = "cell"; d.innerHTML = "<h4>" + title + "</h4>"; if (small) el.className = "small"; d.appendChild(el); return d; };
+    const b2 = new Image(); b2.src = name + "-baked.png";
+    const c2 = document.createElement("canvas"); c2.width = 360; c2.height = 360; c2.getContext("2d").drawImage(c, 0, 0);
+    row.append(mk("baked (Python) 360", b2), mk("browser canvas 360", c), mk("baked 120", Object.assign(new Image(), { src: name + "-baked.png" }), true), mk("canvas 120", c2, true));
+    out.appendChild(row);
+  }
+  document.title = "done";
+});
+</script></body></html>
