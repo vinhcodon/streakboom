@@ -1,8 +1,7 @@
 {
-  "note": "Cloudflare Web Analytics (ADR-0096). Mode off: no script, the privacy words say there is no page analytics. Mode auto: Cloudflare adds its script itself (the dashboard option Enable, excluding visitor data in the EU, when excludeEu is true); the build adds nothing, the privacy words say what it counts, and the check of the live pages allows exactly that script. Mode manual: the build adds one script tag with webAnalyticsToken (32 hex characters, public). allowBotScript: Cloudflare's bot protection adds its own small script (JavaScript detections, /cdn-cgi/challenge-platform/); on the free plan it cannot be switched off while the zone is proxied, and the author accepted it (ADR-0096): true lets the live check allow it and makes the privacy words say it exists. The words follow the mode; the build and the live check refuse what the mode does not allow. excludeEu is a statement about the Cloudflare setting, which the build cannot see: set it to true only after choosing that option in the dashboard.",
-  "webAnalytics": "auto",
-  "excludeEu": true,
-  "allowBotScript": true,
+  "note": "Cloudflare Web Analytics (ADR-0096). Modes: off (no script), auto (Cloudflare adds its script itself), manual (the build adds one script tag with webAnalyticsToken, 32 hex characters, public). Since 2026-11-14 the site is served through Cloudflare's proxy with a Transform Rule that sets Cache-Control to public, max-age=600, no-transform on every response: Cloudflare then adds NO script (neither the automatic analytics nor the bot-protection script), so the mode is off until the author chooses manual with a token. allowBotScript true would make the live check allow Cloudflare's bot script and the privacy words name it (it is false now: the script is gone). excludeEu is only for auto mode (a setting of the Cloudflare dashboard). behindCloudflare tells the live check that a page it reads must have come through Cloudflare. The words follow the switches; the build and the live check refuse what they do not allow.",
+  "webAnalytics": "off",
+  "allowBotScript": false,
   "behindCloudflare": true,
   "webAnalyticsToken": ""
 }
