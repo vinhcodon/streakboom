@@ -1067,12 +1067,22 @@ def meme_amazing():
 ART["Ý kiến hay."] = (meme_idea, dict(scale=2.3, dy=12))
 ART["Ờ mây zing, gút chóp!"] = (meme_amazing, dict(scale=2.3, dy=12))
 
+def no_idea():
+    """"No idea": a blank, dazed face (flat mouth) and an empty thought bubble of three growing circles above the head. No arms."""
+    grey, white = "#b8c2cc", "#ffffff"
+    circles = ((28, 44, 2.6), (35, 34, 4.2), (48, 17, 11.5))
+    bub = "".join(f'<circle cx="{x}" cy="{y}" r="{r + 1.3}" fill="{grey}"/>' for x, y, r in circles) + "".join(f'<circle cx="{x}" cy="{y}" r="{r}" fill="{white}"/>' for x, y, r in circles)
+    return cat(STAND_F, dict(LOOK["rest"], wide=0.2, mouth="flat", cheek=0.4, roll=4, dy=4, gx=1)) + bub
+
+
+ART["Không biết nha."] = (no_idea, dict(scale=2.3, dy=14))
+
 GROUPS = [
     ("Chào hỏi và ngày tháng", [("Chào buổi sáng!", None), ("Ngủ ngon.", None), ("Buồn ngủ…", None), ("Thứ Sáu rồi!", None)]),
     ("Yêu thương và lời tử tế", [("Thương quá!", "Yêu quá!"), ("Cảm ơn nha!", None), ("Xin lỗi nhé.", None), ("Chúc mừng nha!", None), ("Sinh nhật vui!", "Sinh nhật vui vẻ!"), ("Cố lên nha!", None), ("Ờ mây zing, gút chóp!", None)]),
     ("Vui và phấn khích", [("Haha!", None), ("Sướng quá~", None), ("Hì hì.", None), ("Meo~", None), ("Ú òa!", None), ("Đi chơi đi!", None), ("Hóng!", None)]),
     ("Buồn và lo", [("Huhu…", None), ("Deadline!", None)]),
-    ("Bất ngờ và nghi ngờ", [("Ơ!", None), ("Ủa?", None), ("Để mình nghĩ…", None)]),
+    ("Bất ngờ và nghi ngờ", [("Ơ!", None), ("Ủa?", None), ("Để mình nghĩ…", None), ("Không biết nha.", None)]),
     ("Trêu và lầy", [("Còn lâu!", None), ("Gớm!", None), ("Xỉu ngang!", None), ("Hừm.", "Hứ!"), ("Ai đợi đâu.", None), ("Giỏi quá.", None), ("Ý kiến hay.", None), ("Cuộc sống mà.", None)]),
     ("Đáp lời", [("Ok nè!", None), ("Không nha.", None)]),
 ]
@@ -1134,6 +1144,7 @@ V2 = [
     (("Ơ", "Oh", "えっ"), ("mắt trắng đồng tử nhỏ, miệng há to, người ngả ra sau, giật mình", "white eyes with tiny pupils, mouth wide open, leaning back in shock", "小さな瞳で目を見開き、口を大きく開けて、のけぞっておどろいている"), ("Oh!", "えっ！")),
     (("Ủa", "Huh", "あれ"), ("nghiêng đầu, hai dấu hỏi", "tilts its head with two question marks", "首をかしげて、はてなマークが浮かんでいる"), ("Huh?", "あれ？")),
     (("Để mình nghĩ", "Let me think", "考え中"), ("chống chân lên cằm, đang nghĩ", "paw on chin, thinking", "あごに手をあてて考えている"), ("Let me think…", "考え中…")),
+    (("Không biết", "No idea", "さあね"), ("mặt ngơ ngác, miệng phẳng, bong bóng suy nghĩ trống rỗng trên đầu", "a blank, dazed face with a flat mouth and an empty thought bubble above", "ぽかんとした顔で口は一文字、頭の上に空っぽの吹き出しが浮かんでいる"), ("No idea.", "さあね。")),
     (("Còn lâu", "Nyah nyah", "べーっだ"), ("kéo mí mắt dưới xuống và thè lưỡi ngắn, lêu lêu", "pulls down its lower eyelids and sticks out a short tongue, teasing", "あかんべえをして、短く舌を出している"), ("Nyah nyah!", "べーっだ！")),
     (("Gớm", "Ugh, really", "うわぁ"), ("mắt lim dim, miệng lượn sóng, vạch u ám trên trán", "half-closed eyes, a wavy mouth, gloom lines on the forehead", "半目で口が波うち、おでこに縦線が入っている"), ("Ugh, really?", "うわぁ…")),
     (("Xỉu ngang", "I'm dead", "もうだめ"), ("nằm bẹp, mắt xoáy, lè lưỡi, sao quay trên đầu", "flat on the floor, spiral eyes, tongue out, stars circling", "ぺちゃんと倒れて目がぐるぐる、舌を出し、星が回っている"), ("I'm dead!", "もうだめ〜")),

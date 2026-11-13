@@ -20,3 +20,6 @@ Three packs of twenty; a Share or Download button on every sticker; sticker 03 w
 
 ## Consequences
 The website page must show 33 and has no tabs. The Zalo route (ADR-0049) would need the list split into sets of 12 to 20. The meme origin was read from news articles, not the video (V-122). Revisit when a native speaker has read the English and Japanese lines.
+
+## Addendum (2026-11-13)
+Vinh asked for a "No idea" sticker, which the list lacked; "Không biết nha." (an empty thought bubble above a blank face) was added after "Để mình nghĩ…", so the list is **34**, not 33 (the file name of this ADR keeps the number it was written with).

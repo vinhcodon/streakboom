@@ -554,6 +554,29 @@
     {
       "id": "24",
       "text": {
+        "vi": "Không biết nha.",
+        "en": "No idea.",
+        "ja": "さあね。"
+      },
+      "title": {
+        "vi": "Không biết",
+        "en": "No idea",
+        "ja": "さあね"
+      },
+      "alt": {
+        "vi": "Peak mặt ngơ ngác, miệng phẳng, bong bóng suy nghĩ trống rỗng trên đầu. Chữ trên ảnh: “Không biết nha.”",
+        "en": "Peak a blank, dazed face with a flat mouth and an empty thought bubble above. Text on the image: \"No idea.\"",
+        "ja": "Peak（ねこ）がぽかんとした顔で口は一文字、頭の上に空っぽの吹き出しが浮かんでいる。画像の文字：「さあね。」"
+      },
+      "reviewed": {
+        "vi": true,
+        "en": false,
+        "ja": false
+      }
+    },
+    {
+      "id": "25",
+      "text": {
         "vi": "Còn lâu!",
         "en": "Nyah nyah!",
         "ja": "べーっだ！"
@@ -575,7 +598,7 @@
       }
     },
     {
-      "id": "25",
+      "id": "26",
       "text": {
         "vi": "Gớm!",
         "en": "Ugh, really?",
@@ -598,7 +621,7 @@
       }
     },
     {
-      "id": "26",
+      "id": "27",
       "text": {
         "vi": "Xỉu ngang!",
         "en": "I'm dead!",
@@ -621,7 +644,7 @@
       }
     },
     {
-      "id": "27",
+      "id": "28",
       "text": {
         "vi": "Hứ!",
         "en": "Hmph.",
@@ -644,7 +667,7 @@
       }
     },
     {
-      "id": "28",
+      "id": "29",
       "text": {
         "vi": "Ai đợi đâu.",
         "en": "Who's waiting?",
@@ -667,7 +690,7 @@
       }
     },
     {
-      "id": "29",
+      "id": "30",
       "text": {
         "vi": "Giỏi quá.",
         "en": "Good job.",
@@ -690,7 +713,7 @@
       }
     },
     {
-      "id": "30",
+      "id": "31",
       "text": {
         "vi": "Ý kiến hay.",
         "en": "Great idea.",
@@ -713,7 +736,7 @@
       }
     },
     {
-      "id": "31",
+      "id": "32",
       "text": {
         "vi": "Cuộc sống mà.",
         "en": "Life, you know.",
@@ -736,7 +759,7 @@
       }
     },
     {
-      "id": "32",
+      "id": "33",
       "text": {
         "vi": "Ok nè!",
         "en": "OK!",
@@ -759,7 +782,7 @@
       }
     },
     {
-      "id": "33",
+      "id": "34",
       "text": {
         "vi": "Không nha.",
         "en": "Nope.",

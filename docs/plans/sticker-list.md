@@ -1,6 +1,6 @@
-# The sticker list: 33 stickers in one list (2026-11-12)
+# The sticker list: 34 stickers in one list (2026-11-12)
 
-Status: **approved by Vinh on 2026-11-12 (31 stickers, the English and Japanese lines as proposed); the three-language set is built: `assets/stickers/set-v2/` with a manifest and review sheets `assets/stickers/direction-v1/set-v2_vi_sheet.png`, `_en_` and `_ja_`; the handoff for the website session is updated (`docs/handoff/website-stickers.md`).** Earlier: Vinh chose a shortlist on 2026-11-12, dropped the three categories and asked for one single list.** [`sticker-packs-three-categories.md`](sticker-packs-three-categories.md) and [`sticker-pack-2-office.md`](sticker-pack-2-office.md) are superseded (they keep the reasoning and the drawings of what was not kept). **33 stickers, one group**: the order below follows the types only to keep similar ones together; there are no groups, tabs or categories on the page or in the manifest. All 32 on one page: [`assets/stickers/list-draft/contact_sheet.png`](assets/stickers/list-draft/contact_sheet.png) (files `01.png` to `33.png` in the same folder, in the order below, Vietnamese text). Rules that hold: PNG 360 x 360, transparent, flat, at most 4 words per frame, **no arms** (Vinh), CC BY 4.0.
+Status: **approved by Vinh on 2026-11-12 (31 stickers, the English and Japanese lines as proposed); the three-language set is built: `assets/stickers/set-v2/` with a manifest and review sheets `assets/stickers/direction-v1/set-v2_vi_sheet.png`, `_en_` and `_ja_`; the handoff for the website session is updated (`docs/handoff/website-stickers.md`).** Earlier: Vinh chose a shortlist on 2026-11-12, dropped the three categories and asked for one single list.** [`sticker-packs-three-categories.md`](sticker-packs-three-categories.md) and [`sticker-pack-2-office.md`](sticker-pack-2-office.md) are superseded (they keep the reasoning and the drawings of what was not kept). **34 stickers, one group**: the order below follows the types only to keep similar ones together; there are no groups, tabs or categories on the page or in the manifest. All 32 on one page: [`assets/stickers/list-draft/contact_sheet.png`](assets/stickers/list-draft/contact_sheet.png) (files `01.png` to `34.png` in the same folder, in the order below, Vietnamese text). Rules that hold: PNG 360 x 360, transparent, flat, at most 4 words per frame, **no arms** (Vinh), CC BY 4.0.
 
 ## 1. The list
 "Now" = on the website (`set-v1`); "new" = drawn in the first passes. "Edit" = Vinh's note.
@@ -30,20 +30,21 @@ Status: **approved by Vinh on 2026-11-12 (31 stickers, the English and Japanese 
 | 21 | Ơ! | now, redrawn | a real shock: eyes white with tiny pupils, the mouth wide open, the body leaning back, shock lines (so it differs from "Ủa?") |
 | 22 | Ủa? | new | |
 | 23 | Để mình nghĩ… | now | |
-| 24 | **Còn lâu!** | new, redrawn | the "lêu lêu" face: both lower eyelids pulled down (red crescents under the eyes) and a short tongue stuck out (the first try had a long tongue and a wink and did not read as "lêu lêu") |
-| 25 | Gớm! | new | |
-| 26 | Xỉu ngang! | new | |
-| 27 | **Hứ!** | now, redrawn | was "Hừm."; the head turned away, eyes shut, little puffs (so it differs from "Gớm!") |
-| 28 | Ai đợi đâu. | now | |
-| 29 | Giỏi quá. | now | |
-| 30 | **Ý kiến hay.** | new | a flat unimpressed face from the picture Vinh sent (heavy lids, a pout), a dull switched-off lightbulb above (Vinh's choice Y2 of three) |
-| 31 | Cuộc sống mà. | now | |
-| 32 | Ok nè! | now | |
-| 33 | Không nha. | now | |
+| 24 | **Không biết nha.** | new | "No idea": a blank, dazed face with a flat mouth and an empty thought bubble of three growing circles above the head (Vinh's choice A of three, 2026-11-13) |
+| 25 | **Còn lâu!** | new, redrawn | the "lêu lêu" face: both lower eyelids pulled down (red crescents under the eyes) and a short tongue stuck out (the first try had a long tongue and a wink and did not read as "lêu lêu") |
+| 26 | Gớm! | new | |
+| 27 | Xỉu ngang! | new | |
+| 28 | **Hứ!** | now, redrawn | was "Hừm."; the head turned away, eyes shut, little puffs (so it differs from "Gớm!") |
+| 29 | Ai đợi đâu. | now | |
+| 30 | Giỏi quá. | now | |
+| 31 | **Ý kiến hay.** | new | a flat unimpressed face from the picture Vinh sent (heavy lids, a pout), a dull switched-off lightbulb above (Vinh's choice Y2 of three) |
+| 32 | Cuộc sống mà. | now | |
+| 33 | Ok nè! | now | |
+| 34 | Không nha. | now | |
 
-**17 stay as they are on the website and 16 are new** (the 14 of the first passes and the two meme stickers of 2026-11-13). "Ok sếp." and "Rất tiếc." are out (Vinh: the shrug-and-pout drawing was ugly and he dropped it). Also out, as before: "Làm chung nhé?", "Hoan hô!" and the stickers of the first passes that were not chosen (their pictures stay in `pack-cute-draft`, `pack-friends-draft`, `pack-office-draft`).
+**17 stay as they are on the website and 17 are new** (the 14 of the first passes, the two meme stickers and "Không biết nha.", all of 2026-11-13). "Ok sếp." and "Rất tiếc." are out (Vinh: the shrug-and-pout drawing was ugly and he dropped it). Also out, as before: "Làm chung nhé?", "Hoan hô!" and the stickers of the first passes that were not chosen (their pictures stay in `pack-cute-draft`, `pack-friends-draft`, `pack-office-draft`).
 
-## 2. Languages: all 33 in Vietnamese, English and Japanese (Vinh, 2026-11-12)
+## 2. Languages: all 34 in Vietnamese, English and Japanese (Vinh, 2026-11-12)
 The 17 unchanged ones already have English and Japanese (`set-v1`). The 14 others need them; **proposed lines below, written by an AI, not read by a native speaker** (they go into the manifest with `"reviewed": false`, V-99). Each is a line in the same spirit, not a translation word for word.
 
 | Quote (vi) | English | Japanese |
@@ -93,8 +94,8 @@ Done on the 32 above (before "Rất tiếc." was dropped; the numbers in the tab
 - **The English and Japanese lines of section 2:** are they right to draw with? (He may change any.)
 
 ## 5. What this changes
-- **The website:** one pack of 33; the manifest has no category; the page must not assume 20. "Hoan hô!" and "Làm chung nhé?" leave the page when it moves. The website stays as it is until Vinh approves the list and a handoff is written.
-- **File numbers** are 01 to 33 in the order above.
+- **The website:** one pack of 34; the manifest has no category; the page must not assume 20. "Hoan hô!" and "Làm chung nhé?" leave the page when it moves. The website stays as it is until Vinh approves the list and a handoff is written.
+- **File numbers** are 01 to 34 in the order above.
 - **Zalo or Telegram** (not planned): 31 would be two sets for Zalo (for example 16 and 15) (12 to 20 each), not decided.
 
 ## 6. Not verified
@@ -105,3 +106,4 @@ That "Còn lâu!" now reads as "lêu lêu" at 120 px (the lower lids are bright 
 - **"Ý kiến hay" (Thành Phạm).** No source found for a youtuber of that name saying it (four searches, 2026-11-13); nothing is drawn. Vinh will send a link or describe the scene.
 - **Second round (2026-11-13):** Vinh sent a caricature of the youtuber's face (heavy half-lidded eyes, a flat unimpressed look, slightly pouting lips) and found the first "Amazing" draft unimpressive, so three options were drawn for each: [`assets/stickers/direction-v1/meme_options.png`](assets/stickers/direction-v1/meme_options.png). "Ý kiến hay.": Y1 the unimpressed side-eye alone, Y2 the same face with a dull, switched-off lightbulb, Y3 the same face with a paw on a paper with a tick. "Amazing": A1 a medal and sparkles, A2 star eyes and a sunburst, A3 a mic drop. The deadpan reading ("ý kiến hay" said flatly, as a sarcasm) comes from the picture Vinh sent, not from a source found online.
 - **Decided (Vinh, 2026-11-13): both are in the list, Y2 and A2; `set-v2` was rebuilt with 33 stickers.** English "Amazing, good job!" / "Great idea."; Japanese "アメイジング！グッジョブ！" / "いい考えですね。" (AI-written, unreviewed, V-122). The old draft folder `pack-meme-draft` is gone.
+- **"No idea" (2026-11-13, Vinh asked whether it existed; it did not):** added as "Không biết nha." / "No idea." / "さあね。" (sticker 24, after "Để mình nghĩ…"); the English and Japanese lines are AI-written and unreviewed (V-99). Files from 24 on moved by one again.
