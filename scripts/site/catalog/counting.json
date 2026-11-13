@@ -1,4 +1,4 @@
 {
   "note": "Anonymous counting of sticker copies (ADR-0092). Empty endpoint = nothing is counted and the pages say nothing is sent. When Vinh has deployed the Worker (scripts/site/worker/README.md) the address goes here; the build then switches the sticker pages and the privacy page to the texts that say a copy is counted, and the page starts to send. Both change together or the build fails.",
-  "endpoint": "https://streakboom-count.vinhndhanoi.workers.dev"
+  "endpoint": "https://streakboom-sticker-count.vinhcodon.workers.dev"
 }
