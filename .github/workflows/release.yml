@@ -194,7 +194,8 @@ jobs:
           $file = if ($signed) { "signed/$env:INSTALLER" } else { "dist-in/$env:INSTALLER" }
           Write-Host "release file: $file (signed: $signed)"
           # a Preview is a pre-release from the start, so that releases/latest and the website never point at it (ADR-0090)
-          $extra = if ($env:CHANNEL -eq 'preview') { @('--prerelease') } else { @() }
+          # (typed as a list of strings: a single value would be unrolled and splatted letter by letter)
+          [string[]]$extra = if ($env:CHANNEL -eq 'preview') { '--prerelease' } else { @() }
           gh release create $env:TAG $file --repo $env:GITHUB_REPOSITORY --draft --verify-tag --title "Streakboom $env:VERSION" --notes-file notes-in/release-notes.md @extra
           if ($LASTEXITCODE -ne 0) { Write-Host "::error::gh release create failed (a release for $env:TAG may already exist)"; exit 1 }
           $state = if ($signed) { 'signed by SignPath' } else { '**not signed** (SignPath is not active yet)' }
