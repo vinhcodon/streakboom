@@ -1,0 +1,11 @@
+{
+    "version":  "0.5.0",
+    "notes":  "The first Preview build. It behaves exactly as 0.4.2; the only difference you can see is the word \"Preview\" beside the version in Settings, About. It exists to prove that a Preview can be built, published as a pre-release and updated inside the app.",
+    "pub_date":  "2026-11-13T15:02:50Z",
+    "platforms":  {
+                      "windows-x86_64":  {
+                                             "signature":  "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVUcHBlQXhYUlVURnFtbnVNb2JpMjA2bTlhUEpybis0c2oweWZISEdNSUMyNTNkSm8rcUREOGQ0bUZYa1RQY0h5M3BpQm5MUEMwMi9GMGZFVDNHNTI0ZVcyS3ZBWUpwU2d3PQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzk0NTgyMTY5CWZpbGU6U3RyZWFrYm9vbV8wLjUuMF94NjQtc2V0dXAuZXhlCXZlcnNpb246MC41LjAKUFFKNTkydWgyS29LcXFLTEZqbXFLQ0dWY25XUlhpSzhHRkhwMjFaVk5qbkFNZFVDRTJ5OFdJT1o3RUc0Q0p1TjBkOHhRVTRJSHV6TFIyanBXaE9BQ0E9PQo=",
+                                             "url":  "https://api.github.com/repos/vinhcodon/streakboom/releases/assets/744061297"
+                                         }
+                  }
+}
