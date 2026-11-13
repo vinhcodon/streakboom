@@ -1,6 +1,6 @@
 # ADR-0092: Measure sticker copies with a small Worker, for a thirty-day reading first
 
-- **Status:** accepted (Vinh asked on 2026-11-13: "tôi vẫn muốn đo để có số liệu cho danh sách hot", and chose a Cloudflare Worker, 30 days, copies only); **built, switched off** (the Worker is not deployed; counting starts only when the author has deployed it and its address is in `counting.json`)
+- **Status:** accepted (Vinh asked on 2026-11-13: "tôi vẫn muốn đo để có số liệu cho danh sách hot", and chose a Cloudflare Worker, 30 days, copies only); **built; the Worker was deployed by the author on 2026-11-13** (`https://streakboom-count.vinhndhanoi.workers.dev`); counting starts when the address in `counting.json` is pushed
 - **Date:** 2026-11-13
 - **Decided by:** Vinh (author) for measuring, the Worker and the event; Claude (the website session) for the design
 - **Supersedes** ADR-0091 (the pause); keeps what ADR-0077 Q7 approved

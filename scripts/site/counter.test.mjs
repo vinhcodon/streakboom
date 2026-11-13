@@ -80,7 +80,7 @@ test("the totals need the secret token", async () => {
 });
 
 test("the switch: off by default; an endpoint must be a plain https address of the Worker", () => {
-  assert.equal(loadCounting().endpoint, "", "counting is off until the author has deployed the Worker");
+  assert.deepEqual(countingProblems(loadCounting()), [], "the switch in the repository is valid (off, or the address of the Worker)");
   assert.deepEqual(countingProblems({ endpoint: "" }), []);
   assert.deepEqual(countingProblems({ endpoint: "https://streakboom-count.example-name.workers.dev" }), []);
   assert.deepEqual(countingProblems({ endpoint: "https://count.streakboom.com" }), []);
@@ -90,7 +90,12 @@ test("the switch: off by default; an endpoint must be a plain https address of t
 });
 
 test("counting on: the pages carry the address and the text that says a copy is counted; the checks refuse the page and the text apart", () => {
-  const off = build({ out: join(mkdtempSync(join(tmpdir(), "sb-cnt-")), "_site") });
+  // the pages with counting off are built from an empty switch, whatever the repository has now
+  const offDir = mkdtempSync(join(tmpdir(), "sb-cnt-"));
+  writeFileSync(join(offDir, "counting.json"), JSON.stringify({ endpoint: "" }));
+  process.env.STREAKBOOM_COUNTING_FILE = join(offDir, "counting.json");
+  let off;
+  try { off = build({ out: join(offDir, "_site") }); } finally { delete process.env.STREAKBOOM_COUNTING_FILE; }
   for (const p of off.pages.filter((x) => /stickers|privacy/.test(x.path))) assert.doesNotMatch(p.html, /data-count=|a copy is counted|bộ đếm|カウンター/, p.path);
   assert.doesNotMatch(off.files["llms-full.txt"], /only adds one to that day/);
   const on = () => ({ ...off.ctx, counting: { endpoint: "https://streakboom-count.x.workers.dev" } });
