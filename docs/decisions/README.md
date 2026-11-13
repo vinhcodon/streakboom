@@ -10,6 +10,7 @@ What was **decided**, why, and what was rejected. One short file per decision (a
 
 | ADR | Decision | Status | Date |
 |---|---|---|---|
+| [0095](0095-one-update-candidate-preview-only-by-hand-auto-is-stable-only.md) | One update candidate: the newest Stable, else (on a Preview copy) the newest Preview; Preview only by hand (a Stable copy only through a "Test builds..." step); Auto installs Stable only and asks on a Preview copy; replaces points 2 and 3 of ADR-0094 | accepted (direction) | 2026-11-14 |
 | [0094](0094-what-an-update-offers-a-preview-and-a-stable-copy.md) | What an update offers a Preview and a Stable copy: a Preview is offered its next Preview and a higher Stable as two choices, Auto stays in its own channel, the manual check lists both, separate manifests, no downgrade by the updater | accepted (direction) | 2026-11-14 |
 | [0093](0093-the-rules-for-managing-version-numbers.md) | The rules for managing version numbers: what each number means, when it moves, a Stable fix only when main is shippable, Preview testers skip the Stable and stay on Preview, a Stable is cut from the last Preview's commit, major stays 0 until an ADR | accepted | 2026-11-13 |
 | [0092](0092-measure-sticker-copies-with-a-worker-for-thirty-days.md) | Measure sticker copies with a small Cloudflare Worker, switched off until the author deploys it; a thirty-day reading before any HOT row; supersedes the pause of 0091 (the website session) | accepted, built (off) | 2026-11-13 |

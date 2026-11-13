@@ -1,6 +1,6 @@
 # ADR-0094: What an update offers a Preview copy and a Stable copy, and how the three update modes behave
 
-- **Status:** accepted as a **direction** (answered by the author on 2026-11-14 as multiple choice); nothing is built. The work is stories PV-10 to PV-12 of [`../plans/preview-channel-plan.md`](../plans/preview-channel-plan.md), each approved before code. **Amends** ADR-0093 point 3 (the rule that `preview.json` shows the newest release of both channels) and completes ADR-0090 and spec 16.
+- **Status:** accepted as a **direction** (answered by the author on 2026-11-14 as multiple choice); **points 2 and 3 are replaced by ADR-0095** (one candidate, Preview only by hand, Auto Stable only the same day); points 1, 4 and 5 stand; nothing is built. The work is stories PV-10 to PV-12 of [`../plans/preview-channel-plan.md`](../plans/preview-channel-plan.md), each approved before code. **Amends** ADR-0093 point 3 (the rule that `preview.json` shows the newest release of both channels) and completes ADR-0090 and spec 16.
 - **Date:** 2026-11-14
 - **Decided by:** Vinh (author), recorded by Claude (the app session)
 

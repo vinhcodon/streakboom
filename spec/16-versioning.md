@@ -107,28 +107,28 @@ A version number is **never reused**, never taken back, and may be skipped. A ta
 - `audit-docs.mjs`: the snapshot version in `docs/PROJECT.md` is the last **Stable** (already so), never a Preview.
 - For the Preview-stays-on-Preview choice: `release-finish.ps1 -Tag` for a Stable also reminds the author to publish the next Preview, and a test shows `preview.json` ends at the highest version whatever the order of publishing.
 
-## 11. What a copy is offered, and the update modes (ADR-0094, 2026-11-14)
+## 11. What a copy is offered, and the update modes (ADR-0095, which replaces points 2 and 3 of ADR-0094; 2026-11-14)
 
-The rule of the channels (section 1) is unchanged. What a copy is **offered** is:
+The rule of the channels (section 1) is unchanged, and the website shows only Stable. **One version is offered at a time**, by this rule: the newest **Stable higher than the copy in hand**; if there is none and the copy is **itself a Preview**, the newest **Preview higher than the copy**; else nothing.
 
-| The copy is on | What exists that is higher | The card (Ask) and the manual check show |
-|---|---|---|
-| Preview | a newer Preview only | that Preview |
-| Preview | a newer Stable only (no Preview line yet) | that Stable, marked as switching to Stable |
-| Preview | **both** | **two choices**: the Preview (staying, highlighted) and the Stable (switching) |
-| Stable | a newer Stable | that Stable |
-| Stable | only a Preview | nothing: Previews are not announced; a person tries one by being given its installer |
+| The copy is on | What exists that is higher | The check by hand shows | A background check (Ask card, Auto) |
+|---|---|---|---|
+| Stable | a newer Stable | that Stable | that Stable |
+| Stable | only a Preview | "you have the latest version", and under it a small link **"Test builds..."** (a warning and a confirmation, then the newest Preview) | nothing |
+| Preview | a newer Preview only | that Preview | nothing (a Preview is never offered in the background) |
+| Preview | a newer Stable only | that Stable (switching to Stable) | that Stable |
+| Preview | both | the **Stable first**; the Preview at the next check | the Stable |
 
-A Stable cut from a Preview line contains the code of that line up to its last Preview, so switching from a Preview to a higher Stable loses no feature the person already has (it has fewer than the newest Preview).
+A Stable cut from a Preview line contains the code of that line up to its last Preview, so switching from a Preview to a higher Stable loses no feature the person already has.
 
 | Mode | Behaviour |
 |---|---|
-| **Auto** | installs by itself only an update in the copy's **own channel**, when the person is not busy; never switches channel |
-| **Ask** (default) | the card, with the second choice when there is one |
+| **Auto** | on a **Stable** copy: installs the newer Stable by itself when the person is not busy. On a **Preview** copy: **behaves as Ask**, it never moves a tester to Stable silently |
+| **Ask** (default) | the card, for a Stable only |
 | **Off** | no background check |
-| **Manual check** (Settings) | works in every mode; on a Preview it lists both candidates, each with its own install button, and says which channel the copy is on |
+| **Check by hand** (Settings) | works in every mode and shows the one version of the table |
 
-**Manifests:** `updates/latest.json` holds only the newest **Stable**, `updates/preview.json` only the newest **Preview**; a Preview copy reads both, a Stable copy only the first. This replaces the earlier rule that `preview.json` shows the newest of both channels (sections 3 and 6, and ADR-0093 point 3, are amended by ADR-0094). **It takes effect only after the app can read two manifests and has been released in a Preview** (plan PV-10 to PV-12); until then the earlier rule stands, and the copies built before (0.5.0 to 0.7.1) keep reading only `preview.json`. **No downgrade by the updater**; a lower Stable is installed by hand.
+**Manifests:** `updates/latest.json` holds only the newest **Stable**, `updates/preview.json` only the newest **Preview**. A Stable copy reads `latest.json` (and `preview.json` only after the confirmation of "Test builds..."); a Preview copy reads both. This replaces the earlier rule that `preview.json` shows the newest of both channels (sections 3 and 6, and ADR-0093 point 3, are amended by ADR-0094 and ADR-0095). **It takes effect only after the app can read the two manifests by this rule and has been released in a Preview** (plan PV-10 to PV-12); until then the earlier rule stands, and the copies built before (0.5.0 to 0.7.1) keep reading only `preview.json`. **No downgrade by the updater**; a lower Stable is installed by hand.
 
 ## 12. Not verified
 
