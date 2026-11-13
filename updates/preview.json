@@ -1,11 +1,11 @@
 {
-    "version":  "0.7.5",
-    "notes":  "Sending Peak away can now be understood by the chat model too. When the model understands that you are telling it to go away, in any wording, Peak says one of its own goodbyes and leaves, as it does for the phrases it knows. This works only on a Preview build, when a brain is connected, from a sh...",
-    "pub_date":  "2026-11-13T20:44:55Z",
+    "version":  "0.7.6",
+    "notes":  "Peak coming back by itself no longer takes the keyboard from what you are typing in, and it comes back on time even if the computer slept. Two fixes to sending Peak away: it now reappears without becoming the active window, and its return timer follows the clock instead of one long sleep. Nothing...",
+    "pub_date":  "2026-11-13T21:20:34Z",
     "platforms":  {
                       "windows-x86_64":  {
-                                             "signature":  "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVUcHBlQXhYUlVURm5BK3hla2FwR1VUTXVXdnBHTjBFdjZLS0JnRmRCZCswMjVZTVZhNTY5Nkg3UklqWW9hQnQyeVNmS1pkUGlFZWVOajlVRWFKczQza0NIbEk3VWljcVFZPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzk0NjAyNjk0CWZpbGU6U3RyZWFrYm9vbV8wLjcuNV94NjQtc2V0dXAuZXhlCXZlcnNpb246MC43LjUKVjEyUENEN2l1NU9ZQUZVdkk1VUVXa1NJYTg3Z3daY1BidkZmOFl1UDU5Y0FjMHZXMkwrdTlubGpZT3dCZVRNUzZDUXJCUHJxYnlacm5SZjV4c3ZTQXc9PQo=",
-                                             "url":  "https://api.github.com/repos/vinhcodon/streakboom/releases/assets/745118429"
+                                             "signature":  "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVUcHBlQXhYUlVURnVXS0ZEVW8xOSt1Ymh6cTMvdCtPemVpWXdTenFmOVgyTTZQeUsrLzc3MVVGNXNJeXN4ajlWZzdGZkpvK0wzc1ZFb1dHdnpRSnVJRjRzU0JIUmlFVlF3PQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzk0NjA0ODM0CWZpbGU6U3RyZWFrYm9vbV8wLjcuNl94NjQtc2V0dXAuZXhlCXZlcnNpb246MC43LjYKQ3UvcGdLUHBsUW1PbGtWcVlaL1VUR2lYM3VBV1Z3NHJvUGIzMmpmMjBOUStKa3FmYWlzZTc2VFdQOWZjZHBhSlZaSy9rWEJGb1VaUmhPeDhycnFCQ3c9PQo=",
+                                             "url":  "https://api.github.com/repos/vinhcodon/streakboom/releases/assets/745222578"
                                          }
                   }
 }
