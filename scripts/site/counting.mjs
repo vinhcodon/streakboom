@@ -10,6 +10,38 @@ import { STRINGS } from "../../site/strings.mjs";
 const FILE = () => process.env.STREAKBOOM_COUNTING_FILE || join(dirname(fileURLToPath(import.meta.url)), "catalog", "counting.json");
 export const loadCounting = () => JSON.parse(readFileSync(FILE(), "utf8"));
 
+// the visit count of Cloudflare Web Analytics (ADR-0096): its own switch, scripts/site/catalog/measurement.json
+const MEASUREMENT = () => process.env.STREAKBOOM_MEASUREMENT_FILE || join(dirname(fileURLToPath(import.meta.url)), "catalog", "measurement.json");
+export const loadMeasurement = () => JSON.parse(readFileSync(MEASUREMENT(), "utf8"));
+export const BEACON_SRC = "https://static.cloudflareinsights.com/beacon.min.js";
+/** True when the pages carry the Cloudflare Web Analytics script. */
+export const webAnalyticsOn = (ctx) => Boolean(ctx?.measurement?.webAnalyticsToken);
+/** What the build refuses about that switch: the token is empty or the 32 hex characters of a site tag. */
+export function measurementProblems(m) {
+  const t = m?.webAnalyticsToken;
+  if (typeof t !== "string") return ["measurement.json: the token must be a string (empty = off)"];
+  if (t && !/^[0-9a-f]{32}$/.test(t)) return ["measurement.json: the token must be the 32 hex characters of a Cloudflare Web Analytics site tag"];
+  return [];
+}
+/** The one script tag of the visit count, or "" when it is off. */
+export const beaconTag = (ctx) => (webAnalyticsOn(ctx) ? `<script defer src="${BEACON_SRC}" data-cf-beacon='{"token": "${ctx.measurement.webAnalyticsToken}"}'></script>` : "");
+
+/** The paragraph "This website" of the privacy page, composed from what the build really does: cookies, the visit count, the copy counter, Cloudflare. */
+export function siteParagraph(lang, ctx) {
+  const S = STRINGS[lang];
+  const parts = [S.pv_site_nocookie, webAnalyticsOn(ctx) ? S.pv_site_wa : countingOn(ctx) ? S.pv_site_pv_none : S.pv_site_none];
+  if (countingOn(ctx)) parts.push(S.pv_site_cnt);
+  parts.push(S.pv_site_cf, S.pv_site_tail);
+  return parts.join(lang === "ja" ? "" : " ");
+}
+
+/** The note of the sticker page about what is sent: the copy counter or nothing, and the visit count when it is on. */
+export function stickerNote(lang, ctx) {
+  const S = STRINGS[lang];
+  const base = countingOn(ctx) ? S.st_privacy_on : S.st_privacy;
+  return webAnalyticsOn(ctx) ? `${base}${lang === "ja" ? "" : " "}${S.st_privacy_wa}` : base;
+}
+
 /** True when the build counts copies. */
 export const countingOn = (ctx) => Boolean(ctx?.counting?.endpoint);
 
@@ -27,11 +59,10 @@ export function countingProblems(counting) {
   return problems;
 }
 
-/** The sections of the privacy page, with the paragraph about this website replaced by the one that says a copy is counted when counting is on. */
+/** The sections of the privacy page, with the paragraph about this website composed from what the build does (siteParagraph). */
 export function privacySections(lang, ctx) {
   const sections = STRINGS[lang].pv_sections;
-  if (!countingOn(ctx)) return sections;
   const i = sections.findIndex((s) => s.id === "website" || /^(This website|Trang web này|このウェブサイトについて)$/.test(s.h));
   if (i < 0) throw new Error("the privacy section about this website was not found, so the counting text cannot replace it");
-  return sections.map((s, k) => (k === i ? { ...s, p: [STRINGS[lang].pv_site_on] } : s));
+  return sections.map((s, k) => (k === i ? { ...s, p: [siteParagraph(lang, ctx)] } : s));
 }

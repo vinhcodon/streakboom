@@ -62,3 +62,8 @@ jobs:
         with:
           name: downloads-ledger
           path: _site/downloads.json
+
+      # the LIVE pages must carry only what the privacy page says (ADR-0096): Cloudflare sits in front of the site and can add scripts, headers or
+      # cookies after the build checked its own files. Last, after the deploy and the ledger copy, so a failure is an alert and undoes nothing
+      - name: Check the live site against the privacy page
+        run: sleep 20 && node scripts/site/livecheck.mjs

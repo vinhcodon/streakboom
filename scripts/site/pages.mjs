@@ -7,7 +7,7 @@ import { formatCount } from "./downloads.mjs";
 import { inlineScript } from "./langsuggest.mjs";
 import { loadPopular } from "./catalog.mjs";
 import { withVersion } from "./assetversion.mjs";
-import { countingOn, privacySections } from "./counting.mjs";
+import { beaconTag, countingOn, privacySections, stickerNote } from "./counting.mjs";
 import { CC_URL, fontNames, needsReviewNote, stickerUrl } from "./stickers.mjs";
 
 export const PATHS = {
@@ -134,7 +134,7 @@ ${main}
   </main>
 
   ${footer({ lang, ctx })}
-${script ? `\n  <script type="module" src="${withVersion(script === true ? "/app.js" : script, ctx)}"></script>\n` : ""}</body>
+${script ? `\n  <script type="module" src="${withVersion(script === true ? "/app.js" : script, ctx)}"></script>\n` : ""}${beaconTag(ctx) ? `  ${beaconTag(ctx)}\n` : ""}</body>
 </html>
 `;
 }
@@ -478,7 +478,7 @@ ${items}
       </ol>
       <p class="licence">${s("st_license")}</p>
       <p class="note">${fonts}</p>${aiNote}
-      <p class="note">${s(countingOn(ctx) ? "st_privacy_on" : "st_privacy")}</p>
+      <p class="note">${esc(stickerNote(lang, ctx))}</p>
     </section>
 
     <section class="section">

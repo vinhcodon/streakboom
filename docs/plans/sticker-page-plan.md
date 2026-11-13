@@ -36,6 +36,8 @@ What exists (spec 13 section 0.1): the grid of 31, the copy, the Share link, the
 
 ## Phase v1: growth (after v0; counting was approved by Vinh in Q7)
 
+> **2026-11-14 (ADR-0096):** the website may also count visits (Cloudflare Web Analytics, a script added by hand, switched off until its token is given); the copy counter is unchanged.
+>
 > **2026-11-13 (ADR-0092): counting is built but off until the author deploys the Worker** (v1.1: the switch, the texts and the Worker are done; v1.2 HOT waits for the thirty-day reading, v1.7). Earlier the same day ADR-0091 paused it.
 >
 > *Earlier note:* **ADR-0091: counting is paused**, so v1.1, v1.2 (HOT), v1.3 and v1.7 wait; the row of Peak's picks (v0.8) stays. The test of W-57 shows what a GitHub counter would do (all requests counted, a lag of 15 to 25 minutes).

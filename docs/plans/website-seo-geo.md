@@ -148,7 +148,7 @@ Answered by Vinh on 2026-11-09; recorded in [ADR-0034](../decisions/0034-website
 | D4 structured data | **B**: SoftwareApplication, Person, WebSite, FAQPage | 2026-11-09 |
 | D5 files for AI engines | **C**: `llms.txt` and `llms-full.txt` | 2026-11-09 |
 | D6 crawler policy | **A**: allow everything, name the sitemap | 2026-11-09 |
-| D7 measuring | **A**: Search Console, Bing Webmaster, an assistant answer log; no analytics script | 2026-11-09 |
+| D7 measuring | **A**: Search Console, Bing Webmaster, an assistant answer log; no analytics script | 2026-11-09 (amended by ADR-0096, 2026-11-14: cookie-free tools named on the privacy page are allowed) |
 
 ## 9. Next improvements after 0.3.0 (proposal 2026-11-09; **the author chose the recommended option of N1 to N5 the same day, ADR-0040; N4, N2 and the N5 budget are built (see section 11); N3 is not**)
 

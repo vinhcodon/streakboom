@@ -28,3 +28,7 @@ Nghiên cứu chỉ là thông tin. Phần lớn nguồn pháp lý chưa đượ
 ## Tự kiểm tra trước khi gặp luật sư (không cần luật sư)
 
 - Điều khoản gói miễn phí của Gemini về việc dùng dữ liệu để cải thiện sản phẩm: bản nháp requirements v0.4 (mục E4) đã ghi nhận rủi ro này nhưng chưa xác minh. Nếu gói miễn phí cho phép dùng nội dung để huấn luyện, nó mâu thuẫn quy tắc 9 và Privacy trong app phải nói rõ.
+
+## Trang web (thêm 2026-11-14, ADR-0096)
+
+9. **Đo lượt truy cập không cookie và bộ đếm lượt chép sticker.** Trang web dùng Cloudflare Web Analytics (đo lượt truy cập và tốc độ tải, không cookie theo lời Cloudflare) và một bộ đếm ẩn danh theo ngày cho lượt chép sticker. Ở Việt Nam, Nhật Bản và EU: có cần thông báo hoặc cơ sở pháp lý riêng không, và câu chữ trên trang riêng tư (do AI viết, chưa có người bản ngữ đọc) đã đủ chưa?

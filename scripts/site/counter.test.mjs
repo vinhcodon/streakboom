@@ -122,7 +122,7 @@ test("counting on: the pages carry the address and the text that says a copy is 
     const run = (mutate) => { const c = { ctx: { ...b.ctx }, pages: b.pages.map((p) => ({ ...p })), files: { ...b.files }, out: b.out }; mutate(c); return () => check(c); };
     assert.doesNotThrow(run(() => {}));
     assert.throws(run((c) => { const p = c.pages.find((x) => x.path === "/stickers/"); p.html = p.html.replace(/ data-count="[^"]*"/, ""); }), /no address to send to/);
-    assert.throws(run((c) => { const p = c.pages.find((x) => x.path === "/privacy/"); p.html = off.pages.find((x) => x.path === "/privacy/").html; }), /does not say a copy is counted/);
+    assert.throws(run((c) => { const p = c.pages.find((x) => x.path === "/privacy/"); p.html = off.pages.find((x) => x.path === "/privacy/").html; }), /not the one composed from what the build does/);
     assert.throws(run((c) => { const p = c.pages.find((x) => x.path === "/vi/stickers/"); p.html = off.pages.find((x) => x.path === "/vi/stickers/").html; }), /no address to send to/);
   } finally {
     delete process.env.STREAKBOOM_COUNTING_FILE;
