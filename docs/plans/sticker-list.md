@@ -1,6 +1,6 @@
-# The sticker list: 34 stickers in one list (2026-11-12)
+# The sticker list: 35 stickers in one list (2026-11-12)
 
-Status: **approved by Vinh on 2026-11-12 (31 stickers, the English and Japanese lines as proposed); the three-language set is built: `assets/stickers/set-v2/` with a manifest and review sheets `assets/stickers/direction-v1/set-v2_vi_sheet.png`, `_en_` and `_ja_`; the handoff for the website session is updated (`docs/handoff/website-stickers.md`).** Earlier: Vinh chose a shortlist on 2026-11-12, dropped the three categories and asked for one single list.** [`sticker-packs-three-categories.md`](sticker-packs-three-categories.md) and [`sticker-pack-2-office.md`](sticker-pack-2-office.md) are superseded (they keep the reasoning and the drawings of what was not kept). **34 stickers, one group**: the order below follows the types only to keep similar ones together; there are no groups, tabs or categories on the page or in the manifest. All 32 on one page: [`assets/stickers/list-draft/contact_sheet.png`](assets/stickers/list-draft/contact_sheet.png) (files `01.png` to `34.png` in the same folder, in the order below, Vietnamese text). Rules that hold: PNG 360 x 360, transparent, flat, at most 4 words per frame, **no arms** (Vinh), CC BY 4.0.
+Status: **approved by Vinh on 2026-11-12 (31 stickers, the English and Japanese lines as proposed); the three-language set is built: `assets/stickers/set-v2/` with a manifest and review sheets `assets/stickers/direction-v1/set-v2_vi_sheet.png`, `_en_` and `_ja_`; the handoff for the website session is updated (`docs/handoff/website-stickers.md`).** Earlier: Vinh chose a shortlist on 2026-11-12, dropped the three categories and asked for one single list.** [`sticker-packs-three-categories.md`](sticker-packs-three-categories.md) and [`sticker-pack-2-office.md`](sticker-pack-2-office.md) are superseded (they keep the reasoning and the drawings of what was not kept). **35 stickers, one group**: the order below follows the types only to keep similar ones together; there are no groups, tabs or categories on the page or in the manifest. All 32 on one page: [`assets/stickers/list-draft/contact_sheet.png`](assets/stickers/list-draft/contact_sheet.png) (files `01.png` to `35.png` in the same folder, in the order below, Vietnamese text). Rules that hold: PNG 360 x 360, transparent, flat, at most 4 words per frame, **no arms** (Vinh), CC BY 4.0.
 
 ## 1. The list
 "Now" = on the website (`set-v1`); "new" = drawn in the first passes. "Edit" = Vinh's note.
@@ -18,33 +18,34 @@ Status: **approved by Vinh on 2026-11-12 (31 stickers, the English and Japanese 
 | 09 | **Sinh nhật vui vẻ!** | new | was "Sinh nhật vui!"; taller candle, bigger flame; open shiny eyes |
 | 10 | Cố lên nha! | new | |
 | 11 | **Ờ mây zing, gút chóp!** | new (Binz) | star-shaped eyes, a mouth open in awe, golden rays behind (Vinh's choice A2 of three) |
-| 12 | Haha! | now | |
-| 13 | Sướng quá~ | now | |
-| 14 | Hì hì. | now | |
-| 15 | Meo~ | new | |
-| 16 | Ú òa! | new | |
-| 17 | Đi chơi đi! | new | |
-| 18 | Hóng! | new | |
-| 19 | Huhu… | now | |
-| 20 | Deadline! | new | |
-| 21 | Ơ! | now, redrawn | a real shock: eyes white with tiny pupils, the mouth wide open, the body leaning back, shock lines (so it differs from "Ủa?") |
-| 22 | Ủa? | new | |
-| 23 | Để mình nghĩ… | now | |
-| 24 | **Không biết nha.** | new | "No idea": the shrug of the usual "I have no idea" emoji: eyes glancing aside, uneven brows (one raised), a sheepish closed smile, **no paws** (the open paws of the emoji made it busy, Vinh, 2026-11-13) (Vinh sent the emoji; the first version, an empty thought bubble, looked too much like "Để mình nghĩ…" and was replaced the same day) |
-| 25 | **Còn lâu!** | new, redrawn | the "lêu lêu" face: both lower eyelids pulled down (red crescents under the eyes) and a short tongue stuck out (the first try had a long tongue and a wink and did not read as "lêu lêu") |
-| 26 | Gớm! | new | |
-| 27 | Xỉu ngang! | new | |
-| 28 | **Hứ!** | now, redrawn | was "Hừm."; the head turned away, eyes shut, little puffs (so it differs from "Gớm!") |
-| 29 | Ai đợi đâu. | now | |
-| 30 | Giỏi quá. | now | |
-| 31 | **Ý kiến hay.** | new | a flat unimpressed face from the picture Vinh sent (heavy lids, a pout), a dull switched-off lightbulb above (Vinh's choice Y2 of three) |
-| 32 | Cuộc sống mà. | now | |
-| 33 | Ok nè! | now | |
-| 34 | Không nha. | now | |
+| 12 | **Tuyệt vời!** | new | "Awesome": round black sunglasses with a gloss, a wide grin that bares a row of teeth (**Peak's first teeth**, a flat white band), a thumbs-up fist at each side of the body, no arms; drawn from the emoji Vinh sent (2026-11-13). It shares the sunglasses with "Thứ Sáu rồi!" (04), see the note below |
+| 13 | Haha! | now | |
+| 14 | Sướng quá~ | now | |
+| 15 | Hì hì. | now | |
+| 16 | Meo~ | new | |
+| 17 | Ú òa! | new | |
+| 18 | Đi chơi đi! | new | |
+| 19 | Hóng! | new | |
+| 20 | Huhu… | now | |
+| 21 | Deadline! | new | |
+| 22 | Ơ! | now, redrawn | a real shock: eyes white with tiny pupils, the mouth wide open, the body leaning back, shock lines (so it differs from "Ủa?") |
+| 23 | Ủa? | new | |
+| 24 | Để mình nghĩ… | now | |
+| 25 | **Không biết nha.** | new | "No idea": the shrug of the usual "I have no idea" emoji: eyes glancing aside, uneven brows (one raised), a sheepish closed smile, **no paws** (the open paws of the emoji made it busy, Vinh, 2026-11-13) (Vinh sent the emoji; the first version, an empty thought bubble, looked too much like "Để mình nghĩ…" and was replaced the same day) |
+| 26 | **Còn lâu!** | new, redrawn | the "lêu lêu" face: both lower eyelids pulled down (red crescents under the eyes) and a short tongue stuck out (the first try had a long tongue and a wink and did not read as "lêu lêu") |
+| 27 | Gớm! | new | |
+| 28 | Xỉu ngang! | new | |
+| 29 | **Hứ!** | now, redrawn | was "Hừm."; the head turned away, eyes shut, little puffs (so it differs from "Gớm!") |
+| 30 | Ai đợi đâu. | now | |
+| 31 | Giỏi quá. | now | |
+| 32 | **Ý kiến hay.** | new | a flat unimpressed face from the picture Vinh sent (heavy lids, a pout), a dull switched-off lightbulb above (Vinh's choice Y2 of three) |
+| 33 | Cuộc sống mà. | now | |
+| 34 | Ok nè! | now | |
+| 35 | Không nha. | now | |
 
-**17 stay as they are on the website and 17 are new** (the 14 of the first passes, the two meme stickers and "Không biết nha.", all of 2026-11-13). "Ok sếp." and "Rất tiếc." are out (Vinh: the shrug-and-pout drawing was ugly and he dropped it). Also out, as before: "Làm chung nhé?", "Hoan hô!" and the stickers of the first passes that were not chosen (their pictures stay in `pack-cute-draft`, `pack-friends-draft`, `pack-office-draft`).
+**17 stay as they are on the website and 18 are new** (the 14 of the first passes, the two meme stickers, "Không biết nha." and "Tuyệt vời!", all of 2026-11-13). "Ok sếp." and "Rất tiếc." are out (Vinh: the shrug-and-pout drawing was ugly and he dropped it). Also out, as before: "Làm chung nhé?", "Hoan hô!" and the stickers of the first passes that were not chosen (their pictures stay in `pack-cute-draft`, `pack-friends-draft`, `pack-office-draft`).
 
-## 2. Languages: all 34 in Vietnamese, English and Japanese (Vinh, 2026-11-12)
+## 2. Languages: all 35 in Vietnamese, English and Japanese (Vinh, 2026-11-12)
 The 17 unchanged ones already have English and Japanese (`set-v1`). The 14 others need them; **proposed lines below, written by an AI, not read by a native speaker** (they go into the manifest with `"reviewed": false`, V-99). Each is a line in the same spirit, not a translation word for word.
 
 | Quote (vi) | English | Japanese |
@@ -94,8 +95,8 @@ Done on the 32 above (before "Rất tiếc." was dropped; the numbers in the tab
 - **The English and Japanese lines of section 2:** are they right to draw with? (He may change any.)
 
 ## 5. What this changes
-- **The website:** one pack of 34; the manifest has no category; the page must not assume 20. "Hoan hô!" and "Làm chung nhé?" leave the page when it moves. The website stays as it is until Vinh approves the list and a handoff is written.
-- **File numbers** are 01 to 34 in the order above.
+- **The website:** one pack of 35; the manifest has no category; the page must not assume 20. "Hoan hô!" and "Làm chung nhé?" leave the page when it moves. The website stays as it is until Vinh approves the list and a handoff is written.
+- **File numbers** are 01 to 35 in the order above.
 - **Zalo or Telegram** (not planned): 31 would be two sets for Zalo (for example 16 and 15) (12 to 20 each), not decided.
 
 ## 6. Not verified
@@ -107,3 +108,4 @@ That "Còn lâu!" now reads as "lêu lêu" at 120 px (the lower lids are bright 
 - **Second round (2026-11-13):** Vinh sent a caricature of the youtuber's face (heavy half-lidded eyes, a flat unimpressed look, slightly pouting lips) and found the first "Amazing" draft unimpressive, so three options were drawn for each: [`assets/stickers/direction-v1/meme_options.png`](assets/stickers/direction-v1/meme_options.png). "Ý kiến hay.": Y1 the unimpressed side-eye alone, Y2 the same face with a dull, switched-off lightbulb, Y3 the same face with a paw on a paper with a tick. "Amazing": A1 a medal and sparkles, A2 star eyes and a sunburst, A3 a mic drop. The deadpan reading ("ý kiến hay" said flatly, as a sarcasm) comes from the picture Vinh sent, not from a source found online.
 - **Decided (Vinh, 2026-11-13): both are in the list, Y2 and A2; `set-v2` was rebuilt with 33 stickers.** English "Amazing, good job!" / "Great idea."; Japanese "アメイジング！グッジョブ！" / "いい考えですね。" (AI-written, unreviewed, V-122). The old draft folder `pack-meme-draft` is gone.
 - **"No idea" (2026-11-13, Vinh asked whether it existed; it did not):** added as "Không biết nha." / "No idea." / "さあね。" (sticker 24, after "Để mình nghĩ…"); the English and Japanese lines are AI-written and unreviewed (V-99). Files from 24 on moved by one again.
+- **"Tuyệt vời!" (2026-11-13):** sticker 12, after "Ờ mây zing, gút chóp!"; English "Awesome!", Japanese "最高！" (AI-written, unreviewed, V-99). **Note:** it wears the same kind of sunglasses as "Thứ Sáu rồi!" (04); Vinh may want the Friday one redrawn without them (a party hat and sparkles); not decided. Files from 12 on moved by one again.

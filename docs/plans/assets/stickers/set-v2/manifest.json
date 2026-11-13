@@ -278,6 +278,29 @@
     {
       "id": "12",
       "text": {
+        "vi": "Tuyệt vời!",
+        "en": "Awesome!",
+        "ja": "最高！"
+      },
+      "title": {
+        "vi": "Tuyệt vời",
+        "en": "Awesome",
+        "ja": "最高"
+      },
+      "alt": {
+        "vi": "Peak đeo kính đen, cười toe để lộ răng, giơ ngón cái ở hai bên. Chữ trên ảnh: “Tuyệt vời!”",
+        "en": "Peak wears black sunglasses, grins showing its teeth, a thumbs-up on each side. Text on the image: \"Awesome!\"",
+        "ja": "Peak（ねこ）が黒いサングラスで歯を見せて笑い、両側で親指を立てている。画像の文字：「最高！」"
+      },
+      "reviewed": {
+        "vi": true,
+        "en": false,
+        "ja": false
+      }
+    },
+    {
+      "id": "13",
+      "text": {
         "vi": "Haha!",
         "en": "Haha!",
         "ja": "あはは！"
@@ -299,7 +322,7 @@
       }
     },
     {
-      "id": "13",
+      "id": "14",
       "text": {
         "vi": "Sướng quá~",
         "en": "So good~",
@@ -322,7 +345,7 @@
       }
     },
     {
-      "id": "14",
+      "id": "15",
       "text": {
         "vi": "Hì hì.",
         "en": "Hehe.",
@@ -345,7 +368,7 @@
       }
     },
     {
-      "id": "15",
+      "id": "16",
       "text": {
         "vi": "Meo~",
         "en": "Meow~",
@@ -368,7 +391,7 @@
       }
     },
     {
-      "id": "16",
+      "id": "17",
       "text": {
         "vi": "Ú òa!",
         "en": "Peekaboo!",
@@ -391,7 +414,7 @@
       }
     },
     {
-      "id": "17",
+      "id": "18",
       "text": {
         "vi": "Đi chơi đi!",
         "en": "Let's go out!",
@@ -414,7 +437,7 @@
       }
     },
     {
-      "id": "18",
+      "id": "19",
       "text": {
         "vi": "Hóng!",
         "en": "Popcorn time!",
@@ -437,7 +460,7 @@
       }
     },
     {
-      "id": "19",
+      "id": "20",
       "text": {
         "vi": "Huhu…",
         "en": "Boohoo…",
@@ -460,7 +483,7 @@
       }
     },
     {
-      "id": "20",
+      "id": "21",
       "text": {
         "vi": "Deadline!",
         "en": "Deadline!",
@@ -483,7 +506,7 @@
       }
     },
     {
-      "id": "21",
+      "id": "22",
       "text": {
         "vi": "Ơ!",
         "en": "Oh!",
@@ -506,7 +529,7 @@
       }
     },
     {
-      "id": "22",
+      "id": "23",
       "text": {
         "vi": "Ủa?",
         "en": "Huh?",
@@ -529,7 +552,7 @@
       }
     },
     {
-      "id": "23",
+      "id": "24",
       "text": {
         "vi": "Để mình nghĩ…",
         "en": "Let me think…",
@@ -552,7 +575,7 @@
       }
     },
     {
-      "id": "24",
+      "id": "25",
       "text": {
         "vi": "Không biết nha.",
         "en": "No idea.",
@@ -575,7 +598,7 @@
       }
     },
     {
-      "id": "25",
+      "id": "26",
       "text": {
         "vi": "Còn lâu!",
         "en": "Nyah nyah!",
@@ -598,7 +621,7 @@
       }
     },
     {
-      "id": "26",
+      "id": "27",
       "text": {
         "vi": "Gớm!",
         "en": "Ugh, really?",
@@ -621,7 +644,7 @@
       }
     },
     {
-      "id": "27",
+      "id": "28",
       "text": {
         "vi": "Xỉu ngang!",
         "en": "I'm dead!",
@@ -644,7 +667,7 @@
       }
     },
     {
-      "id": "28",
+      "id": "29",
       "text": {
         "vi": "Hứ!",
         "en": "Hmph.",
@@ -667,7 +690,7 @@
       }
     },
     {
-      "id": "29",
+      "id": "30",
       "text": {
         "vi": "Ai đợi đâu.",
         "en": "Who's waiting?",
@@ -690,7 +713,7 @@
       }
     },
     {
-      "id": "30",
+      "id": "31",
       "text": {
         "vi": "Giỏi quá.",
         "en": "Good job.",
@@ -713,7 +736,7 @@
       }
     },
     {
-      "id": "31",
+      "id": "32",
       "text": {
         "vi": "Ý kiến hay.",
         "en": "Great idea.",
@@ -736,7 +759,7 @@
       }
     },
     {
-      "id": "32",
+      "id": "33",
       "text": {
         "vi": "Cuộc sống mà.",
         "en": "Life, you know.",
@@ -759,7 +782,7 @@
       }
     },
     {
-      "id": "33",
+      "id": "34",
       "text": {
         "vi": "Ok nè!",
         "en": "OK!",
@@ -782,7 +805,7 @@
       }
     },
     {
-      "id": "34",
+      "id": "35",
       "text": {
         "vi": "Không nha.",
         "en": "Nope.",
