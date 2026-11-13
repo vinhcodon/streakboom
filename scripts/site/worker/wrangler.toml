@@ -9,7 +9,7 @@ ALLOWED_ORIGIN = "https://streakboom.com"
 [[d1_databases]]
 binding = "DB"
 database_name = "streakboom-count"
-# database_id = "..."   # the id that `wrangler d1 create streakboom-count` prints; put it here before deploying
+database_id = "1f407624-3210-42ea-a6f5-0b2461d2a75a"   # printed by `wrangler d1 create streakboom-count` (not a secret)
 
 # A limit per address, kept by Cloudflare (this code stores no address): 30 copies a minute is far above a person.
 [[ratelimits]]
