@@ -1145,7 +1145,7 @@ V2 = [
     (("Ơ", "Oh", "えっ"), ("mắt trắng đồng tử nhỏ, miệng há to, người ngả ra sau, giật mình", "white eyes with tiny pupils, mouth wide open, leaning back in shock", "小さな瞳で目を見開き、口を大きく開けて、のけぞっておどろいている"), ("Oh!", "えっ！")),
     (("Ủa", "Huh", "あれ"), ("nghiêng đầu, hai dấu hỏi", "tilts its head with two question marks", "首をかしげて、はてなマークが浮かんでいる"), ("Huh?", "あれ？")),
     (("Để mình nghĩ", "Let me think", "考え中"), ("chống chân lên cằm, đang nghĩ", "paw on chin, thinking", "あごに手をあてて考えている"), ("Let me think…", "考え中…")),
-    (("Không biết", "No idea", "さあね"), ("mặt ngơ ngác, miệng phẳng, bong bóng suy nghĩ trống rỗng trên đầu", "a blank, dazed face with a flat mouth and an empty thought bubble above", "ぽかんとした顔で口は一文字、頭の上に空っぽの吹き出しが浮かんでいる"), ("No idea.", "さあね。")),
+    (("Không biết", "No idea", "さあね"), ("nhún vai: mắt liếc sang bên, lông mày lệch, cười ngượng, hai bàn chân xòe ra hai bên", "a shrug: eyes glancing aside, uneven brows, a sheepish smile, both paws open at the sides", "肩をすくめるように、目は横を見て眉は左右でちがい、照れ笑いで両手を横に広げている"), ("No idea.", "さあね。")),
     (("Còn lâu", "Nyah nyah", "べーっだ"), ("kéo mí mắt dưới xuống và thè lưỡi ngắn, lêu lêu", "pulls down its lower eyelids and sticks out a short tongue, teasing", "あかんべえをして、短く舌を出している"), ("Nyah nyah!", "べーっだ！")),
     (("Gớm", "Ugh, really", "うわぁ"), ("mắt lim dim, miệng lượn sóng, vạch u ám trên trán", "half-closed eyes, a wavy mouth, gloom lines on the forehead", "半目で口が波うち、おでこに縦線が入っている"), ("Ugh, really?", "うわぁ…")),
     (("Xỉu ngang", "I'm dead", "もうだめ"), ("nằm bẹp, mắt xoáy, lè lưỡi, sao quay trên đầu", "flat on the floor, spiral eyes, tongue out, stars circling", "ぺちゃんと倒れて目がぐるぐる、舌を出し、星が回っている"), ("I'm dead!", "もうだめ〜")),
