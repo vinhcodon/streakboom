@@ -157,11 +157,11 @@ From the handoff (section 13):
 New, from this analysis:
 - **N1.** *Answered 2026-11-13: the spec stays number 14.*
 - **N2.** The thresholds for H17 to H22 (the register's rule: before looking at data). *Answered 2026-11-13 for H18 and H19 (section 4); H17 and H20 to H22 are still open.*
-- **N3.** Tag in the reply (recommended) or native function calling.
+- **N3.** *Answered by doing, 2026-11-14 (ADR-0098): the tag.*
 - **N4.** Voice for Gemini only in the first version, or wait.
 - **N5.** The default hotkey, and whether it can be changed (a setting by necessity).
 - **N6.** Does pressing the suggestion's button count as `engaged` for Bond Days?
-- **N7.** Does a tier-2 leave act at once, or ask first with the `ask` card?
+- **N7.** *Answered 2026-11-14 (ADR-0098): it acts at once, from a short message (at most 10 words, no question mark), through the same gates; the goodbye is Peak's own line; undo is the tray.*
 - **N8.** What "đi ngủ đi" does until a `sleep` skill exists: yawn and go drowsy, or pass to chat.
 - **N9.** Whether "away" survives a restart (recommended: no).
 - **N10.** *Answered 2026-11-13: the file was found and is read; see spec 15.*
