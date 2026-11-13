@@ -51,6 +51,12 @@ test("anything but exactly that note is refused: other text, other languages, a 
   assert.equal(e.DB.rows.size, 0);
 });
 
+test("Safari sends the origin null for a POST that asks for no referrer: it is counted (seen on an iPhone, 2026-11-14)", async () => {
+  const e = env();
+  assert.equal((await worker.fetch(post("thank-you vi", { origin: "null" }), e)).status, 204);
+  assert.equal(e.DB.rows.size, 1);
+});
+
 test("a day with too many different names stops counting new ones, and the known ones still count", async () => {
   const e = env();
   for (let i = 0; i < MAX_STICKERS_PER_DAY; i++) await worker.fetch(post(`s${i} en`), e);
