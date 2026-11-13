@@ -2,6 +2,8 @@
   // The pet window. It owns all state and logic; speech bubbles are shown by the "bubble"
   // window and settings by the "settings" window (see $lib/bus.ts for the messages).
   import { invoke } from "@tauri-apps/api/core";
+  import { getVersion } from "@tauri-apps/api/app";
+  import { channelOf, effectiveUpdateMode } from "$lib/channel";
   import { emitTo } from "@tauri-apps/api/event";
   import { getCurrentWebviewWindow } from "@tauri-apps/api/webviewWindow";
   import { onMount } from "svelte";
@@ -1892,11 +1894,15 @@
   // Checks quietly in the background; if a newer signed version exists the pet offers it. It
   // never updates or restarts on its own while you may be busy (fullscreen, a panel, quiet hours).
   let updateRetry: ReturnType<typeof setTimeout> | undefined;
+  let ownVersion = "";
   async function autoCheckUpdate() {
     clearTimeout(updateRetry);
     if (data.settings.updates === "off") return;
     try {
-      const info = await invoke<{ version: string } | null>("update_check");
+      // The quiet check looks at Stable only, never at a Preview (ADR-0095); on a Preview copy Auto asks instead of installing.
+      if (!ownVersion) ownVersion = await getVersion().catch(() => "");
+      const mode = effectiveUpdateMode(data.settings.updates, channelOf(ownVersion));
+      const info = await invoke<{ version: string } | null>("update_check", { scope: "background" });
       if (!info || !shouldOfferUpdate(data, info.version, Date.now())) return;
       const busyNow = await invoke<boolean>("is_busy").catch(() => false);
       if (quiet || busyNow || panel !== null || isNight(new Date().getHours())) {
@@ -1904,7 +1910,7 @@
         return;
       }
       updateVersion = info.version;
-      if (data.settings.updates === "auto") {
+      if (mode === "auto") {
         // Installing restarts the app: say so, then go (only when nothing else is going on).
         closePanel();
         showBubble(ui.updatingNow.replace("{v}", info.version), 600_000);

@@ -168,7 +168,8 @@
     upInfo = null;
     upMsg = "";
     try {
-      const info = await invoke<{ version: string } | null>("update_check");
+      // By hand: a Stable if there is a newer one; on a Preview copy, else the newest Preview (ADR-0095).
+      const info = await invoke<{ version: string } | null>("update_check", { scope: "manual" });
       upInfo = info;
       upMsg = info ? ui.updateAvailable.replace("{v}", info.version) : ui.upToDate;
     } catch {
