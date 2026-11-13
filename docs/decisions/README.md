@@ -10,6 +10,7 @@ What was **decided**, why, and what was rejected. One short file per decision (a
 
 | ADR | Decision | Status | Date |
 |---|---|---|---|
+| [0079](0079-saved-stickers-and-peaks-lines.md) | Saved stickers (kept by slug, saved from the line after a copy) and Peak's lines on the sticker page (the website session; plan v0.3 and v0.4) | accepted, built | 2026-11-13 |
 | [0078](0078-no-contributors-page-on-the-website.md) | No contributors page on the website; nothing new shown (the website session) | accepted, done | 2026-11-13 |
 | [0077](0077-the-sticker-page-answers-q3-to-q10.md) | The sticker page as a picker: Vinh's answers to Q3 to Q10 (anonymous counting from v1, share-first on phones after a test, automatic tags, no white variant, no new language yet; the website session) | accepted, not built | 2026-11-13 |
 | [0076](0076-the-code-signing-policy-on-the-home-page.md) | A truthful Code signing policy on the home page in three languages; no SignPath attribution yet (the website session) | accepted, built | 2026-11-12 |

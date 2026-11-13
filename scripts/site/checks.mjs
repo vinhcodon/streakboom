@@ -242,6 +242,13 @@ export function check({ ctx, pages, files, out }) {
     if (!html.includes('<label class="visually-hidden" for="sticker-q">')) bad(PATHS[lang].stickers + ": the search box has no label");
   }
 
+  // every sticker button carries its English address (slug), which the saved and recent lists store (plan v0.3)
+  for (const lang of LANGS) {
+    const html = byPath.get(PATHS[lang].stickers).html;
+    for (const c of ctx.catalog.stickers) if (!html.includes('data-id="' + c.id + '" data-slug="' + c.slug + '"')) bad(PATHS[lang].stickers + ": the button of sticker " + c.id + " has no data-slug " + c.slug);
+    for (const id of ["sticker-saved", "sticker-saved-list", "sticker-recent", "sticker-recent-list", "sticker-mine-foot", "sticker-recent-clear"]) if (!html.includes('id="' + id + '"')) bad(PATHS[lang].stickers + ": #" + id + " is missing");
+  }
+
   // the language suggestion (ADR-0067): an inline script on the pages that have a same-page translation, none on the English-only
   // pages; no strip in the static HTML; it reads only the browser's languages and the local storage; it never redirects or asks a server
   {
@@ -342,7 +349,7 @@ export function check({ ctx, pages, files, out }) {
     if (!js) bad("stickers.js was not built");
     for (const word of ["cookie", "sessionStorage", "sendBeacon", "XMLHttpRequest", "analytics", "indexedDB"]) if (js.includes(word)) bad(`stickers.js mentions ${word}: the page may keep only the recent list in localStorage (ADR-0060)`);
     // the one thing kept: a short list of sticker numbers in this browser (ADR-0060), under one key, with a way to clear it
-    if ((js.match(/localStorage/g) || []).length !== 4 || !js.includes("streakboom-sticker-recent")) bad("stickers.js: localStorage is only for the recent-stickers list (one key per set: read, write, remove, and dropping the list of an older set)");
+    if ((js.match(/localStorage/g) || []).length !== 3 || !js.includes("streakboom-stickers-mine") || !js.includes("streakboom-sticker-recent")) bad("stickers.js: local storage is only for the saved and recent stickers (one key, by slug: read, write, remove; the older keys are only dropped)");
     if (!js.includes("COPY_PX = 360") || !js.includes("COPY_SIDE")) bad("stickers.js: the copied picture is no longer the full 360 px, or the test parameter is gone (ADR-0075)");
     // the pictures stay real images that the system menu can act on (a long press, a right click)
     const css = readFileSync(join(out, "style.css"), "utf8");

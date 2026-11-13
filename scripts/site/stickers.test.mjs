@@ -47,7 +47,7 @@ test("each page uses the images of its own language, with the manifest's alt and
 
 test("the picture is a real <img> inside a real <button>, labelled, with width and height", () => {
   const html = page(clone(), "/stickers/").html;
-  assert.match(html, /<button class="sticker" type="button" data-id="01" data-title="[^"]+" aria-label="Copy sticker [^"]+"><img src="\/assets\/stickers\/en\/01\.png" width="360" height="360" alt="[^"]+"><span class="paw" aria-hidden="true"><\/span><\/button>/);
+  assert.match(html, /<button class="sticker" type="button" data-id="01" data-slug="good-morning" data-title="[^"]+" aria-label="Copy sticker [^"]+"><img src="\/assets\/stickers\/en\/01\.png" width="360" height="360" alt="[^"]+"><span class="paw" aria-hidden="true"><\/span><\/button>/);
   assert.match(html, /loading="lazy"/); // below the first row
   assert.match(page(clone(), "/vi/stickers/").html, /aria-label="Chép sticker /);
 });
@@ -139,7 +139,7 @@ test("the page script records nothing, and no rule blocks the system menu on a p
   const css0 = readFileSync(css, "utf8");
   try {
     writeFileSync(js, js0 + "\nlocalStorage.setItem('x', 1);\n");
-    assert.throws(run, /localStorage is only for the recent-stickers list/);
+    assert.throws(run, /local storage is only for the saved and recent stickers/);
     writeFileSync(js, js0 + "\nsessionStorage.setItem('x', 1);\n");
     assert.throws(run, /stickers\.js mentions sessionStorage/);
     writeFileSync(js, js0.replace("COPY_PX = 360", "COPY_PX = 128"));
