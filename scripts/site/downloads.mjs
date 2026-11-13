@@ -2,11 +2,14 @@
 // that keeps the count of releases GitHub has already deleted. Downloads, not installs and not people: an update is a download.
 //
 //   current = the installer's download_count of every release GitHub lists now (the API, public data)
-//   ledger  = the previous ledger, published with the last deploy (https://streakboom.com/downloads.json)
+//   ledger  = the previous ledger: the copy the last run kept in GitHub Actions (the artifact `downloads-ledger`, which the workflow fetches into
+//             the file named by STREAKBOOM_PREVIOUS_LEDGER, ADR-0099); if there is no such file, the one published with the last deploy
+//             (https://streakboom.com/downloads.json), which Cloudflare may turn away (W-64)
 //   new ledger = for every tag the larger of the two counts; the total is their sum, so a deleted release stays in it
 //
 // Nothing here runs in the visitor's browser. The build calls it only when STREAKBOOM_DOWNLOADS=live (the Pages workflow);
 // local builds, the preview server and the tests use no network and show no number.
+import { existsSync, readFileSync } from "node:fs";
 import { ORIGIN, REPO } from "./facts.mjs";
 
 /** The installer asset of a release: `Streakboom_<version>_x64-setup.exe` (not `latest.json`). */
@@ -65,8 +68,13 @@ const get = async (url, headers, fetchFn) => {
   return res;
 };
 
-/** The previous ledger from the live site: null when there is none yet (a 404), an error for anything else. */
-export async function previousLedger({ url = `${ORIGIN}/downloads.json`, fetchFn = fetch } = {}) {
+/** The previous ledger: from the file the workflow fetched from Actions when there is one (ADR-0099), else from the live site: null when there is none yet (a 404), an error for anything else. */
+export async function previousLedger({ url = `${ORIGIN}/downloads.json`, fetchFn = fetch, file = process.env.STREAKBOOM_PREVIOUS_LEDGER } = {}) {
+  if (file && existsSync(file)) {
+    let data;
+    try { data = JSON.parse(readFileSync(file, "utf8")); } catch (e) { throw new Error(`downloads: the kept copy of the ledger is not readable (${e.message}); not publishing a total that may have lost its history`); }
+    return checkLedger(data);
+  }
   let res;
   try {
     res = await get(url, { "User-Agent": "streakboom-site-build", "Cache-Control": "no-cache" }, fetchFn);
@@ -78,7 +86,7 @@ export async function previousLedger({ url = `${ORIGIN}/downloads.json`, fetchFn
     // what answered, to tell the site's own host from something in front of it (a proxy that turns a build away): the server name, the ray id and the first words of the body
     const h = (n) => res.headers?.get?.(n) || "-";
     let body = "";
-    try { body = (await res.text()).replace(/s+/g, " ").slice(0, 160); } catch { /* no body to show */ }
+    try { body = (await res.text()).replace(/\s+/g, " ").slice(0, 160); } catch { /* no body to show */ }
     throw new Error(`downloads: the previous ledger answered ${res.status} (server ${h("server")}, cf-ray ${h("cf-ray")}, cf-mitigated ${h("cf-mitigated")}, body "${body}"); not publishing a total that may have lost its history`);
   }
   return checkLedger(await res.json());

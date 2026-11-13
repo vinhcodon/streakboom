@@ -40,3 +40,5 @@ A private script for the author only (a number that is never shown; safe while t
 
 ## Sources
 GitHub REST API (`/releases`, asset `download_count`), `scripts/release.ps1` and ADR-0028 (only the newest two releases are kept), ADR-0034 (no analytics), ADR-0031 and `docs/charter.md` (what is sent and what is consent), `.github/workflows/pages.yml`.
+
+*(Amended by ADR-0099, 2026-11-14: the previous ledger is read from the copy kept in Actions; the live site is only the fallback.)*
