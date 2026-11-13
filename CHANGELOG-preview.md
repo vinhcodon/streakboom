@@ -2,6 +2,11 @@
 
 Release notes of the **Preview** builds (an odd middle number: 0.5.x, 0.7.x), newest first. A Preview is a build the author hands to a few adults (ADR-0089, ADR-0090). It is published on GitHub as a pre-release, **never** as the download of the website, and its notes are **not** in [`CHANGELOG.md`](CHANGELOG.md), which the website reads. The format is the same as there: `## x.y.z (YYYY-MM-DD)`, then lines starting with `- `, the first a short bold sentence. When a Preview line is promoted, the Stable version takes its entry in `CHANGELOG.md`.
 
+## 0.7.6 (2026-11-14)
+- **Peak coming back by itself no longer takes the keyboard from what you are typing in, and it comes back on time even if the computer slept.** Two fixes to sending Peak away: it now reappears without becoming the active window, and its return timer follows the clock instead of one long sleep. Nothing else changes.
+- For testing only: starting Peak with the environment variable STREAKBOOM_AWAY_SECS (5 to 3600) shortens the time it stays away; docs/plans/lun-di-checklist.md lists what to look at.
+- Not yet tried: any of it on a real screen.
+
 ## 0.7.5 (2026-11-14)
 - **Sending Peak away can now be understood by the chat model too.** When the model understands that you are telling it to go away, in any wording, Peak says one of its own goodbyes and leaves, as it does for the phrases it knows. This works only on a Preview build, when a brain is connected, from a short message that is not a question, and it is not meant to leave when you only mention leaving (a meeting, a trip). It uses one chat turn.
 - Not yet tried: any real model. How often it leaves when it should, and, more important, how often it leaves when it should not, is not known yet; a test for this is written and waits for the author to run it with his own key.

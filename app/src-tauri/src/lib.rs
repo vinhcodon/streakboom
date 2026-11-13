@@ -695,6 +695,8 @@ fn drag_end(state: State<AppState>) {
 const BUBBLE_IDLE_DESTROY: Duration = Duration::from_secs(45);
 /// How often the hit-test thread asks the system whether the person is busy (fullscreen, presenting, locked): about once a second.
 const BUSY_READ_EVERY: Duration = Duration::from_millis(1000);
+/// How often the return timer of "Lượn đi" looks at the clock while Peak is away.
+const AWAY_SLICE: Duration = Duration::from_secs(20);
 
 /// A transparent topmost window of its own, so the bubble is never clipped by the small pet
 /// window and can sit on whichever side of the pet has room.
@@ -1485,7 +1487,8 @@ fn pet_leave(app: AppHandle, state: State<AppState>, minutes: u32) -> bool {
     }
     let _ = win.hide();
     bubble_hide(app.clone(), app.state::<AppState>());
-    arm_return(&app, Duration::from_secs(u64::from(minutes.clamp(1, 24 * 60)) * 60));
+    let secs = away_secs(std::env::var("STREAKBOOM_AWAY_SECS").ok().as_deref(), u64::from(minutes.clamp(1, 24 * 60)) * 60);
+    arm_return(&app, Duration::from_secs(secs));
     true
 }
 
@@ -1497,16 +1500,33 @@ fn pet_return(app: AppHandle, state: State<AppState>) -> bool {
     }
     state.away_gen.fetch_add(1, Ordering::SeqCst);
     if let Some(win) = app.get_webview_window("main") {
-        let _ = win.show();
+        // The timer, not the person, shows it: it must not take the keyboard from the program they are typing in.
+        show_without_activating(&win);
     }
     true
+}
+
+/// Show a window without making it the active one (Windows: `SW_SHOWNOACTIVATE`), so that Peak reappearing by itself never takes
+/// the keyboard focus. Elsewhere, and if the call fails, it is an ordinary `show`.
+fn show_without_activating(win: &WebviewWindow) {
+    #[cfg(windows)]
+    {
+        use windows_sys::Win32::UI::WindowsAndMessaging::{ShowWindow, SW_SHOWNOACTIVATE};
+        if let Ok(hwnd) = win.hwnd() {
+            // SAFETY: a plain call with the window handle of our own window; no pointers are passed.
+            unsafe { ShowWindow(hwnd.0 as _, SW_SHOWNOACTIVATE) };
+            return;
+        }
+    }
+    let _ = win.show();
 }
 
 /// The page found the moment of the return not right (a full-screen program, for example): ask again later.
 #[tauri::command]
 fn pet_away_retry(app: AppHandle, state: State<AppState>, secs: u32) {
     if state.away.load(Ordering::SeqCst) {
-        arm_return(&app, Duration::from_secs(u64::from(secs.clamp(10, 3600))));
+        let wait = away_secs(std::env::var("STREAKBOOM_AWAY_RETRY_SECS").ok().as_deref(), u64::from(secs.clamp(10, 3600)));
+        arm_return(&app, Duration::from_secs(wait));
     }
 }
 
@@ -1515,14 +1535,37 @@ fn pet_away_retry(app: AppHandle, state: State<AppState>, secs: u32) {
 fn arm_return(app: &AppHandle, after: Duration) {
     let state = app.state::<AppState>();
     let turn = state.away_gen.fetch_add(1, Ordering::SeqCst) + 1;
+    let deadline = now_ms().saturating_add(after.as_millis() as u64);
     let app = app.clone();
-    std::thread::spawn(move || {
-        std::thread::sleep(after);
+    std::thread::spawn(move || loop {
+        // Look at the wall clock in short slices, not one long sleep: a long sleep does not count the time the computer slept, so
+        // a Peak sent away before a lid was closed would come back late. A leaving that was ended or replaced stops the thread.
         let state = app.state::<AppState>();
-        if state.away.load(Ordering::SeqCst) && state.away_gen.load(Ordering::SeqCst) == turn {
-            let _ = app.emit_to("main", "away-due", ());
+        if !state.away.load(Ordering::SeqCst) || state.away_gen.load(Ordering::SeqCst) != turn {
+            return;
+        }
+        match next_wait(now_ms(), deadline) {
+            Some(wait) => std::thread::sleep(wait),
+            None => {
+                let _ = app.emit_to("main", "away-due", ());
+                return;
+            }
         }
     });
+}
+
+/// A test aid, like STREAKBOOM_UPDATE_URL: the environment variables STREAKBOOM_AWAY_SECS and STREAKBOOM_AWAY_RETRY_SECS (5 to 3600)
+/// replace the 20 minutes and the 5-minute retry of "Lượn đi", so that the return can be tried in a minute. Anything else is ignored.
+fn away_secs(over: Option<&str>, default_secs: u64) -> u64 {
+    over.and_then(|s| s.trim().parse::<u64>().ok()).filter(|s| (5..=3600).contains(s)).unwrap_or(default_secs)
+}
+
+/// How long to sleep before looking at the clock again: the time left, at most `AWAY_SLICE`; None when the deadline has come.
+fn next_wait(now_ms: u64, deadline_ms: u64) -> Option<Duration> {
+    if now_ms >= deadline_ms {
+        return None;
+    }
+    Some(Duration::from_millis((deadline_ms - now_ms).min(AWAY_SLICE.as_millis() as u64)))
 }
 
 fn build_tray(app: &AppHandle, quiet: bool) -> tauri::Result<()> {
@@ -1721,4 +1764,41 @@ pub fn run() {
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
+}
+
+#[cfg(test)]
+mod away_tests {
+    use super::*;
+
+    #[test]
+    fn the_return_timer_sleeps_in_slices_and_stops_at_the_deadline() {
+        let slice = AWAY_SLICE.as_millis() as u64;
+        // far away: a full slice
+        assert_eq!(next_wait(0, 20 * 60_000), Some(AWAY_SLICE));
+        // close: only what is left
+        assert_eq!(next_wait(1_000, 1_000 + 7_500), Some(Duration::from_millis(7_500)));
+        assert_eq!(next_wait(0, slice), Some(AWAY_SLICE));
+        assert_eq!(next_wait(0, slice - 1), Some(Duration::from_millis(slice - 1)));
+        // due now, or long past (the computer slept: the clock is far ahead)
+        assert_eq!(next_wait(5_000, 5_000), None);
+        assert_eq!(next_wait(5_001, 5_000), None);
+        assert_eq!(next_wait(10_000_000, 1_200_000), None);
+    }
+
+    #[test]
+    fn the_test_aid_replaces_the_times_only_by_a_sane_number() {
+        assert_eq!(away_secs(None, 1200), 1200);
+        assert_eq!(away_secs(Some("60"), 1200), 60);
+        assert_eq!(away_secs(Some(" 45 "), 1200), 45);
+        assert_eq!(away_secs(Some("5"), 1200), 5);
+        assert_eq!(away_secs(Some("3600"), 1200), 3600);
+        for bad in ["", "abc", "4", "3601", "-5", "1.5", "0", "99999999999999999999"] {
+            assert_eq!(away_secs(Some(bad), 1200), 1200, "{bad}");
+        }
+    }
+
+    #[test]
+    fn a_slice_is_short_enough_to_notice_a_wake_and_long_enough_to_cost_nothing() {
+        assert!(AWAY_SLICE >= Duration::from_secs(5) && AWAY_SLICE <= Duration::from_secs(60));
+    }
 }
