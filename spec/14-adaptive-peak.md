@@ -44,8 +44,8 @@ The handoff numbers its hypotheses H1 to H6; the register already has H1 to H16,
 | Register | Handoff | Statement | Refuted if (from the handoff) | Threshold |
 |---|---|---|---|---|
 | H17 | H1 | Local counts of behaviour are enough for Peak to make suggestions people accept | the acceptance rate is low, or people hide Peak or start Quiet mode more after suggestions | Vinh, with a baseline |
-| **H18** | **H2** | A local table of phrases (en / vi / ja) covers most real commands, so a model is only needed for the vague ones | most real commands do not match the table | **Vinh sets the coverage and the false-positive rate** (the plan suggests 70 % and 2 % as a starting point for him to change) |
-| **H19** | **H3** | "Lượn đi" adds feeling and is not used as a substitute for Quiet mode in a way that lowers Bond Days | people leave Peak and do not call it back, or Bond Days fall | Vinh |
+| **H18** | **H2** | A local table of phrases (en / vi / ja) covers most real commands, so a model is only needed for the vague ones | most real commands do not match the table | **Set by Vinh 2026-11-13:** supported at **70 % coverage or more with 2 % false positives or fewer**; refuted under 40 % coverage (the handoff's own rule); between 40 % and 70 % Vinh reads the misses and decides |
+| **H19** | **H3** | "Lượn đi" adds feeling and is not used as a substitute for Quiet mode in a way that lowers Bond Days | people leave Peak and do not call it back, or Bond Days fall | **Set by Vinh 2026-11-13:** refuted if the people who use "Lượn đi" have lower Bond Days than those who do not, or more than half do not call Peak back and let the time run out; always read with the five end-of-week questions |
 | H20 | H4 | A small model (Flash / Flash-Lite and the others) keeps to a short closed list reliably | wrong or invented skills are common | Vinh |
 | H21 | H5 | A held hotkey to talk is used for real, not once | uses fall quickly after the first week | Vinh |
 | H22 | H6 | Learning from behaviour locally does not feel like being watched | a survey or the off-rate says it is uncomfortable | Vinh |
@@ -155,8 +155,8 @@ From the handoff (section 13):
 - **Q8.** Does the unstaged multi-provider version change the chat and call structure? *Answered by the code: it is committed and released; four providers with four shapes (feasibility, item 3).*
 
 New, from this analysis:
-- **N1.** Spec number 14 or another.
-- **N2.** The thresholds for H17 to H22 (the register's rule: before looking at data).
+- **N1.** *Answered 2026-11-13: the spec stays number 14.*
+- **N2.** The thresholds for H17 to H22 (the register's rule: before looking at data). *Answered 2026-11-13 for H18 and H19 (section 4); H17 and H20 to H22 are still open.*
 - **N3.** Tag in the reply (recommended) or native function calling.
 - **N4.** Voice for Gemini only in the first version, or wait.
 - **N5.** The default hotkey, and whether it can be changed (a setting by necessity).

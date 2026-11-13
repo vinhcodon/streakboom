@@ -43,7 +43,7 @@ One row per phrase in a sheet (a plain file kept by Vinh, **not committed** unti
 - **Coverage** = the share of the held-out `leave` (and `return`, `sleep`, `quiet`) phrases that the table sends to the right skill. **False positives** = the share of the `none` phrases (question 5, and any other ordinary lines) that the table sends to any skill. The matcher is the one in the plan's step S1 (whole message only, about six words or fewer, no question mark).
 - Both numbers are reported with the **list of misses and of false positives**, so that Vinh sees what kind of words they are.
 - A phrase that belongs to two intents (for example one person's "đi đi" meaning both leave and sleep) is listed and **not** added to either table.
-- **Thresholds are Vinh's, set before reading the results.** The plan suggests 70 % coverage and 2 % false positives as a place to start; below 40 % coverage the hypothesis is refuted by the handoff's own rule.
+- **Thresholds were set by Vinh on 2026-11-13, before any answer:** supported at 70 % coverage or more with 2 % false positives or fewer; refuted under 40 % coverage; between the two Vinh reads the misses and decides.
 
 ## 5. What this does not tell us
 
@@ -53,7 +53,7 @@ How people will phrase it **by voice**; what they type when they are annoyed rat
 
 1. Pick the form tool, paste section 2, send it to the alpha candidates (no names collected).
 2. Collect the rows into the sheet of section 3 and tell Claude where it is; Claude reads it, builds the table and the matcher test (step S1, with Vinh's go), and reports section 4's numbers.
-3. Set the thresholds before the numbers are shown.
+3. (Done 2026-11-13: the thresholds are fixed; do not change them after seeing the numbers.)
 
 ## Not verified
 

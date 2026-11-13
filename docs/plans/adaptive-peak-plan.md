@@ -6,7 +6,7 @@
 - **H18:** a local table of phrases in en / vi / ja covers most real commands, so a model is needed only for the vague ones.
 - **H19:** "Lượn đi" adds feeling and is not used instead of Quiet mode in a way that lowers Bond Days.
 
-**Thresholds are Vinh's, and are set before looking at data.** The numbers below marked "suggested" are only a place to start.
+**Thresholds are Vinh's, and are set before looking at data.** Set on 2026-11-13: **H18 supported at 70 % coverage or more with 2 % false positives or fewer; refuted under 40 % coverage. H19 refuted if the users of "Lượn đi" have lower Bond Days than the others, or more than half do not call Peak back; read with the five end-of-week questions.** The thresholds of H17 and H20 to H22 are not set.
 
 ## The steps
 
@@ -43,4 +43,4 @@ The phone animation, the favourite place and the transformation (spec 14 section
 
 ## Not verified
 
-The suggested thresholds are not based on data. The cost estimates are guesses until S1 and S2 are done.
+The thresholds are Vinh's choice and not based on data. The cost estimates are guesses until S1 and S2 are done.
