@@ -1,11 +1,11 @@
 {
-    "version":  "0.7.1",
-    "notes":  "Peak keeps still and quiet while you are in something full-screen, presenting, or the screen is locked. Before, it could start a walk, a hop or a perch while you watched a full-screen video or gave a presentation; now it starts nothing, stops a walk in progress and says nothing until you are out...",
-    "pub_date":  "2026-11-13T17:36:43Z",
+    "version":  "0.7.2",
+    "notes":  "Updates now show one version at a time, and test builds are only offered by hand. In Settings, About, the check shows the newest regular version if there is one; on a test build it shows the newest test build when there is no newer regular one. The quiet background check never offers a test build...",
+    "pub_date":  "2026-11-13T19:04:42Z",
     "platforms":  {
                       "windows-x86_64":  {
-                                             "signature":  "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVUcHBlQXhYUlVURmc1T3dJVjV5S2tNWXpUZVUwR3REMDVyMlo5ZVdUVnBqMU91c1htTFltVVBFOXBuR1dyOUcvSVV5OWZKcXdnWExHNDhXMU5YSWQ4MnBSQnM4TkIvTEFFPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzk0NTkxNDAzCWZpbGU6U3RyZWFrYm9vbV8wLjcuMV94NjQtc2V0dXAuZXhlCXZlcnNpb246MC43LjEKamtLUk1QWVIrMEc2cHJ4ejRlMmV5OHhCMlVDR0d6U0tlWldieS93TDliWDlIb3VraVJQMFU4WVlmbHhTaktTVlVSMEptM0MwaktHQ2RtclRrU3JLQUE9PQo=",
-                                             "url":  "https://api.github.com/repos/vinhcodon/streakboom/releases/assets/744555321"
+                                             "signature":  "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVUcHBlQXhYUlVURnVkck9nODVyeFZ5R205MUZybUlmYmxtY1NMb2xtY2VWdW93RUxxYzQ2U0RmS1RyMUE1YnZRMVRtZjdQeGtBMHp0Z0E0SE5TS01hUkVkK2dLOVFKMEF3PQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzk0NTk2NjgxCWZpbGU6U3RyZWFrYm9vbV8wLjcuMl94NjQtc2V0dXAuZXhlCXZlcnNpb246MC43LjIKU0tYNkk2MjNxT1QzYjBuU3FHdEl1QVMvUEw1cXB4RlZRQzN1dkRLUW04eUh1Z2E3ZjEyb2pqejdxNW1ZOEluZTBvWmMyekZrdlZ3ZkpVU0pERzhLQmc9PQo=",
+                                             "url":  "https://api.github.com/repos/vinhcodon/streakboom/releases/assets/744823913"
                                          }
                   }
 }
