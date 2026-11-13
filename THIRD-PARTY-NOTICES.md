@@ -4,7 +4,7 @@ Streakboom is under the MIT license (`LICENSE`). It is built from the open-sourc
 
 <!-- lock-files-sha256: d682a8e6d695b64982186d18c5b33a4db2e7887852a1ac4a8a05dcc05461054d -->
 
-**303 Rust packages** (the Windows build graph) and 6 JavaScript packages that are compiled into the front end. Each license text is printed once; under it, the packages it comes from.
+**303 Rust packages** (the Windows build graph) and 3 JavaScript packages that are compiled into the front end. Each license text is printed once; under it, the packages it comes from.
 
 ## 1. @sveltejs/kit 2.70.4 (npm) (MIT)
 
@@ -2063,23 +2063,7 @@ limitations under the License.
 ~~~~
 ```
 
-## 29. clsx 2.1.1 (npm) (MIT)
-
-Used by: clsx 2.1.1 (npm) (MIT)
-
-```text
-MIT License
-
-Copyright (c) Luke Edwards <luke.edwards05@gmail.com> (lukeed.com)
-
-Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-```
-
-## 30. cookie 0.18.2 (MIT OR Apache-2.0)
+## 29. cookie 0.18.2 (MIT OR Apache-2.0)
 
 Used by: cookie 0.18.2 (MIT OR Apache-2.0)
 
@@ -2288,7 +2272,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 ```
 
-## 31. cookie 0.18.2 (MIT OR Apache-2.0)
+## 30. cookie 0.18.2 (MIT OR Apache-2.0)
 
 Used by: cookie 0.18.2 (MIT OR Apache-2.0)
 
@@ -2321,7 +2305,7 @@ IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 ```
 
-## 32. cpufeatures 0.2.17 (MIT OR Apache-2.0)
+## 31. cpufeatures 0.2.17 (MIT OR Apache-2.0)
 
 Used by: cpufeatures 0.2.17 (MIT OR Apache-2.0)
 
@@ -2353,7 +2337,7 @@ IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 ```
 
-## 33. crc32fast 1.5.4 (MIT OR Apache-2.0) and 5 more
+## 32. crc32fast 1.5.4 (MIT OR Apache-2.0) and 5 more
 
 Used by: crc32fast 1.5.4 (MIT OR Apache-2.0); ctor 1.0.13 (Apache-2.0 OR MIT); dpi 0.1.2 (Apache-2.0 AND MIT); hex 0.4.3 (MIT OR Apache-2.0); json-patch 4.2.0 (MIT/Apache-2.0); tao 0.37.2 (Apache-2.0)
 
@@ -2561,7 +2545,7 @@ Apache License
    limitations under the License.
 ```
 
-## 34. crc32fast 1.5.4 (MIT OR Apache-2.0)
+## 33. crc32fast 1.5.4 (MIT OR Apache-2.0)
 
 Used by: crc32fast 1.5.4 (MIT OR Apache-2.0)
 
@@ -2589,7 +2573,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
 
-## 35. crossbeam-channel 0.5.17 (MIT OR Apache-2.0) and 1 more
+## 34. crossbeam-channel 0.5.17 (MIT OR Apache-2.0) and 1 more
 
 Used by: crossbeam-channel 0.5.17 (MIT OR Apache-2.0); crossbeam-utils 0.8.23 (MIT OR Apache-2.0)
 
@@ -2623,7 +2607,7 @@ IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 ```
 
-## 36. crossbeam-channel 0.5.17 (MIT OR Apache-2.0)
+## 35. crossbeam-channel 0.5.17 (MIT OR Apache-2.0)
 
 Used by: crossbeam-channel 0.5.17 (MIT OR Apache-2.0)
 
@@ -3223,7 +3207,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 ```
 
-## 37. crypto-common 0.1.7 (MIT OR Apache-2.0)
+## 36. crypto-common 0.1.7 (MIT OR Apache-2.0)
 
 Used by: crypto-common 0.1.7 (MIT OR Apache-2.0)
 
@@ -3255,7 +3239,7 @@ IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 ```
 
-## 38. cssparser 0.37.0 (MPL-2.0) and 1 more
+## 37. cssparser 0.37.0 (MPL-2.0) and 1 more
 
 Used by: cssparser 0.37.0 (MPL-2.0); cssparser-macros 0.7.1 (MPL-2.0)
 
@@ -3635,7 +3619,7 @@ Exhibit B - "Incompatible With Secondary Licenses" Notice
   defined by the Mozilla Public License, v. 2.0.
 ```
 
-## 39. ctor 1.0.13 (Apache-2.0 OR MIT) and 1 more
+## 38. ctor 1.0.13 (Apache-2.0 OR MIT) and 1 more
 
 Used by: ctor 1.0.13 (Apache-2.0 OR MIT); tinyvec 1.13.3 (Zlib OR Apache-2.0 OR MIT)
 
@@ -3647,7 +3631,7 @@ The above copyright notice and this permission notice shall be included in all c
 THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 ```
 
-## 40. darling 0.24.1 (MIT) and 2 more
+## 39. darling 0.24.1 (MIT) and 2 more
 
 Used by: darling 0.24.1 (MIT); darling_core 0.24.1 (MIT); darling_macro 0.24.1 (MIT)
 
@@ -3675,7 +3659,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
 
-## 41. defmt 1.2.0 (MIT OR Apache-2.0) and 2 more
+## 40. defmt 1.2.0 (MIT OR Apache-2.0) and 2 more
 
 Used by: defmt 1.2.0 (MIT OR Apache-2.0); defmt-macros 1.2.0 (MIT OR Apache-2.0); defmt-parser 1.1.0 (MIT OR Apache-2.0)
 
@@ -3707,7 +3691,7 @@ IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 ```
 
-## 42. deranged 0.5.9 (MIT OR Apache-2.0)
+## 41. deranged 0.5.9 (MIT OR Apache-2.0)
 
 Used by: deranged 0.5.9 (MIT OR Apache-2.0)
 
@@ -3915,7 +3899,7 @@ Apache License
    limitations under the License.
 ```
 
-## 43. deranged 0.5.9 (MIT OR Apache-2.0)
+## 42. deranged 0.5.9 (MIT OR Apache-2.0)
 
 Used by: deranged 0.5.9 (MIT OR Apache-2.0)
 
@@ -3941,7 +3925,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
 
-## 44. derive_more 2.1.1 (MIT) and 1 more
+## 43. derive_more 2.1.1 (MIT) and 1 more
 
 Used by: derive_more 2.1.1 (MIT); derive_more-impl 2.1.1 (MIT)
 
@@ -3969,21 +3953,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
 
-## 45. devalue 5.9.4 (npm) (MIT)
-
-Used by: devalue 5.9.4 (npm) (MIT)
-
-```text
-Copyright (c) 2018-19 [these people](https://github.com/rich-harris/devalue/graphs/contributors)
-
-Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-```
-
-## 46. digest 0.10.7 (MIT OR Apache-2.0)
+## 44. digest 0.10.7 (MIT OR Apache-2.0)
 
 Used by: digest 0.10.7 (MIT OR Apache-2.0)
 
@@ -4015,7 +3985,7 @@ IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 ```
 
-## 47. dirs 7.0.0 (MIT OR Apache-2.0) and 1 more
+## 45. dirs 7.0.0 (MIT OR Apache-2.0) and 1 more
 
 Used by: dirs 7.0.0 (MIT OR Apache-2.0); dirs-sys 0.5.0 (MIT OR Apache-2.0)
 
@@ -4196,7 +4166,7 @@ TERMS AND CONDITIONS FOR USE, REPRODUCTION, AND DISTRIBUTION
    of your accepting any such warranty or additional liability.
 ```
 
-## 48. dirs 7.0.0 (MIT OR Apache-2.0) and 1 more
+## 46. dirs 7.0.0 (MIT OR Apache-2.0) and 1 more
 
 Used by: dirs 7.0.0 (MIT OR Apache-2.0); dirs-sys 0.5.0 (MIT OR Apache-2.0)
 
@@ -4222,7 +4192,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
 
-## 49. dom_query 0.28.0 (MIT)
+## 47. dom_query 0.28.0 (MIT)
 
 Used by: dom_query 0.28.0 (MIT)
 
@@ -4256,7 +4226,7 @@ derived from the "nipper" project (https://github.com/importcjj/nipper),
 developed by Chen Jiaju, licensed under the MIT License and the Apache License 2.0 (dual licensed).
 ```
 
-## 50. dpi 0.1.2 (Apache-2.0 AND MIT)
+## 48. dpi 0.1.2 (Apache-2.0 AND MIT)
 
 Used by: dpi 0.1.2 (Apache-2.0 AND MIT)
 
@@ -4314,7 +4284,7 @@ have been licensed under extremely permissive terms.
 ------------------------------------------------------------------------------
 ```
 
-## 51. dtoa-short 0.3.5 (MPL-2.0)
+## 49. dtoa-short 0.3.5 (MPL-2.0)
 
 Used by: dtoa-short 0.3.5 (MPL-2.0)
 
@@ -4694,7 +4664,7 @@ Exhibit B - "Incompatible With Secondary Licenses" Notice
   defined by the Mozilla Public License, v. 2.0.
 ```
 
-## 52. dunce 1.0.5 (CC0-1.0 OR MIT-0 OR Apache-2.0)
+## 50. dunce 1.0.5 (CC0-1.0 OR MIT-0 OR Apache-2.0)
 
 Used by: dunce 1.0.5 (CC0-1.0 OR MIT-0 OR Apache-2.0)
 
@@ -4822,7 +4792,7 @@ express Statement of Purpose.
     this CC0 or use of the Work.
 ```
 
-## 53. embed-resource 3.0.12 (MIT)
+## 51. embed-resource 3.0.12 (MIT)
 
 Used by: embed-resource 3.0.12 (MIT)
 
@@ -4850,7 +4820,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
 
-## 54. equivalent 1.0.3 (Apache-2.0 OR MIT)
+## 52. equivalent 1.0.3 (Apache-2.0 OR MIT)
 
 Used by: equivalent 1.0.3 (Apache-2.0 OR MIT)
 
@@ -4882,21 +4852,7 @@ IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 ```
 
-## 55. esm-env 1.2.2 (npm) (MIT)
-
-Used by: esm-env 1.2.2 (npm) (MIT)
-
-```text
-Copyright 2022 Benjamin McCann
-
-Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the “Software”), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED “AS IS”, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-```
-
-## 56. fdeflate 0.3.7 (MIT OR Apache-2.0) and 21 more
+## 53. fdeflate 0.3.7 (MIT OR Apache-2.0) and 21 more
 
 Used by: fdeflate 0.3.7 (MIT OR Apache-2.0); miniz_oxide 0.8.9 (MIT OR Zlib OR Apache-2.0); miniz_oxide 0.9.1 (MIT OR Zlib OR Apache-2.0); num-conv 0.2.2 (MIT OR Apache-2.0); pin-project-lite 0.2.17 (Apache-2.0 OR MIT); raw-window-handle 0.6.2 (MIT OR Apache-2.0 OR Zlib); sync_wrapper 1.0.2 (Apache-2.0); tauri 2.12.5 (Apache-2.0 OR MIT); tauri-build 2.7.4 (Apache-2.0 OR MIT); tauri-codegen 2.7.4 (Apache-2.0 OR MIT); tauri-macros 2.7.4 (Apache-2.0 OR MIT); tauri-plugin-autostart 2.7.0 (Apache-2.0 OR MIT); tauri-plugin-opener 2.7.2 (Apache-2.0 OR MIT); tauri-plugin-single-instance 2.5.5 (Apache-2.0 OR MIT); tauri-plugin-updater 2.14.1 (Apache-2.0 OR MIT); tauri-runtime 2.12.2 (Apache-2.0 OR MIT); tauri-runtime-wry 2.12.3 (Apache-2.0 OR MIT); tauri-utils 2.10.2 (Apache-2.0 OR MIT); time 0.3.55 (MIT OR Apache-2.0); time-core 0.1.9 (MIT OR Apache-2.0); time-macros 0.2.32 (MIT OR Apache-2.0); @tauri-apps/api 2.12.4 (npm) (Apache-2.0 OR MIT)
 
@@ -5079,7 +5035,7 @@ Apache License
    END OF TERMS AND CONDITIONS
 ```
 
-## 57. fdeflate 0.3.7 (MIT OR Apache-2.0)
+## 54. fdeflate 0.3.7 (MIT OR Apache-2.0)
 
 Used by: fdeflate 0.3.7 (MIT OR Apache-2.0)
 
@@ -5111,7 +5067,7 @@ IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 ```
 
-## 58. flate2 1.1.11 (MIT OR Apache-2.0)
+## 55. flate2 1.1.11 (MIT OR Apache-2.0)
 
 Used by: flate2 1.1.11 (MIT OR Apache-2.0)
 
@@ -5143,7 +5099,7 @@ IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 ```
 
-## 59. fnv 1.0.7 (Apache-2.0 / MIT)
+## 56. fnv 1.0.7 (Apache-2.0 / MIT)
 
 Used by: fnv 1.0.7 (Apache-2.0 / MIT)
 
@@ -5175,7 +5131,7 @@ IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 ```
 
-## 60. foldhash 0.2.0 (Zlib)
+## 57. foldhash 0.2.0 (Zlib)
 
 Used by: foldhash 0.2.0 (Zlib)
 
@@ -5201,7 +5157,7 @@ the following restrictions:
 3. This notice may not be removed or altered from any source distribution.
 ```
 
-## 61. form_urlencoded 1.2.2 (MIT OR Apache-2.0)
+## 58. form_urlencoded 1.2.2 (MIT OR Apache-2.0)
 
 Used by: form_urlencoded 1.2.2 (MIT OR Apache-2.0)
 
@@ -5233,7 +5189,7 @@ IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 ```
 
-## 62. futures-channel 0.3.34 (MIT OR Apache-2.0) and 6 more
+## 59. futures-channel 0.3.34 (MIT OR Apache-2.0) and 6 more
 
 Used by: futures-channel 0.3.34 (MIT OR Apache-2.0); futures-core 0.3.34 (MIT OR Apache-2.0); futures-io 0.3.34 (MIT OR Apache-2.0); futures-macro 0.3.34 (MIT OR Apache-2.0); futures-sink 0.3.34 (MIT OR Apache-2.0); futures-task 0.3.34 (MIT OR Apache-2.0); futures-util 0.3.34 (MIT OR Apache-2.0)
 
@@ -5442,7 +5398,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 ```
 
-## 63. futures-channel 0.3.34 (MIT OR Apache-2.0) and 6 more
+## 60. futures-channel 0.3.34 (MIT OR Apache-2.0) and 6 more
 
 Used by: futures-channel 0.3.34 (MIT OR Apache-2.0); futures-core 0.3.34 (MIT OR Apache-2.0); futures-io 0.3.34 (MIT OR Apache-2.0); futures-macro 0.3.34 (MIT OR Apache-2.0); futures-sink 0.3.34 (MIT OR Apache-2.0); futures-task 0.3.34 (MIT OR Apache-2.0); futures-util 0.3.34 (MIT OR Apache-2.0)
 
@@ -5475,7 +5431,7 @@ IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 ```
 
-## 64. generic-array 0.14.7 (MIT)
+## 61. generic-array 0.14.7 (MIT)
 
 Used by: generic-array 0.14.7 (MIT)
 
@@ -5503,7 +5459,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
 
-## 65. getrandom 0.2.17 (MIT OR Apache-2.0) and 2 more
+## 62. getrandom 0.2.17 (MIT OR Apache-2.0) and 2 more
 
 Used by: getrandom 0.2.17 (MIT OR Apache-2.0); getrandom 0.3.4 (MIT OR Apache-2.0); getrandom 0.4.3 (MIT OR Apache-2.0)
 
@@ -5711,7 +5667,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 ```
 
-## 66. getrandom 0.2.17 (MIT OR Apache-2.0)
+## 63. getrandom 0.2.17 (MIT OR Apache-2.0)
 
 Used by: getrandom 0.2.17 (MIT OR Apache-2.0)
 
@@ -5744,7 +5700,7 @@ IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 ```
 
-## 67. getrandom 0.3.4 (MIT OR Apache-2.0)
+## 64. getrandom 0.3.4 (MIT OR Apache-2.0)
 
 Used by: getrandom 0.3.4 (MIT OR Apache-2.0)
 
@@ -5777,7 +5733,7 @@ IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 ```
 
-## 68. getrandom 0.4.3 (MIT OR Apache-2.0)
+## 65. getrandom 0.4.3 (MIT OR Apache-2.0)
 
 Used by: getrandom 0.4.3 (MIT OR Apache-2.0)
 
@@ -5810,7 +5766,7 @@ IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 ```
 
-## 69. hashbrown 0.12.3 (MIT OR Apache-2.0) and 1 more
+## 66. hashbrown 0.12.3 (MIT OR Apache-2.0) and 1 more
 
 Used by: hashbrown 0.12.3 (MIT OR Apache-2.0); hashbrown 0.17.1 (MIT OR Apache-2.0)
 
@@ -5842,7 +5798,7 @@ IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 ```
 
-## 70. heck 0.5.0 (MIT OR Apache-2.0) and 1 more
+## 67. heck 0.5.0 (MIT OR Apache-2.0) and 1 more
 
 Used by: heck 0.5.0 (MIT OR Apache-2.0); unicode-segmentation 1.13.3 (MIT OR Apache-2.0)
 
@@ -5874,7 +5830,7 @@ IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 ```
 
-## 71. hex 0.4.3 (MIT OR Apache-2.0)
+## 68. hex 0.4.3 (MIT OR Apache-2.0)
 
 Used by: hex 0.4.3 (MIT OR Apache-2.0)
 
@@ -5901,7 +5857,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
 
-## 72. html5ever 0.39.0 (MIT OR Apache-2.0) and 2 more
+## 69. html5ever 0.39.0 (MIT OR Apache-2.0) and 2 more
 
 Used by: html5ever 0.39.0 (MIT OR Apache-2.0); markup5ever 0.39.0 (MIT OR Apache-2.0); web_atoms 0.2.6 (MIT OR Apache-2.0)
 
@@ -5933,7 +5889,7 @@ IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 ```
 
-## 73. http 1.5.0 (MIT OR Apache-2.0)
+## 70. http 1.5.0 (MIT OR Apache-2.0)
 
 Used by: http 1.5.0 (MIT OR Apache-2.0)
 
@@ -6141,7 +6097,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 ```
 
-## 74. http 1.5.0 (MIT OR Apache-2.0)
+## 71. http 1.5.0 (MIT OR Apache-2.0)
 
 Used by: http 1.5.0 (MIT OR Apache-2.0)
 
@@ -6173,7 +6129,7 @@ IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 ```
 
-## 75. http-body 1.1.0 (MIT) and 1 more
+## 72. http-body 1.1.0 (MIT) and 1 more
 
 Used by: http-body 1.1.0 (MIT); http-body-util 0.1.5 (MIT)
 
@@ -6205,7 +6161,7 @@ IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 ```
 
-## 76. httparse 1.10.1 (MIT OR Apache-2.0)
+## 73. httparse 1.10.1 (MIT OR Apache-2.0)
 
 Used by: httparse 1.10.1 (MIT OR Apache-2.0)
 
@@ -6231,7 +6187,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 ```
 
-## 77. hyper 1.12.0 (MIT)
+## 74. hyper 1.12.0 (MIT)
 
 Used by: hyper 1.12.0 (MIT)
 
@@ -6257,7 +6213,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 ```
 
-## 78. hyper-rustls 0.27.10 (Apache-2.0 OR ISC OR MIT) and 1 more
+## 75. hyper-rustls 0.27.10 (Apache-2.0 OR ISC OR MIT) and 1 more
 
 Used by: hyper-rustls 0.27.10 (Apache-2.0 OR ISC OR MIT); rustls 0.23.46 (Apache-2.0 OR ISC OR MIT)
 
@@ -6279,7 +6235,7 @@ ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF
 THIS SOFTWARE.
 ```
 
-## 79. hyper-rustls 0.27.10 (Apache-2.0 OR ISC OR MIT) and 1 more
+## 76. hyper-rustls 0.27.10 (Apache-2.0 OR ISC OR MIT) and 1 more
 
 Used by: hyper-rustls 0.27.10 (Apache-2.0 OR ISC OR MIT); rustls 0.23.46 (Apache-2.0 OR ISC OR MIT)
 
@@ -6311,7 +6267,7 @@ IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 ```
 
-## 80. hyper-util 0.1.21 (MIT)
+## 77. hyper-util 0.1.21 (MIT)
 
 Used by: hyper-util 0.1.21 (MIT)
 
@@ -6337,7 +6293,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 ```
 
-## 81. ico 0.6.0 (MIT)
+## 78. ico 0.6.0 (MIT)
 
 Used by: ico 0.6.0 (MIT)
 
@@ -6365,7 +6321,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
 
-## 82. icu_collections 2.4.0 (Unicode-3.0) and 17 more
+## 79. icu_collections 2.4.0 (Unicode-3.0) and 17 more
 
 Used by: icu_collections 2.4.0 (Unicode-3.0); icu_locale_core 2.4.0 (Unicode-3.0); icu_normalizer 2.4.0 (Unicode-3.0); icu_normalizer_data 2.4.0 (Unicode-3.0); icu_properties 2.4.0 (Unicode-3.0); icu_properties_data 2.4.0 (Unicode-3.0); icu_provider 2.4.0 (Unicode-3.0); litemap 0.8.3 (Unicode-3.0); potential_utf 0.1.6 (Unicode-3.0); tinystr 0.8.5 (Unicode-3.0); writeable 0.6.4 (Unicode-3.0); yoke 0.8.4 (Unicode-3.0); yoke-derive 0.8.4 (Unicode-3.0); zerofrom 0.1.8 (Unicode-3.0); zerofrom-derive 0.1.8 (Unicode-3.0); zerotrie 0.2.5 (Unicode-3.0); zerovec 0.11.9 (Unicode-3.0); zerovec-derive 0.11.7 (Unicode-3.0)
 
@@ -6418,7 +6374,7 @@ Portions of ICU4X may have been adapted from ICU4C and/or ICU4J.
 ICU 1.8.1 to ICU 57.1 © 1995-2016 International Business Machines Corporation and others.
 ```
 
-## 83. ident_case 1.0.1 (MIT/Apache-2.0)
+## 80. ident_case 1.0.1 (MIT/Apache-2.0)
 
 Used by: ident_case 1.0.1 (MIT/Apache-2.0)
 
@@ -6444,7 +6400,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
 
-## 84. idna 1.1.0 (MIT OR Apache-2.0) and 2 more
+## 81. idna 1.1.0 (MIT OR Apache-2.0) and 2 more
 
 Used by: idna 1.1.0 (MIT OR Apache-2.0); percent-encoding 2.3.2 (MIT OR Apache-2.0); url 2.5.8 (MIT OR Apache-2.0)
 
@@ -6476,7 +6432,7 @@ IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 ```
 
-## 85. idna_adapter 1.2.2 (Apache-2.0 OR MIT)
+## 82. idna_adapter 1.2.2 (Apache-2.0 OR MIT)
 
 Used by: idna_adapter 1.2.2 (Apache-2.0 OR MIT)
 
@@ -6508,7 +6464,7 @@ IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 ```
 
-## 86. indexmap 1.9.3 (Apache-2.0 OR MIT) and 1 more
+## 83. indexmap 1.9.3 (Apache-2.0 OR MIT) and 1 more
 
 Used by: indexmap 1.9.3 (Apache-2.0 OR MIT); indexmap 2.14.2 (Apache-2.0 OR MIT)
 
@@ -6540,7 +6496,7 @@ IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 ```
 
-## 87. infer 0.22.0 (MIT)
+## 84. infer 0.22.0 (MIT)
 
 Used by: infer 0.22.0 (MIT)
 
@@ -6568,7 +6524,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
 
-## 88. ipnet 2.12.2 (MIT OR Apache-2.0)
+## 85. ipnet 2.12.2 (MIT OR Apache-2.0)
 
 Used by: ipnet 2.12.2 (MIT OR Apache-2.0)
 
@@ -6776,7 +6732,7 @@ Apache License
    limitations under the License.
 ```
 
-## 89. ipnet 2.12.2 (MIT OR Apache-2.0)
+## 86. ipnet 2.12.2 (MIT OR Apache-2.0)
 
 Used by: ipnet 2.12.2 (MIT OR Apache-2.0)
 
@@ -6790,7 +6746,7 @@ The above copyright notice and this permission notice shall be included in all c
 THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 ```
 
-## 90. json-patch 4.2.0 (MIT/Apache-2.0)
+## 87. json-patch 4.2.0 (MIT/Apache-2.0)
 
 Used by: json-patch 4.2.0 (MIT/Apache-2.0)
 
@@ -6818,7 +6774,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
 
-## 91. jsonptr 0.7.1 (MIT OR Apache-2.0)
+## 88. jsonptr 0.7.1 (MIT OR Apache-2.0)
 
 Used by: jsonptr 0.7.1 (MIT OR Apache-2.0)
 
@@ -7026,7 +6982,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 ```
 
-## 92. jsonptr 0.7.1 (MIT OR Apache-2.0)
+## 89. jsonptr 0.7.1 (MIT OR Apache-2.0)
 
 Used by: jsonptr 0.7.1 (MIT OR Apache-2.0)
 
@@ -7054,7 +7010,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
 
-## 93. keyboard-types 0.8.3 (MIT OR Apache-2.0)
+## 90. keyboard-types 0.8.3 (MIT OR Apache-2.0)
 
 Used by: keyboard-types 0.8.3 (MIT OR Apache-2.0)
 
@@ -7080,7 +7036,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 ```
 
-## 94. keyring 3.6.3 (MIT OR Apache-2.0)
+## 91. keyring 3.6.3 (MIT OR Apache-2.0)
 
 Used by: keyring 3.6.3 (MIT OR Apache-2.0)
 
@@ -7288,7 +7244,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 ```
 
-## 95. keyring 3.6.3 (MIT OR Apache-2.0)
+## 92. keyring 3.6.3 (MIT OR Apache-2.0)
 
 Used by: keyring 3.6.3 (MIT OR Apache-2.0)
 
@@ -7320,7 +7276,7 @@ IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 ```
 
-## 96. libc 0.2.191 (MIT OR Apache-2.0)
+## 93. libc 0.2.191 (MIT OR Apache-2.0)
 
 Used by: libc 0.2.191 (MIT OR Apache-2.0)
 
@@ -7352,7 +7308,7 @@ IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 ```
 
-## 97. lock_api 0.4.14 (MIT OR Apache-2.0) and 3 more
+## 94. lock_api 0.4.14 (MIT OR Apache-2.0) and 3 more
 
 Used by: lock_api 0.4.14 (MIT OR Apache-2.0); parking_lot 0.12.5 (MIT OR Apache-2.0); parking_lot_core 0.9.12 (MIT OR Apache-2.0); rustc_version 0.4.1 (MIT OR Apache-2.0)
 
@@ -7384,7 +7340,7 @@ IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 ```
 
-## 98. mime 0.3.18 (MIT OR Apache-2.0)
+## 95. mime 0.3.18 (MIT OR Apache-2.0)
 
 Used by: mime 0.3.18 (MIT OR Apache-2.0)
 
@@ -7410,7 +7366,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 ```
 
-## 99. minisign-verify 0.3.0 (MIT)
+## 96. minisign-verify 0.3.0 (MIT)
 
 Used by: minisign-verify 0.3.0 (MIT)
 
@@ -7476,7 +7432,7 @@ IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 ```
 
-## 100. miniz_oxide 0.8.9 (MIT OR Zlib OR Apache-2.0) and 1 more
+## 97. miniz_oxide 0.8.9 (MIT OR Zlib OR Apache-2.0) and 1 more
 
 Used by: miniz_oxide 0.8.9 (MIT OR Zlib OR Apache-2.0); miniz_oxide 0.9.1 (MIT OR Zlib OR Apache-2.0)
 
@@ -7508,7 +7464,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
 
-## 101. miniz_oxide 0.8.9 (MIT OR Zlib OR Apache-2.0) and 1 more
+## 98. miniz_oxide 0.8.9 (MIT OR Zlib OR Apache-2.0) and 1 more
 
 Used by: miniz_oxide 0.8.9 (MIT OR Zlib OR Apache-2.0); miniz_oxide 0.9.1 (MIT OR Zlib OR Apache-2.0)
 
@@ -7539,7 +7495,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
 
-## 102. miniz_oxide 0.8.9 (MIT OR Zlib OR Apache-2.0) and 1 more
+## 99. miniz_oxide 0.8.9 (MIT OR Zlib OR Apache-2.0) and 1 more
 
 Used by: miniz_oxide 0.8.9 (MIT OR Zlib OR Apache-2.0); miniz_oxide 0.9.1 (MIT OR Zlib OR Apache-2.0)
 
@@ -7560,7 +7516,7 @@ Permission is granted to anyone to use this software for any purpose, including 
 3. This notice may not be removed or altered from any source distribution.
 ```
 
-## 103. mio 1.2.4 (MIT)
+## 100. mio 1.2.4 (MIT)
 
 Used by: mio 1.2.4 (MIT)
 
@@ -7586,7 +7542,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 ```
 
-## 104. muda 0.20.0 (Apache-2.0 OR MIT) and 1 more
+## 101. muda 0.20.0 (Apache-2.0 OR MIT) and 1 more
 
 Used by: muda 0.20.0 (Apache-2.0 OR MIT); tray-icon 0.25.1 (MIT OR Apache-2.0)
 
@@ -7614,7 +7570,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
 
-## 105. muda 0.20.0 (Apache-2.0 OR MIT)
+## 102. muda 0.20.0 (Apache-2.0 OR MIT)
 
 Used by: muda 0.20.0 (Apache-2.0 OR MIT)
 
@@ -7640,7 +7596,7 @@ PackageDownloadLocation: git+ssh://github.com/tauri-apps/muda.git
 Creator: Person: Daniel Thompson-Yvetot
 ```
 
-## 106. new_debug_unreachable 1.0.6 (MIT)
+## 103. new_debug_unreachable 1.0.6 (MIT)
 
 Used by: new_debug_unreachable 1.0.6 (MIT)
 
@@ -7672,7 +7628,7 @@ IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 ```
 
-## 107. num-conv 0.2.2 (MIT OR Apache-2.0)
+## 104. num-conv 0.2.2 (MIT OR Apache-2.0)
 
 Used by: num-conv 0.2.2 (MIT OR Apache-2.0)
 
@@ -7698,7 +7654,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
 
-## 108. open 5.4.5 (MIT)
+## 105. open 5.4.5 (MIT)
 
 Used by: open 5.4.5 (MIT)
 
@@ -7730,7 +7686,7 @@ FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 OTHER DEALINGS IN THE SOFTWARE.
 ```
 
-## 109. option-ext 0.2.0 (MPL-2.0)
+## 106. option-ext 0.2.0 (MPL-2.0)
 
 Used by: option-ext 0.2.0 (MPL-2.0)
 
@@ -8110,7 +8066,7 @@ Exhibit B - "Incompatible With Secondary Licenses" Notice
   defined by the Mozilla Public License, v. 2.0.
 ```
 
-## 110. os_info 3.15.0 (MIT)
+## 107. os_info 3.15.0 (MIT)
 
 Used by: os_info 3.15.0 (MIT)
 
@@ -8138,7 +8094,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
 
-## 111. phf 0.13.1 (MIT) and 4 more
+## 108. phf 0.13.1 (MIT) and 4 more
 
 Used by: phf 0.13.1 (MIT); phf_codegen 0.13.1 (MIT); phf_generator 0.13.1 (MIT); phf_macros 0.13.1 (MIT); phf_shared 0.13.1 (MIT)
 
@@ -8165,7 +8121,7 @@ IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 ```
 
-## 112. plist 1.10.3 (MIT)
+## 109. plist 1.10.3 (MIT)
 
 Used by: plist 1.10.3 (MIT)
 
@@ -8191,7 +8147,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
 
-## 113. png 0.18.1 (MIT OR Apache-2.0)
+## 110. png 0.18.1 (MIT OR Apache-2.0)
 
 Used by: png 0.18.1 (MIT OR Apache-2.0)
 
@@ -8223,7 +8179,7 @@ IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 ```
 
-## 114. powerfmt 0.2.1 (MIT OR Apache-2.0)
+## 111. powerfmt 0.2.1 (MIT OR Apache-2.0)
 
 Used by: powerfmt 0.2.1 (MIT OR Apache-2.0)
 
@@ -8431,7 +8387,7 @@ Apache License
    limitations under the License.
 ```
 
-## 115. powerfmt 0.2.1 (MIT OR Apache-2.0)
+## 112. powerfmt 0.2.1 (MIT OR Apache-2.0)
 
 Used by: powerfmt 0.2.1 (MIT OR Apache-2.0)
 
@@ -8457,7 +8413,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
 
-## 116. precomputed-hash 0.1.1 (MIT)
+## 113. precomputed-hash 0.1.1 (MIT)
 
 Used by: precomputed-hash 0.1.1 (MIT)
 
@@ -8485,7 +8441,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
 
-## 117. quick-xml 0.42.0 (MIT)
+## 114. quick-xml 0.42.0 (MIT)
 
 Used by: quick-xml 0.42.0 (MIT)
 
@@ -8515,7 +8471,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 ```
 
-## 118. raw-window-handle 0.6.2 (MIT OR Apache-2.0 OR Zlib)
+## 115. raw-window-handle 0.6.2 (MIT OR Apache-2.0 OR Zlib)
 
 Used by: raw-window-handle 0.6.2 (MIT OR Apache-2.0 OR Zlib)
 
@@ -8543,7 +8499,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
 
-## 119. raw-window-handle 0.6.2 (MIT OR Apache-2.0 OR Zlib)
+## 116. raw-window-handle 0.6.2 (MIT OR Apache-2.0 OR Zlib)
 
 Used by: raw-window-handle 0.6.2 (MIT OR Apache-2.0 OR Zlib)
 
@@ -8561,7 +8517,7 @@ Permission is granted to anyone to use this software for any purpose, including 
 3. This notice may not be removed or altered from any source distribution.
 ```
 
-## 120. reqwest 0.13.5 (MIT OR Apache-2.0)
+## 117. reqwest 0.13.5 (MIT OR Apache-2.0)
 
 Used by: reqwest 0.13.5 (MIT OR Apache-2.0)
 
@@ -8769,7 +8725,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 ```
 
-## 121. reqwest 0.13.5 (MIT OR Apache-2.0)
+## 118. reqwest 0.13.5 (MIT OR Apache-2.0)
 
 Used by: reqwest 0.13.5 (MIT OR Apache-2.0)
 
@@ -8795,7 +8751,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 ```
 
-## 122. ring 0.17.14 (Apache-2.0 AND ISC)
+## 119. ring 0.17.14 (Apache-2.0 AND ISC)
 
 Used by: ring 0.17.14 (Apache-2.0 AND ISC)
 
@@ -8811,7 +8767,7 @@ See src/polyfill/once_cell/LICENSE-APACHE and src/polyfill/once_cell/LICENSE-MIT
 for the license to code that was sourced from the once_cell project.
 ```
 
-## 123. ring 0.17.14 (Apache-2.0 AND ISC)
+## 120. ring 0.17.14 (Apache-2.0 AND ISC)
 
 Used by: ring 0.17.14 (Apache-2.0 AND ISC)
 
@@ -9089,7 +9045,7 @@ THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ```
 
-## 124. ring 0.17.14 (Apache-2.0 AND ISC)
+## 121. ring 0.17.14 (Apache-2.0 AND ISC)
 
 Used by: ring 0.17.14 (Apache-2.0 AND ISC)
 
@@ -9109,7 +9065,7 @@ OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN
 CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 ```
 
-## 125. rustls-pki-types 1.15.1 (MIT OR Apache-2.0)
+## 122. rustls-pki-types 1.15.1 (MIT OR Apache-2.0)
 
 Used by: rustls-pki-types 1.15.1 (MIT OR Apache-2.0)
 
@@ -9317,7 +9273,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 ```
 
-## 126. rustls-pki-types 1.15.1 (MIT OR Apache-2.0)
+## 123. rustls-pki-types 1.15.1 (MIT OR Apache-2.0)
 
 Used by: rustls-pki-types 1.15.1 (MIT OR Apache-2.0)
 
@@ -9349,7 +9305,7 @@ IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 ```
 
-## 127. rustls-platform-verifier 0.7.1 (MIT OR Apache-2.0) and 8 more
+## 124. rustls-platform-verifier 0.7.1 (MIT OR Apache-2.0) and 8 more
 
 Used by: rustls-platform-verifier 0.7.1 (MIT OR Apache-2.0); serialize-to-javascript 0.1.2 (MIT OR Apache-2.0); serialize-to-javascript-impl 0.1.2 (MIT OR Apache-2.0); siphasher 1.0.4 (MIT OR Apache-2.0); tinyvec 1.13.3 (Zlib OR Apache-2.0 OR MIT); ureq 2.12.1 (MIT OR Apache-2.0); utf_types 1.0.0 (Apache-2.0 OR MIT); utf8_iter 1.1.0 (Apache-2.0 OR MIT); zeroize 1.9.1 (Apache-2.0 OR MIT)
 
@@ -9557,7 +9513,7 @@ Apache License
    limitations under the License.
 ```
 
-## 128. rustls-platform-verifier 0.7.1 (MIT OR Apache-2.0)
+## 125. rustls-platform-verifier 0.7.1 (MIT OR Apache-2.0)
 
 Used by: rustls-platform-verifier 0.7.1 (MIT OR Apache-2.0)
 
@@ -9585,7 +9541,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
 
-## 129. rustls-webpki 0.103.16 (ISC)
+## 126. rustls-webpki 0.103.16 (ISC)
 
 Used by: rustls-webpki 0.103.16 (ISC)
 
@@ -9611,7 +9567,7 @@ The files under third-party/chromium are licensed as described in
 third-party/chromium/LICENSE.
 ```
 
-## 130. same-file 1.0.6 (Unlicense/MIT) and 1 more
+## 127. same-file 1.0.6 (Unlicense/MIT) and 1 more
 
 Used by: same-file 1.0.6 (Unlicense/MIT); winapi-util 0.1.11 (Unlicense OR MIT)
 
@@ -9639,7 +9595,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 ```
 
-## 131. schemars 0.8.22 (MIT) and 3 more
+## 128. schemars 0.8.22 (MIT) and 3 more
 
 Used by: schemars 0.8.22 (MIT); schemars 0.9.0 (MIT); schemars 1.2.3 (MIT); schemars_derive 0.8.22 (MIT)
 
@@ -9667,7 +9623,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
 
-## 132. scopeguard 1.2.0 (MIT OR Apache-2.0)
+## 129. scopeguard 1.2.0 (MIT OR Apache-2.0)
 
 Used by: scopeguard 1.2.0 (MIT OR Apache-2.0)
 
@@ -9699,7 +9655,7 @@ IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 ```
 
-## 133. serde_spanned 1.1.3 (MIT OR Apache-2.0) and 4 more
+## 130. serde_spanned 1.1.3 (MIT OR Apache-2.0) and 4 more
 
 Used by: serde_spanned 1.1.3 (MIT OR Apache-2.0); toml 1.2.1+spec-1.1.0 (MIT OR Apache-2.0); toml_datetime 1.1.3+spec-1.1.0 (MIT OR Apache-2.0); toml_parser 1.1.5+spec-1.1.0 (MIT OR Apache-2.0); toml_writer 1.2.0+spec-1.1.0 (MIT OR Apache-2.0)
 
@@ -9907,7 +9863,7 @@ Apache License
    limitations under the License.
 ```
 
-## 134. serde_spanned 1.1.3 (MIT OR Apache-2.0) and 4 more
+## 131. serde_spanned 1.1.3 (MIT OR Apache-2.0) and 4 more
 
 Used by: serde_spanned 1.1.3 (MIT OR Apache-2.0); toml 1.2.1+spec-1.1.0 (MIT OR Apache-2.0); toml_datetime 1.1.3+spec-1.1.0 (MIT OR Apache-2.0); toml_parser 1.1.5+spec-1.1.0 (MIT OR Apache-2.0); toml_writer 1.2.0+spec-1.1.0 (MIT OR Apache-2.0)
 
@@ -9933,7 +9889,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
 
-## 135. serde_with 3.24.0 (MIT OR Apache-2.0) and 1 more
+## 132. serde_with 3.24.0 (MIT OR Apache-2.0) and 1 more
 
 Used by: serde_with 3.24.0 (MIT OR Apache-2.0); serde_with_macros 3.24.0 (MIT OR Apache-2.0)
 
@@ -9965,7 +9921,7 @@ IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 ```
 
-## 136. serialize-to-javascript 0.1.2 (MIT OR Apache-2.0) and 1 more
+## 133. serialize-to-javascript 0.1.2 (MIT OR Apache-2.0) and 1 more
 
 Used by: serialize-to-javascript 0.1.2 (MIT OR Apache-2.0); serialize-to-javascript-impl 0.1.2 (MIT OR Apache-2.0)
 
@@ -9993,7 +9949,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
 
-## 137. sha2 0.10.9 (MIT OR Apache-2.0)
+## 134. sha2 0.10.9 (MIT OR Apache-2.0)
 
 Used by: sha2 0.10.9 (MIT OR Apache-2.0)
 
@@ -10027,7 +9983,7 @@ IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 ```
 
-## 138. shlex 2.0.1 (MIT OR Apache-2.0)
+## 135. shlex 2.0.1 (MIT OR Apache-2.0)
 
 Used by: shlex 2.0.1 (MIT OR Apache-2.0)
 
@@ -10047,7 +10003,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 ```
 
-## 139. shlex 2.0.1 (MIT OR Apache-2.0)
+## 136. shlex 2.0.1 (MIT OR Apache-2.0)
 
 Used by: shlex 2.0.1 (MIT OR Apache-2.0)
 
@@ -10075,7 +10031,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 ```
 
-## 140. simd-adler32 0.3.10 (MIT)
+## 137. simd-adler32 0.3.10 (MIT)
 
 Used by: simd-adler32 0.3.10 (MIT)
 
@@ -10103,7 +10059,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
 
-## 141. siphasher 1.0.4 (MIT OR Apache-2.0)
+## 138. siphasher 1.0.4 (MIT OR Apache-2.0)
 
 Used by: siphasher 1.0.4 (MIT OR Apache-2.0)
 
@@ -10117,7 +10073,7 @@ http://www.apache.org/licenses/LICENSE-2.0> or the MIT license
 option.
 ```
 
-## 142. siphasher 1.0.4 (MIT OR Apache-2.0)
+## 139. siphasher 1.0.4 (MIT OR Apache-2.0)
 
 Used by: siphasher 1.0.4 (MIT OR Apache-2.0)
 
@@ -10141,7 +10097,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
 
-## 143. slab 0.4.12 (MIT)
+## 140. slab 0.4.12 (MIT)
 
 Used by: slab 0.4.12 (MIT)
 
@@ -10173,7 +10129,7 @@ IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 ```
 
-## 144. smallvec 1.16.5 (MIT OR Apache-2.0)
+## 141. smallvec 1.16.5 (MIT OR Apache-2.0)
 
 Used by: smallvec 1.16.5 (MIT OR Apache-2.0)
 
@@ -10205,7 +10161,7 @@ IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 ```
 
-## 145. softbuffer 0.4.8 (MIT OR Apache-2.0)
+## 142. softbuffer 0.4.8 (MIT OR Apache-2.0)
 
 Used by: softbuffer 0.4.8 (MIT OR Apache-2.0)
 
@@ -10413,7 +10369,7 @@ Apache License
    limitations under the License.
 ```
 
-## 146. softbuffer 0.4.8 (MIT OR Apache-2.0)
+## 143. softbuffer 0.4.8 (MIT OR Apache-2.0)
 
 Used by: softbuffer 0.4.8 (MIT OR Apache-2.0)
 
@@ -10439,7 +10395,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
 
-## 147. stable_deref_trait 1.2.1 (MIT OR Apache-2.0)
+## 144. stable_deref_trait 1.2.1 (MIT OR Apache-2.0)
 
 Used by: stable_deref_trait 1.2.1 (MIT OR Apache-2.0)
 
@@ -10471,7 +10427,7 @@ IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 ```
 
-## 148. static_vcruntime 3.0.0 (MIT OR Apache-2.0 OR Zlib)
+## 145. static_vcruntime 3.0.0 (MIT OR Apache-2.0 OR Zlib)
 
 Used by: static_vcruntime 3.0.0 (MIT OR Apache-2.0 OR Zlib)
 
@@ -10479,7 +10435,7 @@ Used by: static_vcruntime 3.0.0 (MIT OR Apache-2.0 OR Zlib)
 MIT OR Apache-2.0 OR Zlib
 ```
 
-## 149. static_vcruntime 3.0.0 (MIT OR Apache-2.0 OR Zlib)
+## 146. static_vcruntime 3.0.0 (MIT OR Apache-2.0 OR Zlib)
 
 Used by: static_vcruntime 3.0.0 (MIT OR Apache-2.0 OR Zlib)
 
@@ -10547,7 +10503,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 ```
 
-## 150. static_vcruntime 3.0.0 (MIT OR Apache-2.0 OR Zlib)
+## 147. static_vcruntime 3.0.0 (MIT OR Apache-2.0 OR Zlib)
 
 Used by: static_vcruntime 3.0.0 (MIT OR Apache-2.0 OR Zlib)
 
@@ -10563,7 +10519,7 @@ The above copyright notice and this permission notice (including the next paragr
 THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 ```
 
-## 151. static_vcruntime 3.0.0 (MIT OR Apache-2.0 OR Zlib)
+## 148. static_vcruntime 3.0.0 (MIT OR Apache-2.0 OR Zlib)
 
 Used by: static_vcruntime 3.0.0 (MIT OR Apache-2.0 OR Zlib)
 
@@ -10581,7 +10537,7 @@ Permission is granted to anyone to use this software for any purpose, including 
 3. This notice may not be removed or altered from any source distribution.
 ```
 
-## 152. string_cache 0.9.0 (MIT OR Apache-2.0) and 1 more
+## 149. string_cache 0.9.0 (MIT OR Apache-2.0) and 1 more
 
 Used by: string_cache 0.9.0 (MIT OR Apache-2.0); string_cache_codegen 0.6.1 (MIT OR Apache-2.0)
 
@@ -10613,7 +10569,7 @@ IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 ```
 
-## 153. strsim 0.11.1 (MIT)
+## 150. strsim 0.11.1 (MIT)
 
 Used by: strsim 0.11.1 (MIT)
 
@@ -10643,7 +10599,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
 
-## 154. subtle 2.6.1 (BSD-3-Clause)
+## 151. subtle 2.6.1 (BSD-3-Clause)
 
 Used by: subtle 2.6.1 (BSD-3-Clause)
 
@@ -10679,7 +10635,7 @@ NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ```
 
-## 155. svelte 5.57.3 (npm) (MIT)
+## 152. svelte 5.57.3 (npm) (MIT)
 
 Used by: svelte 5.57.3 (npm) (MIT)
 
@@ -10693,7 +10649,7 @@ The above copyright notice and this permission notice shall be included in all c
 THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 ```
 
-## 156. synstructure 0.14.0 (MIT)
+## 153. synstructure 0.14.0 (MIT)
 
 Used by: synstructure 0.14.0 (MIT)
 
@@ -10707,7 +10663,7 @@ The above copyright notice and this permission notice shall be included in all c
 THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 ```
 
-## 157. tao 0.37.2 (Apache-2.0)
+## 154. tao 0.37.2 (Apache-2.0)
 
 Used by: tao 0.37.2 (Apache-2.0)
 
@@ -10732,7 +10688,7 @@ PackageDownloadLocation: git+ssh://github.com/tauri-apps/tao.git
 Creator: Person: Daniel Thompson-Yvetot
 ```
 
-## 158. tauri 2.12.5 (Apache-2.0 OR MIT) and 10 more
+## 155. tauri 2.12.5 (Apache-2.0 OR MIT) and 10 more
 
 Used by: tauri 2.12.5 (Apache-2.0 OR MIT); tauri-build 2.7.4 (Apache-2.0 OR MIT); tauri-codegen 2.7.4 (Apache-2.0 OR MIT); tauri-macros 2.7.4 (Apache-2.0 OR MIT); tauri-plugin-autostart 2.7.0 (Apache-2.0 OR MIT); tauri-plugin-opener 2.7.2 (Apache-2.0 OR MIT); tauri-plugin-updater 2.14.1 (Apache-2.0 OR MIT); tauri-runtime 2.12.2 (Apache-2.0 OR MIT); tauri-runtime-wry 2.12.3 (Apache-2.0 OR MIT); tauri-utils 2.10.2 (Apache-2.0 OR MIT); @tauri-apps/api 2.12.4 (npm) (Apache-2.0 OR MIT)
 
@@ -10760,7 +10716,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
 
-## 159. tauri-plugin-autostart 2.7.0 (Apache-2.0 OR MIT) and 3 more
+## 156. tauri-plugin-autostart 2.7.0 (Apache-2.0 OR MIT) and 3 more
 
 Used by: tauri-plugin-autostart 2.7.0 (Apache-2.0 OR MIT); tauri-plugin-opener 2.7.2 (Apache-2.0 OR MIT); tauri-plugin-single-instance 2.5.5 (Apache-2.0 OR MIT); tauri-plugin-updater 2.14.1 (Apache-2.0 OR MIT)
 
@@ -10787,7 +10743,7 @@ PackageDownloadLocation: git+ssh://github.com/tauri-apps/tauri.git
 Creator: Person: Daniel Thompson-Yvetot
 ```
 
-## 160. tauri-plugin-single-instance 2.5.5 (Apache-2.0 OR MIT)
+## 157. tauri-plugin-single-instance 2.5.5 (Apache-2.0 OR MIT)
 
 Used by: tauri-plugin-single-instance 2.5.5 (Apache-2.0 OR MIT)
 
@@ -10815,7 +10771,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
 
-## 161. tauri-winres 0.3.7 (MIT)
+## 158. tauri-winres 0.3.7 (MIT)
 
 Used by: tauri-winres 0.3.7 (MIT)
 
@@ -10850,7 +10806,7 @@ IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 ```
 
-## 162. tempfile 3.27.0 (MIT OR Apache-2.0)
+## 159. tempfile 3.27.0 (MIT OR Apache-2.0)
 
 Used by: tempfile 3.27.0 (MIT OR Apache-2.0)
 
@@ -10882,7 +10838,7 @@ IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 ```
 
-## 163. tendril 0.5.1 (MIT OR Apache-2.0)
+## 160. tendril 0.5.1 (MIT OR Apache-2.0)
 
 Used by: tendril 0.5.1 (MIT OR Apache-2.0)
 
@@ -10914,7 +10870,7 @@ IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 ```
 
-## 164. time 0.3.55 (MIT OR Apache-2.0) and 2 more
+## 161. time 0.3.55 (MIT OR Apache-2.0) and 2 more
 
 Used by: time 0.3.55 (MIT OR Apache-2.0); time-core 0.1.9 (MIT OR Apache-2.0); time-macros 0.2.32 (MIT OR Apache-2.0)
 
@@ -10940,7 +10896,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
 
-## 165. tinyvec 1.13.3 (Zlib OR Apache-2.0 OR MIT)
+## 162. tinyvec 1.13.3 (Zlib OR Apache-2.0 OR MIT)
 
 Used by: tinyvec 1.13.3 (Zlib OR Apache-2.0 OR MIT)
 
@@ -10958,7 +10914,7 @@ Permission is granted to anyone to use this software for any purpose, including 
 3. This notice may not be removed or altered from any source distribution.
 ```
 
-## 166. tokio 1.54.1 (MIT) and 1 more
+## 163. tokio 1.54.1 (MIT) and 1 more
 
 Used by: tokio 1.54.1 (MIT); tokio-util 0.7.20 (MIT)
 
@@ -10986,7 +10942,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
 
-## 167. tokio-rustls 0.26.6 (MIT OR Apache-2.0)
+## 164. tokio-rustls 0.26.6 (MIT OR Apache-2.0)
 
 Used by: tokio-rustls 0.26.6 (MIT OR Apache-2.0)
 
@@ -11194,7 +11150,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 ```
 
-## 168. tokio-rustls 0.26.6 (MIT OR Apache-2.0)
+## 165. tokio-rustls 0.26.6 (MIT OR Apache-2.0)
 
 Used by: tokio-rustls 0.26.6 (MIT OR Apache-2.0)
 
@@ -11226,7 +11182,7 @@ IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 ```
 
-## 169. tower 0.5.3 (MIT) and 2 more
+## 166. tower 0.5.3 (MIT) and 2 more
 
 Used by: tower 0.5.3 (MIT); tower-layer 0.3.3 (MIT); tower-service 0.3.3 (MIT)
 
@@ -11258,7 +11214,7 @@ IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 ```
 
-## 170. tower-http 0.6.11 (MIT)
+## 167. tower-http 0.6.11 (MIT)
 
 Used by: tower-http 0.6.11 (MIT)
 
@@ -11290,7 +11246,7 @@ IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 ```
 
-## 171. tracing 0.1.44 (MIT) and 2 more
+## 168. tracing 0.1.44 (MIT) and 2 more
 
 Used by: tracing 0.1.44 (MIT); tracing-attributes 0.1.31 (MIT); tracing-core 0.1.36 (MIT)
 
@@ -11322,7 +11278,7 @@ IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 ```
 
-## 172. tray-icon 0.25.1 (MIT OR Apache-2.0)
+## 169. tray-icon 0.25.1 (MIT OR Apache-2.0)
 
 Used by: tray-icon 0.25.1 (MIT OR Apache-2.0)
 
@@ -11348,7 +11304,7 @@ PackageDownloadLocation: git+ssh://github.com/tauri-apps/tray-icon.git
 Creator: Person: Daniel Thompson-Yvetot
 ```
 
-## 173. try-lock 0.2.5 (MIT)
+## 170. try-lock 0.2.5 (MIT)
 
 Used by: try-lock 0.2.5 (MIT)
 
@@ -11375,7 +11331,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 ```
 
-## 174. typenum 1.20.1 (MIT OR Apache-2.0)
+## 171. typenum 1.20.1 (MIT OR Apache-2.0)
 
 Used by: typenum 1.20.1 (MIT OR Apache-2.0)
 
@@ -11383,7 +11339,7 @@ Used by: typenum 1.20.1 (MIT OR Apache-2.0)
 MIT OR Apache-2.0
 ```
 
-## 175. typenum 1.20.1 (MIT OR Apache-2.0)
+## 172. typenum 1.20.1 (MIT OR Apache-2.0)
 
 Used by: typenum 1.20.1 (MIT OR Apache-2.0)
 
@@ -11591,7 +11547,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 ```
 
-## 176. typenum 1.20.1 (MIT OR Apache-2.0)
+## 173. typenum 1.20.1 (MIT OR Apache-2.0)
 
 Used by: typenum 1.20.1 (MIT OR Apache-2.0)
 
@@ -11619,7 +11575,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
 
-## 177. unicode-ident 1.0.27 ((MIT OR Apache-2.0) AND Unicode-3.0)
+## 174. unicode-ident 1.0.27 ((MIT OR Apache-2.0) AND Unicode-3.0)
 
 Used by: unicode-ident 1.0.27 ((MIT OR Apache-2.0) AND Unicode-3.0)
 
@@ -11665,7 +11621,7 @@ dealings in these Data Files or Software without prior written
 authorization of the copyright holder.
 ```
 
-## 178. untrusted 0.9.0 (ISC)
+## 175. untrusted 0.9.0 (ISC)
 
 Used by: untrusted 0.9.0 (ISC)
 
@@ -11685,7 +11641,7 @@ Used by: untrusted 0.9.0 (ISC)
 // OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 ```
 
-## 179. ureq 2.12.1 (MIT OR Apache-2.0)
+## 176. ureq 2.12.1 (MIT OR Apache-2.0)
 
 Used by: ureq 2.12.1 (MIT OR Apache-2.0)
 
@@ -11713,7 +11669,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
 
-## 180. urlpattern 0.6.0 (MIT)
+## 177. urlpattern 0.6.0 (MIT)
 
 Used by: urlpattern 0.6.0 (MIT)
 
@@ -11741,7 +11697,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
 
-## 181. utf_types 1.0.0 (Apache-2.0 OR MIT) and 1 more
+## 178. utf_types 1.0.0 (Apache-2.0 OR MIT) and 1 more
 
 Used by: utf_types 1.0.0 (Apache-2.0 OR MIT); utf8_iter 1.1.0 (Apache-2.0 OR MIT)
 
@@ -11773,7 +11729,7 @@ IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 ```
 
-## 182. uuid 1.29.1 (Apache-2.0 OR MIT)
+## 179. uuid 1.29.1 (Apache-2.0 OR MIT)
 
 Used by: uuid 1.29.1 (Apache-2.0 OR MIT)
 
@@ -11806,7 +11762,7 @@ IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 ```
 
-## 183. version_check 0.9.5 (MIT/Apache-2.0)
+## 180. version_check 0.9.5 (MIT/Apache-2.0)
 
 Used by: version_check 0.9.5 (MIT/Apache-2.0)
 
@@ -11832,7 +11788,7 @@ IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 ```
 
-## 184. vswhom 0.1.0 (MIT) and 1 more
+## 181. vswhom 0.1.0 (MIT) and 1 more
 
 Used by: vswhom 0.1.0 (MIT); vswhom-sys 0.1.3 (MIT)
 
@@ -11860,7 +11816,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
 
-## 185. want 0.3.2 (MIT)
+## 182. want 0.3.2 (MIT)
 
 Used by: want 0.3.2 (MIT)
 
@@ -11886,7 +11842,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 ```
 
-## 186. web-time 1.1.0 (MIT OR Apache-2.0)
+## 183. web-time 1.1.0 (MIT OR Apache-2.0)
 
 Used by: web-time 1.1.0 (MIT OR Apache-2.0)
 
@@ -12094,7 +12050,7 @@ Apache License
    limitations under the License.
 ```
 
-## 187. web-time 1.1.0 (MIT OR Apache-2.0)
+## 184. web-time 1.1.0 (MIT OR Apache-2.0)
 
 Used by: web-time 1.1.0 (MIT OR Apache-2.0)
 
@@ -12122,7 +12078,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
 
-## 188. webpki-roots 0.26.11 (CDLA-Permissive-2.0) and 1 more
+## 185. webpki-roots 0.26.11 (CDLA-Permissive-2.0) and 1 more
 
 Used by: webpki-roots 0.26.11 (CDLA-Permissive-2.0); webpki-roots 1.0.11 (CDLA-Permissive-2.0)
 
@@ -12190,7 +12146,7 @@ of Data, including for example machine learning models and models'
 insights.
 ```
 
-## 189. window-vibrancy 0.8.1 (Apache-2.0 OR MIT)
+## 186. window-vibrancy 0.8.1 (Apache-2.0 OR MIT)
 
 Used by: window-vibrancy 0.8.1 (Apache-2.0 OR MIT)
 
@@ -12218,7 +12174,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
 
-## 190. window-vibrancy 0.8.1 (Apache-2.0 OR MIT)
+## 187. window-vibrancy 0.8.1 (Apache-2.0 OR MIT)
 
 Used by: window-vibrancy 0.8.1 (Apache-2.0 OR MIT)
 
@@ -12244,7 +12200,7 @@ PackageDownloadLocation: git+ssh://github.com/tauri-apps/window-vibrancy.git
 Creator: Person: Daniel Thompson-Yvetot
 ```
 
-## 191. windows 0.62.2 (MIT OR Apache-2.0) and 19 more
+## 188. windows 0.62.2 (MIT OR Apache-2.0) and 19 more
 
 Used by: windows 0.62.2 (MIT OR Apache-2.0); windows_x86_64_msvc 0.52.6 (MIT OR Apache-2.0); windows_x86_64_msvc 0.53.1 (MIT OR Apache-2.0); windows-collections 0.3.2 (MIT OR Apache-2.0); windows-core 0.62.2 (MIT OR Apache-2.0); windows-future 0.3.2 (MIT OR Apache-2.0); windows-implement 0.60.2 (MIT OR Apache-2.0); windows-interface 0.59.3 (MIT OR Apache-2.0); windows-link 0.2.1 (MIT OR Apache-2.0); windows-numerics 0.3.1 (MIT OR Apache-2.0); windows-registry 0.6.1 (MIT OR Apache-2.0); windows-result 0.4.1 (MIT OR Apache-2.0); windows-strings 0.5.1 (MIT OR Apache-2.0); windows-sys 0.59.0 (MIT OR Apache-2.0); windows-sys 0.60.2 (MIT OR Apache-2.0); windows-sys 0.61.2 (MIT OR Apache-2.0); windows-targets 0.52.6 (MIT OR Apache-2.0); windows-targets 0.53.5 (MIT OR Apache-2.0); windows-threading 0.2.1 (MIT OR Apache-2.0); windows-version 0.1.7 (MIT OR Apache-2.0)
 
@@ -12452,7 +12408,7 @@ Apache License
    limitations under the License.
 ```
 
-## 192. windows 0.62.2 (MIT OR Apache-2.0) and 19 more
+## 189. windows 0.62.2 (MIT OR Apache-2.0) and 19 more
 
 Used by: windows 0.62.2 (MIT OR Apache-2.0); windows_x86_64_msvc 0.52.6 (MIT OR Apache-2.0); windows_x86_64_msvc 0.53.1 (MIT OR Apache-2.0); windows-collections 0.3.2 (MIT OR Apache-2.0); windows-core 0.62.2 (MIT OR Apache-2.0); windows-future 0.3.2 (MIT OR Apache-2.0); windows-implement 0.60.2 (MIT OR Apache-2.0); windows-interface 0.59.3 (MIT OR Apache-2.0); windows-link 0.2.1 (MIT OR Apache-2.0); windows-numerics 0.3.1 (MIT OR Apache-2.0); windows-registry 0.6.1 (MIT OR Apache-2.0); windows-result 0.4.1 (MIT OR Apache-2.0); windows-strings 0.5.1 (MIT OR Apache-2.0); windows-sys 0.59.0 (MIT OR Apache-2.0); windows-sys 0.60.2 (MIT OR Apache-2.0); windows-sys 0.61.2 (MIT OR Apache-2.0); windows-targets 0.52.6 (MIT OR Apache-2.0); windows-targets 0.53.5 (MIT OR Apache-2.0); windows-threading 0.2.1 (MIT OR Apache-2.0); windows-version 0.1.7 (MIT OR Apache-2.0)
 
@@ -12480,7 +12436,7 @@ MIT License
     SOFTWARE
 ```
 
-## 193. winnow 1.0.5 (MIT)
+## 190. winnow 1.0.5 (MIT)
 
 Used by: winnow 1.0.5 (MIT)
 
@@ -12505,7 +12461,7 @@ OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
 WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 ```
 
-## 194. winreg 0.56.0 (MIT)
+## 191. winreg 0.56.0 (MIT)
 
 Used by: winreg 0.56.0 (MIT)
 
@@ -12531,7 +12487,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 ```
 
-## 195. wry 0.57.1 (Apache-2.0 OR MIT)
+## 192. wry 0.57.1 (Apache-2.0 OR MIT)
 
 Used by: wry 0.57.1 (Apache-2.0 OR MIT)
 
@@ -12559,7 +12515,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
 
-## 196. wry 0.57.1 (Apache-2.0 OR MIT)
+## 193. wry 0.57.1 (Apache-2.0 OR MIT)
 
 Used by: wry 0.57.1 (Apache-2.0 OR MIT)
 
@@ -12586,7 +12542,7 @@ PackageDownloadLocation: git+ssh://github.com/tauri-apps/wry.git
 Creator: Person: Daniel Thompson-Yvetot
 ```
 
-## 197. zeroize 1.9.1 (Apache-2.0 OR MIT)
+## 194. zeroize 1.9.1 (Apache-2.0 OR MIT)
 
 Used by: zeroize 1.9.1 (Apache-2.0 OR MIT)
 
@@ -12618,7 +12574,7 @@ IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 ```
 
-## 198. zip 9.4.1 (MIT)
+## 195. zip 9.4.1 (MIT)
 
 Used by: zip 9.4.1 (MIT)
 
@@ -12646,7 +12602,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
 
-## 199. zlib-rs 0.6.8 (Zlib)
+## 196. zlib-rs 0.6.8 (Zlib)
 
 Used by: zlib-rs 0.6.8 (Zlib)
 

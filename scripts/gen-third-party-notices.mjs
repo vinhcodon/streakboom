@@ -63,7 +63,8 @@ function main() {
   for (const p of pkgs) add(`${p.name} ${p.version}`, p.license, dirname(p.manifest_path), p.repository);
 
   // The JavaScript that is compiled into the front end: the Tauri API, the Svelte runtime and the SvelteKit client runtime.
-  const npmRuntime = ["@tauri-apps/api", "svelte", "@sveltejs/kit", "clsx", "esm-env", "devalue"];
+  // (Checked 2026-11-13 with a build with source maps: these three are the only npm packages whose code is in the bundle.)
+  const npmRuntime = ["@tauri-apps/api", "svelte", "@sveltejs/kit"];
   for (const name of npmRuntime) {
     const d = join(root, "app/node_modules", name);
     if (!existsSync(join(d, "package.json"))) continue;

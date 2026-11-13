@@ -133,7 +133,7 @@ jobs:
     if: github.ref_type == 'tag'
     needs: build
     runs-on: windows-latest
-    timeout-minutes: 30
+    timeout-minutes: 120
     permissions:
       contents: write
     steps:
@@ -150,7 +150,11 @@ jobs:
       # Story SP-1, after SignPath Foundation approves the project. Needs: the variable SIGNPATH_SIGNING = true; the variables
       # SIGNPATH_ORGANIZATION_ID, SIGNPATH_PROJECT_SLUG, SIGNPATH_POLICY_SLUG and SIGNPATH_ARTIFACT_CONFIGURATION_SLUG; and the
       # secret SIGNPATH_API_TOKEN (a submitter token, set only in GitHub, never in a file or in chat). The signing request is
-      # approved by hand in SignPath. Check the inputs against docs.signpath.io before enabling.
+      # approved by hand in SignPath. The inputs were checked on 2026-11-13 against the action.yml of v3.0 (never run). The artifact configuration in SignPath is, for example:
+      #   <artifact-configuration xmlns="http://signpath.io/artifact-configuration/v1">
+      #     <parameters><parameter name="version"/></parameters>
+      #     <zip-file><pe-file path="Streakboom_*_x64-setup.exe" product-name="Streakboom" product-version="${version}"><authenticode-sign/></pe-file></zip-file>
+      #   </artifact-configuration>
       - name: Sign (SignPath Foundation)
         if: vars.SIGNPATH_SIGNING == 'true'
         uses: SignPath/github-action-submit-signing-request@f6d04783b4569d051e0c80105fe66e82819d0092 # v3.0
@@ -161,8 +165,11 @@ jobs:
           signing-policy-slug: ${{ vars.SIGNPATH_POLICY_SLUG }}
           artifact-configuration-slug: ${{ vars.SIGNPATH_ARTIFACT_CONFIGURATION_SLUG }}
           github-artifact-id: ${{ needs.build.outputs.installer-artifact-id }}
+          parameters: |
+            version: "${{ needs.build.outputs.version }}"
           wait-for-completion: true
-          output-artifact-directory: signed
+          wait-for-completion-timeout-in-seconds: 5400   # the approval is done by hand in SignPath; the default wait is 600 s
+          output-artifact-directory: signed              # the signed archive is extracted here (skip-decompress is false)
 
       - name: Make the draft release
         shell: pwsh

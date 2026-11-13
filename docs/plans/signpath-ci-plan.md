@@ -66,6 +66,12 @@ SignPath asks for "a certain verifiable reputation" for executable programs and 
 
 **If the application is declined (the free plan B):** stay unsigned and keep the "More info, Run anyway" steps in the install guide; reapply later when the project has users (the rules for reapplying are **not verified**); or, as a separate and larger project, publish through the Microsoft Store (MSIX), where Microsoft signs for free ([Microsoft Learn](https://learn.microsoft.com/en-us/windows/apps/package-and-deploy/code-signing-options)). Paid certificates are out of scope by the author's decision.
 
+## 5b. What the SignPath documentation says about our pipeline (read 2026-11-13, not tried)
+
+- **The action** (`SignPath/github-action-submit-signing-request` v3.0, its `action.yml`): the inputs `api-token`, `organization-id`, `project-slug`, `signing-policy-slug`, `artifact-configuration-slug`, `github-artifact-id` (from the upload step's `artifact-id`), `parameters` (one `name: "value"` per line), `wait-for-completion` (default true) with a **default wait of 600 seconds**, and `output-artifact-directory`, into which the signed archive is **extracted** unless `skip-decompress` is true. The workflow now waits up to 5400 seconds (the approval is by hand) and reads `signed/<installer>`.
+- **The artifact configuration** (XML, schema `http://signpath.io/artifact-configuration/v1`): a `zip-file` (the uploaded artifact is a zip) with one `pe-file` that matches the installer by a pattern (`Streakboom_*_x64-setup.exe`; it must match exactly one file) and carries `product-name` and `product-version` (the version is passed as a parameter) and `authenticode-sign`. The example is in the comment of `release.yml`.
+- **Runners:** for open-source projects SignPath checks that every job before the signing request ran on GitHub-hosted runners (ours does).
+
 ## 6. What is not verified
 
 The application page and form (not readable here); how long SignPath takes and whether one person can be the whole team; whether our privacy statement is enough without a notice inside the installer; the reputation level that is enough; that the SignPath artifact configuration can take the installer as built by Tauri and enforce the metadata; that GitHub artifact attestations work for this repository; that the CI build of the installer is equivalent to the local one (it will be installed and run before it is trusted); the licenses of all dependencies (CP-3). They are in `verification-debt.md` (V-114, V-115).
