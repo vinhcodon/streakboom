@@ -302,3 +302,10 @@ summary h3 { display: inline; font-size: inherit; font-weight: 600; margin: 0; }
   .sticker-search-status { margin-top: 2px; }
   .sticker-recent, .sticker-popular { margin-bottom: 20px; }
 }
+/* the four menu links fit a phone from 360 px in the three languages, with no fade at the right edge (ADR-0053, amended); the fade and the swipe stay only for a window under 360 px */
+@media (max-width: 760px) {
+  .nav nav { gap: 0; -webkit-mask-image: none; mask-image: none; }
+}
+@media (max-width: 359px) {
+  .nav nav { -webkit-mask-image: linear-gradient(to right, #000 88%, transparent); mask-image: linear-gradient(to right, #000 88%, transparent); }
+}

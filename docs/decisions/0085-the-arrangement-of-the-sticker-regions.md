@@ -20,6 +20,9 @@ Vinh saw three faults: the tiles of the recent row and of Peak's picks had diffe
 ## Amendment 2 (2026-11-13, Vinh: people come back often to pick their favourites)
 On a phone the recent stickers and Peak's picks should come up the screen. The order stays (search, recent, picks, all). The head of the page is tighter on a phone **for everyone** (not only for returning visitors: hiding it with a script would move the page while it loads): smaller title (1.5rem), the lead at 1rem, less space above and between, 20 px between the regions. Vinh chose this over moving the search below the rows or leaving it. Seen at 375 x 812 with recent stickers: the recent row at 374 to 500 px, picks at 576 to 703 px and the heading of the full list at 723 px, all on the first screen (before: the recent row started about 80 px lower and the picks touched the bottom). A phone 667 px high (estimate, not seen) still cuts the picks.
 
+## Amendment 3 (2026-11-13, Vinh asked whether the phone menu should fold; he chose to keep the line)
+No hamburger: four links are too few to fold, and folding hides the Stickers link behind a tap (ADR-0053 keeps the menu at four). Instead the four links now fit a phone **from 360 px in all three languages with no fade at the right edge**: the gap between links is 0 (it was 4 px; the Vietnamese line was 8 px too long at 360 px) and the fade and the swipe stay only for a window under 360 px. Measured at 360 px: the line is as wide as its box in English, Vietnamese and Japanese, and no mask is applied.
+
 ## Consequences
 - The build checks the heading of the full list on all three languages.
 - **Not verified:** all widths come from the CSS and the built-in browser at phone width, not from a real phone (swipe feel, whether the cut tile reads as "more", 3 columns with the on-screen keyboard open, Android and iOS); the Vietnamese and Japanese heading texts have no native reader.
