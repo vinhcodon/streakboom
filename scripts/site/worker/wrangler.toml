@@ -12,8 +12,10 @@ database_name = "streakboom-count"
 # database_id = "..."   # the id that `wrangler d1 create streakboom-count` prints; put it here before deploying
 
 # A limit per address, kept by Cloudflare (this code stores no address): 30 copies a minute is far above a person.
-[[unsafe.bindings]]
+[[ratelimits]]
 name = "LIMITER"
-type = "ratelimit"
 namespace_id = "1001"
-simple = { limit = 30, period = 60 }
+
+  [ratelimits.simple]
+  limit = 30
+  period = 60
