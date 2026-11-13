@@ -4,6 +4,8 @@ import { existsSync, readFileSync, readdirSync } from "node:fs";
 import { gzipSync } from "node:zlib";
 import { join } from "node:path";
 import { ORIGIN, RELEASES_URL, ROOT, fmtDate } from "./facts.mjs";
+import { catalogProblems, loadOverrides, loadVocabulary, proposalMarkdown } from "./catalog.mjs";
+import { STICKER_DIR } from "./stickers.mjs";
 import { formatCount } from "./downloads.mjs";
 import { CC_URL, fontNames, needsReviewNote, stickerUrl } from "./stickers.mjs";
 import { pageList } from "./files.mjs";
@@ -420,8 +422,20 @@ export function check({ ctx, pages, files, out }) {
     for (const phrase of ["Loading", "<version>", "&lt;version&gt;"]) if (body.includes(phrase)) bad(`${p.path}: placeholder text '${phrase}' left in the page`);
   }
 
+  // 6b. the sticker tags (ADR-0077): given by the rules; a sticker with none, an unknown tag, a missing synonym, or a proposal page
+  // that is out of date stops the build
+  if (ctx.catalog) {
+    for (const p of catalogProblems(ctx.stickers, ctx.catalog)) bad("sticker tags: " + p);
+    if (ctx.stickers.dir === STICKER_DIR) {
+      const file = join(ROOT, "docs", "plans", "sticker-tags-proposed.md");
+      const want = proposalMarkdown(ctx.stickers, ctx.catalog);
+      const have = existsSync(file) ? readFileSync(file, "utf8").replace(/\r\n/g, "\n") : "";
+      if (have !== want) bad("docs/plans/sticker-tags-proposed.md is out of date: run node scripts/site/tags-report.mjs and commit it");
+    }
+  }
+
   // 7. words and claims that must not appear (pages and files)
-  const everything = [...pages.map((p) => [p.path, p.html.replace(/<script type="application\/ld\+json">.*?<\/script>/gs, "")]), ...Object.entries(files).map(([f, t]) => [f, t])];
+  const everything = [["catalog/tags.json", JSON.stringify(loadVocabulary())], ["catalog/overrides.json", JSON.stringify(loadOverrides())], ...pages.map((p) => [p.path, p.html.replace(/<script type="application\/ld\+json">.*?<\/script>/gs, "")]), ...Object.entries(files).map(([f, t]) => [f, t])];
   for (const [where, text] of everything) {
     for (const [re, why] of BANNED) if (re.test(text)) bad(`${where}: ${why}`);
     if (where === "/changelog/" || where === "changelog.xml") continue; // the release notes keep what was true when they were written

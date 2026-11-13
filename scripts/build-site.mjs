@@ -17,6 +17,7 @@ import { LANGS } from "../site/strings.mjs";
 import { changelogFeed, llms, llmsFull, robots, sitemap } from "./site/files.mjs";
 import { check } from "./site/checks.mjs";
 import { assertInstaller, liveData } from "./site/downloads.mjs";
+import { buildCatalog } from "./site/catalog.mjs";
 
 export const OUT = join(ROOT, "_site");
 const SITE = join(ROOT, "site");
@@ -54,6 +55,7 @@ export function build({ out = OUT, downloads = null, stickerDir } = {}) {
   ctx.downloads = downloads;
   // the Peak stickers: one folder of the repository, read at build time (ADR-0053); the manifest decides the count and the order
   ctx.stickers = loadStickers(stickerDir);
+  ctx.catalog = buildCatalog(ctx.stickers); // the tags of each sticker, given by the rules (ADR-0077)
   for (const lang of LANGS) {
     mkdirSync(join(out, "assets", "stickers", lang), { recursive: true });
     for (const st of ctx.stickers.stickers) cpSync(join(ctx.stickers.dir, lang, `${st.id}.png`), join(out, "assets", "stickers", lang, `${st.id}.png`));

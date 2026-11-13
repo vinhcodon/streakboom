@@ -54,6 +54,7 @@ The files are grouped here, not in folders (decided at gate 2 of the foundation 
 
 | File | What | Status |
 |---|---|---|
+| [`sticker-tags-proposed.md`](sticker-tags-proposed.md) | The tags the rules give each sticker of set-v2 (emotions, situations, cheekiness, and why) for Vinh to skim; **generated** by `node scripts/site/tags-report.mjs`, never edited by hand; the build fails when it is out of date | generated 2026-11-13 by the website session (plan v0.1, ADR-0077) |
 | [`sticker-page-plan.md`](sticker-page-plan.md) | The sticker page as a picker: phase 0 (the chat table, the answers, Search Console), v0 (tags, search, favourites, permalinks, moderated tests) and v1 (counting if approved, HOT, tag pages, scale, Peak, PWA), each with its done criteria and how it is measured | proposed 2026-11-13 by the website session; **waiting for Vinh's approval**; spec 13 |
 | [`bond-days.md`](bond-days.md) | Implementing the north star counters: steps, files, risks, test plan, what could not be verified | built and released in 0.1.15; some checks not verified |
 

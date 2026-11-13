@@ -1,0 +1,4 @@
+{
+  "note": "Corrections that win over the rules (Vinh's edits after skimming docs/plans/sticker-tags-proposed.md). Key: the English slug of the sticker. Each entry may have: emotions {add, remove}, situations {add, remove}, edge (0, 1 or 2), synonyms {en, vi, ja: [words to add]}.",
+  "overrides": {}
+}

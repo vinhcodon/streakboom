@@ -1,6 +1,6 @@
 # ADR-0077: The sticker page as a picker: Vinh's answers to Q3 to Q10
 
-- **Status:** accepted (answered by the author on 2026-11-13 as multiple choice); the plan ([`../plans/sticker-page-plan.md`](../plans/sticker-page-plan.md)) and [`../../spec/13-sticker-page.md`](../../spec/13-sticker-page.md) are the proposal these answers fill in; **nothing is built**
+- **Status:** accepted (answered by the author on 2026-11-13 as multiple choice); the plan ([`../plans/sticker-page-plan.md`](../plans/sticker-page-plan.md)) and [`../../spec/13-sticker-page.md`](../../spec/13-sticker-page.md) are the proposal these answers fill in; **v0.1 (the tag rules) was built on 2026-11-13 after Vinh approved the plan; the rest of the plan is not**
 - **Date:** 2026-11-13
 - **Decided by:** Vinh (author), with Claude (the website session)
 
