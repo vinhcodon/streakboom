@@ -1,11 +1,11 @@
 {
-    "version":  "0.5.1",
-    "notes":  "A second Preview build, to prove the update inside the app. It behaves exactly as 0.5.0 and 0.4.2; nothing you can see has changed. If you run 0.5.0, the app should offer this one by itself.",
-    "pub_date":  "2026-11-13T15:20:44Z",
+    "version":  "0.7.0",
+    "notes":  "The first Preview after Stable 0.6.0. It has the same program as 0.5.1 and 0.6.0; nothing you can see has changed. It starts the next Preview line: from here the new work goes, and the app offers the next 0.7.x by itself. You stay on Preview, and the Stable 0.6.0 is skipped because 0.7.0 contains...",
+    "pub_date":  "2026-11-13T16:17:17Z",
     "platforms":  {
                       "windows-x86_64":  {
-                                             "signature":  "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVUcHBlQXhYUlVURm81WDFRWURVNHBoalRCVW15cE5NZEtKclRaOVBNL1ZOWVZnSldKbnFiM01FYVByT09FVk9ENDMyK0o4NTIrQnA2VFhKbFZzY3MxSUJQY0dOR3FEUkE4PQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzk0NTgzMjQ0CWZpbGU6U3RyZWFrYm9vbV8wLjUuMV94NjQtc2V0dXAuZXhlCXZlcnNpb246MC41LjEKOERGRGptZEVHaWNsOG9HazN3UXRpV1VhemhmWE1WSHNJb2ExaWxtWWNGQ1NaU0s4VXhnaUp6QkxrbnY2WjU1UFFkc3FVdHdYMHV5WTZ2cE9FUjZqQXc9PQo=",
-                                             "url":  "https://api.github.com/repos/vinhcodon/streakboom/releases/assets/744116242"
+                                             "signature":  "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVUcHBlQXhYUlVURmhMSTBNeUFxMm5EQml3MUJKUlNhbVp2bmhzeVcxTlo1MHZ4aVpkKzZRVVZ6cDVZRFdRZlNnaERNZ0hBeHEvRVZyMy9vWThpc3Q4Y1NIKzZyelB0alE4PQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzk0NTg2NjM3CWZpbGU6U3RyZWFrYm9vbV8wLjcuMF94NjQtc2V0dXAuZXhlCXZlcnNpb246MC43LjAKeUtLNUVhSUJmendWSEJGYUNaTHNVMXlmZEdRRXhYNG5HaDhwc0VWWmRMdHluZTBBV0d1K1M1UHo3ajEyTCs3a0tDZ2xGODRHRDVWN2JmQWZYaStPRFE9PQo=",
+                                             "url":  "https://api.github.com/repos/vinhcodon/streakboom/releases/assets/744299765"
                                          }
                   }
 }
