@@ -15,6 +15,7 @@ const readJson = (name) => JSON.parse(readFileSync(join(HERE, name), "utf8"));
 export const loadVocabulary = () => readJson("tags.json");
 export const loadRules = () => readJson("tag-rules.json");
 export const loadOverrides = () => readJson("overrides.json");
+export const loadPopular = () => readJson("popular.json");
 
 export { normalize };
 
@@ -110,6 +111,17 @@ export function catalogProblems(set, catalog, vocab = loadVocabulary(), rules = 
     if (!c.emotions.length && !c.situations.length) problems.push(`${name}: no rule gives it an emotion or a situation: add words to tag-rules.json (or an override); no sticker is published without tags`);
     for (const lang of LANGS) if (!c.synonyms[lang].length) problems.push(`${name}: no synonym in ${lang}`);
   }
+  return problems;
+}
+
+/** The editorial row of the sticker pages: what the build refuses (4 to 12 entries, each the address of a sticker of the set, none twice). */
+export function popularProblems(popular, catalog) {
+  const problems = [];
+  const known = new Set(catalog.stickers.map((c) => c.slug));
+  const list = popular.slugs;
+  if (!Array.isArray(list) || list.length < 4 || list.length > 12) problems.push("popular.json: the row must have 4 to 12 stickers");
+  for (const slug of Array.isArray(list) ? list : []) if (!known.has(slug)) problems.push(`popular.json: "${slug}" is not the address of a sticker of the set`);
+  if (Array.isArray(list) && new Set(list).size !== list.length) problems.push("popular.json: a sticker is listed twice");
   return problems;
 }
 

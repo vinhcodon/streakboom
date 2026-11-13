@@ -1,0 +1,5 @@
+{
+  "note": "The editorial row \"Peak's picks\" of the sticker pages (plan v0.8): chosen by Vinh, not counted. The order is the order shown; the entries are English addresses (slugs). To change it, edit this list (4 to 12 entries, each a sticker of the set). When the anonymous counting runs (ADR-0077) the row is replaced by the HOT list.",
+  "updated": "2026-11-13",
+  "slugs": ["thank-you", "ok", "good-morning", "sorry", "congrats", "haha", "friday", "deadline"]
+}

@@ -29,9 +29,9 @@ test("the real set loads, and the count and the order come from the manifest", (
   assert.ok(real.stickers.length > 0);
   for (const lang of ["en", "vi", "ja"]) {
     const html = page(clone(), { en: "/stickers/", vi: "/vi/stickers/", ja: "/ja/stickers/" }[lang]).html;
-    const ids = [...html.matchAll(/<button class="sticker"[^>]*data-id="([^"]*)"/g)].map((m) => m[1]);
+    const ids = [...html.slice(html.indexOf('<ul class="sticker-grid">')).matchAll(/<button class="sticker"[^>]*data-id="([^"]*)"/g)].map((m) => m[1]);
     assert.deepEqual(ids, real.stickers.map((s) => s.id), `${lang}: the manifest's order`);
-    assert.equal((html.match(/<img src="\/assets\/stickers\//g) || []).length, real.stickers.length);
+    assert.equal((html.slice(html.indexOf('<ul class="sticker-grid">')).match(/<img src="\/assets\/stickers\//g) || []).length, real.stickers.length);
   }
 });
 
@@ -115,7 +115,7 @@ test("a manifest with a missing image, a missing text or another licence stops t
 });
 
 test("a sticker page that breaks what the author asked for", () => {
-  fails((c) => { const p = page(c, "/stickers/"); p.html = p.html.replace(/<li class="sticker-item">.*?<\/li>\n?/s, ""); }, /sticker buttons, the manifest has/);
+  fails((c) => { const p = page(c, "/stickers/"); const g = p.html.indexOf('<ul class="sticker-grid">'); p.html = p.html.slice(0, g) + p.html.slice(g).replace(/<li class="sticker-item">.*?<\/li>\n?/s, ""); }, /sticker buttons, the manifest has/);
   fails((c) => { const p = page(c, "/ja/stickers/"); p.html = p.html.replaceAll("/assets/stickers/ja/", "/assets/stickers/vi/"); }, /not the image of its language/);
   fails((c) => { const p = page(c, "/stickers/"); p.html = p.html.replace(/<a href="https:\/\/creativecommons\.org\/licenses\/by\/4\.0\/">CC BY 4\.0<\/a>/, "CC BY 4.0"); }, /no link to the CC BY 4\.0 licence/);
   fails((c) => { const p = page(c, "/stickers/"); p.html = p.html.replace('<button class="sticker"', '<a download href="/assets/stickers/en/01.png">Download</a><button class="sticker"'); }, /a download or a ZIP/);

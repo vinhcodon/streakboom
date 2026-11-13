@@ -10,6 +10,7 @@ What was **decided**, why, and what was rejected. One short file per decision (a
 
 | ADR | Decision | Status | Date |
 |---|---|---|---|
+| [0084](0084-the-editorial-row-peaks-picks.md) | The editorial row "Peak's picks" on the sticker pages: Vinh's eight, not a count (the website session; plan v0.8) | accepted, built | 2026-11-13 |
 | [0083](0083-no-permalink-pages-and-no-stories-for-now.md) | No permalink page per sticker and no story behind each sticker, for now (the website session; plan v0.5 dropped) | accepted, done | 2026-11-13 |
 | [0082](0082-the-search-is-by-meaning-in-any-language.md) | The sticker search is by meaning: any language typed on any page (an index per script, Latin and Japanese; the website session) | accepted, built | 2026-11-13 |
 | [0081](0081-the-sticker-list-33-one-group-no-arms-three-languages.md) | The sticker list: 33 stickers in one list, no categories, no arms, three languages, two meme stickers (Binz, a flat "good idea") | accepted | 2026-11-13 |

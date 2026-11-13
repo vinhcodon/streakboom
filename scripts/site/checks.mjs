@@ -4,7 +4,7 @@ import { existsSync, readFileSync, readdirSync } from "node:fs";
 import { gzipSync } from "node:zlib";
 import { join } from "node:path";
 import { ORIGIN, RELEASES_URL, ROOT, fmtDate } from "./facts.mjs";
-import { catalogProblems, loadOverrides, loadVocabulary, normalize, proposalMarkdown } from "./catalog.mjs";
+import { catalogProblems, loadOverrides, loadPopular, loadVocabulary, normalize, popularProblems, proposalMarkdown } from "./catalog.mjs";
 import { STICKER_DIR } from "./stickers.mjs";
 import { formatCount } from "./downloads.mjs";
 import { CC_URL, fontNames, needsReviewNote, stickerUrl } from "./stickers.mjs";
@@ -318,7 +318,8 @@ export function check({ ctx, pages, files, out }) {
       const p = byPath.get(PATHS[lang].stickers);
       if (!p) { bad(`no sticker page for ${lang}`); continue; }
       const html = p.html;
-      const buttons = [...html.matchAll(/<button class="sticker"[^>]*data-id="([^"]*)"[^>]*aria-label="([^"]*)"><img src="([^"]*)" width="(\d+)" height="(\d+)" alt="([^"]*)"/g)];
+      const grid = html.slice(html.indexOf('<ul class="sticker-grid">')); // the editorial row above repeats some buttons (plan v0.8)
+      const buttons = [...grid.matchAll(/<button class="sticker"[^>]*data-id="([^"]*)"[^>]*aria-label="([^"]*)"><img src="([^"]*)" width="(\d+)" height="(\d+)" alt="([^"]*)"/g)];
       if (buttons.length !== set.stickers.length) bad(`${p.path}: ${buttons.length} sticker buttons, the manifest has ${set.stickers.length}`);
       set.stickers.forEach((st, i) => {
         const b = buttons[i];
@@ -451,6 +452,19 @@ export function check({ ctx, pages, files, out }) {
     for (const [text, what] of need) if (!h.includes(text)) bad(`${p.path}: ${what} is not in the static HTML (${text})`);
     const body = h.slice(h.indexOf("<main"));
     for (const phrase of ["Loading", "<version>", "&lt;version&gt;"]) if (body.includes(phrase)) bad(`${p.path}: placeholder text '${phrase}' left in the page`);
+  }
+
+  // 6c. the editorial row of the sticker pages (plan v0.8): a list of addresses of stickers of the set, shown in this order on every language
+  if (ctx.catalog) {
+    for (const p of popularProblems(loadPopular(), ctx.catalog)) bad("sticker pages: " + p);
+    const slugOrder = loadPopular().slugs;
+    for (const lang of LANGS) {
+      const html = byPath.get(PATHS[lang].stickers).html;
+      const m = html.match(/<div id="sticker-popular"[\s\S]*?<\/ul>/);
+      if (!m) { bad(PATHS[lang].stickers + ": the row of picks is missing"); continue; }
+      const shown = [...m[0].matchAll(/data-slug="([^"]*)"/g)].map((x) => x[1]);
+      if (JSON.stringify(shown) !== JSON.stringify(slugOrder)) bad(PATHS[lang].stickers + ": the row of picks is not the list of popular.json, in its order");
+    }
   }
 
   // 6b. the sticker tags (ADR-0077): given by the rules; a sticker with none, an unknown tag, a missing synonym, or a proposal page

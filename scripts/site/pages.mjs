@@ -5,6 +5,7 @@ import { SCENES } from "../../site/scenes.js";
 import { AUTHOR, ORIGIN, RELEASES_URL, REPO_URL, fmtDate } from "./facts.mjs";
 import { formatCount } from "./downloads.mjs";
 import { inlineScript } from "./langsuggest.mjs";
+import { loadPopular } from "./catalog.mjs";
 import { CC_URL, fontNames, needsReviewNote, stickerUrl } from "./stickers.mjs";
 
 export const PATHS = {
@@ -426,11 +427,16 @@ export function stickersPage(lang, ctx) {
   const set = ctx.stickers;
   const path = PATHS[lang].stickers;
   const slugs = new Map(ctx.catalog.stickers.map((c) => [c.id, c.slug]));
-  const items = set.stickers.map((st, i) => {
+  const buttonHtml = (st, lazy) => {
     const title = st.title[lang];
     const label = raw(lang, "st_aria", ctx).replace("{title}", title);
-    return `        <li class="sticker-item"><button class="sticker" type="button" data-id="${esc(st.id)}" data-slug="${esc(slugs.get(st.id))}" data-title="${esc(title)}" aria-label="${esc(label)}"><img src="${stickerUrl(lang, st.id)}" width="360" height="360" alt="${esc(st.alt[lang])}"${i < 12 ? "" : ' loading="lazy"'}><span class="paw" aria-hidden="true"></span></button><span class="sticker-title">${esc(title)}</span></li>`;
-  }).join("\n");
+    return `<button class="sticker" type="button" data-id="${esc(st.id)}" data-slug="${esc(slugs.get(st.id))}" data-title="${esc(title)}" aria-label="${esc(label)}"><img src="${stickerUrl(lang, st.id)}" width="360" height="360" alt="${esc(st.alt[lang])}"${lazy ? ' loading="lazy"' : ""}><span class="paw" aria-hidden="true"></span></button>`;
+  };
+  const items = set.stickers.map((st, i) => `        <li class="sticker-item">${buttonHtml(st, i >= 12)}<span class="sticker-title">${esc(st.title[lang])}</span></li>`).join("\n");
+  // the editorial row (plan v0.8): Vinh's picks, in the static HTML (no script needed), the same buttons as the grid
+  const bySlug = new Map(set.stickers.map((st) => [slugs.get(st.id), st]));
+  const popular = loadPopular().slugs.map((slug) => bySlug.get(slug)).filter(Boolean)
+    .map((st) => `          <li class="sticker-item">${buttonHtml(st, false)}</li>`).join("\n");
   const fonts = esc(raw(lang, "st_fonts", ctx).replace("{fonts}", fontNames(set, lang)));
   const aiNote = needsReviewNote(set, lang) ? `\n      <p class="note">${s("st_ai_note")}</p>` : "";
   const main = `
@@ -449,6 +455,12 @@ export function stickersPage(lang, ctx) {
         <ul id="sticker-recent-list" class="sticker-grid recent-grid"></ul>
       </div>
       <p id="sticker-mine-foot" class="sticker-mine-foot" hidden>${s("st_mine_note")} <button id="sticker-recent-clear" class="linklike" type="button">${s("st_recent_clear")}</button></p>
+      <div id="sticker-popular" class="sticker-recent sticker-popular">
+        <h2>${s("st_popular")}</h2>
+        <ul class="sticker-grid recent-grid popular-grid">
+${popular}
+        </ul>
+      </div>
       <ul class="sticker-grid">
 ${items}
       </ul>

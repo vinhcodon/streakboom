@@ -148,3 +148,24 @@ test("the build keeps the proposal page up to date, and refuses an untagged stic
   // the proposal is the one the generator writes
   assert.match(proposalMarkdown(set, buildCatalog(set)), /| d+ | `nope` | Nope. | Firm | Refusal | 1 cheeky |/);
 });
+
+// plan v0.8: the editorial row "Peak's picks"
+import { loadPopular, popularProblems } from "./catalog.mjs";
+test("the editorial row is Vinh's list, in its order, on the three sticker pages, and the build refuses a bad list", () => {
+  const popular = loadPopular();
+  assert.deepEqual(popular.slugs, ["thank-you", "ok", "good-morning", "sorry", "congrats", "haha", "friday", "deadline"]);
+  const cat = buildCatalog(set);
+  assert.deepEqual(popularProblems(popular, cat), []);
+  assert.match(popularProblems({ slugs: ["thank-you", "ok", "good-morning"] }, cat).join("\n"), /4 to 12 stickers/);
+  assert.match(popularProblems({ slugs: ["thank-you", "ok", "good-morning", "sorry", "no-such"] }, cat).join("\n"), /"no-such" is not the address/);
+  assert.match(popularProblems({ slugs: ["thank-you", "ok", "good-morning", "sorry", "ok"] }, cat).join("\n"), /listed twice/);
+  const b = build({ out: join(mkdtempSync(join(tmpdir(), "pop-")), "_site") });
+  for (const [path, title] of [["/stickers/", "Peak's picks"], ["/vi/stickers/", "Peak gợi ý"], ["/ja/stickers/", "Peakのおすすめ"]]) {
+    const html = b.pages.find((p) => p.path === path).html;
+    const row = html.match(/<div id="sticker-popular"[\s\S]*?<\/ul>/)[0];
+    assert.ok(row.includes(`<h2>${title}</h2>`), path);
+    assert.deepEqual([...row.matchAll(/data-slug="([^"]*)"/g)].map((m) => m[1]), popular.slugs, path);
+  }
+  const run = (mutate) => { const c = { ctx: b.ctx, pages: b.pages.map((p) => ({ ...p })), files: b.files, out: b.out }; mutate(c); return () => check(c); };
+  assert.throws(run((c) => { const p = c.pages.find((x) => x.path === "/vi/stickers/"); p.html = p.html.replace('data-slug="thank-you"', 'data-slug="sorry"'); }), /the row of picks is not the list of popular\.json/);
+});

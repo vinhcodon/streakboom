@@ -265,3 +265,7 @@ summary h3 { display: inline; font-size: inherit; font-weight: 600; margin: 0; }
 .sticker-mine-foot { margin: -10px 0 24px; font-size: .9rem; color: var(--muted); }
 .sticker-mine-foot[hidden] { display: none; }
 .stickers-page.searching .sticker-mine-foot { display: none; }
+/* the editorial row "Peak's picks" (plan v0.8): static, above the grid; hidden while a search is typed */
+.sticker-popular { margin-bottom: 24px; }
+.stickers-page.searching .sticker-popular { display: none; }
+.popular-grid { grid-template-columns: repeat(auto-fill, minmax(108px, 124px)); }
