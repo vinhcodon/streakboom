@@ -6,7 +6,7 @@
 import { fileURLToPath } from "node:url";
 import { resolve } from "node:path";
 import { ORIGIN } from "./facts.mjs";
-import { BEACON_SRC, loadMeasurement, webAnalyticsManual, webAnalyticsMode } from "./counting.mjs";
+import { BEACON_SRC, allowsBotScript, loadMeasurement, webAnalyticsManual, webAnalyticsMode } from "./counting.mjs";
 
 const PAGES = ["/", "/vi/", "/ja/", "/stickers/", "/vi/stickers/", "/ja/stickers/", "/privacy/"];
 
@@ -22,10 +22,12 @@ export function liveProblems(path, html, headers, ctx) {
     else if (mode !== "manual") problems.push(`${path}: the analytics tag of manual mode is on the page while measurement.json says "${mode}"`);
   }
   if (webAnalyticsManual(ctx) && !html.includes(`data-cf-beacon='{"token": "${ctx.measurement.webAnalyticsToken}"}'`)) problems.push(`${path}: the analytics script of measurement.json is not on the page`);
-  if (/\/cdn-cgi\/challenge-platform/.test(html)) problems.push(`${path}: the bot-detection script of Cloudflare (JavaScript detections); turn it off`);
+  const bot = allowsBotScript(ctx);
+  if (!bot && /\/cdn-cgi\/challenge-platform/.test(html)) problems.push(`${path}: the bot-detection script of Cloudflare (JavaScript detections); turn it off`);
   const has = (n) => (headers?.get?.(n) ? true : false);
   if (has("nel") || has("report-to")) problems.push(`${path}: the headers of Network Error Logging (nel, report-to); turn it off`);
-  if (has("set-cookie")) problems.push(`${path}: a cookie is set (${headers.get("set-cookie").split("=")[0]})`);
+  // a cookie of Cloudflare's bot protection (__cf_bm, cf_clearance) is covered by the privacy words when the bot script is allowed; any other cookie is not
+  if (has("set-cookie")) { const name = headers.get("set-cookie").split("=")[0].trim(); if (!(bot && /^(__cf|cf_)/.test(name))) problems.push(`${path}: a cookie is set (${name})`); }
   return problems;
 }
 

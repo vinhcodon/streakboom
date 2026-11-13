@@ -5,7 +5,7 @@ import { BEACON_SRC } from "./counting.mjs";
 import { checkLive, liveProblems } from "./livecheck.mjs";
 
 const TOKEN = "0123456789abcdef0123456789abcdef";
-const off = { measurement: { webAnalytics: "off" } }, auto = { measurement: { webAnalytics: "auto", excludeEu: true } }, manual = { measurement: { webAnalytics: "manual", webAnalyticsToken: TOKEN } };
+const off = { measurement: { webAnalytics: "off" } }, auto = { measurement: { webAnalytics: "auto", excludeEu: true } }, autoBot = { measurement: { webAnalytics: "auto", excludeEu: true, allowBotScript: true } }, manual = { measurement: { webAnalytics: "manual", webAnalyticsToken: TOKEN } };
 const H = (o = {}) => new Headers(o);
 const page = (extra = "") => `<html><body><script type="module" src="/app.js?v=1"></script>${extra}</body></html>`;
 const tag = `<script defer src="${BEACON_SRC}" data-cf-beacon='{"token": "${TOKEN}"}'></script>`;
@@ -28,6 +28,15 @@ test("what Cloudflare can add is found: a script the mode does not allow, the bo
   assert.match(liveProblems("/", page(), H({ "report-to": "{}" }), auto).join(), /Network Error Logging/);
   assert.match(liveProblems("/", page(), H({ "set-cookie": "__cf_bm=1; path=/" }), auto).join(), /a cookie is set \(__cf_bm\)/);
   assert.match(liveProblems("/", page('<script src="https://stats.example.com/a.js"></script>'), H(), auto).join(), /a script from a third party/);
+});
+
+test("the bot-protection script and the cookie of Cloudflare are allowed only when measurement.json says so", () => {
+  const bot = "<script>var u='/cdn-cgi/challenge-platform/scripts/jsd/main.js'</script>";
+  assert.deepEqual(liveProblems("/", page(autoTag + bot), H(), autoBot), []);
+  assert.match(liveProblems("/", page(bot), H(), auto).join(), /bot-detection script/);
+  assert.deepEqual(liveProblems("/", page(), H({ "set-cookie": "__cf_bm=1; path=/" }), autoBot), []);
+  assert.match(liveProblems("/", page(), H({ "set-cookie": "_ga=1; path=/" }), autoBot).join(), /a cookie is set \(_ga\)/);
+  assert.match(liveProblems("/", page(), H({ "set-cookie": "__cf_bm=1; path=/" }), auto).join(), /a cookie is set \(__cf_bm\)/);
 });
 
 test("manual mode needs its tag on the page", () => {

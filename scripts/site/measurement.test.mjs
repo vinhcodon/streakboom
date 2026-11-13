@@ -6,7 +6,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { build } from "../build-site.mjs";
 import { check } from "./checks.mjs";
-import { BEACON_SRC, loadMeasurement, measurementProblems, siteParagraph, webAnalyticsOn } from "./counting.mjs";
+import { BEACON_SRC, allowsBotScript, loadMeasurement, measurementProblems, siteParagraph, webAnalyticsOn } from "./counting.mjs";
 
 const TOKEN = "0123456789abcdef0123456789abcdef";
 const OFF = { webAnalytics: "off" }, AUTO = { webAnalytics: "auto", excludeEu: true }, MANUAL = { webAnalytics: "manual", webAnalyticsToken: TOKEN };
@@ -33,6 +33,8 @@ test("the switch: the repository's own file is valid; the modes and their token 
   assert.ok(measurementProblems({ webAnalytics: "auto", webAnalyticsToken: TOKEN }).length, "a token with auto is a mistake");
   assert.ok(measurementProblems({ webAnalytics: "manual", webAnalyticsToken: TOKEN, excludeEu: true }).length, "excludeEu is only for auto");
   assert.ok(measurementProblems({ webAnalytics: "auto", excludeEu: "yes" }).length);
+  assert.ok(measurementProblems({ webAnalytics: "auto", allowBotScript: "yes" }).length);
+  assert.deepEqual(measurementProblems({ webAnalytics: "auto", excludeEu: true, allowBotScript: true }), []);
   assert.equal(webAnalyticsOn({ measurement: OFF }), false);
   assert.equal(webAnalyticsOn({ measurement: AUTO }), true);
 });
@@ -84,4 +86,14 @@ test("the checks refuse a page and its words apart, and any other third-party sc
   const off = withSwitch(OFF);
   assert.throws(tryRun(off, (c) => { const p = home(c); p.html = p.html.replace("</body>", `<script defer src="${BEACON_SRC}" data-cf-beacon='{"token": "${TOKEN}"}'></script></body>`); }), /a script from a third party/);
   assert.throws(tryRun(off, (c) => { const p = c.pages.find((x) => x.path === "/ja/privacy/"); p.html = p.html.replace("アクセス解析も行いません。", "アクセス解析を行います。"); }), /not the one composed/);
+});
+
+test("the privacy words name Cloudflare's bot protection only when it is allowed, in three languages", () => {
+  const off = withSwitch({ webAnalytics: "off" }), bot = withSwitch({ webAnalytics: "auto", excludeEu: true, allowBotScript: true });
+  assert.equal(allowsBotScript(off.ctx), false);
+  assert.equal(allowsBotScript(bot.ctx), true);
+  assert.doesNotMatch(siteParagraph("en", off.ctx), /bot protection/);
+  assert.match(siteParagraph("en", bot.ctx), /^This website sets no cookies\. The one exception is Cloudflare's own bot protection/);
+  for (const lang of ["vi", "ja"]) assert.ok(siteParagraph(lang, bot.ctx).length > siteParagraph(lang, off.ctx).length, lang);
+  assert.doesNotThrow(tryRun(bot, () => {}));
 });
