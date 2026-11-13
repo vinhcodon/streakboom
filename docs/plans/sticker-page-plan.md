@@ -36,6 +36,8 @@ What exists (spec 13 section 0.1): the grid of 31, the copy, the Share link, the
 
 ## Phase v1: growth (after v0; counting was approved by Vinh in Q7)
 
+> **2026-11-13 (ADR-0091): counting is paused**, so v1.1, v1.2 (HOT), v1.3 and v1.7 wait; the row of Peak's picks (v0.8) stays. The test of W-57 shows what a GitHub counter would do (all requests counted, a lag of 15 to 25 minutes).
+
 | # | Step | Done when | How it is measured |
 |---|---|---|---|
 | v1.1 | **Anonymous counting (Q7: yes):** the privacy text changed **first** (the sticker pages and the privacy page, three languages), then the minimal events of spec 13 section 6 to a small counter (option 2 there); an ADR; a lawyer's note added to the list | the counter receives events; no identifier, cookie or IP is stored by our code; the pages say what is counted | a test that the page sends only the listed events; the Worker's code reviewed; the privacy wording read |
