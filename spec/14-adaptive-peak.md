@@ -68,7 +68,7 @@ A tier-1 hit makes no API call. A tier-2 skill is one ordinary chat turn and cou
 
 A skill does not run, or waits, when any of these is true: Quiet mode is on; the clock says night (23:00 to 07:00) and the skill is not the goodbye the person just asked for; `is_busy` (a fullscreen program, presentation mode, a locked session); a panel is open; Peak is being held or is falling; a cooldown for that skill has not passed; or **the person is typing** (the focus-safety rules, spec 06 section 3, apply to every movement). A skill the **person** just triggered is allowed to run in `work` mode (they asked), but its **automatic parts** (the return, the suggestions) are not.
 
-Known gap: `is_busy` is today used only before an unprompted line and before an update; the movement path passes `busy: false`. **Wiring it is part of the first slice** (AP-08). It does not see a window shared in Teams, Zoom or Meet; Quiet mode and Hide remain the person's answer (feasibility, item 8).
+Gap (closed 2026-11-14): `is_busy` was used only before an unprompted line and before an update, and the movement path passed `busy: false`. AP-08 wires it into the focus decision, so while the person is in something full-screen, presenting, or the session is locked, Peak starts no walk, hop or perch, stops a walk in progress and shows no unprompted line. It does not see a window shared in Teams, Zoom or Meet; Quiet mode and Hide remain the person's answer (feasibility, item 8).
 
 ## 7. The skills
 
@@ -130,7 +130,7 @@ Replaces the voice item of `requirements-draft-v0.4.md` (E1); the wake word move
 | AP-05 | The hotkey, hold to talk | the spike answers repeat and release; the key can be changed; no focus is taken from the app being typed in |
 | AP-06 | A short recording to the brain | format and limit checked on the day; the mic closed at release; indicator seen |
 | AP-07 | Local behaviour counters and suggestions | in `memory.json`; Forget and the learn switch remove them; frequency rules tested |
-| AP-08 | `is_busy` applies to movement and to the return | a test that the walk and the return respect busy |
+| AP-08 | `is_busy` applies to movement and to the return | a test that the walk and the return respect busy. **Built 2026-11-14** for movement and unprompted lines (`decideFocus` with `busy`; the hit-test thread reads `is_busy` about once a second); the return from "Lượn đi" will use the same answer; **not yet seen on a screen** (a full-screen video, a presentation, a locked screen) |
 | AP-09 | Counters: skills used, undo rate, suggestions accepted and declined, hide rate; calls and sends-away separate from Bond Days | in "Copy stats" as counts only; Bond Days unchanged by them |
 | AP-10 | New lines under the banned-patterns test | the test passes in three languages |
 
