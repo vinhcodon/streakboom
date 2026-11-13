@@ -253,3 +253,11 @@ summary h3 { display: inline; font-size: inherit; font-weight: 600; margin: 0; }
 .lang-strip { display: flex; align-items: center; justify-content: center; gap: 6px; padding: 0 16px; background: var(--bg-alt); border-bottom: 1px solid var(--line); font-size: .95rem; }
 .lang-strip a { font-weight: 600; }
 .lang-strip button { font: inherit; font-size: 1.3rem; line-height: 1; min-width: 40px; min-height: 40px; padding: 0 8px; background: none; border: 0; color: var(--muted); cursor: pointer; }
+/* the search of the sticker pages (plan v0.2): its room is kept while the script has not shown it, so it moves nothing */
+.sticker-search { margin: 0 0 14px; max-width: 520px; }
+.sticker-search[hidden] { display: block; visibility: hidden; }
+.sticker-search input { display: block; width: 100%; box-sizing: border-box; min-height: 44px; padding: 8px 14px; font: inherit; color: inherit; background: var(--card); border: 1px solid var(--line); border-radius: 999px; }
+.sticker-search input:focus-visible { outline: 3px solid var(--accent, #f5b83d); outline-offset: 2px; }
+.sticker-search-status { margin: 6px 14px 0; min-height: 1.5em; font-size: .95rem; color: var(--muted); }
+.sticker-item[hidden] { display: none; }
+.stickers-page.searching .sticker-recent { display: none; }

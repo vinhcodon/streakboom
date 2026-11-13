@@ -20,7 +20,7 @@ test("the normalisation: no tone marks, d with stroke, apostrophes and punctuati
     ["vi", "Ơ!", "o"], ["vi", "Ủa?", "ua"], ["vi", "Ú òa!", "u oa"], ["vi", "Xỉu ngang!", "xiu ngang"], ["vi", "Hứ!", "hu"],
     ["vi", "Cuộc sống mà.", "cuoc song ma"], ["vi", "ĐI CHƠI ĐI", "di choi di"], ["vi", "ằ ẳ ẵ ặ ầ ẩ ẫ ậ ề ể ễ ệ ồ ổ ỗ ộ ờ ở ỡ ợ ừ ử ữ ự ỳ ỷ ỹ ỵ", "a a a a a a a a e e e e o o o o o o o o u u u u y y y y"],
     ["en", "It's Friday!", "its friday"], ["en", "I'm dead!", "im dead"], ["en", "Let’s go out!", "lets go out"], ["en", "Nyah nyah!", "nyah nyah"], ["en", "no-entry road sign", "no entry road sign"],
-    ["ja", "おはよう！", "おはよう!"], ["ja", "ｶﾞﾝﾊﾞﾚ", "ガンバレ".toLowerCase()], ["ja", "  ふふっ。 ", "ふふっ。"],
+    ["ja", "おはよう！", "おはよう!"], ["ja", "ｶﾞﾝﾊﾞﾚ", "がんばれ"], ["ja", "オッケー", "おっけー"], ["ja", "  ふふっ。 ", "ふふっ。"],
   ];
   for (const [lang, input, want] of table) assert.equal(normalize(lang, input), want, `${lang}: ${input}`);
   // typing without marks finds the same words

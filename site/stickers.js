@@ -4,6 +4,7 @@
 // sent anywhere; the row has a Clear button). There is no request except the one for the picture that is already on the page.
 // Without this script the pictures are still there (real <img> elements).
 import { t } from "./ui.js";
+import { search } from "./search.js";
 
 const COPY_PX = 360; // the copy is the picture as it is: 360 px, as sharp as it can be (ADR-0075; 180 and 128 were tried and were too small and soft)
 // To try other sizes in a chat, open the page with ?px=NN (48 to 360); nothing is stored, and without it the size is COPY_PX.
@@ -154,6 +155,51 @@ async function copy(button) {
 }
 
 document.querySelectorAll(".sticker").forEach((b) => b.addEventListener("click", () => copy(b)));
+
+// ---- the search (plan v0.2): the index of this language is read from the site the first time the box is used; it filters and orders the
+// pictures already on the page, and nothing is sent anywhere (the request is for a file of the site itself)
+const lang = document.documentElement.lang || "en";
+const searchBox = document.getElementById("sticker-search");
+const query = document.getElementById("sticker-q");
+const searchStatus = document.getElementById("sticker-search-status");
+const page = document.querySelector(".stickers-page");
+const itemById = new Map([...document.querySelectorAll(".sticker-grid:not(.recent-grid) .sticker")].map((b) => [b.dataset.id, b.closest(".sticker-item")]));
+let indexItems = null;
+let loading = null;
+function loadIndex() {
+  loading ||= fetch(`/assets/stickers/search-${lang}.json`).then((r) => {
+    if (!r.ok) throw new Error("index");
+    return r.json();
+  }).then((j) => {
+    if (j.v !== 1 || !Array.isArray(j.items)) throw new Error("index version");
+    indexItems = j.items;
+    return indexItems;
+  });
+  return loading;
+}
+function showAll() {
+  for (const li of itemById.values()) { li.hidden = false; li.style.order = ""; }
+  page.classList.remove("searching");
+}
+function applySearch() {
+  const text = query.value;
+  if (!text.trim()) { showAll(); searchStatus.textContent = ""; return; }
+  const found = search(lang, indexItems, text);
+  const rank = new Map(found.map((r, i) => [r.id, i + 1]));
+  for (const [id, li] of itemById) { li.hidden = !rank.has(id); li.style.order = rank.has(id) ? String(rank.get(id)) : ""; }
+  page.classList.add("searching");
+  searchStatus.textContent = found.length ? t("st_search_count").replace("%n", String(found.length)) : t("st_search_none");
+}
+function searchOff() {
+  showAll();
+  searchStatus.textContent = t("st_search_off");
+}
+if (searchBox && query) {
+  query.addEventListener("focus", () => { loadIndex().catch(() => {}); }, { once: true });
+  query.addEventListener("input", () => { loadIndex().then(applySearch, searchOff); });
+  query.addEventListener("keydown", (e) => { if (e.key === "Escape" && query.value) { query.value = ""; applySearch(); } });
+  searchBox.hidden = false;
+}
 const clear = document.getElementById("sticker-recent-clear");
 if (clear) clear.addEventListener("click", () => { writeRecent([]); showRecent(); });
 showRecent();

@@ -7,6 +7,7 @@ import { readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { LANGS } from "../../site/strings.mjs";
+import { normalize } from "../../site/normalize.js"; // the same function the page uses for what the visitor types
 
 const HERE = join(dirname(fileURLToPath(import.meta.url)), "catalog");
 export const MAX_PER_KIND = 3;
@@ -15,15 +16,7 @@ export const loadVocabulary = () => readJson("tags.json");
 export const loadRules = () => readJson("tag-rules.json");
 export const loadOverrides = () => readJson("overrides.json");
 
-/** The text as the search will read it (spec 13 section 3): English and Vietnamese lose case, diacritics, d-with-stroke and
- *  apostrophes, and every other mark becomes a space; Japanese is only width-normalised and lower-cased (taking the marks off
- *  kana would change letters). */
-export function normalize(lang, text) {
-  const t = String(text || "");
-  if (lang === "ja") return t.normalize("NFKC").toLowerCase().replace(/\s+/g, " ").trim();
-  return t.normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/đ/g, "d").replace(/Đ/g, "D").toLowerCase()
-    .replace(/['’`]/g, "").replace(/[^\p{L}\p{N}]+/gu, " ").trim();
-}
+export { normalize };
 
 /** The words of a normalised English or Vietnamese text. */
 const tokens = (s) => (s ? s.split(" ") : []);

@@ -437,6 +437,11 @@ export function stickersPage(lang, ctx) {
       <h1>${s("st_title")}</h1>
       <p class="lead">${s("st_lead")}</p>
       <p id="sticker-hint" class="hint" hidden>${s("st_hint")}</p>
+      <div id="sticker-search" class="sticker-search" hidden>
+        <label class="visually-hidden" for="sticker-q">${s("st_search_label")}</label>
+        <input id="sticker-q" type="search" placeholder="${s("st_search_ph")}" autocomplete="off" spellcheck="false" enterkeyhint="search">
+        <p id="sticker-search-status" class="sticker-search-status" role="status" aria-live="polite"></p>
+      </div>
       <noscript><p class="note">${s("st_nojs")}</p></noscript>
       <div id="sticker-recent" class="sticker-recent" data-set="${esc(set.version)}" hidden>
         <h2>${s("st_recent")} <button id="sticker-recent-clear" class="linklike" type="button">${s("st_recent_clear")}</button></h2>

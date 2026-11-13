@@ -4,7 +4,7 @@ import { existsSync, readFileSync, readdirSync } from "node:fs";
 import { gzipSync } from "node:zlib";
 import { join } from "node:path";
 import { ORIGIN, RELEASES_URL, ROOT, fmtDate } from "./facts.mjs";
-import { catalogProblems, loadOverrides, loadVocabulary, proposalMarkdown } from "./catalog.mjs";
+import { catalogProblems, loadOverrides, loadVocabulary, normalize, proposalMarkdown } from "./catalog.mjs";
 import { STICKER_DIR } from "./stickers.mjs";
 import { formatCount } from "./downloads.mjs";
 import { CC_URL, fontNames, needsReviewNote, stickerUrl } from "./stickers.mjs";
@@ -222,6 +222,25 @@ export function check({ ctx, pages, files, out }) {
     if (!h.includes('href="#code-signing"')) bad(PATHS[lang].home + ": the download area does not point to the Code signing policy");
   }
   if (!files["llms.txt"].includes(CODE_SIGNING_URL)) bad("llms.txt does not link to the Code signing policy");
+
+  // the search index of the sticker pages (plan v0.2): one file per language, every sticker in it, its words normalised by the very
+  // function the page uses, small enough to read at once
+  for (const lang of LANGS) {
+    const name = "assets/stickers/search-" + lang + ".json";
+    const raw = files[name];
+    if (!raw) { bad(name + " was not built"); continue; }
+    let idx;
+    try { idx = JSON.parse(raw); } catch { bad(name + " is not valid JSON"); continue; }
+    if (idx.v !== 1 || !Array.isArray(idx.items) || idx.items.length !== ctx.stickers.stickers.length) bad(name + ": the index does not list every sticker of the set");
+    if (gzipSync(raw).length > 150 * 1024) bad(name + " is over 150 KB gzipped (spec 13: split the index)");
+    for (const it of idx.items || []) {
+      for (const [k, v] of Object.entries({ t: it.t, x: it.x })) if (v !== normalize(lang, v)) bad(name + ": sticker " + it.id + " field " + k + " is not normalised");
+      for (const w of [...(it.s || []), ...(it.g || [])]) if (w !== normalize(lang, w)) bad(name + ": sticker " + it.id + " has a word that is not normalised: " + w);
+    }
+    const html = byPath.get(PATHS[lang].stickers).html;
+    if (!html.includes('id="sticker-q"') || !html.includes('id="sticker-search" class="sticker-search" hidden')) bad(PATHS[lang].stickers + ": the search box is missing or not reserved");
+    if (!html.includes('<label class="visually-hidden" for="sticker-q">')) bad(PATHS[lang].stickers + ": the search box has no label");
+  }
 
   // the language suggestion (ADR-0067): an inline script on the pages that have a same-page translation, none on the English-only
   // pages; no strip in the static HTML; it reads only the browser's languages and the local storage; it never redirects or asks a server

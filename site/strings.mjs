@@ -140,6 +140,8 @@ export const STRINGS = {
     st_title: "Peak stickers",
     st_lead: "Little Peak moods for your chats. Free to use.",
     st_hint: "Tap a sticker to copy it.",
+    st_search_label: "Search the stickers", st_search_ph: "Search (try: tired, deadline, thanks)",
+    st_search_count: "%n stickers", st_search_none: "Peak has not drawn that one yet. Try another word.", st_search_off: "Search is not available right now. All the stickers are below.",
     st_nojs: "Without scripts: press and hold a picture, or right-click it, to copy or save it.",
     st_how_title: "How to use",
     st_how1: "Tap a sticker to copy it, then paste it into the chat box. On a phone, Share sends it straight to a chat app.",
@@ -298,6 +300,8 @@ export const STRINGS = {
     st_title: "Sticker Peak",
     st_lead: "Những tâm trạng nhỏ của Peak cho cuộc trò chuyện của bạn. Dùng miễn phí.",
     st_hint: "Bấm vào sticker để chép.",
+    st_search_label: "Tìm sticker", st_search_ph: "Tìm (thử: mệt, deadline, cảm ơn)",
+    st_search_count: "%n sticker", st_search_none: "Peak chưa vẽ cái đó. Thử từ khác nhé.", st_search_off: "Tạm thời chưa tìm được. Tất cả sticker ở bên dưới.",
     st_nojs: "Khi không có script: nhấn giữ ảnh hoặc bấm chuột phải để chép hoặc lưu.",
     st_how_title: "Cách dùng",
     st_how1: "Bấm vào sticker để chép, rồi dán vào khung chat. Trên điện thoại, Chia sẻ gửi thẳng vào ứng dụng chat.",
@@ -479,6 +483,8 @@ export const STRINGS = {
     st_title: "Peakのステッカー",
     st_lead: "チャットで使える、Peakのいろいろな気分。無料で使えます。",
     st_hint: "ステッカーをタップしてコピー。",
+    st_search_label: "ステッカーを探す", st_search_ph: "探す（例：ねむい、ありがとう、締め切り）",
+    st_search_count: "%n枚", st_search_none: "Peakはまだそれを描いていません。ほかの言葉で試してね。", st_search_off: "今は検索できません。すべてのステッカーを下に表示しています。",
     st_nojs: "スクリプトが使えないとき：画像を長押し（または右クリック）して、コピーまたは保存してください。",
     st_how_title: "使い方",
     st_how1: "ステッカーをタップしてコピーし、チャット欄に貼り付けます。スマートフォンでは「共有」でチャットアプリに直接送れます。",
@@ -513,7 +519,7 @@ export const FEATURE_IDS = Object.keys(STRINGS.en).filter((k) => /^f\d+_h$/.test
 
 export const HTML_KEYS = new Set(["hero_lead", "alpha_note", "s1", "s2", "s3", "upd_sub", "st_license"]);
 /** The strings the sticker page script needs, besides UI_KEYS (written into that page only). */
-export const STICKER_UI_KEYS = ["st_copied", "st_copy_failed", "st_share"];
+export const STICKER_UI_KEYS = ["st_copied", "st_copy_failed", "st_share", "st_search_count", "st_search_none", "st_search_off"];
 /** Keys that exist in English only: the changelog and the 404 page are not translated. */
 export const EN_ONLY = new Set(["cl_feed", "cl_page_title", "cl_desc", "cl_title", "cl_intro", "nf_title", "nf_text"]);
 /** The keys the page scripts need (share button, copy note, pose labels); the build puts them in each page. */
