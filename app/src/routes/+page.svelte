@@ -1732,7 +1732,11 @@
     chatUser = "";
     chatSlow = false;
     chatDraft = false;
-    if (canChat) {
+    if (canChat && pendingAlive(pendingDay, Date.now()) && pendingAsk) {
+      // the chat box closed by itself while a question about a day was open: it is shown again, to be answered
+      chatReply = pendingAsk;
+      chatPhase = "reply";
+    } else if (canChat) {
       chatReply = "";
       chatPhase = "compose";
     } else {
@@ -2168,6 +2172,7 @@
   }
 
   async function startLeave() {
+    pendingDay = null; // a question about a day does not wait through a leaving
     leaving = true;
     lt(`start pose=${pose} away=${away}`);
     closePanel(); // the chat box goes
@@ -2244,6 +2249,8 @@
   }
 
   // ------------------------------------------------------- kept days (ADR-0106, ADR-0115)
+  let pendingAsk = ""; // the words of the open question, shown again if the chat box was closed and is opened before it is answered
+  const declinedDays = new Set<string>(); // days the person said no to in this run (year-month-day): the model is not allowed to offer them again
   let pendingTries = 0; // short replies to the open question that were answered with "say it again"
   let pendingDay: Pending | null = null; // a day waiting for the person's yes or no; memory only, gone after five minutes
   let lastRemindLine: string | null = null;
@@ -2282,7 +2289,10 @@
   /** Keep the day or leave it, and say so: the one place where a yes or a no (the table's or the model's) takes effect. */
   function settleDay(p: Pending, a: "yes" | "no", now: number): string {
     let line: string;
-    if (a === "no") line = remindLine("dropped", {});
+    if (a === "no") {
+      declinedDays.add(`${p.year}-${p.md}`);
+      line = remindLine("dropped", {});
+    }
     else {
       const r = addKept(mem.keptDays, p, now, `d${now.toString(36)}${Math.floor(Math.random() * 1296).toString(36)}`);
       if (r.result === "added") {
@@ -2421,12 +2431,20 @@
           // the model read the reply as a yes or a no to the open question; Peak says the rest itself
           if (pendingDay === asked) pendingDay = null;
           reply = settleDay(asked, answer, Date.now());
+        } else if (answer) {
+          reply = remindLine("stale", {}); // a yes or a no with no question open: nothing is kept, and Peak says so
         } else if (p && hasKept(mem.keptDays, p)) {
           reply = remindLine("same", {}); // already kept: the model naming it again is not asked about again
+        } else if (p && declinedDays.has(`${p.year}-${p.md}`)) {
+          // the person said no to this day in this run: it is not offered again; the model's own words stay
         } else if (p) {
           pendingDay = { ...p, t: Date.now() };
           pendingTries = 0;
           reply = remindLine("ask", { date: describeDate(p.md, p.year, lang), label: p.label });
+          if (p.more) reply += " " + remindLine("later", {}); // several days in one message: one at a time
+          pendingAsk = reply;
+        } else {
+          reply = remindLine("baddate", {}); // the tag was not a day: Peak does not repeat the model's words, which may say it is kept
         }
       }
       if (asked && pendingDay === asked) pendingDay = null; // the model had its one turn with the question; it is not kept open for a stray "uh" later
@@ -2578,10 +2596,16 @@
     else if (p.action === "fact-set") mem = setFact(mem, p.id, p.value);
     else if (p.action === "fact-del") mem = removeFact(mem, p.id);
     else if (p.action === "kept-del") mem = { ...mem, keptDays: mem.keptDays.filter((k) => k.id !== p.id) };
-    else if (p.action === "forget-kept") mem = forgetKept(mem);
+    else if (p.action === "forget-kept") {
+      mem = forgetKept(mem);
+      pendingDay = null;
+    }
     else if (p.action === "forget-facts") mem = forgetFacts(mem);
     else if (p.action === "forget-habits") mem = forgetHabits(mem);
-    else mem = forgetAll(mem);
+    else {
+      mem = forgetAll(mem);
+      pendingDay = null;
+    }
     scheduleSave();
   }
 

@@ -11,8 +11,8 @@ import { normalize } from "./intents.ts";
 
 export const MAX_KEPT = 24;
 export const MAX_LABEL = 40;
-/** A question to confirm a day waits this long for the answer. */
-export const PENDING_MS = 5 * 60_000;
+/** A question to confirm a day waits this long for the answer (the chat box closes by itself after 20 s; the question stays open, and is shown again when the box is opened). */
+export const PENDING_MS = 30 * 60_000;
 /** A missed day is still said when Peak is back within this many days. */
 export const MISSED_WINDOW_DAYS = 7;
 
@@ -30,6 +30,8 @@ export interface Pending {
   year: number;
   label: string;
   t: number;
+  /** The person told more than one day in the message: Peak takes the first and says the others come one at a time. */
+  more?: boolean;
 }
 
 const DAYS_IN_MONTH = [31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
@@ -50,22 +52,24 @@ export function validMd(md: string): boolean {
 }
 
 /**
- * What the model put after `[skill:remind|`: `MM-DD|label` (every year) or `YYYY-MM-DD|label` (that year only). Anything that
+ * What the model put after `[skill:remind|`: `MM-DD|label` (every year) or `YYYY-MM-DD|label` (that year only), with a last part `|more` when the person told several days at once. Anything that
  * is not exactly that is refused, so a model that invents a form keeps nothing.
  */
 export function parseRemindArgs(args: string | null | undefined): Pending | null {
   if (!args) return null;
-  const cut = args.indexOf("|");
-  if (cut < 0) return null;
-  const date = args.slice(0, cut).trim();
-  const label = cleanLabel(args.slice(cut + 1));
+  const parts = args.split("|");
+  if (parts.length < 2 || parts.length > 3) return null;
+  const date = parts[0].trim();
+  const label = cleanLabel(parts[1]);
   if (!label) return null;
+  if (parts.length === 3 && parts[2].trim().toLowerCase() !== "more") return null;
+  const more = parts.length === 3;
   const full = /^(\d{4})-(\d{2}-\d{2})$/.exec(date);
   const md = full ? full[2] : date;
   const year = full ? Number(full[1]) : 0;
   if (!validMd(md)) return null;
   if (full && (year < 2000 || year > 2100)) return null;
-  return { md, year, label, t: 0 };
+  return more ? { md, year, label, t: 0, more: true } : { md, year, label, t: 0 };
 }
 
 const YES = ["đúng", "đúng rồi", "đúng vậy", "đúng đó", "phải", "phải rồi", "ừ", "ừm", "ừa", "ờ", "uh", "uhm", "uh huh", "um", "uk", "vâng", "dạ", "dạ vâng", "được", "được rồi", "ok", "okay", "oke", "okie", "yup", "yes", "yep", "yeah", "right", "correct", "that's right", "sure", "keep it", "keep", "please", "do it", "giữ", "giữ đi", "giữ nhé", "nhớ đi", "はい", "うん", "そう", "そうだよ", "合ってる", "あってる", "お願い", "覚えて"];
@@ -187,7 +191,7 @@ export function describeDate(md: string, year: number, lang: Lang): string {
   return `${d} ${MONTHS_EN[mo - 1]}${year ? ` ${year}` : ""}`;
 }
 
-export type RemindLine = "today" | "missed" | "ask" | "kept" | "same" | "full" | "dropped" | "clarify";
+export type RemindLine = "today" | "missed" | "ask" | "kept" | "same" | "full" | "dropped" | "clarify" | "later" | "baddate" | "stale";
 
 /** Scripted lines, three languages, no key needed (ADR-0106 point 6). {label} and {date} are filled in by `say`. */
 export const REMIND_LINES: Record<RemindLine, Record<Lang, string[]>> = {
@@ -225,6 +229,21 @@ export const REMIND_LINES: Record<RemindLine, Record<Lang, string[]>> = {
     en: ["Not sure I got that. Say 'keep it' to keep the day, or 'no' to skip it.", "I did not catch that. 'Keep it' or 'no'?"],
     vi: ["Mình chưa rõ nè. Giữ ngày này thì nói 'giữ đi', không thì nói 'không' nhé.", "Mình chưa hiểu ý. 'Giữ đi' hay 'không' nhỉ?"],
     ja: ["ごめん、わからなかった。覚えるなら「お願い」、やめるなら「やめて」って言ってね。", "うまく伝わらなかったみたい。「お願い」か「やめて」で教えてね。"],
+  },
+  later: {
+    en: ["One day at a time: I'll take the others after this one.", "I keep one day at a time. Tell me the next one after this."],
+    vi: ["Mình nhận từng ngày một nha, các ngày kia mình hỏi sau.", "Mình giữ từng ngày một. Ngày còn lại bạn kể sau nhé."],
+    ja: ["一日ずつ覚えるね。ほかの日はそのあとで。", "日付は一つずつ覚えるよ。次の日はそのあとで教えてね。"],
+  },
+  baddate: {
+    en: ["I could not make out the day. Could you tell me the date again?", "That day did not come out clearly for me. What is the date?"],
+    vi: ["Mình chưa rõ ngày đó. Bạn nói lại ngày giúp mình nhé?", "Ngày đó mình chưa nắm được. Là ngày mấy nhỉ?"],
+    ja: ["その日がよくわからなかった。もう一度日付を教えてくれる？", "日付がはっきりしなかったよ。何日かな？"],
+  },
+  stale: {
+    en: ["I am not waiting on a day right now. Tell me the day again and I'll ask.", "No day is waiting for an answer. Tell me the date again?"],
+    vi: ["Mình đang không chờ ngày nào cả. Bạn kể lại ngày giúp mình nhé.", "Không có ngày nào đang chờ trả lời. Bạn nói lại ngày nhé?"],
+    ja: ["いま返事を待っている日はないよ。もう一度日付を教えてね。", "待っている日はないみたい。日付をもう一度教えてくれる？"],
   },
   dropped: {
     en: ["Okay, I won't keep it.", "No problem, I'll leave it out."],

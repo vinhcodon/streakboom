@@ -23,6 +23,9 @@ test("only real days of a year are valid, 29 February included", () => {
 
 test("the model's arguments are accepted in exactly two forms and nothing else", () => {
   assert.deepEqual(parseRemindArgs("03-12|mẹ"), { md: "03-12", year: 0, label: "mẹ", t: 0 });
+  assert.deepEqual(parseRemindArgs("03-12|mẹ|more"), { md: "03-12", year: 0, label: "mẹ", t: 0, more: true });
+  assert.equal(parseRemindArgs("03-12|mẹ|other"), null);
+  assert.equal(parseRemindArgs("03-12|mẹ|more|x"), null);
   assert.deepEqual(parseRemindArgs("2026-11-20|kỳ thi"), { md: "11-20", year: 2026, label: "kỳ thi", t: 0 });
   for (const bad of [null, undefined, "", "03-12", "03-12|", "13-40|x", "1999-03-12|x", "2101-03-12|x", "tomorrow|x", "03-12 |  ", "2026-02-30|x"]) {
     assert.equal(parseRemindArgs(bad as string), null, String(bad));
@@ -35,7 +38,7 @@ test("yes and no are whole short answers in the three languages; a sentence is n
   for (const x of ["đúng rồi nhưng mà đổi sang ngày 13", "maybe", "hello", "", "mẹ mình"]) assert.equal(answerOf(x), null, x);
 });
 
-test("a question waits five minutes for its answer", () => {
+test("a question waits half an hour for its answer", () => {
   const p = { md: "03-12", year: 0, label: "mẹ", t: 1000 };
   assert.equal(pendingAlive(p, 1000 + PENDING_MS - 1), true);
   assert.equal(pendingAlive(p, 1000 + PENDING_MS), false);
