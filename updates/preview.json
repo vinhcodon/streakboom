@@ -1,11 +1,11 @@
 {
-    "version":  "0.9.3",
-    "notes":  "Peak no longer mistakes the morning for the night. Its own unprompted lines from the chat model were told only \"it is 10 o\u0027clock\", and the model read that as 10 at night. Peak now tells the model the time with the part of the day in words, and the chat is given your local time, the weekday and th...",
-    "pub_date":  "2026-11-14T04:28:05Z",
+    "version":  "0.9.4",
+    "notes":  "Telling Peak to go away in the middle of a chat is now taken as a joke, unless you mean it. If you were talking with Peak in the last two minutes, lượn đi, cút đi and the others are answered like any message; say it three times within three minutes and Peak goes. With no chat just before, it goes...",
+    "pub_date":  "2026-11-14T05:09:45Z",
     "platforms":  {
                       "windows-x86_64":  {
-                                             "signature":  "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVUcHBlQXhYUlVURnVwbUNGVnBwMGsyVzI5L3pscjA1eVhFbm5MdUplVUt2NXVrbklrV2tEZmdJYVNsUWlReU5tQXpzYkFCTkhFWFpTZnFXdEZ3emUxWm16RHZFdmVvVUFBPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzk0NjMwNDgyCWZpbGU6U3RyZWFrYm9vbV8wLjkuM194NjQtc2V0dXAuZXhlCXZlcnNpb246MC45LjMKc1JsaWJkQlBXT2ZaWVMwRjE0bnpERHllUG9mUlZ5WTJ1L3NWbVJ1SFQzaEppamJ4TGtNVWpoaG4rWnhNWlNkdzZnMFdzM3BaOUFmdmp4K1FGRzd5Q1E9PQo=",
-                                             "url":  "https://api.github.com/repos/vinhcodon/streakboom/releases/assets/746283532"
+                                             "signature":  "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVUcHBlQXhYUlVURnBUYzVPQzVIcFVDeVlibmV0eExFOXVmY2tDY2pIcHJOOXIvMnFZYUdqMUpWVHVjOXNMSUczRWdMNmpIN1Qvazd5Q1k3SlZZRWdRUDFUTWV2bGpDRHdnPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzk0NjMyOTgyCWZpbGU6U3RyZWFrYm9vbV8wLjkuNF94NjQtc2V0dXAuZXhlCXZlcnNpb246MC45LjQKWGdUSGJiUGs1VUxKdmdsbmhWcjZJSDlmbVIrMDBlazJOSUFHZkN3VHVnbFZZUW9HZStJWHZmS3U3RUlyUkFTN2g5N3FjREhyT0k2OHZQUmF4eGJtQmc9PQo=",
+                                             "url":  "https://api.github.com/repos/vinhcodon/streakboom/releases/assets/746376481"
                                          }
                   }
 }
