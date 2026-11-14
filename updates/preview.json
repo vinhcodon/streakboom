@@ -1,11 +1,11 @@
 {
-    "version":  "0.9.6",
-    "notes":  "You can now ask Peak to step aside. Double right-click on Peak, or type xê ra, tránh ra, move over, step aside, どいて. Peak walks away from the pointer until it is clear, and nods and stays if there is no room; it never leaves and never falls. A single right click is still a push, but it now waits...",
-    "pub_date":  "2026-11-14T10:02:09Z",
+    "version":  "0.9.7",
+    "notes":  "The hint about xê ra now really shows. After three pushes in a short while Peak is meant to say once that you can also say xê ra; in 0.9.6 the line could be swallowed by the bubble of the push and then never come back. It now waits for the bubble to go and counts as said only when you have seen it.",
+    "pub_date":  "2026-11-14T14:18:29Z",
     "platforms":  {
                       "windows-x86_64":  {
-                                             "signature":  "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVUcHBlQXhYUlVURm9KYVJoakVsUTlQZjdEN2FoYnlWSnh6QytmZlRGQStNaTlaSVMxbVVFdlEzaTdONys5YzNTWjY3V055ZjJuOW9mVktkTmVFTUFDd2NZU2FodFNzM0FRPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzk0NjUwNTI1CWZpbGU6U3RyZWFrYm9vbV8wLjkuNl94NjQtc2V0dXAuZXhlCXZlcnNpb246MC45LjYKd2Z1UG5weENLSE1rNk1OWC9VYmxIaU81NHFZcHlDZGxSdkVCRno3RzB2cGRCUmJkck9UQ1FsQ3pNR2luSnppWFhiT1FHUGxNYis5ZWkwZkRHL2pzQlE9PQo=",
-                                             "url":  "https://api.github.com/repos/vinhcodon/streakboom/releases/assets/747050833"
+                                             "signature":  "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVUcHBlQXhYUlVURnNMbGFDcEh4NjV4elZQMUtGbnZtMmY4a1d1R0dwakRjOGJ3c2pCNUpUYzdLdXJyanZxV2tzZVJja0NsWFBCalBNeUVoc09DMkZQKzlQblVqcCtwMWdBPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzk0NjY1OTA2CWZpbGU6U3RyZWFrYm9vbV8wLjkuN194NjQtc2V0dXAuZXhlCXZlcnNpb246MC45LjcKM05hR3FzRkdXK1RrbmNFK0F2bkhvUENaTXRkc25TSTNLUGpsWHk4VUFidElzS2RmbnVuNGprZGpVWGs3NHJacGMrNHBiR3Z2WEllaHFRL2x5dUhuRHc9PQo=",
+                                             "url":  "https://api.github.com/repos/vinhcodon/streakboom/releases/assets/747708780"
                                          }
                   }
 }
