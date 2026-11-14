@@ -4,6 +4,7 @@ import { existsSync, readFileSync, readdirSync } from "node:fs";
 import { gzipSync } from "node:zlib";
 import { join } from "node:path";
 import { ORIGIN, RELEASES_URL, ROOT, fmtDate } from "./facts.mjs";
+import { HIDDEN_WORDS } from "./facts.mjs";
 import { BEACON_SRC, countingOn, countingProblems, measurementProblems, siteParagraph, stickerNote, webAnalyticsManual, webAnalyticsOn } from "./counting.mjs";
 import { catalogProblems, loadOverrides, loadPopular, loadVocabulary, normalize, popularProblems, proposalMarkdown } from "./catalog.mjs";
 import { STICKER_DIR } from "./stickers.mjs";
@@ -331,6 +332,11 @@ export function check({ ctx, pages, files, out }) {
       if (webAnalyticsOn(ctx) && /no analytics|không có công cụ phân tích|アクセス解析も行いません/.test(pv)) bad(PATHS[lang].privacy + ": the visit count is on but the page says there is no analytics");
     }
   }
+
+  // Preview and the test builds are not for the site (ADR-0089, ADR-0095, ADR-0101): the words are in no page text and in no generated file
+  const visible = (html) => html.replace(/<script[\s\S]*?<\/script>/g, " ").replace(/<style[\s\S]*?<\/style>/g, " ").replace(/<[^>]*>/g, " ");
+  for (const p of pages) { const m = HIDDEN_WORDS.exec(visible(p.html)); if (m) bad(`${p.path}: the page says "${m[0]}" (Preview and the test builds are not announced: ADR-0101)`); }
+  for (const [name, text] of Object.entries(files)) { if (!/\.(xml|txt)$/.test(name) || name === "sitemap.xml") continue; const m = HIDDEN_WORDS.exec(text); if (m) bad(`${name}: says "${m[0]}" (Preview and the test builds are not announced: ADR-0101)`); }
 
   // the menu stays short (ADR-0053): four links in the header, the rest in the footer
   for (const p of pages) {
