@@ -224,8 +224,8 @@ Why: the perches of TE-10c need bare desktop above a window, which a full-screen
 | TT-7 | Props: a cardboard box and a cushion drawn under the cat as the place that works anywhere (art, a rig change) | M | later (the author declined for now, ADR-0044 T3) | TT-5 |
 | TT-8 | Taught places (spec/07 L4, TE-11): where the user drops Peak and leaves it becomes a favourite spot, with Forget in Settings | M | needs Vinh (consent text) | TT-5 |
 | TT-9 | The ground map switch on by default, the README and the website text | S | done (on by default; the README and the Settings text in three languages; the website session is told at the next release) | |
-| TT-10 | The screen picture sense: a low-resolution grayscale picture of the screen in memory, turned into blocks (text-like, boxes, pictures, empty space) with a stability filter; opt-in, off by default; its own README, Settings and website text (spec/10 section 12) | L, split | ready, last in the order (decided 2026-11-10, ADR-0045) | TT-1 |
-| TT-11 | Content surfaces: the top edges of blocks as ledges, their sides as walls, and the rule that the cat sits in empty space | M | blocked (TT-10, TT-3) | TT-10 |
+| TT-10 | The screen picture sense: a low-resolution grayscale picture of the screen in memory, turned into blocks (text-like, boxes, pictures, empty space) with a stability filter; opt-in, off by default; its own README, Settings and website text (spec/10 section 12) | L, split | ready, last in the order (decided 2026-11-10, ADR-0045); **split into epic E27 on 2026-11-15** (plan `screen-picture-plan.md`, ADR-0119); stage 1 (the view) is built, the rest waits for the author | TT-1 |
+| TT-11 | Content surfaces: the top edges of blocks as ledges, their sides as walls, and the rule that the cat sits in empty space | M | blocked (TT-10, TT-3): this is stage 4 of E27 (PS-7) | TT-10 |
 | TT-12 | Walls and vertical movement: `terrain.ts` gives walls (`wallFor`: the side of the window under a ledge, with the ledge's width) and a "surface below x" query; climb, mantle, cling; the fall of PC-7 lands on the plane below instead of the floor | M | done (committed 48a2af1; seen on a stand-in desktop: it walked to the wall, climbed 223 px, pulled up onto the ledge, and later climbed down to the floor; the wall's real x is found by asking `ground_at` a few px at a time; falls to the plane below are done; knocks are TT-13) | TT-3 |
 | TT-13 | Knocks: a window moved or resized into the cat or closed under a wall it clings to knocks it off (a fall to the plane below), told apart from the user carrying it | M | ready (TT-12 is done; the person's own push is CH-5, this is the world's knock) | TT-12 |
 | TT-14 | The climb pose and cycle (a rig change; the author looks at a test build first) | M | done (the author looked at it on the test build on 2026-11-10 and said it was fine; committed 48a2af1; poses `climb` and `cling` on a new side key `CLIMB_S`: body upright and leaning to the wall, belly on it, head up, paws reaching, tail hanging; the legs alternate with the walk machinery; the mantle is a hop without a crouch) | TT-12 |
@@ -407,3 +407,20 @@ Why: the author keeps building features and lets a few adults try them (ADR-0089
 |---|---|---|---|
 | SE-1 | The place as a number along the floor (`seat.ts`), the field `seat` in `memory.json`, the skill `seat_here` ("sit here"), `seat` walking there (verbs `walk_home` and `save_seat`), the row in Settings, Memory | M | built on branch `vanish` 2026-11-15, not seen |
 | SE-2 | Favourite places learned from habit (spec 06 section 2.3: a count of resting minutes in a grid) | M | not decided; ADR-0117 chose teaching by words instead |
+
+## E27: Terrain from the picture of the screen (plan `docs/plans/screen-picture-plan.md`, spec 10 section 12, ADR-0045 T5, ADR-0119)
+
+**Why.** With every window minimised the map is all "bare desktop", with one maximised window it is one block: Peak has no ledge or wall (the author, 2026-11-15). The picture sense (blocks and borders from the brightness of the screen) was decided on 2026-11-10 and put last because it needs the overlay to be tuned. Each stage is looked at by the author on a Preview before the next; the author can end the work at any stage.
+
+| # | Story | Size | Status |
+|---|---|---|---|
+| PS-1 | Rust `screen_grid`: the monitor Peak is on, `StretchBlt` (halftone) into at most 192 x 108 grey cells, Windows only, Peak's own windows left out, nothing kept | S | built on branch `vanish` 2026-11-15, not seen |
+| PS-2 | `picture.ts` (pure, tested): gradient, relative threshold, horizontal and vertical segments, room above a ledge, empty space | M | built, not seen (tuning waits for what the author sees) |
+| PS-3 | The tray item "Screen picture (experiment)" (Preview only, off at every start) and the drawing on the overlay | S | built, not seen (V-149) |
+| PS-4 | Tuning with the author on his usual screens (desktop with icons, a maximised editor, a browser, a dark theme): thresholds, minimal run, noise; a fixture set of synthetic grids | M | waits for the author's look at PS-3 |
+| PS-5 | Stability: two captures about a second apart, the filter, the cost measured | S | proposed |
+| PS-6 | The rule "sit in empty space" for the cat's room (replaces "some other window above it") | M | proposed (needs PS-5) |
+| PS-7 | Content surfaces (this is TT-11): the segments as ledges and walls in `terrain.ts`, behind a switch for the author's Preview only; the perch trace says when one was chosen; a second look just before a hop | M | proposed (needs PS-5, PS-6) |
+| PS-8 | The feature: the switch in Settings, Privacy (off by default), the texts in the README, Settings (three languages) and the website (through the website session), taken only when about to move or to check the seat | M | proposed; only by the author's order |
+| PS-9 | The privacy test that nothing is written, logged or sent (the grid never leaves memory), and the list of what the sense does and does not see | S | proposed (a first test comes with PS-2) |
+| PS-10 | Hardening: several monitors and scales, security software, full-screen programs and black captures, the cost on a weak computer | M | proposed |
