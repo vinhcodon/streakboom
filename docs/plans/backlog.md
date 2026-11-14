@@ -381,7 +381,8 @@ Why: the author keeps building features and lets a few adults try them (ADR-0089
 
 | # | Story | Size | Status |
 |---|---|---|---|
-| IM-1 | `bindings.ts`: the table of named actions and gestures with tests (one action per gesture, one skill per phrase), and the handlers calling it | M | proposed |
+| IM-1 | `bindings.ts`: the table of named actions and gestures with tests (one action per gesture, one skill per phrase) | M | built (table and resolver, not yet called by the page) |
+| IM-1b | The page handlers call `resolveGesture` and run the action by name (done together with IM-2, which rewrites the right-click handler) | S | proposed |
 | IM-2 | The right click resolver (about 250 ms) and the double right click | S | proposed |
 | IM-3 | Skill `aside` ("xê ra", "tránh ra", "move over") and the verb `step_aside` | M | proposed |
 | IM-4 | The one-time hint after repeated pushes, three languages, under the banned-patterns test | S | proposed |
