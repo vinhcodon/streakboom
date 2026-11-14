@@ -131,7 +131,7 @@ A skill is one file in `app/src/lib/skills/*.skill.json`: `skill` (the name), `d
 
 ### 7.7 What the model is told besides the persona (ADR-0105, 0108)
 
-After the persona and the notes about the user, a chat turn may carry, in this order: the **skills layer** (outside a conversation, not in Quiet mode), the **clock line** (the local time, the weekday and the part of the day, in English, such as `10:05, Saturday, morning`; no date, no zone, no place; the page builds it, Rust cleans it to letters, digits and `: , -`, 40 characters), and the **banter rule** (in a conversation). The unprompted AI line states the hour as 24-hour time with the part of the day in words (`clock.ts`), because "Bây giờ là 10 giờ" alone was read as 10 at night at 10 in the morning. The clock goes only to the brain the person connected, with their chat or their optional unprompted lines (`docs/privacy.md`).
+After the persona and the notes about the user, a chat turn may carry, in this order: the **skills layer** (outside a conversation, not in Quiet mode), the **clock line** (the local time, the weekday with the date in words and the part of the day, in English, such as `10:05, Saturday 14 November 2026, morning`; no zone, no place; the page builds it, Rust cleans it to letters, digits and `: , -`, 64 characters; the date was added on 2026-11-15, ADR-0105 addendum), and the **banter rule** (in a conversation). The unprompted AI line states the hour as 24-hour time with the part of the day in words (`clock.ts`), because "Bây giờ là 10 giờ" alone was read as 10 at night at 10 in the morning. The clock goes only to the brain the person connected, with their chat or their optional unprompted lines (`docs/privacy.md`).
 
 ## 8. Learning from behaviour and making suggestions
 

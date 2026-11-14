@@ -68,8 +68,8 @@ export function parseRemindArgs(args: string | null | undefined): Pending | null
   return { md, year, label, t: 0 };
 }
 
-const YES = ["đúng", "đúng rồi", "đúng vậy", "đúng đó", "phải", "phải rồi", "ừ", "ừm", "ờ", "ok", "okay", "yes", "yep", "yeah", "right", "correct", "that's right", "sure", "はい", "うん", "そう", "そうだよ", "合ってる", "あってる"];
-const NO = ["không", "không phải", "không đúng", "sai", "sai rồi", "chưa đúng", "no", "nope", "wrong", "not right", "that's wrong", "いいえ", "ちがう", "違う", "ううん", "ちがうよ"];
+const YES = ["đúng", "đúng rồi", "đúng vậy", "đúng đó", "phải", "phải rồi", "ừ", "ừm", "ờ", "ok", "okay", "yes", "yep", "yeah", "right", "correct", "that's right", "sure", "keep it", "keep", "please", "do it", "giữ", "giữ đi", "giữ nhé", "nhớ đi", "はい", "うん", "そう", "そうだよ", "合ってる", "あってる", "お願い", "覚えて"];
+const NO = ["không", "không phải", "không đúng", "sai", "sai rồi", "chưa đúng", "no", "nope", "wrong", "not right", "that's wrong", "don't", "no thanks", "đừng", "đừng giữ", "thôi", "いいえ", "ちがう", "違う", "ううん", "ちがうよ", "やめて"];
 const norm = (xs: string[]) => new Set(xs.map(normalize));
 const YES_SET = norm(YES);
 const NO_SET = norm(NO);
@@ -177,9 +177,9 @@ export const REMIND_LINES: Record<RemindLine, Record<Lang, string[]>> = {
     ja: ["{label}、少し前だったね。遅ればせながらおめでとう！", "{label}は数日前だったかな。遅くなったけど、おめでとう。"],
   },
   ask: {
-    en: ["{date}: {label}. Did I get that right?", "So {label} is on {date}. Is that right?"],
-    vi: ["{date}: {label}. Mình hiểu vậy có đúng không?", "{label} vào {date}. Đúng không nhỉ?"],
-    ja: ["{date}：{label}。これで合ってる？", "{label}は{date}だね。合ってる？"],
+    en: ["{date}: {label}. Shall I keep that day?", "So {label} is on {date}. Keep it?"],
+    vi: ["{date}: {label}. Mình giữ ngày này nhé?", "{label} vào {date}. Giữ lại nhé?"],
+    ja: ["{date}：{label}。この日を覚えておく？", "{label}は{date}だね。覚えておこうか？"],
   },
   kept: {
     en: ["Got it. I'll keep {date}.", "Done. {date} is kept."],

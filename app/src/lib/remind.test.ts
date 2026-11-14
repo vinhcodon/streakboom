@@ -30,8 +30,8 @@ test("the model's arguments are accepted in exactly two forms and nothing else",
 });
 
 test("yes and no are whole short answers in the three languages; a sentence is neither", () => {
-  for (const y of ["đúng", "Đúng rồi!", "ừ", "yes", "Yep.", "That's right", "はい", "うん"]) assert.equal(answerOf(y), "yes", y);
-  for (const n of ["không", "Không phải", "sai rồi", "no", "Nope", "いいえ", "ちがう"]) assert.equal(answerOf(n), "no", n);
+  for (const y of ["đúng", "Đúng rồi!", "ừ", "yes", "Yep.", "That's right", "Giữ đi", "keep it", "はい", "うん", "お願い"]) assert.equal(answerOf(y), "yes", y);
+  for (const n of ["không", "Không phải", "sai rồi", "Đừng giữ", "thôi", "no", "Nope", "no thanks", "いいえ", "ちがう", "やめて"]) assert.equal(answerOf(n), "no", n);
   for (const x of ["đúng rồi nhưng mà đổi sang ngày 13", "maybe", "hello", "", "mẹ mình"]) assert.equal(answerOf(x), null, x);
 });
 

@@ -22,9 +22,15 @@ export function clockPhrase(lang: string, hour: number): string {
   return `It is ${hh(hour)}:00 (${w}).`;
 }
 
-/** The line added to the chat's instructions: local time, the weekday and the part of the day, in English. Nothing else (no date, no zone, no place). */
+const MONTHS_EN = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+
+/**
+ * The line added to the chat's instructions: local time, the weekday with the date written in words, and the part of the day, in
+ * English ("10:05, Saturday 14 November 2026, morning"). The date was added on 2026-11-15 (ADR-0105 addendum): without it the model
+ * could not say today's date and could not turn "today" or "tomorrow" into the day to keep (remind, ADR-0115). No zone, no place.
+ */
 export function clockLine(d: Date): string {
   const time = `${hh(d.getHours())}:${String(d.getMinutes()).padStart(2, "0")}`;
   const weekday = new Intl.DateTimeFormat("en-US", { weekday: "long" }).format(d);
-  return `${time}, ${weekday}, ${PART_WORDS.en[partOf(d.getHours())]}`;
+  return `${time}, ${weekday} ${d.getDate()} ${MONTHS_EN[d.getMonth()]} ${d.getFullYear()}, ${PART_WORDS.en[partOf(d.getHours())]}`;
 }

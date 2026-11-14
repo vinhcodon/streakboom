@@ -22,8 +22,14 @@ test("odd input and an unknown language stay sane", () => {
   for (const bad of [NaN, -3, 99, Infinity]) assert.match(clockPhrase("en", bad), /^It is \d\d:00 \(\w+\)\.$/);
 });
 
-test("the line for the chat holds the time, the weekday and the part of the day, and nothing else", () => {
-  assert.equal(clockLine(new Date(2026, 10, 14, 10, 5)), "10:05, Saturday, morning");
-  assert.equal(clockLine(new Date(2026, 10, 14, 23, 59)), "23:59, Saturday, night");
-  assert.ok(!/2026|GMT|UTC/.test(clockLine(new Date(2026, 10, 14, 10, 5))));
+test("the line for the chat holds the time, the weekday with the date in words, and the part of the day, and no zone", () => {
+  assert.equal(clockLine(new Date(2026, 10, 14, 10, 5)), "10:05, Saturday 14 November 2026, morning");
+  assert.equal(clockLine(new Date(2026, 10, 14, 23, 59)), "23:59, Saturday 14 November 2026, night");
+  assert.equal(clockLine(new Date(2027, 0, 1, 0, 0)), "00:00, Friday 1 January 2027, night");
+  assert.ok(!/GMT|UTC|[+]\d\d/.test(clockLine(new Date(2026, 10, 14, 10, 5))));
+});
+
+test("the date is the local one, so 'today' is the day on the person's clock (the remind skill relies on it)", () => {
+  const d = new Date(2026, 10, 14, 23, 30); // late evening: the local date is still the 14th
+  assert.match(clockLine(d), /14 November 2026/);
 });

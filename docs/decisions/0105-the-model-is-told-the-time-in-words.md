@@ -16,3 +16,6 @@ The author saw Peak say it was 10 at night at 10 in the morning. The unprompted 
 - One short line more per chat turn (about 15 tokens).
 - The part-of-day boundaries are those of the rest of the app (`partOf`: morning 5 to 12, afternoon 12 to 18, evening 18 to 23, night 23 to 5).
 - **Not verified:** the model's behaviour with the line, in the three languages, on a real model (V-135).
+
+## Addendum (2026-11-15): the date is told too
+The author tried the remind skill (ADR-0115) and saw that the model did not know today's date: asked "what day is it" it answered wrongly, and "today is my daughter's birthday" could not become a day to keep. Point 2 above said "no date"; that is reversed. The line is now `10:05, Saturday 14 November 2026, morning` (the local date in words, so that 14/11 and 11/14 cannot be mixed up), Rust keeps at most 64 characters, and the sentence that follows it says it may be used for the time, the date, a greeting and to turn "today", "tomorrow" or a weekday into a date. Still no time zone and no place. The date is the person's own computer date, sent only with a chat the person started, like the time (docs/privacy.md says so).
