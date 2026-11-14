@@ -10,6 +10,7 @@ What was **decided**, why, and what was rejected. One short file per decision (a
 
 | ADR | Decision | Status | Date |
 |---|---|---|---|
+| [0103](0103-peak-skills-as-text-files-in-stages.md) | Peak's skills are described in text files (phrases, description, gates, steps from a closed list of verbs), built in stages: Lượn đi as a file first, a second skill next, scenarios later; nothing built yet | accepted as a direction | 2026-11-14 |
 | [0102](0102-peak-leaves-only-at-the-edge.md) | Peak leaves only at the edge: a trot at 110 px/s, a deadline from the distance, a stay (no vanishing mid-screen) when it cannot get there, the leave counted when the window is hidden | accepted, built, not seen | 2026-11-14 |
 | [0101](0101-the-site-does-not-say-preview-or-test-builds-even-in-the-changelog.md) | The site does not say Preview or the test builds, even in the changelog it mirrors (it leaves those lines out; the build refuses the words); follows ADR-0089 and ADR-0095 (the website session) | accepted, built | 2026-11-14 |
 | [0100](0100-lun-di-goes-to-stable-in-0-8-0.md) | "Lượn đi" goes to Stable in 0.8.0: the Preview-only gate is lifted in the last Preview (0.7.7), the Stable is cut from its commit, Preview 0.9.0 the same day; the model's false-tag rate and the checklist items are not measured and are accepted as such | accepted | 2026-11-14 |
