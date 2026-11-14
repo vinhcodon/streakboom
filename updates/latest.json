@@ -1,11 +1,11 @@
 {
-    "version":  "0.8.1",
-    "notes":  "Peak no longer vanishes in the middle of the screen when you send it away. It now trots to the edge, faster than its ordinary walk, with a time that depends on how far the edge is; if something stops it before it gets there, it stays where it is instead of disappearing. Sending it away is counted...",
-    "pub_date":  "2026-11-14T03:06:57Z",
+    "version":  "0.10.0",
+    "notes":  "You can ask Peak to step aside. Double right-click on Peak, or type xê ra, tránh ra, move over, step aside or どいて: Peak walks away from the pointer along the surface it stands on until the pointer is clear, and nods and stays if there is no room. It never leaves and never falls. A single right cl...",
+    "pub_date":  "2026-11-14T15:09:31Z",
     "platforms":  {
                       "windows-x86_64":  {
-                                             "signature":  "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVUcHBlQXhYUlVURm9hQ29vbHdTUWFERVpBNU9aU3ZnLytOc0FUL09tRUh2NmJhUGtoczJTU0JuYjdwNEtSekljTkNGSEFaRWpwQVNwaXR2NmxpMjBpNmo5WDRnR2tiQmdzPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzk0NjI1NjE1CWZpbGU6U3RyZWFrYm9vbV8wLjguMV94NjQtc2V0dXAuZXhlCXZlcnNpb246MC44LjEKbjdVRU5sbEFOWm1QdExleXFmNURsK1UwKzFieTF5SExWY2x0eXZyYUNFZ0wzbnlyM3lXanQ5OStTNGlFRHQ5aUFQbGI1ckVidVprcXdNY2NQR1JIRFE9PQo=",
-                                             "url":  "https://api.github.com/repos/vinhcodon/streakboom/releases/assets/746101816"
+                                             "signature":  "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVUcHBlQXhYUlVURmdHQWlVV0M1TUptbkFXU05RNlpFYXpKWHlVLy9BcU8yd3Jlc3REZ0tQcnJMcExlZDNWbjBuMStqUlQ1a2RrdDVDS01RYmJ2b2ZZR08vR1NsbDdpbUFZPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzk0NjY4OTcxCWZpbGU6U3RyZWFrYm9vbV8wLjEwLjBfeDY0LXNldHVwLmV4ZQl2ZXJzaW9uOjAuMTAuMApERkhRRkdqWDRUcTlNbWVKS2RVbG5SNWxheXcySW9lTXF1WDg4SHNGUkVNRDNYYnRaU3hidEZhMkdXVk56cnB5Kzh2MHRBU0JBZlJSa0VCS1pLZE5CZz09Cg==",
+                                             "url":  "https://api.github.com/repos/vinhcodon/streakboom/releases/assets/747847545"
                                          }
                   }
 }
