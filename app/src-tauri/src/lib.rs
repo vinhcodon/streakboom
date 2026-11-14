@@ -1478,6 +1478,50 @@ fn end_away(app: &AppHandle) {
     }
 }
 
+/// One step of the "Luợn đi" flow as a line of `leave-trace.log` in the data folder (V-132): only a fixed step name and numbers the page
+/// chose, never chat text, so that a failure the author sees can be read afterwards. Anything outside letters, digits and
+/// `_ - : . , = space` is dropped, a line is at most 120 characters, and the file is cut to its newest half past 64 KB.
+fn trace_line(step: &str, now_ms: u128) -> Option<String> {
+    let clean: String = step
+        .chars()
+        .filter(|c| c.is_ascii_alphanumeric() || matches!(c, '_' | '-' | ':' | '.' | ',' | '=' | ' '))
+        .take(120)
+        .collect();
+    let clean = clean.trim();
+    if clean.is_empty() {
+        None
+    } else {
+        Some(format!("{now_ms} {clean}\n"))
+    }
+}
+
+const TRACE_MAX_BYTES: usize = 64 * 1024;
+
+fn trim_trace(text: &str) -> String {
+    if text.len() <= TRACE_MAX_BYTES {
+        return text.to_string();
+    }
+    let mut start = text.len() / 2;
+    while !text.is_char_boundary(start) {
+        start += 1;
+    }
+    match text[start..].find('\n') {
+        Some(i) => text[start + i + 1..].to_string(),
+        None => String::new(),
+    }
+}
+
+#[tauri::command]
+fn leave_trace(app: AppHandle, step: String) {
+    let now = std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).map(|d| d.as_millis()).unwrap_or(0);
+    let Some(line) = trace_line(&step, now) else { return };
+    let Ok(dir) = app.path().app_data_dir() else { return };
+    let _ = fs::create_dir_all(&dir);
+    let path = dir.join("leave-trace.log");
+    let old = fs::read_to_string(&path).unwrap_or_default();
+    let _ = fs::write(&path, trim_trace(&(old + &line)));
+}
+
 /// Peak walks off (S2): hide the pet window and its bubble and start the return timer. The page decides whether it may leave.
 #[tauri::command]
 fn pet_leave(app: AppHandle, state: State<AppState>, minutes: u32) -> bool {
@@ -1719,6 +1763,7 @@ pub fn run() {
             get_prefs,
             move_by,
             pet_leave,
+            leave_trace,
             pet_return,
             pet_away_retry,
             drag_start,
@@ -1769,6 +1814,23 @@ pub fn run() {
 #[cfg(test)]
 mod away_tests {
     use super::*;
+
+    #[test]
+    fn a_trace_line_keeps_only_a_step_name_and_numbers() {
+        assert_eq!(trace_line("walk_start room=640 dir=1", 5).as_deref(), Some("5 walk_start room=640 dir=1\n"));
+        assert_eq!(trace_line("say \"x\" <b>hi</b>\n", 5).as_deref(), Some("5 say x bhib\n"));
+        assert_eq!(trace_line("   \n", 5), None);
+        assert!(trace_line(&"a".repeat(500), 5).unwrap().len() <= 130);
+    }
+
+    #[test]
+    fn the_trace_file_is_cut_to_its_newest_lines() {
+        let line = "1 step\n";
+        let big = line.repeat(TRACE_MAX_BYTES / line.len() + 100);
+        let cut = trim_trace(&big);
+        assert!(cut.len() < TRACE_MAX_BYTES && cut.len() > 1000 && cut.ends_with('\n') && cut.starts_with("1 step"));
+        assert_eq!(trim_trace("1 a\n"), "1 a\n");
+    }
 
     #[test]
     fn the_return_timer_sleeps_in_slices_and_stops_at_the_deadline() {

@@ -13,6 +13,9 @@ Told "lượn đi", Peak walked at the ordinary pace (36 px/s) and gave up after
 3. **If the edge is not reached in time, Peak stays** where it is, the leaving is cancelled and it goes back to idle. It never hides away from an edge. The goodbye line was already said and is not taken back.
 4. **Counted when it has gone:** the `leave` counter moves from the moment the command is taken to the moment the window is really hidden, so a cancelled leaving is not counted.
 
+## Addendum (2026-11-14): a trace of the leaving
+Two reports on Preview 0.9.1 (typed in the chat box while Peak stood still: the box closed, Peak nodded twice, no goodbye, no walk) were not explained by reading the code. Preview 0.9.2 writes each step of the leaving to `leave-trace.log` in the data folder: a fixed step name and numbers (poses, flags, distances, the deadline), never the person's words or any chat text; at most 64 KB (the newest half is kept), local only, nothing sent (privacy contract). It records, it does not fix.
+
 ## Consequences
 - Half of a 1920 px screen (about 960 px) takes about 9 s; the longest allowed walk is 20 s.
 - The edge is still the only place Peak disappears; the tray (Show) and the 20 minutes are unchanged.

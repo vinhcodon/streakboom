@@ -740,6 +740,7 @@
   function enter(requested: PetState) {
     // something else took over while it was leaving (picked up, touched, a hop, a fall): it does not leave
     if (leaving && requested !== "walk" && requested !== "nod" && requested !== "idle" && requested !== "look") {
+      lt(`cancelled_by_pose pose=${requested}`);
       leaving = false;
       awayWalkActive = false;
     }
@@ -1959,9 +1960,18 @@
   // its window and starts a timer) and comes back after AWAY_MINUTES at the edge it left by, stretching and saying nothing; or
   // at once when the person shows it from the tray. On every build (ADR-0100). Counted as `leave` and `callback`, apart from
   // Bond Days. Nothing here is saved: after a restart Peak is simply on screen.
+  /** One step of the leaving into leave-trace.log (V-132): a fixed name and numbers, never the person's words. */
+  function lt(step: string) {
+    void invoke("leave_trace", { step }).catch(() => {});
+  }
+
   async function tryLeaveFromChat(text: string): Promise<boolean> {
     if (!isLeaveCommand(text, [mem.petName])) return false; // "peak" and the name the person gave it may stand around the command
-    if (!mayLeave({ quiet, held: pose === "held", flying, away, leaving })) return false;
+    if (!mayLeave({ quiet, held: pose === "held", flying, away, leaving })) {
+      lt(`command_refused quiet=${quiet} held=${pose === "held"} flying=${flying} away=${away} leaving=${leaving}`);
+      return false;
+    }
+    lt(`command_table pose=${pose}`);
     void startLeave();
     return true;
   }
@@ -1969,13 +1979,15 @@
   let leaveRoom = 0; // logical px from Peak to the edge it walks to
   async function startLeave() {
     leaving = true;
+    lt(`start pose=${pose} away=${away}`);
     closePanel(); // the chat box goes
     const line = pickFarewell(lang, lastFarewell);
     lastFarewell = line;
     showBubble(line, FAREWELL_BUBBLE_MS);
+    lt(`bubble on=${bubbleOn} len=${line.length}`);
     enter("nod");
     await new Promise((r) => setTimeout(r, FAREWELL_BUBBLE_MS));
-    if (!leaving) return; // something took over (it was picked up, for example)
+    if (!leaving) return lt("stopped_after_goodbye"); // something took over (it was picked up, for example)
     let roomLeft = 0;
     let roomRight = 0;
     try {
@@ -1984,9 +1996,10 @@
     } catch {
       /* unknown: it walks right */
     }
-    if (!leaving) return;
+    if (!leaving) return lt("stopped_after_edge_room");
     dir = nearerEdge(roomLeft, roomRight);
     leaveRoom = dir < 0 ? roomLeft : roomRight;
+    lt(`walk_start left=${Math.round(roomLeft)} right=${Math.round(roomRight)} dir=${dir} deadline=${leaveDeadlineMs(leaveRoom)}`);
     awayWalkActive = true;
     enter("walk"); // startWalk sees awayWalkActive and runs the walk to the edge
   }
@@ -2004,8 +2017,10 @@
         carry = s.carry;
         if (s.move === 0) return;
         const hitEdge = await invoke<boolean>("move_by", { dx: dir * s.move });
+        if (ticks === 1 || ticks % 100 === 0) lt(`walk_tick n=${ticks} hit=${hitEdge}`);
         if (hitEdge) await finishLeave();
       } catch {
+        lt("walk_error");
         await finishLeave();
       }
     }, WALK_TICK_MS);
@@ -2016,6 +2031,7 @@
   /** The edge was not reached in time (blocked, carried, the screens changed): Peak stays where it is and the leaving is cancelled. */
   function giveUpLeave() {
     if (!leaving) return;
+    lt("gave_up_edge_not_reached");
     clearInterval(walkTimer);
     clearTimeout(walkEndTimer);
     leaving = false;
@@ -2032,6 +2048,7 @@
     away = true; // from here nothing moves or speaks (scheduleNext, showBubble and the proactive line look at it)
     enter("idle");
     const left = await invoke<boolean>("pet_leave", { minutes: AWAY_MINUTES }).catch(() => false);
+    lt(`pet_leave left=${left}`);
     if (left) count("leave"); // counted when it has really gone, not when the command was taken
     else {
       away = false; // the window could not be hidden: Peak simply stays
@@ -2106,6 +2123,7 @@
       // The model's own word is checked again here: the name is on the closed list, the message is short and not a question,
       // and the same gates as for the table (Preview, not Quiet, not carried, not in the air). Its words are not shown: Peak says
       // one of its own goodbyes (ADR-0097).
+      if (out.skill) lt(`model_skill=${out.skill} short=${shortEnoughForSkill(text)} flying=${flying} quiet=${quiet}`);
       if (out.skill === "leave" && shortEnoughForSkill(text) && mayLeave({ quiet, held: pose === "held", flying, away, leaving })) {
         leftByModel = true;
         history = history.slice(0, -1); // the command is not part of the talk
