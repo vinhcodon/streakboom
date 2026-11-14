@@ -2,6 +2,12 @@
 
 Release notes of the **Preview** builds (an odd middle number: 0.5.x, 0.7.x), newest first. A Preview is a build the author hands to a few adults (ADR-0089, ADR-0090). It is published on GitHub as a pre-release, **never** as the download of the website, and its notes are **not** in [`CHANGELOG.md`](CHANGELOG.md), which the website reads. The format is the same as there: `## x.y.z (YYYY-MM-DD)`, then lines starting with `- `, the first a short bold sentence. When a Preview line is promoted, the Stable version takes its entry in `CHANGELOG.md`.
 
+## 0.9.6 (2026-11-14)
+- **You can now ask Peak to step aside.** Double right-click on Peak, or type xê ra, tránh ra, move over, step aside, どいて. Peak walks away from the pointer until it is clear, and nods and stays if there is no room; it never leaves and never falls. A single right click is still a push, but it now waits a quarter of a second to see if a second click follows.
+- After you push Peak three times in a short while, it says once, in its whole life, that you can also say xê ra.
+- Under the hood, every action now has a name in one table (gestures, typed phrases, the rules that may refuse it).
+- Not yet tried: any of it on a real screen or on a trackpad, the feel of the quarter-second wait, and the walk at the edge of a seat or with two monitors.
+
 ## 0.9.5 (2026-11-14)
 - **Peak no longer says goodbye and stays, and a leaving is no longer stopped by Peak dodging your typing.** In a chat, telling Peak to go away now gets a playful answer instead of a goodbye. And when it really goes, it no longer breaks off to make way for the typing you have just done beside it, which was why it sometimes stood up, hopped and stayed.
 - Not yet tried: whether the chat model keeps to the playful answer in all three languages, and the leaving on a real screen after this change.
