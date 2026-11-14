@@ -6,7 +6,8 @@ import { join } from "node:path";
 import { ORIGIN, RELEASES_URL, ROOT, fmtDate } from "./facts.mjs";
 import { HIDDEN_WORDS } from "./facts.mjs";
 import { DEFAULT_TAGLINE, FORBIDDEN_IN_SCRIPT, MAX_TAGLINE_LENGTH, TAGLINE_KEYS } from "./taglines.mjs";
-import { BEACON_SRC, countingOn, countingProblems, measurementProblems, siteParagraph, stickerNote, webAnalyticsManual, webAnalyticsOn } from "./counting.mjs";
+import { BEACON_SRC, clarityOn, clarityProblems, countingOn, countingProblems, measurementProblems, siteParagraph, stickerNote, webAnalyticsManual, webAnalyticsOn } from "./counting.mjs";
+import { CLARITY_SRC } from "./clarity.mjs";
 import { catalogProblems, loadOverrides, loadPopular, loadVocabulary, normalize, popularProblems, proposalMarkdown } from "./catalog.mjs";
 import { STICKER_DIR } from "./stickers.mjs";
 import { formatCount } from "./downloads.mjs";
@@ -316,7 +317,22 @@ export function check({ ctx, pages, files, out }) {
   // the third parties of the pages are exactly the list of ADR-0096 (the Cloudflare Web Analytics script, only when the switch is on), and the
   // privacy words and the sticker note say what the build does (they are composed from the switches, so a page cannot say otherwise)
   if (ctx.measurement) {
-    for (const p of measurementProblems(ctx.measurement)) bad(p);
+    for (const p of [...measurementProblems(ctx.measurement), ...clarityProblems(ctx.measurement)]) bad(p);
+    // Microsoft Clarity (ADR-0118): one loader per page when it is on, with the id of measurement.json and no other address; nothing of it when it is off
+    for (const p of pages) {
+      const loaders = [...p.html.matchAll(/<script id="clarity-loader">([\s\S]*?)<\/script>/g)];
+      if (clarityOn(ctx)) {
+        if (loaders.length !== 1) { bad(`${p.path}: Clarity is on but the page has ${loaders.length} loaders (one is needed)`); continue; }
+        const code = loaders[0][1];
+        if (!code.includes(JSON.stringify(ctx.measurement.clarity.projectId))) bad(`${p.path}: the Clarity loader has another project id than measurement.json`);
+        const hosts = [...code.matchAll(/https?:\/\/[^"'\s)]+/g)].map((m) => m[0]);
+        if (hosts.some((h) => h !== CLARITY_SRC)) bad(`${p.path}: the Clarity loader names an address other than ${CLARITY_SRC}`);
+        for (const word of ["fetch", "XMLHttpRequest", "sendBeacon", "document.cookie", "location.href", "sessionStorage", "indexedDB", "geolocation"]) if (code.includes(word)) bad(`${p.path}: the Clarity loader mentions ${word}`);
+        if ((code.match(/localStorage/g) || []).length !== 2) bad(`${p.path}: the Clarity loader uses local storage for more than the visitor's answer`);
+        if (/class="consent-strip"/.test(p.html.replace(/<script[\s\S]*?<\/script>/g, ""))) bad(`${p.path}: the consent notice is in the static HTML (it is built by the loader, only for a visitor who must be asked)`);
+      } else if (loaders.length || /clarity\.ms|clarity-loader|consent-strip/.test(p.html.replace(/<style[\s\S]*?<\/style>/g, ""))) bad(`${p.path}: Clarity is off in measurement.json but the page carries something of it`);
+    }
+    for (const lang of LANGS) if (!clarityOn(ctx) && /Clarity/.test(byPath.get(PATHS[lang].privacy).html)) bad(PATHS[lang].privacy + ": the page names Microsoft Clarity while it is off");
     for (const p of pages) {
       const tags = [...p.html.matchAll(/<script[^>]*\ssrc="(https?:[^"]*)"[^>]*>/g)];
       for (const t of tags) if (!(webAnalyticsManual(ctx) && t[1] === BEACON_SRC)) bad(`${p.path}: a script from a third party: ${t[1]} (ADR-0096 lists the only one allowed)`);

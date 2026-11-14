@@ -6,7 +6,7 @@
 import { fileURLToPath } from "node:url";
 import { resolve } from "node:path";
 import { ORIGIN } from "./facts.mjs";
-import { BEACON_SRC, allowsBotScript, behindCloudflare, loadMeasurement, webAnalyticsManual, webAnalyticsMode } from "./counting.mjs";
+import { BEACON_SRC, allowsBotScript, behindCloudflare, clarityOn, loadMeasurement, webAnalyticsManual, webAnalyticsMode } from "./counting.mjs";
 
 const PAGES = ["/", "/vi/", "/ja/", "/stickers/", "/vi/stickers/", "/ja/stickers/", "/privacy/"];
 
@@ -22,6 +22,10 @@ export function liveProblems(path, html, headers, ctx) {
     else if (mode !== "manual") problems.push(`${path}: the analytics tag of manual mode is on the page while measurement.json says "${mode}"`);
   }
   if (webAnalyticsManual(ctx) && !html.includes(`data-cf-beacon='{"token": "${ctx.measurement.webAnalyticsToken}"}'`)) problems.push(`${path}: the analytics script of measurement.json is not on the page`);
+  // Microsoft Clarity (ADR-0118): its loader is on the page exactly when measurement.json says so
+  const loader = /<script id="clarity-loader">/.test(html), mentions = /clarity\.ms/.test(html);
+  if (clarityOn(ctx) && !loader) problems.push(`${path}: Clarity is on in measurement.json but the loader is not on the page`);
+  if (!clarityOn(ctx) && (loader || mentions)) problems.push(`${path}: the page carries Microsoft Clarity while measurement.json says it is off`);
   const bot = allowsBotScript(ctx);
   if (!bot && /\/cdn-cgi\/challenge-platform/.test(html)) problems.push(`${path}: the bot-detection script of Cloudflare (JavaScript detections); turn it off`);
   const has = (n) => (headers?.get?.(n) ? true : false);

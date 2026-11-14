@@ -8,6 +8,7 @@ import { inlineScript } from "./langsuggest.mjs";
 import { loadPopular } from "./catalog.mjs";
 import { withVersion } from "./assetversion.mjs";
 import { beaconTag, countingOn, privacySections, stickerNote } from "./counting.mjs";
+import { clarityTag } from "./clarity.mjs";
 import { DEFAULT_TAGLINE, TAGLINE_KEYS, taglineScript } from "./taglines.mjs";
 import { CC_URL, fontNames, needsReviewNote, stickerUrl } from "./stickers.mjs";
 
@@ -139,7 +140,7 @@ ${main}
   </main>
 
   ${footer({ lang, ctx })}
-${script ? `\n  <script type="module" src="${withVersion(script === true ? "/app.js" : script, ctx)}"></script>\n` : ""}${beaconTag(ctx) ? `  ${beaconTag(ctx)}\n` : ""}</body>
+${script ? `\n  <script type="module" src="${withVersion(script === true ? "/app.js" : script, ctx)}"></script>\n` : ""}${beaconTag(ctx) ? `  ${beaconTag(ctx)}\n` : ""}${clarityTag(lang, ctx) ? `  ${clarityTag(lang, ctx)}\n` : ""}</body>
 </html>
 `;
 }
@@ -482,7 +483,7 @@ export function stickersPage(lang, ctx) {
       <p id="sticker-hint" class="hint" hidden>${s("st_hint")}</p>
       <div id="sticker-search" class="sticker-search" hidden>
         <label class="visually-hidden" for="sticker-q">${s("st_search_label")}</label>
-        <input id="sticker-q" type="search" placeholder="${s("st_search_ph")}" autocomplete="off" spellcheck="false" enterkeyhint="search">
+        <input id="sticker-q" type="search" data-clarity-mask="True" placeholder="${s("st_search_ph")}" autocomplete="off" spellcheck="false" enterkeyhint="search">
         <p id="sticker-search-status" class="sticker-search-status" role="status" aria-live="polite"></p>
       </div>
       <noscript><p class="note">${s("st_nojs")}</p></noscript>

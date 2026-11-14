@@ -42,15 +42,27 @@ export function measurementProblems(m) {
   if (m?.excludeEu === true && mode !== "auto") problems.push("measurement.json: excludeEu is only for auto mode (it is a setting of the Cloudflare dashboard)");
   return problems;
 }
+/** True when Microsoft Clarity is switched on (ADR-0118): a project id in measurement.json. */
+export const clarityOn = (ctx) => Boolean(ctx?.measurement?.clarity?.projectId);
+/** What the build refuses about the Clarity switch. */
+export function clarityProblems(m) {
+  const c = m?.clarity;
+  if (c === undefined) return [];
+  if (typeof c !== "object" || c === null || typeof c.projectId !== "string") return ["measurement.json: clarity must be { \"projectId\": \"...\" } (empty = off)"];
+  if (c.projectId && !/^[a-z0-9]{8,12}$/.test(c.projectId)) return ["measurement.json: the Clarity project id is 8 to 12 lower-case letters and digits (the last part of the address of its tag), nothing else"];
+  return [];
+}
 /** The one script tag of the visit count in manual mode, or "" otherwise. */
 export const beaconTag = (ctx) => (webAnalyticsManual(ctx) ? `<script type="module" src="${BEACON_SRC}" data-cf-beacon='{"token": "${ctx.measurement.webAnalyticsToken}"}'></script>` : "");
 
 /** The paragraph "This website" of the privacy page, composed from what the build really does: cookies, the visit count, the copy counter, Cloudflare. */
 export function siteParagraph(lang, ctx) {
   const S = STRINGS[lang];
-  const parts = [S.pv_site_nocookie];
+  const parts = [clarityOn(ctx) ? S.pv_site_nocookie_clarity : S.pv_site_nocookie];
   if (allowsBotScript(ctx)) parts.push(S.pv_site_bot);
-  parts.push(webAnalyticsOn(ctx) ? S.pv_site_wa : countingOn(ctx) ? S.pv_site_pv_none : S.pv_site_none);
+  if (webAnalyticsOn(ctx)) parts.push(S.pv_site_wa);
+  else if (!clarityOn(ctx)) parts.push(countingOn(ctx) ? S.pv_site_pv_none : S.pv_site_none);
+  if (clarityOn(ctx)) parts.push(S.pv_site_clarity);
   if (excludesEu(ctx)) parts.push(S.pv_site_wa_eu);
   if (countingOn(ctx)) parts.push(S.pv_site_cnt);
   parts.push(S.pv_site_cf, S.pv_site_tail);
@@ -61,7 +73,8 @@ export function siteParagraph(lang, ctx) {
 export function stickerNote(lang, ctx) {
   const S = STRINGS[lang];
   const base = countingOn(ctx) ? S.st_privacy_on : S.st_privacy;
-  return webAnalyticsOn(ctx) ? `${base}${lang === "ja" ? "" : " "}${S.st_privacy_wa}` : base;
+  const sep = lang === "ja" ? "" : " ";
+  return [base, webAnalyticsOn(ctx) ? S.st_privacy_wa : "", clarityOn(ctx) ? S.st_privacy_clarity : ""].filter(Boolean).join(sep);
 }
 
 /** True when the build counts copies. */

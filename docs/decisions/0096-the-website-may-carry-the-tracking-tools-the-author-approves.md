@@ -31,3 +31,5 @@ The author asked for the visit count back. With the Transform Rule in place Clou
 - The limits of the copy counter (no identifier, no cookie, no stored address, one event) are **that counter's own design** (ADR-0092), no longer a rule of the site; the author may widen them by a new decision.
 - **Risks the author accepted:** a visitor who read the product's privacy promise may be surprised by trackers on the site (the privacy page separates the app from the site and names every tool); tracking with cookies or identifiers usually needs consent in the EU and has rules in Vietnam and Japan, which Cloudflare does not replace (not checked with a lawyer).
 - **Not verified:** that Cloudflare Web Analytics sets no cookie or identifier; which Cloudflare setting produces each added item; the legal reading; the Vietnamese and Japanese words (AI-written, no native reader).
+
+*(Microsoft Clarity was approved on 2026-11-15, with the notice of decision 4: ADR-0118.)*

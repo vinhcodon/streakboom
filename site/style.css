@@ -343,3 +343,9 @@ html[data-want="en"] a.lang[hreflang="en"], html[data-want="vi"] a.lang[hreflang
 .story .voice-peak .voice-name { margin-top: .8em; }
 .story blockquote { margin: 1em 0; padding: 2px 0 2px 14px; border-left: 2px solid var(--line); }
 .story blockquote p { margin: 0; }
+
+/* The consent notice of Microsoft Clarity (ADR-0118): built by the loader only for a visitor who must be asked; a quiet bar at the bottom, two buttons, no motion. */
+.consent-strip { position: fixed; left: 0; right: 0; bottom: 0; z-index: 50; display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 6px 10px; padding: 8px 12px; background: var(--bg-alt); border-top: 1px solid var(--line); font-size: .8rem; line-height: 1.4; color: var(--ink); }
+.consent-strip p { margin: 0; max-width: 52rem; }
+.consent-strip button { font: inherit; min-height: 38px; padding: 4px 14px; border-radius: 10px; border: 1.5px solid var(--gold); background: transparent; color: var(--ink); cursor: pointer; }
+.consent-strip button.yes { background: var(--gold); color: #2a1d05; }
