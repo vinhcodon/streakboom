@@ -5,10 +5,11 @@
   import { getVersion } from "@tauri-apps/api/app";
   import { channelOf, effectiveUpdateMode } from "$lib/channel";
   import { clockLine, clockPhrase } from "$lib/clock";
-  import { pickLine as pickFromPool, runSteps, type Host } from "$lib/skill-run";
-  import { LEAVE_SKILL } from "$lib/skills";
+  import { decideDismissal, freshDismissalState, inConversation } from "$lib/dismissal";
+  import { gatesPass, pickLine as pickFromPool, runSteps, type Host } from "$lib/skill-run";
+  import { LEAVE_SKILL, SEAT_SKILL } from "$lib/skills";
   import { LEAVE_PACE_PX_S, RETRY_SECS, isLeaveCommand, leaveDeadlineMs, mayLeave, nearerEdge } from "$lib/farewell";
-  import { shortEnoughForSkill } from "$lib/intents";
+  import { matchIntent, shortEnoughForSkill } from "$lib/intents";
   import { emitTo } from "@tauri-apps/api/event";
   import { getCurrentWebviewWindow } from "@tauri-apps/api/webviewWindow";
   import { onMount } from "svelte";
@@ -1975,12 +1976,30 @@
     void invoke("leave_trace", { step }).catch(() => {});
   }
 
+  let lastUserChatAt: number | null = null; // when the person last sent a chat message in this run (a conversation is going on if it was just now)
+  let dismissState = freshDismissalState(); // dismissals typed in the middle of a conversation (ADR-0108); memory only
+
   async function tryLeaveFromChat(text: string): Promise<boolean> {
+    const m = matchIntent(text, [mem.petName]);
+    if (m?.skill === "seat" && m.kind === "exact") {
+      // "go back to your place": not a wish to be left alone (ADR-0108). Peak only nods; it does not know a usual place yet.
+      if (!gatesPass(SEAT_SKILL.gates, { quiet, held: pose === "held", flying, away, leaving })) return false;
+      lt(`command_seat pose=${pose}`);
+      closePanel();
+      void runSteps(SEAT_SKILL.steps, skillHost, () => true, lt);
+      return true;
+    }
     if (!isLeaveCommand(text, [mem.petName])) return false; // "peak" and the name the person gave it may stand around the command
     if (!mayLeave({ quiet, held: pose === "held", flying, away, leaving })) {
       lt(`command_refused quiet=${quiet} held=${pose === "held"} flying=${flying} away=${away} leaving=${leaving}`);
       return false;
     }
+    // In the middle of a conversation "lượn đi" is a joke, not an order: it goes to the chat unless it is said again and again (ADR-0108).
+    const now = Date.now();
+    const decision = decideDismissal(now, lastUserChatAt, dismissState);
+    dismissState = decision.state;
+    lt(`dismissal ${decision.action} talking=${inConversation(now, lastUserChatAt)} said=${decision.state.times.length}`);
+    if (decision.action === "chat") return false;
     lt(`command_table pose=${pose}`);
     void startLeave();
     return true;
@@ -2137,6 +2156,8 @@
       return;
     }
     data = recordAi(data, "chat", Date.now());
+    const talking = inConversation(Date.now(), lastUserChatAt); // a conversation was already going on: the model is not offered the skill (ADR-0108)
+    lastUserChatAt = Date.now();
     count("chat"); // a message that passed the usage gate and goes to the model
     busy = true;
     data = interact(data, "how", Date.now());
@@ -2162,8 +2183,8 @@
         history,
         known: knownFor(mem, lang),
         followUser: true, // answer in the language the user writes in
-        skills: !quiet && !away && !leaving,
-        clock: clockLine(new Date()), // the local time, the weekday and the part of the day, so the model does not guess them (ADR-0104)
+        skills: !quiet && !away && !leaving && !talking,
+        clock: clockLine(new Date()), // the local time, the weekday and the part of the day, so the model does not guess them (ADR-0105)
       });
       // The model's own word is checked again here: the name is on the closed list, the message is short and not a question,
       // and the same gates as for the table (Preview, not Quiet, not carried, not in the air). Its words are not shown: Peak says

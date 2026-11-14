@@ -1,5 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
+import { isLeaveCommand } from "./farewell.ts";
 import { MAX_WORDS, SKILLS, SKILL_MAX_WORDS, TABLE, clashes, evaluate, fold, matchIntent, mayBeCommand, normalize, shortEnoughForSkill, type Sample, type Skill } from "./intents.ts";
 
 const skillOf = (t: string) => matchIntent(t)?.skill ?? null;
@@ -187,4 +188,14 @@ test("a command named by the model acts only from a short message that is not a 
   // longer than the table allows (6 words) but allowed for the model
   assert.equal(mayBeCommand("thôi em đi chỗ khác chơi đi"), false);
   assert.equal(shortEnoughForSkill("thôi em đi chỗ khác chơi đi"), true);
+});
+
+test("\"go back to your place\" is its own command and is never a wish to be left alone (ADR-0108)", () => {
+  for (const p of ["về chỗ đi", "về chỗ ngồi đi em", "về chỗ nào", "go to your spot", "please go back to your place", "席に戻って", "自分の席に戻ってね"]) {
+    assert.equal(skillOf(p), "seat", p);
+    assert.equal(isLeaveCommand(p), false, p);
+  }
+  for (const p of ["cút đi", "biến", "get out", "buzz off"]) assert.equal(skillOf(p), "leave", p);
+  assert.equal(skillOf("về chỗ"), "seat");
+  assert.equal(skillOf("ve cho di"), "seat");
 });

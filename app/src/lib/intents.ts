@@ -14,10 +14,10 @@
 //    extended from the phrase survey (docs/plans/adaptive-peak-survey.md). Coverage is measured by `evaluate` on held-out
 //    phrases, never on the ones the table was written from.
 
-import { LEAVE_SKILL } from "./skills.ts";
+import { LEAVE_SKILL, SEAT_SKILL } from "./skills.ts";
 
-export type Skill = "leave" | "return" | "sleep" | "quiet";
-export const SKILLS: readonly Skill[] = ["leave", "return", "sleep", "quiet"];
+export type Skill = "leave" | "seat" | "return" | "sleep" | "quiet";
+export const SKILLS: readonly Skill[] = ["leave", "seat", "return", "sleep", "quiet"];
 
 export interface IntentMatch {
   skill: Skill;
@@ -39,6 +39,8 @@ interface SkillTable {
 export const TABLE: Record<Skill, SkillTable> = {
   // the phrases and patterns of "leave" are written in its skill file (ADR-0103)
   leave: { phrases: LEAVE_SKILL.phrases, patterns: LEAVE_SKILL.patterns.map((s) => new RegExp(s)) },
+  // "go back to your place" is NOT a wish to be left alone (ADR-0108); its phrases are in its skill file
+  seat: { phrases: SEAT_SKILL.phrases, patterns: SEAT_SKILL.patterns.map((s) => new RegExp(s)) },
   return: {
     phrases: [
       "quay lại đi", "quay về đi", "trở lại đi", "về đi", "lại đây", "ra đây đi", "ra đây",

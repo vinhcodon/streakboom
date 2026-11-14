@@ -88,6 +88,8 @@ Gap (closed 2026-11-14): `is_busy` was used only before an unprompted line and b
 
 **Walk rule (ADR-0102, built 2026-11-14, not yet seen):** Peak trots to the edge at 110 px/s and has `clamp(distance/110 x 1.3 + 2 s, 6 s, 20 s)` to get there; if it does not, it stays where it is and the leaving is cancelled. It never vanishes away from an edge, and the leave is counted when the window is hidden.
 
+**When it acts (ADR-0108):** a dismissal typed within 2 minutes of the person's last chat message is chat, not an order, unless it is said 3 times within 3 minutes; "go to your place" is the command `seat` (Peak nods; no usual place yet).
+
 **What is measured:** leaves a day; returns by timer against calls back by the person; the same person's Quiet starts and hides before and after; Bond Days of leavers against non-leavers. All as counts, and **separate from Bond Days** (A5).
 
 ### 7.2 Candidates for later slices (not chosen; costs for reference)

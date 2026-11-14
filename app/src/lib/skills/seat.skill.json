@@ -1,0 +1,36 @@
+{
+  "skill": "seat",
+  "description": "Go back to your place: a command for the table only, never named by the model. In this first version Peak nods and stays where it is, because it does not know a usual place yet (ADR-0108).",
+  "phrases": [
+    "về chỗ đi",
+    "về chỗ",
+    "về chỗ ngồi đi",
+    "về chỗ của mình đi",
+    "về chỗ nào",
+    "go to your spot",
+    "go back to your spot",
+    "go to your place",
+    "back to your spot",
+    "席に戻って",
+    "自分の席に戻って",
+    "定位置に戻って"
+  ],
+  "patterns": [
+    "^(please )?go (back )?to your (spot|place|seat)$"
+  ],
+  "pools": {},
+  "gates": [
+    "not_held",
+    "not_flying",
+    "not_away",
+    "not_leaving"
+  ],
+  "limits": {},
+  "steps": [
+    {
+      "verb": "pose",
+      "pose": "nod"
+    }
+  ],
+  "after_return": []
+}

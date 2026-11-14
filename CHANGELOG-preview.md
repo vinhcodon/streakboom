@@ -2,6 +2,11 @@
 
 Release notes of the **Preview** builds (an odd middle number: 0.5.x, 0.7.x), newest first. A Preview is a build the author hands to a few adults (ADR-0089, ADR-0090). It is published on GitHub as a pre-release, **never** as the download of the website, and its notes are **not** in [`CHANGELOG.md`](CHANGELOG.md), which the website reads. The format is the same as there: `## x.y.z (YYYY-MM-DD)`, then lines starting with `- `, the first a short bold sentence. When a Preview line is promoted, the Stable version takes its entry in `CHANGELOG.md`.
 
+## 0.9.4 (2026-11-14)
+- **Telling Peak to go away in the middle of a chat is now taken as a joke, unless you mean it.** If you were talking with Peak in the last two minutes, lượn đi, cút đi and the others are answered like any message; say it three times within three minutes and Peak goes. With no chat just before, it goes at once, as before.
+- **Telling Peak to go back to its place (về chỗ đi, go to your spot) is no longer taken as sending it away.** For now it only nods; it does not know a usual place yet.
+- Not yet tried: any of it on a real screen, and how the chat model reacts to these words.
+
 ## 0.9.3 (2026-11-14)
 - **Peak no longer mistakes the morning for the night.** Its own unprompted lines from the chat model were told only "it is 10 o'clock", and the model read that as 10 at night. Peak now tells the model the time with the part of the day in words, and the chat is given your local time, the weekday and the part of the day (nothing else: no date, no place), so asking Peak what time it is no longer makes it guess. This needs a brain connected; the time goes to that brain only with your chat or the optional unprompted lines.
 - Under the hood, sending Peak away is now described in a text file (phrases, goodbyes, steps) that a small interpreter runs; it should look and behave as before. It also fixes a case where Peak could stop walking to the edge and then stand still, refusing the next command.

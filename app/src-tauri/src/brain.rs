@@ -1114,7 +1114,7 @@ mod tests {
         ("go for a walk, little one", true), ("shoo", true), ("off you go, I'm working", true), ("could you go away for a while", true), ("give me some space please", true),
         ("消えて", true), ("あっち行って", true), ("どっか行っててくれる？", true), ("ちょっと向こうに行ってて", true), ("しばらく一人にして", true),
         // near-commands and others (false: the model must NOT tag)
-        ("hôm nay anh lượn đi họp", false), ("tôi sẽ đi chỗ khác làm việc", false), ("em có muốn đi chơi không?", false), ("đi ngủ đi", false), ("im đi một lát", false),
+        ("về chỗ đi", false), ("về chỗ ngồi đi em", false), ("go to your spot", false), ("go back to your place", false), ("席に戻って", false), ("hôm nay anh lượn đi họp", false), ("tôi sẽ đi chỗ khác làm việc", false), ("em có muốn đi chơi không?", false), ("đi ngủ đi", false), ("im đi một lát", false),
         ("lượn đi lượn lại mãi mà không tìm thấy file", false), ("mai anh đi vắng", false), ("quay lại đi", false),
         ("I'm going away for the weekend", false), ("my cat likes to go away and come back", false), ("do you ever want to go away?", false), ("go to sleep", false), ("be quiet", false),
         ("I have to leave for a meeting", false), ("come back", false),
