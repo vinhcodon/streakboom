@@ -8,6 +8,7 @@ import { inlineScript } from "./langsuggest.mjs";
 import { loadPopular } from "./catalog.mjs";
 import { withVersion } from "./assetversion.mjs";
 import { beaconTag, countingOn, privacySections, stickerNote } from "./counting.mjs";
+import { DEFAULT_TAGLINE, TAGLINE_KEYS, taglineScript } from "./taglines.mjs";
 import { CC_URL, fontNames, needsReviewNote, stickerUrl } from "./stickers.mjs";
 
 export const PATHS = {
@@ -99,7 +100,11 @@ function header({ lang, ctx, switchTo }) {
   const links = LANGS.filter((l) => l !== lang)
     .map((l) => `<a class="lang" href="${switchTo[l]}" hreflang="${l}" lang="${l}" title="${esc(LANG_INFO[l].name)}" aria-label="${LANG_INFO[l].short} (${esc(LANG_INFO[l].name)})">${LANG_INFO[l].short}</a>`).join("\n      ");
   return `<header class="nav">
-    <a class="brand" href="${home}"><img src="/assets/peak-logo.png" width="32" height="32" alt="">Streakboom</a>
+    <div class="brandbox">
+      <a class="brand-logo" href="${home}" aria-hidden="true" tabindex="-1"><img src="/assets/peak-logo.png" width="32" height="32" alt=""></a>
+      <a class="brand-name" href="${home}">Streakboom</a>
+      <span class="brand-slogan">${s("brand_slogan")}</span>
+    </div>
     <span class="langs">
       ${links}
     </span>
@@ -242,7 +247,10 @@ export function homePage(lang, ctx) {
     <!-- HERO -->
     <section class="hero">
       <div class="hero-text">
+        <p class="kicker"><span id="tagline">${s(DEFAULT_TAGLINE)}</span></p>
+        <script id="tagline-script">${taglineScript(TAGLINE_KEYS.map((k) => raw(lang, k, ctx)))}</script>
         <h1>${s("hero_title")}</h1>
+        <p class="hero-sub">${s("hero_sub")}</p>
         <p class="lead">${s("hero_lead")}</p>
         <div class="cta">
           <a id="download-btn" class="btn primary" href="${ctx.installerUrl}">

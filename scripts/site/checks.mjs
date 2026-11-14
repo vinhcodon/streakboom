@@ -5,6 +5,7 @@ import { gzipSync } from "node:zlib";
 import { join } from "node:path";
 import { ORIGIN, RELEASES_URL, ROOT, fmtDate } from "./facts.mjs";
 import { HIDDEN_WORDS } from "./facts.mjs";
+import { DEFAULT_TAGLINE, FORBIDDEN_IN_SCRIPT, MAX_TAGLINE_LENGTH, TAGLINE_KEYS } from "./taglines.mjs";
 import { BEACON_SRC, countingOn, countingProblems, measurementProblems, siteParagraph, stickerNote, webAnalyticsManual, webAnalyticsOn } from "./counting.mjs";
 import { catalogProblems, loadOverrides, loadPopular, loadVocabulary, normalize, popularProblems, proposalMarkdown } from "./catalog.mjs";
 import { STICKER_DIR } from "./stickers.mjs";
@@ -337,6 +338,28 @@ export function check({ ctx, pages, files, out }) {
   const visible = (html) => html.replace(/<script[\s\S]*?<\/script>/g, " ").replace(/<style[\s\S]*?<\/style>/g, " ").replace(/<[^>]*>/g, " ");
   for (const p of pages) { const m = HIDDEN_WORDS.exec(visible(p.html)); if (m) bad(`${p.path}: the page says "${m[0]}" (Preview and the test builds are not announced: ADR-0101)`); }
   for (const [name, text] of Object.entries(files)) { if (!/\.(xml|txt)$/.test(name) || name === "sitemap.xml") continue; const m = HIDDEN_WORDS.exec(text); if (m) bad(`${name}: says "${m[0]}" (Preview and the test builds are not announced: ADR-0101)`); }
+
+  // the slogan and the taglines (ADR-0104): every page has the slogan under the name; the home page has the list in a script with no timer and no storage, the default in
+  // the HTML, and every line passes the same word lists as the rest of the site
+  for (const lang of LANGS) {
+    const list = TAGLINE_KEYS.map((k) => STRINGS[lang][k]);
+    if (list.some((t) => typeof t !== "string" || !t)) { bad(`taglines: ${lang} lacks one of ${TAGLINE_KEYS.length}`); continue; }
+    for (const t of [...list, STRINGS[lang].brand_slogan, STRINGS[lang].hero_sub]) {
+      if (t.length > (MAX_TAGLINE_LENGTH[lang] || 80)) bad(`taglines: ${lang} "${t.slice(0, 30)}..." is longer than ${MAX_TAGLINE_LENGTH[lang] || 80} characters`);
+      for (const [re, why] of [...BANNED, ...OUTDATED]) if (re.test(t)) bad(`taglines: ${lang} "${t.slice(0, 30)}...": ${why}`);
+    }
+    if (new Set(list).size !== list.length) bad(`taglines: ${lang} has a line twice`);
+    for (const p of pages.filter((x) => x.lang === lang && !/changelog|404/.test(x.path))) {
+      if (!p.html.includes(`<span class="brand-slogan">${esc(STRINGS[lang].brand_slogan)}</span>`)) bad(`${p.path}: the slogan under the name is missing`);
+    }
+    const home = pages.find((x) => x.path === PATHS[lang].home);
+    const m = home && home.html.match(/<script id="tagline-script">([\s\S]*?)<\/script>/);
+    if (!m) { bad(`${PATHS[lang].home}: the tagline script is missing`); continue; }
+    for (const w of FORBIDDEN_IN_SCRIPT) if (m[1].includes(w)) bad(`${PATHS[lang].home}: the tagline script mentions ${w} (no timer, no animation, nothing stored, nothing sent)`);
+    const inScript = JSON.parse(m[1].slice(m[1].indexOf("var T=") + 6, m[1].indexOf(",e=document")));
+    if (JSON.stringify(inScript) !== JSON.stringify(list)) bad(`${PATHS[lang].home}: the list in the script is not the list of the strings`);
+    if (!home.html.includes(`<span id="tagline">${esc(STRINGS[lang][DEFAULT_TAGLINE])}</span>`)) bad(`${PATHS[lang].home}: the tagline in the HTML is not the default`);
+  }
 
   // the menu stays short (ADR-0053): four links in the header, the rest in the footer
   for (const p of pages) {
