@@ -45,3 +45,18 @@
 
 ## 7. What is not in the plan
 Text recognition, colours, window titles, any use of the picture outside the terrain, a picture of more than one monitor at once, and any storage of a picture.
+
+## 8. The author's idea after seeing stage 1: areas, hills and plains (2026-11-15)
+He saw the thin lines on his screen and said they are right as floors, walls and outlines, but they do not yet say where the **blocks** are: dark regions near each other with a border around them could be one area, a "hill"; the other empty regions "plains"; and from the darkness and the density of a region a **height** could be worked out.
+
+**Assessment (the app session).**
+- **Yes to areas.** Lines are the borders; the missing step is to **label the regions the borders enclose**: connected components of the calm cells (the empty mask of stage 1) separated by edge cells, each with its box, area, mean grey and the density of edges inside it. A tiny region is noise and is merged into its neighbour. This is cheap (one flood fill over about 20,000 cells) and it is what turns lines into blocks.
+- **Yes to plains and hills, in the side-view sense.** Peak is a creature of a side view: it walks along a line, hops up to 240 px and climbs walls. What matters is the **skyline**: for each column, how far above the floor the first surface it can stand on is. A block that stands on a plain is a hill; its top edge is a ledge and its sides are walls. So the height is **geometry** (the distance above the floor of the top edge), read from the regions, not a quantity painted on the cells.
+- **Not brightness as height.** Darker is not taller: a dark theme would make the whole screen one mountain, a light page would be a plain. Brightness is only used **relatively** (a region against its neighbours, to tell the sides of an edge apart). What brightness and density are good for is the **kind** of region:
+  - *plain*: calm and large (the empty space; the cat may sit on it);
+  - *panel*: enclosed by a border with a calm inside (a card, a toolbar, an editor pane): a hill with a flat top the cat can stand on;
+  - *rough*: a high density of edges (text, icons, a detailed wallpaper, a picture): ground the cat should not sit on, because it would cover what is shown (the rule "sit in empty space").
+- **So the model is**: regions with a kind and a skyline, which become surfaces and walls for `terrain.ts` (PS-7), plus a **cost** for rough ground. A smooth elevation (a heightfield with slopes) is not needed: Peak has no slopes, only flat walks, hops and climbs.
+- **Honest limits:** a detailed wallpaper is rough everywhere (the desktop will probably come out as one big "rough" area with icons in it); text blocks are rough and not panels; two panels of nearly the same grey with a thin border may merge; the choice of the density thresholds needs the author's eyes.
+
+**Where it goes in the stages.** Stage 2 (tuning) gets a new first half, **2a: regions and kinds shown on the overlay** (plains, panels, rough ground in three tints, the skyline as a line, the hills outlined); then 2b is the tuning of thresholds. The stages 3 to 6 do not change.

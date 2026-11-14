@@ -417,6 +417,9 @@ Why: the author keeps building features and lets a few adults try them (ADR-0089
 | PS-1 | Rust `screen_grid`: the monitor Peak is on, `StretchBlt` (halftone) into at most 192 x 108 grey cells, Windows only, Peak's own windows left out, nothing kept | S | built on branch `vanish` 2026-11-15, not seen |
 | PS-2 | `picture.ts` (pure, tested): gradient, relative threshold, horizontal and vertical segments, room above a ledge, empty space | M | built, not seen (tuning waits for what the author sees) |
 | PS-3 | The tray item "Screen picture (experiment)" (Preview only, off at every start) and the drawing on the overlay | S | built, not seen (V-149) |
+| PS-11 | **2a. Regions:** label the areas the borders enclose (connected calm cells, merged when tiny), with box, area, mean grey and edge density; drawn on the overlay as outlines | M | proposed (the author's idea of areas, 2026-11-15; waits for his word) |
+| PS-12 | **2a. Kinds:** plain, panel, rough by size, enclosure and edge density, relative thresholds; three tints on the overlay | M | proposed (needs PS-11) |
+| PS-13 | **2a. Skyline:** for each column the height of the first surface above the floor, hills as the regions standing on a plain; a line on the overlay; then PS-7 uses it | M | proposed (needs PS-11, PS-12) |
 | PS-4 | Tuning with the author on his usual screens (desktop with icons, a maximised editor, a browser, a dark theme): thresholds, minimal run, noise; a fixture set of synthetic grids | M | waits for the author's look at PS-3 |
 | PS-5 | Stability: two captures about a second apart, the filter, the cost measured | S | proposed |
 | PS-6 | The rule "sit in empty space" for the cat's room (replaces "some other window above it") | M | proposed (needs PS-5) |
