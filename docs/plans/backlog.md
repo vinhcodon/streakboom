@@ -376,3 +376,12 @@ Why: the author keeps building features and lets a few adults try them (ADR-0089
 | RM-1 | After ADR-0103 stage 1: the skill file for "celebrate a day the person told Peak": the tag, the confirmation in the chat, the list in `memory.json` (add-only) and in the memory area of Settings (removable), the line pools in three languages under the banned-patterns test, the delivery on the day and once on return | L | not started |
 | RM-2 | A harness of labelled date phrases in vi, en and ja (for the author to run with his own key) before RM-1 is released | M | not started |
 | RM-3 | R2 (timed one-off reminders) and R3 (recurring nudges): each only by its own ADR, after the author has used R1 | M | not decided |
+
+## E24: The input map and "step aside" (spec 17; proposed, nothing built)
+
+| # | Story | Size | Status |
+|---|---|---|---|
+| IM-1 | `bindings.ts`: the table of named actions and gestures with tests (one action per gesture, one skill per phrase), and the handlers calling it | M | proposed |
+| IM-2 | The right click resolver (about 250 ms) and the double right click | S | proposed |
+| IM-3 | Skill `aside` ("xê ra", "tránh ra", "move over") and the verb `step_aside` | M | proposed |
+| IM-4 | The one-time hint after repeated pushes, three languages, under the banned-patterns test | S | proposed |
