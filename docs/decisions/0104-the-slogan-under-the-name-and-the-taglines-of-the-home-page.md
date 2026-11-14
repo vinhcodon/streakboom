@@ -21,3 +21,6 @@ The author did not like the two levels inside the `<h1>`. The title is now **one
 
 ## Amendment 3 (2026-11-14, night): the tagline is under the title
 The author suggested moving the rotating tagline from above the title to **under it**: the title first (the page says what it is), then the playful line, then the lead. The place keeps its fixed height of two lines, so nothing moves when the script swaps the line, and the script still comes right after the element.
+
+## Amendment 4 (2026-11-14, night): two lines reworded by the author
+"Một con mèo cho người lớn quá bận để nuôi mèo thật." became "Một con mèo cho người quá bận để nuôi mèo thật." ("người lớn" dropped), and "Nó sẽ không sửa code giúp bạn. Nhưng nó sẽ ở đó khi bạn sửa." became "Nó không sửa code giúp bạn. Nhưng nó sẽ ở đó khi bạn sửa." The English and Japanese versions follow the same change (AI-written, no native reader).
