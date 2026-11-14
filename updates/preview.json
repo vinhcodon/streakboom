@@ -1,11 +1,11 @@
 {
-    "version":  "0.11.5",
-    "notes":  "Peak has a usual place now. Say sit here (ngồi đây nhé, ここが定位置) where it stands and that spot along the floor becomes its place; say go to your spot (về chỗ đi) and it comes down to the floor if it is up on a window, walks to its place and nods. Until you teach it, its place is near the right end...",
-    "pub_date":  "2026-11-14T20:23:28Z",
+    "version":  "0.11.6",
+    "notes":  "An experiment: what Peak could see in a picture of the screen. The tray has a new item, Screen picture on/off (experiment). With it and Terrain overlay both on, about once a second Peak takes a very small grey picture of the screen (too small to read a letter, Peak itself is not in it), finds whe...",
+    "pub_date":  "2026-11-14T21:17:36Z",
     "platforms":  {
                       "windows-x86_64":  {
-                                             "signature":  "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVUcHBlQXhYUlVURmcyeVJyVHN1REhlUElMTVE5TnM3OGgxd1FQOEpjUHJ4Q29kVlBHRU1kV2ZWSlFBSUo2QzNMWjBJQU1KSFBqaFdSZy8wbElxSTlvc2M0RHliMXd0VlFZPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzk0Njg3ODA2CWZpbGU6U3RyZWFrYm9vbV8wLjExLjVfeDY0LXNldHVwLmV4ZQl2ZXJzaW9uOjAuMTEuNQphK3ZicnVpekk5UkUxMDZJalVDSlZNcmZnU1dzb1hYK04wNzMxOTdidUlmREdPbWNUa0Z2QnFSMHRRVEllTDUrSFd1NUp3MVBoTk92QmtQQVNKVnlBUT09Cg==",
-                                             "url":  "https://api.github.com/repos/vinhcodon/streakboom/releases/assets/748672069"
+                                             "signature":  "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVUcHBlQXhYUlVURm1yMEZnQjZ0cEw3SW0vcXRrWTh0b001bmVXQll2OTJkTksxUEhlbGRTWEpGc1BvZnFsaitiZjFHS2x6RzR1elZZN3lHUnBCcDJiVlRxM2dSbi9lNlFNPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzk0NjkxMDU0CWZpbGU6U3RyZWFrYm9vbV8wLjExLjZfeDY0LXNldHVwLmV4ZQl2ZXJzaW9uOjAuMTEuNgpNZFVaYzMyT0c3TldHdllubUJ2aDZ6cjFVdmpQYmxJM21sSzJpMW4zaWFyd2NyUjc3ZC9qRXNNT1JJUERNMWNrd1pXS3JkQXYydUUwbng1T01mcUtBZz09Cg==",
+                                             "url":  "https://api.github.com/repos/vinhcodon/streakboom/releases/assets/748801500"
                                          }
                   }
 }
