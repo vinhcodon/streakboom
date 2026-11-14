@@ -17,6 +17,6 @@ ADR-0109 decided the double right click and the skill `aside`, and said the verb
 7. **The cooldown (2.5 s) is shared** with the push (`lastShove`).
 
 ## Consequences
-- The hint after repeated pushes (IM-4) is still to do.
+- The hint after repeated pushes (IM-4) is built after this ADR: three pushes within 25 s, once in a lifetime, kept in `said.hintaside` (an added key of an existing map); using step aside first marks it as said.
 - The hop to another row, named in spec 17 section 4 as a second choice, is **not built**: with no room Peak nods. It can be added if the author sees it needed.
 - The walk ends on the pointer's distance, so a still pointer at the cat makes a walk of about 260 px; on a short seat it stops at the end of it.

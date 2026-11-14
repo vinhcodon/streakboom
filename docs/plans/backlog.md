@@ -385,4 +385,4 @@ Why: the author keeps building features and lets a few adults try them (ADR-0089
 | IM-1b | The page handlers call `resolveGesture` and run the action by name (done together with IM-2, which rewrites the right-click handler) | S | partly built (the right click only; the other handlers still run their own code) |
 | IM-2 | The right click resolver (about 250 ms) and the double right click | S | built (resolver and handler; the double is step aside since IM-3, a push when a gate refuses it) |
 | IM-3 | Skill `aside` ("xê ra", "tránh ra", "move over") and the verb `step_aside` (ADR-0110) | M | built, not seen |
-| IM-4 | The one-time hint after repeated pushes, three languages, under the banned-patterns test | S | proposed |
+| IM-4 | The one-time hint after repeated pushes (3 pushes in 25 s, once in a lifetime, kept in `said.hintaside`), three languages, under the banned-patterns test | S | built, not seen |

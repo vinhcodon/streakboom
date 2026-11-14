@@ -7,6 +7,7 @@
   import { clockLine, clockPhrase } from "$lib/clock";
   import { decideDismissal, freshDismissalState, inConversation } from "$lib/dismissal";
   import { resolveGesture } from "$lib/bindings";
+  import { recordPush, shouldHintAside } from "$lib/asidehint";
   import { clickResolver } from "$lib/clickresolver";
   import { gatesPass, pickLine as pickFromPool, runSteps, type Host } from "$lib/skill-run";
   import { ASIDE_SKILL, LEAVE_SKILL, SEAT_SKILL } from "$lib/skills";
@@ -1070,12 +1071,24 @@
    * middle, logical px.
    */
   let lastShove = 0;
+  let pushTimes: number[] = []; // recent pushes, for the one-time hint about "step aside" (IM-4); memory only
+  /** After several pushes in a short while Peak says once, in its whole life, that the person can also say "step aside". */
+  function maybeHintAside(now: number) {
+    pushTimes = recordPush(pushTimes, now);
+    if (!shouldHintAside(pushTimes, data.said)) return;
+    data = { ...data, said: { ...data.said, hintaside: now } }; // said once, kept on disk
+    scheduleSave();
+    setTimeout(() => {
+      if (!quiet && !away && !leaving && !flying && pose !== "held" && panel === null && !bubbleOn) say("hintaside");
+    }, 2200);
+  }
   async function shove(pointerDx: number) {
     const now = Date.now();
     if (quiet || flying || panel !== null || pose === "held" || now - lastShove < 2500) return;
     if (isDozing(pose)) return pokeNormal();
     if (!(pose === "idle" || pose === "look" || pose === "peek" || pose === "ledge")) return;
     lastShove = now;
+    maybeHintAside(now);
     const way = shoveDirection(pointerDx, dir);
     const kind = shoveKind(perchSeat ? await seatRoom() : null, EDGE_MARGIN, way);
     data = interact(data, "click", now);
@@ -2130,6 +2143,10 @@
   let asideDx: number | null = null; // the pointer from the cat's middle when step aside was asked with the mouse; null when typed
   async function startAside(dx: number | null) {
     asideDx = dx;
+    if (!data.said.hintaside) {
+      data = { ...data, said: { ...data.said, hintaside: Date.now() } }; // it knows the words: no hint needed
+      scheduleSave();
+    }
     lt(`aside_start pose=${pose}`);
     const result = await runSteps(ASIDE_SKILL.steps, skillHost, () => true, lt);
     lt(`aside ${result}`);

@@ -20,6 +20,7 @@ export type Trigger =
   | "brainhint"
   | "hint" // nudges toward a gesture the user has not discovered yet (the head scratch)
   | "hintbelly" // ...and the belly rub, once the head scratch is known
+  | "hintaside" // after several pushes in a short while: you can also say "step aside" (once in a lifetime, IM-4)
   | "belly" // a belly rub it enjoys
   | "huff" // a belly rub that turned out to be a trap
   | "fall"; // the window it stood on went away and it is about to fall (PC-7)
@@ -424,6 +425,10 @@ const EN3: Line[] = [
     "~I'm not saying rub my belly. I'm just saying it exists.",
     "New trick: stroke lower, on my belly. Usually safe. Usually.",
   ]),
+  ...mk("en", "hintaside", [
+    "You can also just say \"step aside\". Same result, fewer shoves.",
+    "Psst. If you want me out of the way, say \"step aside\". I'll go on my own.",
+  ]),
 ];
 
 const VI3: Line[] = [
@@ -446,6 +451,10 @@ const VI3: Line[] = [
     "Này. Bụng cũng được nha. Cũng rê qua lại, thấp hơn chút. Hơi liều. Đáng thử.",
     "~Mình không bảo bạn xoa bụng mình đâu. Mình chỉ nói bụng có tồn tại.",
     "Chiêu mới: vuốt thấp xuống bụng mình. Thường thì an toàn. Thường thì.",
+  ]),
+  ...mk("vi", "hintaside", [
+    "Bạn cũng có thể nói \"xê ra\" nha. Kết quả y vậy, đỡ phải đẩy.",
+    "Này. Muốn mình tránh đường thì cứ nói \"xê ra\". Mình tự đi.",
   ]),
 ];
 
@@ -644,6 +653,10 @@ const JA3: Line[] = [
     "こそっと。おなかも大丈夫だよ。同じように左右に、ちょっと下で。ちょっとあぶない。でも試す価値あり。",
     "~おなかをなでてって言ってるんじゃないよ。おなかがあるって言ってるだけ。",
     "新しい技：もっと下、おなかをなでてみて。たいてい安全だよ。たいてい。",
+  ]),
+  ...mk("ja", "hintaside", [
+    "「どいて」って言ってくれてもいいよ。同じだけど、押されなくてすむ。",
+    "こそっと。じゃまなら「どいて」って言って。自分で動くよ。",
   ]),
 ];
 
