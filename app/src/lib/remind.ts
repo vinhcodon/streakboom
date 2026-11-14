@@ -98,6 +98,12 @@ export function replyKind(text: string): "yes" | "no" | "short" | "other" {
   return words.length > 0 && words.length <= 3 && n.length <= 24 ? "short" : "other";
 }
 
+/** What the model put after `[skill:remind|` when it read the reply to the open question: exactly "yes" or "no". */
+export function parseRemindAnswer(args: string | null | undefined): "yes" | "no" | null {
+  const a = (args ?? "").trim().toLowerCase();
+  return a === "yes" || a === "no" ? a : null;
+}
+
 /** Is this day (same month and day, same year, same words) already kept? */
 export const hasKept = (list: readonly KeptDay[], p: Pending): boolean => list.some((k) => k.md === p.md && k.year === p.year && k.label.toLowerCase() === p.label.toLowerCase());
 

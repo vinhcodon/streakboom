@@ -2,7 +2,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import {
   MAX_CLARIFY, MAX_KEPT, MAX_LABEL, MISSED_WINDOW_DAYS, PENDING_MS, REMIND_LINES, addKept, answerOf, cleanLabel, describeDate, dueToday, fallsOn,
-  hasKept, markDone, missedSince, parseKept, parseRemindArgs, pendingAlive, pruneOneOff, remindSay, removeKept, replyKind, validMd, type KeptDay, type RemindLine,
+  hasKept, markDone, missedSince, parseKept, parseRemindAnswer, parseRemindArgs, pendingAlive, pruneOneOff, remindSay, removeKept, replyKind, validMd, type KeptDay, type RemindLine,
 } from "./remind.ts";
 import { BANNED } from "./banned.ts";
 import { dayKey } from "./state.ts";
@@ -158,4 +158,11 @@ test("a day already kept is recognised, so the model naming it again is not aske
   assert.equal(hasKept([kept("11-14", { label: "sinh nhật thảo nguyên" })], p), true);
   assert.equal(hasKept([kept("11-15", { label: "sinh nhật thảo nguyên" })], p), false);
   assert.equal(hasKept([], p), false);
+});
+
+test("the model's answer to the open question is exactly yes or no, and never taken for a day", () => {
+  assert.equal(parseRemindAnswer("yes"), "yes");
+  assert.equal(parseRemindAnswer(" No "), "no");
+  for (const bad of ["maybe", "yes please", "", null, undefined, "03-12|mẹ"]) assert.equal(parseRemindAnswer(bad as string), null, String(bad));
+  assert.equal(parseRemindArgs("yes"), null); // a yes is not a day
 });

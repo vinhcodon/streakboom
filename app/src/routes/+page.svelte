@@ -8,7 +8,7 @@
   import { decideDismissal, freshDismissalState, inConversation } from "$lib/dismissal";
   import { resolveGesture } from "$lib/bindings";
   import { recordPush, shouldHintAside } from "$lib/asidehint";
-  import { MAX_CLARIFY, addKept, describeDate, dueToday, fallsOn, hasKept, markDone, missedSince, parseRemindArgs, pendingAlive, pruneOneOff, remindSay, replyKind, type Pending, type RemindLine } from "$lib/remind";
+  import { MAX_CLARIFY, addKept, describeDate, dueToday, fallsOn, hasKept, markDone, missedSince, parseRemindAnswer, parseRemindArgs, pendingAlive, pruneOneOff, remindSay, replyKind, type Pending, type RemindLine } from "$lib/remind";
   import { clickResolver } from "$lib/clickresolver";
   import { gatesPass, pickLine as pickFromPool, runSteps, type Host } from "$lib/skill-run";
   import { ASIDE_SKILL, LEAVE_SKILL, SEAT_SKILL } from "$lib/skills";
@@ -2262,6 +2262,9 @@
       return false;
     }
     const kind = replyKind(text);
+    // With a brain, a reply the table does not know is read by the model, which knows the whole talk and can tell a yes, a no or a
+    // corrected day; the open question goes with the message for this one turn (ADR-0115 addendum). Without a brain the table decides.
+    if (kind !== "yes" && kind !== "no" && canChat && aiGate(data, "chat", now) === "ok") return false;
     if (kind === "short" && pendingTries < MAX_CLARIFY) {
       // a few words that are neither yes nor no ("uh"): the model does not know there is a question and would ask it again, so Peak says
       // how to answer, keeps the question, and does not send the words on
@@ -2272,7 +2275,12 @@
     }
     pendingDay = null; // answered, or something else was said: the question is over either way
     if (kind !== "yes" && kind !== "no") return false;
-    const a = kind;
+    showLocalReply(text, settleDay(p, kind, now));
+    return true;
+  }
+
+  /** Keep the day or leave it, and say so: the one place where a yes or a no (the table's or the model's) takes effect. */
+  function settleDay(p: Pending, a: "yes" | "no", now: number): string {
     let line: string;
     if (a === "no") line = remindLine("dropped", {});
     else {
@@ -2284,11 +2292,11 @@
         mem = { ...mem, keptDays: list };
         scheduleSave();
         line = remindLine("kept", { date: describeDate(p.md, p.year, lang), label: p.label });
+        setTimeout(() => void maybeRemember(true), 800); // what was said around the day ("my second daughter") is looked at now, not after four more messages
       } else line = remindLine(r.result === "same" ? "same" : "full", {});
     }
     lt(`remind_answer ${a}`);
-    showLocalReply(text, line);
-    return true;
+    return line;
   }
 
   /** Peak's own answer in the chat box, without the model. */
@@ -2375,6 +2383,8 @@
     replyMood = "neutral";
     enter("think"); // the pet tilts its head and looks up while it waits
     resetMenuTimer();
+    const openNow = Date.now();
+    const asked = pendingAlive(pendingDay, openNow) ? pendingDay : null; // the question the model is told is open, for this turn only
     let leftByModel = false; // the model named the skill and Peak is leaving: no chat answer is shown
     try {
       // The model may name a skill (S4, spec 14), but not while Quiet or away.
@@ -2386,6 +2396,7 @@
         known: knownFor(mem, lang),
         followUser: true, // answer in the language the user writes in
         skills: !quiet && !away && !leaving && !talking,
+        openDay: asked ? `${describeDate(asked.md, asked.year, lang)}: ${asked.label}` : undefined,
         remind: !away && !leaving, // a day told in a chat is told in a chat, so the model is offered this one in a conversation too (ADR-0115)
         banter: talking, // in a conversation a "go away" is a tease: stay and answer in kind (ADR-0108)
         clock: clockLine(new Date()), // the local time, the weekday and the part of the day, so the model does not guess them (ADR-0105)
@@ -2404,8 +2415,13 @@
       if (out.skill === "remind") {
         // The model named a day. Its form is checked here; Peak asks in its own words and keeps nothing until the person says yes.
         const p = parseRemindArgs(out.skillArgs);
-        lt(`model_remind valid=${p !== null}`);
-        if (p && hasKept(mem.keptDays, p)) {
+        const answer = parseRemindAnswer(out.skillArgs);
+        lt(`model_remind valid=${p !== null} answer=${answer ?? "none"} open=${asked !== null}`);
+        if (answer && asked) {
+          // the model read the reply as a yes or a no to the open question; Peak says the rest itself
+          if (pendingDay === asked) pendingDay = null;
+          reply = settleDay(asked, answer, Date.now());
+        } else if (p && hasKept(mem.keptDays, p)) {
           reply = remindLine("same", {}); // already kept: the model naming it again is not asked about again
         } else if (p) {
           pendingDay = { ...p, t: Date.now() };
@@ -2413,6 +2429,7 @@
           reply = remindLine("ask", { date: describeDate(p.md, p.year, lang), label: p.label });
         }
       }
+      if (asked && pendingDay === asked) pendingDay = null; // the model had its one turn with the question; it is not kept open for a stray "uh" later
       replyMood = out.mood;
       history = [...history, { role: "model" as const, text: reply }].slice(-8);
       chatReply = reply;
@@ -2442,8 +2459,9 @@
   // Every few chat messages, a small background call picks lasting facts out of the chat. Silent on
   // any problem. The first time, a short note says what is stored and where it goes.
   let remembering = false;
-  async function maybeRemember() {
-    const c = countChat(mem);
+  async function maybeRemember(force = false) {
+    // forced: right after a day was kept, so that what was said around it is noted now (only if the person lets Peak learn)
+    const c = force ? { memory: mem, due: mem.learn && mem.aiLearn } : countChat(mem);
     mem = c.memory;
     if (!c.due || remembering || !canChat || aiGate(data, "note", Date.now()) !== "ok") return scheduleSave();
     remembering = true;
