@@ -1,11 +1,11 @@
 {
-    "version":  "0.9.0",
-    "notes":  "The first Preview after Stable 0.8.0. It has the same program as 0.7.7 and 0.8.0; nothing you can see has changed. It starts the next Preview line, where the new work will go. If you are on a 0.7 Preview, the update check shows the regular 0.8.0 first (a Preview copy is offered a regular version...",
-    "pub_date":  "2026-11-13T21:51:22Z",
+    "version":  "0.9.1",
+    "notes":  "Peak no longer vanishes in the middle of the screen when sent away. It now trots to the edge, faster than its ordinary walk, with a time that depends on how far the edge is; if it cannot get there (something stops it), it stays where it is instead of disappearing.",
+    "pub_date":  "2026-11-14T02:12:11Z",
     "platforms":  {
                       "windows-x86_64":  {
-                                             "signature":  "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVUcHBlQXhYUlVURnJpNTl0NjBYTGZvb042V080dWV5aDNLVUpzWnJIb1l4YzFpV2hOZnRqM1RPbGRFWjl3bVduRkhNazdTVFZpMkhwR3Q1S3ErWUYyVWxhK0U3N0Z6cFE4PQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzk0NjA2NjgxCWZpbGU6U3RyZWFrYm9vbV8wLjkuMF94NjQtc2V0dXAuZXhlCXZlcnNpb246MC45LjAKRmlaNTlWRHViM0R0TWV0bVdOL1Q5YzZ0eGE5Skt4Y2dHdXY5aHF3dTJGbVZ2UXpIckN5dWRjK1ZjdHRZM2dhSVF3SWRBdWx1cVlsUElxTHZhdmloREE9PQo=",
-                                             "url":  "https://api.github.com/repos/vinhcodon/streakboom/releases/assets/745308181"
+                                             "signature":  "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVUcHBlQXhYUlVURmo0cmxWaENCdkdKY3JRV0lxazdnMnAvdTdtaHJQYkxRbTFldzhnMCt2eU13dXJmM2RrdGJGWjE2V2JlT1VwQVFRUGdVOFgrVXVIa2dlVDB5N3Y2UGdrPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzk0NjIyMzMxCWZpbGU6U3RyZWFrYm9vbV8wLjkuMV94NjQtc2V0dXAuZXhlCXZlcnNpb246MC45LjEKQWpYN2l2TEt4TGU1am1Vb2lDV0hJaVhNZEVvSWMzOXRUa2svUTZPUXdYZm1mU1FJdk12NGVjRUNqQzNDQ2RpWTc4dmwzcDVlV1A2OG5xaXQ0Y0ZHREE9PQo=",
+                                             "url":  "https://api.github.com/repos/vinhcodon/streakboom/releases/assets/745974342"
                                          }
                   }
 }
