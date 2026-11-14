@@ -9,7 +9,7 @@ import { build } from "../build-site.mjs";
 import { check } from "./checks.mjs";
 
 test("the words are Preview and the test builds, as words, in any case", () => {
-  for (const t of ["A Preview build", "preview", "the Test builds... link", "test build", "shared early as test builds"]) assert.match(t, HIDDEN_WORDS, t);
+  for (const t of ["A Preview build", "preview", "the Test builds... link", "test build", "shared early as test builds", "a small file, leave-trace.log, in its data folder"]) assert.match(t, HIDDEN_WORDS, t);
   for (const t of ["a preliminary look", "previews", "a prevue", "builds the site", "tested the build"]) assert.doesNotMatch(t, HIDDEN_WORDS, t);
 });
 

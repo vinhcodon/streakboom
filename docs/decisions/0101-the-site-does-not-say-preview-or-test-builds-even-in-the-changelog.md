@@ -16,3 +16,6 @@ ADR-0089 and ADR-0095 (the app session) say a Preview is a pre-release, never a 
 - The site's changelog is no longer a verbatim copy; a reader who wants the full notes has the repository's file. The app session is told (`website-measurement-note.md` is not the place: this is reported in the answer to its prompt and in W-68).
 - If the app session later wants a Preview mentioned on the site, it is a new decision and this rule is lifted by an ADR.
 - **Not verified:** how the shortened 0.6.0 entry reads to a visitor; that no other word for the same thing (for example "pre-release", "early build") appears: only the two names are checked.
+
+## Amendment (2026-11-14, the 0.8.1 prompt)
+The app session asked that the site not announce the small log file `leave-trace.log` either (it holds only a step name and numbers, stays on the user's computer, and is not sent). `leave-trace` is added to the words: a changelog line that names it is left out and the build refuses the word anywhere. In 0.8.1 the line that names it also names "test build", so it was already left out; the word makes it safe if a later line names the file alone.
