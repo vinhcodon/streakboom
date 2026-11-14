@@ -10,6 +10,7 @@ What was **decided**, why, and what was rejected. One short file per decision (a
 
 | ADR | Decision | Status | Date |
 |---|---|---|---|
+| [0107](0107-the-language-strip-shows-once-and-the-button-of-the-wanted-language-is-brighter.md) | The language strip shows once and is quieter; the header button of the wanted language is a little brighter; amends ADR-0067 (the website session) | accepted, built | 2026-11-14 |
 | [0104](0104-the-slogan-under-the-name-and-the-taglines-of-the-home-page.md) | The slogan under the name on every page and twelve taglines that rotate at random on the home page (the website session) | accepted, built | 2026-11-14 |
 | [0106](0106-remind-celebrating-the-days-the-person-told-peak.md) | The remind skill, first slice: celebrate the days the person told Peak (by date, said in the chat and confirmed there, no setting, a removable list in the memory area of Settings, said once, a missed day said once on return, a brain needed to create); timed and recurring reminders are separate ADRs; amends A2 of spec 14 | accepted as a direction, not built | 2026-11-14 |
 | [0105](0105-the-model-is-told-the-time-in-words.md) | The chat model is told the local time, the weekday and the part of the day (one line, nothing else), and the unprompted AI line states the time as 24-hour time plus the part of the day in words (the 10 PM at 10 AM mistake) | accepted, built, not seen | 2026-11-14 |

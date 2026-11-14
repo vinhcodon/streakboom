@@ -254,9 +254,11 @@ summary h3 { display: inline; font-size: inherit; font-weight: 600; margin: 0; }
 .licence { font-weight: 600; }
 
 /* the language suggestion (ADR-0067): built by an inline script before the first paint, so it moves nothing */
-.lang-strip { display: flex; align-items: center; justify-content: center; gap: 6px; padding: 0 16px; background: var(--bg-alt); border-bottom: 1px solid var(--line); font-size: .95rem; }
-.lang-strip a { font-weight: 600; }
-.lang-strip button { font: inherit; font-size: 1.3rem; line-height: 1; min-width: 40px; min-height: 40px; padding: 0 8px; background: none; border: 0; color: var(--muted); cursor: pointer; }
+.lang-strip { display: flex; align-items: center; justify-content: center; gap: 4px; padding: 0 12px; background: transparent; border-bottom: 1px solid var(--line); font-size: .85rem; color: var(--muted); }
+.lang-strip a { font-weight: 400; color: var(--link); }
+.lang-strip button { font: inherit; font-size: 1.15rem; line-height: 1; min-width: 36px; min-height: 36px; padding: 0 8px; background: none; border: 0; color: var(--muted); cursor: pointer; }
+/* the button of the language the browser asks for is a little brighter, on every page (ADR-0107); the strip itself shows once */
+html[data-want="en"] a.lang[hreflang="en"], html[data-want="vi"] a.lang[hreflang="vi"], html[data-want="ja"] a.lang[hreflang="ja"] { background: color-mix(in srgb, var(--gold) 26%, transparent); }
 /* the search of the sticker pages (plan v0.2): its room is kept while the script has not shown it, so it moves nothing */
 .sticker-search { margin: 0 0 14px; max-width: 520px; }
 .sticker-search[hidden] { display: block; visibility: hidden; }

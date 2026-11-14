@@ -33,3 +33,5 @@ A fixed bar at the bottom of the screen (no push, but it covers a small screen a
 
 ## Sources
 `docs/handoff/website-language-suggestion.md`, ADR-0066, ADR-0060, ADR-0031, ADR-0059, Google's advice on locale-adaptive pages and on visible language links, `scripts/site/pages.mjs` (the header).
+
+*(Amended by ADR-0107, 2026-11-14: the strip shows once per browser and language, is quieter, and the header button of the wanted language is a little brighter.)*
