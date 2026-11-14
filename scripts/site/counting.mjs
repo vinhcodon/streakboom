@@ -43,7 +43,7 @@ export function measurementProblems(m) {
   return problems;
 }
 /** The one script tag of the visit count in manual mode, or "" otherwise. */
-export const beaconTag = (ctx) => (webAnalyticsManual(ctx) ? `<script defer src="${BEACON_SRC}" data-cf-beacon='{"token": "${ctx.measurement.webAnalyticsToken}"}'></script>` : "");
+export const beaconTag = (ctx) => (webAnalyticsManual(ctx) ? `<script type="module" src="${BEACON_SRC}" data-cf-beacon='{"token": "${ctx.measurement.webAnalyticsToken}"}'></script>` : "");
 
 /** The paragraph "This website" of the privacy page, composed from what the build really does: cookies, the visit count, the copy counter, Cloudflare. */
 export function siteParagraph(lang, ctx) {

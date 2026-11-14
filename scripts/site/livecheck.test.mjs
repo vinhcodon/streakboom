@@ -8,7 +8,7 @@ const TOKEN = "0123456789abcdef0123456789abcdef";
 const off = { measurement: { webAnalytics: "off" } }, auto = { measurement: { webAnalytics: "auto", excludeEu: true } }, autoBot = { measurement: { webAnalytics: "auto", excludeEu: true, allowBotScript: true } }, manual = { measurement: { webAnalytics: "manual", webAnalyticsToken: TOKEN } };
 const H = (o = {}) => new Headers(o);
 const page = (extra = "") => `<html><body><script type="module" src="/app.js?v=1"></script>${extra}</body></html>`;
-const tag = `<script defer src="${BEACON_SRC}" data-cf-beacon='{"token": "${TOKEN}"}'></script>`;
+const tag = `<script type="module" src="${BEACON_SRC}" data-cf-beacon='{"token": "${TOKEN}"}'></script>`;
 const autoTag = `<script type="module" src="${BEACON_SRC}/vcc0123" data-cf-beacon='{"version":"2024"}'></script>`;
 
 test("a clean page is clean in every mode", () => {

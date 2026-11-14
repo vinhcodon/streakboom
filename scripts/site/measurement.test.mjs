@@ -58,7 +58,7 @@ test("auto: the build adds no script (Cloudflare does), the words name Web Analy
   assert.match(siteParagraph("en", b.ctx), /EU are not counted/);
   assert.match(b.pages.find((p) => p.path === "/stickers/").html, /counted as a visit by Cloudflare Web Analytics/);
   assert.doesNotThrow(tryRun(b, () => {}));
-  assert.throws(tryRun(b, (c) => { const p = home(c); p.html = p.html.replace("</body>", `<script defer src="${BEACON_SRC}" data-cf-beacon='{"token": "${TOKEN}"}'></script></body>`); }), /a script from a third party/);
+  assert.throws(tryRun(b, (c) => { const p = home(c); p.html = p.html.replace("</body>", `<script type="module" src="${BEACON_SRC}" data-cf-beacon='{"token": "${TOKEN}"}'></script></body>`); }), /a script from a third party/);
   // without the EU statement the paragraph does not say it
   const noEu = withSwitch({ webAnalytics: "auto", excludeEu: false });
   assert.doesNotMatch(siteParagraph("en", noEu.ctx), /EU are not counted/);
@@ -78,13 +78,13 @@ test("manual: every page has exactly one script of the visit count, with the tok
 
 test("the checks refuse a page and its words apart, and any other third-party script", () => {
   const on = withSwitch(MANUAL);
-  assert.throws(tryRun(on, (c) => { const p = home(c); p.html = p.html.replace(/<script defer src="[^"]*beacon[^>]*><\/script>\n?/, ""); }), /has 0 of its scripts/);
+  assert.throws(tryRun(on, (c) => { const p = home(c); p.html = p.html.replace(/<script type="module" src="[^"]*beacon[^>]*><\/script>\n?/, ""); }), /has 0 of its scripts/);
   assert.throws(tryRun(on, (c) => { const p = home(c); p.html = p.html.replace(TOKEN, "f".repeat(32)); }), /another token than measurement\.json/);
   assert.throws(tryRun(on, (c) => { const p = c.pages.find((x) => x.path === "/privacy/"); p.html = p.html.replace("Cloudflare Web Analytics", "a counter"); }), /not the one composed/);
   assert.throws(tryRun(on, (c) => { const p = home(c); p.html = p.html.replace("</body>", '<script src="https://stats.example.com/a.js"></script></body>'); }), /a script from a third party/);
   assert.throws(tryRun(on, (c) => { const p = home(c); p.html = p.html.replace("</body>", "<script>var u='/cdn-cgi/challenge-platform/scripts/jsd/main.js'</script></body>"); }), /mentions a Cloudflare script of its own/);
   const off = withSwitch(OFF);
-  assert.throws(tryRun(off, (c) => { const p = home(c); p.html = p.html.replace("</body>", `<script defer src="${BEACON_SRC}" data-cf-beacon='{"token": "${TOKEN}"}'></script></body>`); }), /a script from a third party/);
+  assert.throws(tryRun(off, (c) => { const p = home(c); p.html = p.html.replace("</body>", `<script type="module" src="${BEACON_SRC}" data-cf-beacon='{"token": "${TOKEN}"}'></script></body>`); }), /a script from a third party/);
   assert.throws(tryRun(off, (c) => { const p = c.pages.find((x) => x.path === "/ja/privacy/"); p.html = p.html.replace("アクセス解析も行いません。", "アクセス解析を行います。"); }), /not the one composed/);
 });
 
