@@ -59,7 +59,7 @@ The short version of [`docs/charter.md`](docs/charter.md), which ranks what Peak
 ## Highlights
 
 - **Alive without any AI.** A mood and closeness model and 263 hand-written lines per language, with stages when you keep poking it, a sleepy night (23:00 to 07:00 it dozes and says nothing on its own), and "gentle tone" for those who prefer no sarcasm.
-- **Gestures, not buttons.** Sweep the cursor over its head to scratch it, over its belly to rub it (usually bliss, sometimes a trap), click to poke, drag to carry it, right-click to push it, double-click to chat.
+- **Gestures, not buttons.** Sweep the cursor over its head to scratch it, over its belly to rub it (usually bliss, sometimes a trap), click to poke, drag to carry it, right-click to push it, double right-click (or type xê ra, move over, どいて) to ask it to step aside, double-click to chat.
 - **It lives on your desktop.** It wanders, hops between rows, hops onto and climbs the edges of your windows, looks over an edge, falls to the window below if its seat goes away, and gets out from under the Start menu.
 - **Bring your own brain.** Gemini and Groq have free tiers (with limits); Claude and OpenAI are paid. Daily caps keep it frugal; it answers in the language you write in.
 - **It remembers a little, and you control it.** Settings, Memory shows everything and can forget any part.
@@ -85,7 +85,7 @@ More in [`docs/development.md`](docs/development.md) (layout, windows, release b
 
 ## Roadmap
 
-Released so far: **0.2** the naive pet, the key flow, memory, gestures, signed auto-update; **0.2.4 and 0.2.5** focus-safety and hops; **0.3.0** Japanese (beta) and Groq; **0.3.1 and 0.3.2** reactions, perching and climbing on windows, calmer behaviour; **0.4.0** aligned with the research in [`docs/foundation/`](docs/foundation/README.md) (your absence costs nothing, no streak, for adults, safety rules in chat); **0.4.1** one Peak at a time and a tray menu in your language.
+Released so far: **0.2** the naive pet, the key flow, memory, gestures, signed auto-update; **0.2.4 and 0.2.5** focus-safety and hops; **0.3.0** Japanese (beta) and Groq; **0.3.1 and 0.3.2** reactions, perching and climbing on windows, calmer behaviour; **0.4.0** aligned with the research in [`docs/foundation/`](docs/foundation/README.md) (your absence costs nothing, no streak, for adults, safety rules in chat); **0.4.1** one Peak at a time and a tray menu in your language; **0.4.2** the open-source licenses travel with the program, built in public CI; **0.6.0** the groundwork for how releases are built and updated; **0.8.0 and 0.8.1** you can send Peak away by a typed command (it walks to the edge and leaves for 20 minutes), and Peak stays still and quiet in full-screen programs; **0.10.0** you can ask Peak to step aside, a dismissal in the middle of a chat is taken as a joke, and the time of day is right in the model's own lines.
 
 Next (roadmap version 2): the checks that need other machines (the Groq, Claude and OpenAI brains with real keys, a lower-end computer, several monitors) and small steps on how Peak notices and answers. A closed alpha with a handful of observed adults, and an application for free code signing, come last, when the author calls them, and before anything public. The ordered plan is in [`docs/plans/roadmap.md`](docs/plans/roadmap.md), the stories in [`docs/plans/backlog.md`](docs/plans/backlog.md) and what is built but not yet checked in [`docs/plans/verification-debt.md`](docs/plans/verification-debt.md).
 

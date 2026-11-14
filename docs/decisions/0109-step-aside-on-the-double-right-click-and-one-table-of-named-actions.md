@@ -1,6 +1,6 @@
 # ADR-0109: "Step aside" on the double right click, and one table of named actions
 
-- **Status:** accepted (the author chose all four points on 2026-11-14); **nothing is built**. The audit and the proposal are in [`../../spec/17-input-map.md`](../../spec/17-input-map.md). Builds on ADR-0055 (the right click is a push) and ADR-0103 (skills are files).
+- **Status:** accepted (the author chose all four points on 2026-11-14); **built since the same day** (IM-1 to IM-4, ADR-0111; Stable 0.10.0), and seen working by the author on a real screen (Preview 0.9.6 and 0.9.8). The audit and the proposal are in [`../../spec/17-input-map.md`](../../spec/17-input-map.md). Builds on ADR-0055 (the right click is a push) and ADR-0103 (skills are files).
 - **Date:** 2026-11-14
 - **Decided by:** Vinh (author), recorded by Claude (the app session)
 

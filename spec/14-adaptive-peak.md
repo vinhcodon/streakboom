@@ -123,9 +123,9 @@ A skill is one file in `app/src/lib/skills/*.skill.json`: `skill` (the name), `d
 
 | Skill | State | Note |
 |---|---|---|
-| `leave` | built, Stable 0.8.0, fixed in 0.8.1 | section 7.1 and 7.4 |
-| `seat` ("về chỗ đi", "go to your spot", "席に戻って") | built in Preview (0.9.4), table only | Peak nods and stays: it has no usual place yet (spec 06, favourite places, not built). Going to a remembered coarse zone is a later skill with its own ADR (ADR-0108) |
-| `aside` ("xê ra", "tránh ra", "move over") | proposed | with the double right click, spec 17 |
+| `leave` | built, Stable 0.8.0, fixed in 0.8.1 and 0.10.0 | section 7.1 and 7.4 |
+| `seat` ("về chỗ đi", "go to your spot", "席に戻って") | built, Stable 0.10.0, table only | Peak nods and stays: it has no usual place yet (spec 06, favourite places, not built). Going to a remembered coarse zone is a later skill with its own ADR (ADR-0108) |
+| `aside` ("xê ra", "tránh ra", "move over", "どいて") | built, Stable 0.10.0; seen working by the author (Preview 0.9.6) | with the double right click, spec 17, ADR-0111; table only, the first skill that moves |
 | `remind` (celebrate the days the person told Peak) | decided as a direction, not built | ADR-0106: by date, said in the chat and confirmed there, no setting, a removable list in the memory area of Settings, said once, a missed day said once on return, a brain needed to create, none to deliver; timed and recurring reminders are separate ADRs; this amends A2 above |
 | `sleep`, `quiet`, `return` | phrases in the table, no skill | candidates (section 7.2) |
 

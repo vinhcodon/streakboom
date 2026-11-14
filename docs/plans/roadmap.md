@@ -8,7 +8,7 @@
 
 ## Where we are
 
-The product is at **0.4.2** (the first release built by CI), public on GitHub, with a website in three languages. Behaviour, safety rules and documents are ahead of the evidence: the app is built for adults, makes no health claim and has no character that needs the person (0.4.0), but **nobody outside the author has used it**, nothing has run on a second computer, Windows 11 or more than one monitor, three of the four brains have never met a real key, and the north star has no baseline. The bottleneck is not features; it is **finding out whether anyone wants this and whether it does no harm**. The backlog shows it: the measurement epic E6 is 1 of 7 done.
+The product was at **0.4.2** when this plan was written (2026-11-12); on 2026-11-14 it is at **Stable 0.10.0** and Preview 0.11.0 (send Peak away, step aside, the conversation rule, skills as files; the plan below is unchanged), public on GitHub, with a website in three languages. Behaviour, safety rules and documents are ahead of the evidence: the app is built for adults, makes no health claim and has no character that needs the person (0.4.0), but **nobody outside the author has used it**, nothing has run on a second computer, Windows 11 or more than one monitor, three of the four brains have never met a real key, and the north star has no baseline. The bottleneck is not features; it is **finding out whether anyone wants this and whether it does no harm**. The backlog shows it: the measurement epic E6 is 1 of 7 done.
 
 ## The aim of this stretch
 

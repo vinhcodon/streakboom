@@ -1,6 +1,6 @@
 # ADR-0103: Peak's skills are described in text files, built in stages
 
-- **Status:** accepted as a direction (the author chose "in stages, Lượn đi first, a second skill next" on 2026-11-14). **Stage 1 is built (branch `vanish`, Preview 0.9.3, not yet seen, V-136):** `src/lib/skills/leave.skill.json`, the interpreter `skill-run.ts`, the page host. Each stage is checked against the charter before it is coded.
+- **Status:** accepted as a direction (the author chose "in stages, Lượn đi first, a second skill next" on 2026-11-14). **Stage 1 is built (shipped in Stable 0.10.0; Preview 0.9.3 first; the refactor itself not separately seen, V-136), and `seat` and `aside` are the second and third skill files (ADR-0108, ADR-0111):** `src/lib/skills/leave.skill.json`, the interpreter `skill-run.ts`, the page host. Each stage is checked against the charter before it is coded.
 - **Date:** 2026-11-14
 - **Decided by:** Vinh (author), recorded by Claude (the app session)
 
