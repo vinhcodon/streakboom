@@ -1075,13 +1075,25 @@
   /** After several pushes in a short while Peak says once, in its whole life, that the person can also say "step aside". */
   function maybeHintAside(now: number) {
     pushTimes = recordPush(pushTimes, now);
-    if (!shouldHintAside(pushTimes, data.said)) return;
-    data = { ...data, said: { ...data.said, hintaside: now } }; // said once, kept on disk
-    scheduleSave();
-    setTimeout(() => {
-      if (!quiet && !away && !leaving && !flying && pose !== "held" && panel === null && !bubbleOn) say("hintaside");
-    }, 2200);
+    if (!shouldHintAside(pushTimes, data.said) || hintAsideWaiting) return;
+    // The push usually has its own huff and bubble: the hint waits until the bubble is gone (up to ~12 s) and is marked
+    // as said only when it was really shown, so a swallowed line is not lost for good (V-141).
+    hintAsideWaiting = true;
+    let tries = 0;
+    const attempt = () => {
+      tries++;
+      if (data.said.hintaside) return void (hintAsideWaiting = false); // step aside was used meanwhile
+      const free = !quiet && !away && !leaving && !flying && pose !== "held" && panel === null && !bubbleOn;
+      if (free && say("hintaside")) {
+        data = { ...data, said: { ...data.said, hintaside: Date.now() } };
+        scheduleSave();
+        hintAsideWaiting = false;
+      } else if (tries < 12) setTimeout(attempt, 1000);
+      else hintAsideWaiting = false;
+    };
+    setTimeout(attempt, 2200);
   }
+  let hintAsideWaiting = false;
   async function shove(pointerDx: number) {
     const now = Date.now();
     if (quiet || flying || panel !== null || pose === "held" || now - lastShove < 2500) return;
