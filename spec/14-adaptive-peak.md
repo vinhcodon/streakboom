@@ -86,6 +86,8 @@ Gap (closed 2026-11-14): `is_busy` was used only before an unprompted line and b
 
 **Decided (Vinh, 2026-11-13, ADR-0086; 2026-11-14, ADR-0097):** it stays away **20 minutes** and is called back at once with the tray (Show). **Built 2026-11-14 as S2 (not released, not yet seen):** a short goodbye (six per language, `farewell.ts`), the walk to the nearer side edge, the hide by Rust, the return at the same edge with a stretch and no line, the 5-minute retry while a full-screen program runs, only on a Preview build until 0.7.7 and **on every build from Stable 0.8.0 (ADR-0100)**; a pattern match asks nothing yet (not built); needs a connected brain for the chat box. **Cost:** no new art; the walk, the nod, the hide and a timer.
 
+**Walk rule (ADR-0102, built 2026-11-14, not yet seen):** Peak trots to the edge at 110 px/s and has `clamp(distance/110 x 1.3 + 2 s, 6 s, 20 s)` to get there; if it does not, it stays where it is and the leaving is cancelled. It never vanishes away from an edge, and the leave is counted when the window is hidden.
+
 **What is measured:** leaves a day; returns by timer against calls back by the person; the same person's Quiet starts and hides before and after; Bond Days of leavers against non-leavers. All as counts, and **separate from Bond Days** (A5).
 
 ### 7.2 Candidates for later slices (not chosen; costs for reference)

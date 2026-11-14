@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { AWAY_MINUTES, FAREWELLS, FAREWELL_BUBBLE_MS, LEAVE_WALK_MAX_MS, RETRY_SECS, isLeaveCommand, mayLeave, nearerEdge, pickFarewell, type FarewellLang, type LeaveGate } from "./farewell.ts";
+import { AWAY_MINUTES, FAREWELLS, FAREWELL_BUBBLE_MS, LEAVE_DEADLINE_MAX_MS, LEAVE_DEADLINE_MIN_MS, LEAVE_PACE_PX_S, RETRY_SECS, leaveDeadlineMs, isLeaveCommand, mayLeave, nearerEdge, pickFarewell, type FarewellLang, type LeaveGate } from "./farewell.ts";
 import { BANNED } from "./banned.ts";
 
 const LANGS: FarewellLang[] = ["vi", "en", "ja"];
@@ -46,7 +46,8 @@ test("a goodbye is never the one just said, and the choice follows the random nu
 test("the numbers are the ones the author chose (20 minutes, ADR-0086) and sane", () => {
   assert.equal(AWAY_MINUTES, 20);
   assert.ok(FAREWELL_BUBBLE_MS >= 1500 && FAREWELL_BUBBLE_MS <= 4000);
-  assert.ok(LEAVE_WALK_MAX_MS >= 5000 && LEAVE_WALK_MAX_MS <= 20_000);
+  assert.ok(LEAVE_DEADLINE_MIN_MS >= 5000 && LEAVE_DEADLINE_MAX_MS <= 30_000 && LEAVE_DEADLINE_MIN_MS < LEAVE_DEADLINE_MAX_MS);
+  assert.equal(LEAVE_PACE_PX_S, 110);
   assert.ok(RETRY_SECS >= 60 && RETRY_SECS <= 900);
 });
 
@@ -67,4 +68,31 @@ test("the nearer side edge: left when less room on the left, else right", () => 
   assert.equal(nearerEdge(900, 40), 1);
   assert.equal(nearerEdge(300, 300), 1);
   assert.equal(nearerEdge(0, 0), 1);
+});
+
+test("the time given to the walk to the edge comes from the distance and always leaves room to get there (ADR-0101)", () => {
+  // the walk could cover the whole distance within the time, for every distance up to what the longest deadline allows
+  for (const room of [0, 30, 100, 430, 640, 960, 1300, 1600, 2000]) {
+    const ms = leaveDeadlineMs(room);
+    assert.ok(ms >= LEAVE_DEADLINE_MIN_MS && ms <= LEAVE_DEADLINE_MAX_MS, `${room}: ${ms}`);
+    assert.ok((ms / 1000) * LEAVE_PACE_PX_S >= room, `${room} px in ${ms} ms at ${LEAVE_PACE_PX_S} px/s`);
+  }
+  // the numbers, so that a change is a decision
+  assert.equal(leaveDeadlineMs(0), 6000);
+  assert.equal(leaveDeadlineMs(100), 6000);
+  assert.equal(leaveDeadlineMs(430), 7082);
+  assert.equal(leaveDeadlineMs(1300), 17364);
+  assert.equal(leaveDeadlineMs(5000), 20_000);
+  // a farther edge never gets a shorter time
+  let last = 0;
+  for (let room = 0; room <= 3000; room += 50) {
+    const ms = leaveDeadlineMs(room);
+    assert.ok(ms >= last, `${room}`);
+    last = ms;
+  }
+  // nonsense in, sane out
+  for (const bad of [NaN, Infinity, -5, -Infinity]) {
+    const ms = leaveDeadlineMs(bad as number);
+    assert.ok(ms >= LEAVE_DEADLINE_MIN_MS && ms <= LEAVE_DEADLINE_MAX_MS, String(bad));
+  }
 });

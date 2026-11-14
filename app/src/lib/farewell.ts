@@ -15,8 +15,26 @@ export type FarewellLang = "vi" | "en" | "ja";
 export const AWAY_MINUTES = 20;
 /** The goodbye stays this long on the screen before the walk to the edge begins. */
 export const FAREWELL_BUBBLE_MS = 2400;
-/** The walk to the edge is given up after this long (it then leaves where it stands). */
-export const LEAVE_WALK_MAX_MS = 12_000;
+/**
+ * The pace of the walk to the edge (logical px a second), about three times the ordinary walk (36): the pace Peak already uses to
+ * walk to a wall it will climb. At the ordinary pace half a screen took 20 to 40 seconds.
+ */
+export const LEAVE_PACE_PX_S = 110;
+/** The walk to the edge gets its time from the distance (`leaveDeadlineMs`), within these bounds. */
+export const LEAVE_DEADLINE_MIN_MS = 6000;
+export const LEAVE_DEADLINE_MAX_MS = 20_000;
+
+/**
+ * How long the walk to the edge may take for `roomPx` logical px to go: the walking time with a margin of 30 % and two seconds,
+ * never less than 6 s and never more than 20 s. A walk that has not reached the edge by then is NOT finished by hiding Peak where
+ * it stands: Peak stays, and the leaving is cancelled (ADR-0101). The first version gave every walk 12 s and, at the ordinary pace,
+ * let it vanish in the middle of the screen when the edge was farther than about 430 px.
+ */
+export function leaveDeadlineMs(roomPx: number): number {
+  const room = Number.isFinite(roomPx) ? Math.max(0, roomPx) : 0;
+  const ms = Math.round((room / LEAVE_PACE_PX_S) * 1.3 * 1000 + 2000);
+  return Math.min(LEAVE_DEADLINE_MAX_MS, Math.max(LEAVE_DEADLINE_MIN_MS, ms));
+}
 /** If the moment of the return is not right (a full-screen program), try again after this many seconds. */
 export const RETRY_SECS = 300;
 

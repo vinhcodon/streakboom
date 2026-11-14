@@ -4,7 +4,7 @@
   import { invoke } from "@tauri-apps/api/core";
   import { getVersion } from "@tauri-apps/api/app";
   import { channelOf, effectiveUpdateMode } from "$lib/channel";
-  import { AWAY_MINUTES, FAREWELL_BUBBLE_MS, LEAVE_WALK_MAX_MS, RETRY_SECS, isLeaveCommand, mayLeave, nearerEdge, pickFarewell } from "$lib/farewell";
+  import { AWAY_MINUTES, FAREWELL_BUBBLE_MS, LEAVE_PACE_PX_S, RETRY_SECS, isLeaveCommand, leaveDeadlineMs, mayLeave, nearerEdge, pickFarewell } from "$lib/farewell";
   import { shortEnoughForSkill } from "$lib/intents";
   import { emitTo } from "@tauri-apps/api/event";
   import { getCurrentWebviewWindow } from "@tauri-apps/api/webviewWindow";
@@ -1966,9 +1966,9 @@
     return true;
   }
 
+  let leaveRoom = 0; // logical px from Peak to the edge it walks to
   async function startLeave() {
     leaving = true;
-    count("leave");
     closePanel(); // the chat box goes
     const line = pickFarewell(lang, lastFarewell);
     lastFarewell = line;
@@ -1986,6 +1986,7 @@
     }
     if (!leaving) return;
     dir = nearerEdge(roomLeft, roomRight);
+    leaveRoom = dir < 0 ? roomLeft : roomRight;
     awayWalkActive = true;
     enter("walk"); // startWalk sees awayWalkActive and runs the walk to the edge
   }
@@ -1993,7 +1994,7 @@
   /** The walk to the edge: straight on, at the usual pace, until the window cannot go further (or the time is up). */
   function runLeaveWalk() {
     const scale = window.devicePixelRatio || 1;
-    const fullStep = (WALK_SPEED * scale * WALK_TICK_MS) / 1000;
+    const fullStep = (LEAVE_PACE_PX_S * scale * WALK_TICK_MS) / 1000;
     let ticks = 0;
     let carry = 0;
     walkTimer = setInterval(async () => {
@@ -2008,7 +2009,18 @@
         await finishLeave();
       }
     }, WALK_TICK_MS);
-    walkEndTimer = setTimeout(() => void finishLeave(), LEAVE_WALK_MAX_MS);
+    // It leaves only at the edge. If the time given for the distance runs out first, it stays (ADR-0101): never a vanishing in the middle of the screen.
+    walkEndTimer = setTimeout(() => giveUpLeave(), leaveDeadlineMs(leaveRoom));
+  }
+
+  /** The edge was not reached in time (blocked, carried, the screens changed): Peak stays where it is and the leaving is cancelled. */
+  function giveUpLeave() {
+    if (!leaving) return;
+    clearInterval(walkTimer);
+    clearTimeout(walkEndTimer);
+    leaving = false;
+    awayWalkActive = false;
+    enter("idle");
   }
 
   async function finishLeave() {
@@ -2020,7 +2032,8 @@
     away = true; // from here nothing moves or speaks (scheduleNext, showBubble and the proactive line look at it)
     enter("idle");
     const left = await invoke<boolean>("pet_leave", { minutes: AWAY_MINUTES }).catch(() => false);
-    if (!left) {
+    if (left) count("leave"); // counted when it has really gone, not when the command was taken
+    else {
       away = false; // the window could not be hidden: Peak simply stays
       scheduleNext();
     }

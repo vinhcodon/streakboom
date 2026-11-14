@@ -10,6 +10,7 @@ What was **decided**, why, and what was rejected. One short file per decision (a
 
 | ADR | Decision | Status | Date |
 |---|---|---|---|
+| [0102](0102-peak-leaves-only-at-the-edge.md) | Peak leaves only at the edge: a trot at 110 px/s, a deadline from the distance, a stay (no vanishing mid-screen) when it cannot get there, the leave counted when the window is hidden | accepted, built, not seen | 2026-11-14 |
 | [0101](0101-the-site-does-not-say-preview-or-test-builds-even-in-the-changelog.md) | The site does not say Preview or the test builds, even in the changelog it mirrors (it leaves those lines out; the build refuses the words); follows ADR-0089 and ADR-0095 (the website session) | accepted, built | 2026-11-14 |
 | [0100](0100-lun-di-goes-to-stable-in-0-8-0.md) | "Lượn đi" goes to Stable in 0.8.0: the Preview-only gate is lifted in the last Preview (0.7.7), the Stable is cut from its commit, Preview 0.9.0 the same day; the model's false-tag rate and the checklist items are not measured and are accepted as such | accepted | 2026-11-14 |
 | [0099](0099-the-previous-download-ledger-is-read-from-actions-not-from-the-live-site.md) | The previous download ledger is read from the copy kept in Actions, not from the live site, so Bot Fight Mode can be on; amends ADR-0052 (the website session) | accepted, built (not yet run) | 2026-11-14 |

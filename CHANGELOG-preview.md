@@ -2,6 +2,10 @@
 
 Release notes of the **Preview** builds (an odd middle number: 0.5.x, 0.7.x), newest first. A Preview is a build the author hands to a few adults (ADR-0089, ADR-0090). It is published on GitHub as a pre-release, **never** as the download of the website, and its notes are **not** in [`CHANGELOG.md`](CHANGELOG.md), which the website reads. The format is the same as there: `## x.y.z (YYYY-MM-DD)`, then lines starting with `- `, the first a short bold sentence. When a Preview line is promoted, the Stable version takes its entry in `CHANGELOG.md`.
 
+## 0.9.1 (2026-11-14)
+- **Peak no longer vanishes in the middle of the screen when sent away.** It now trots to the edge, faster than its ordinary walk, with a time that depends on how far the edge is; if it cannot get there (something stops it), it stays where it is instead of disappearing.
+- Not yet tried: any of it on a real screen, on two monitors, or on a scaled display.
+
 ## 0.9.0 (2026-11-14)
 - **The first Preview after Stable 0.8.0.** It has the same program as 0.7.7 and 0.8.0; nothing you can see has changed. It starts the next Preview line, where the new work will go. If you are on a 0.7 Preview, the update check shows the regular 0.8.0 first (a Preview copy is offered a regular version before a Preview); to stay on Preview, check again afterwards and this build is offered.
 
