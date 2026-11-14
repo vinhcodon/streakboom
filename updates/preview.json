@@ -1,11 +1,11 @@
 {
-    "version":  "0.9.8",
-    "notes":  "When an update cannot be downloaded, Peak now writes a small note about why. It is a line in update-trace.log in its data folder: a number for the answer of the server (such as 403) and how many calls GitHub says are left for your network. No words, no account, nothing is sent anywhere. It is the...",
-    "pub_date":  "2026-11-14T14:45:24Z",
+    "version":  "0.11.0",
+    "notes":  "The first Preview after Stable 0.10.0. It has the same program as 0.9.8 and 0.10.0; nothing you can see has changed. It starts the next Preview line, where the new work will go. If you are on a 0.9 Preview, the update check shows the regular 0.10.0 first (a Stable that is higher than your copy is...",
+    "pub_date":  "2026-11-14T15:15:13Z",
     "platforms":  {
                       "windows-x86_64":  {
-                                             "signature":  "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVUcHBlQXhYUlVURm5wcms3TjFSKzdUdzVybjdjYWRtbUhRZ080Nk40Nkg4MWZpV0dUU2JPbG5iTE8wTnZlYUFlWmZ2aXhhS2ZVblpZSG1xaEptVXpINnhBNDNXQ3M4cmdnPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzk0NjY3NTIxCWZpbGU6U3RyZWFrYm9vbV8wLjkuOF94NjQtc2V0dXAuZXhlCXZlcnNpb246MC45LjgKYnJDV1k2TU1Za3JyeGxzZi9KOXJiV2djSkltYXRWeWdpdGFVS1J4QkxmRXlMdDJlMUNyZ1ZQN1MxOTJXcDZobW1ReFgvOHM5d1NjTUN5N0dzZVMzRFE9PQo=",
-                                             "url":  "https://api.github.com/repos/vinhcodon/streakboom/releases/assets/747783469"
+                                             "signature":  "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVUcHBlQXhYUlVURnNoTUNnZ2E1YXRDYjJiTzFZNnVCV1lVRUNBWGI3Z2l6dHVjN1dQcEdNcldIaG9ZcCtKMmxjbGdMS0FydGhSRTFoelNHWkFYMnUxZDJiOXRSQkdQa1FzPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzk0NjY5MzA5CWZpbGU6U3RyZWFrYm9vbV8wLjExLjBfeDY0LXNldHVwLmV4ZQl2ZXJzaW9uOjAuMTEuMAo4dTN5aFdJZWlDQnVMS3VkNmhueDBRZDJObE9Gb3hQRE9hUEdXZnJOY0tDd3VsK0hWYlZqQ1FhZGZoNmlJRTF0bUQ3RWRKWC9GclNzS2ZSSjNIOUtCZz09Cg==",
+                                             "url":  "https://api.github.com/repos/vinhcodon/streakboom/releases/assets/747863683"
                                          }
                   }
 }
