@@ -2,6 +2,11 @@
 
 Release notes of the **Preview** builds (an odd middle number: 0.5.x, 0.7.x), newest first. A Preview is a build the author hands to a few adults (ADR-0089, ADR-0090). It is published on GitHub as a pre-release, **never** as the download of the website, and its notes are **not** in [`CHANGELOG.md`](CHANGELOG.md), which the website reads. The format is the same as there: `## x.y.z (YYYY-MM-DD)`, then lines starting with `- `, the first a short bold sentence. When a Preview line is promoted, the Stable version takes its entry in `CHANGELOG.md`.
 
+## 0.11.1 (2026-11-14)
+- **Peak can keep a day you tell it, and cheer on that day.** Tell it in the chat, for example: nhớ sinh nhật mẹ mình, 12 tháng 3. Peak asks if it understood the day right; answer đúng, yes or はい to keep it, không, no or いいえ to drop it. It repeats every year. On the day, when Peak is free, it says one line with your own words in it and a happy move; a day that came by while it was away or in Quiet mode is said once when it is back, without blame. Settings, Memory lists the days and can remove any of them or all.
+- Peak is still not an alarm: it will say so if you ask it to remind you of a time of day or a task.
+- Not yet tried: any of it on a screen or with a real chat model (whether it writes the right date in all three languages, and does not keep what is not a day), and the line on the day and the late one.
+
 ## 0.11.0 (2026-11-14)
 - **The first Preview after Stable 0.10.0.** It has the same program as 0.9.8 and 0.10.0; nothing you can see has changed. It starts the next Preview line, where the new work will go. If you are on a 0.9 Preview, the update check shows the regular 0.10.0 first (a Stable that is higher than your copy is offered before any Preview).
 
