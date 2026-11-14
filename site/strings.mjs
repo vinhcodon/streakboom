@@ -401,10 +401,10 @@ export const STRINGS = {
     hw_faq_title: "Thêm vài câu hỏi",
     dl_count: "Lượt tải từ GitHub đến nay: {n} (đếm lượt tải, gồm cả cập nhật, không phải số người).",
     nav_stickers: "Sticker",
-    nav_story: "Story",
-    sb_page_title: "Story behind Peak: vì sao có một con mèo ngồi cạnh bạn lúc nghỉ",
+    nav_story: "Chuyện",
+    sb_page_title: "Câu chuyện đằng sau Peak: vì sao có một con mèo ngồi cạnh bạn lúc nghỉ",
     sb_desc: "Vì sao Peak tồn tại: một con mèo ngồi cạnh lúc nghỉ, không phải một trợ lý. Do Vinh Codon, người làm ra Peak, và chính Peak kể.",
-    sb_title: "Story behind Peak",
+    sb_title: "Câu chuyện đằng sau Peak",
     sb_scene: "02:14. Màn hình vẫn sáng.",
     // the story of Peak: the author's text, kept word for word (docs/handoff/website-story-behind.md); the Japanese is an AI translation, not reviewed by a native reader
     sb_blocks: [

@@ -411,7 +411,7 @@ test("the Code signing policy is on every home page, says nothing is signed, and
 
 test("the story of Peak (ADR-0110): three pages, five voices each, the dialogue as a blockquote with its labels, the menu has four items with Story last, Install is in the footer", () => {
   const c = clone();
-  for (const [path, title, labels] of [["/story/", "The story behind Peak", ["Him:", "Me:"]], ["/vi/story/", "Story behind Peak", ["Anh ấy:", "Tôi:"]], ["/ja/story/", "Peak誕生の物語", ["彼：", "わたし："]]]) {
+  for (const [path, title, labels] of [["/story/", "The story behind Peak", ["Him:", "Me:"]], ["/vi/story/", "Câu chuyện đằng sau Peak", ["Anh ấy:", "Tôi:"]], ["/ja/story/", "Peak誕生の物語", ["彼：", "わたし："]]]) {
     const h = page(c, path).html;
     assert.ok(h.includes(`<h1>${title}</h1>`), path + ": title");
     assert.equal((h.match(/<section class="voice /g) || []).length, 5, path + ": five voices");
