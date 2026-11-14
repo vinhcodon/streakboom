@@ -436,3 +436,14 @@ test("the Clear button of the recent stickers is on the heading line, in every l
     assert.match(h, /<p id="sticker-mine-foot" class="sticker-mine-foot" hidden>[^<]+<\/p>/, path + ": the note has no button");
   }
 });
+
+test("the step-aside feature card and its gesture row are on the home, how-it-works and llms-full pages in three languages (0.10.0)", () => {
+  const c = clone();
+  for (const [lang, title, row] of [["en", "Steps aside when asked", "Double right-click it"], ["vi", "Nhường chỗ khi bạn nhờ", "Bấm chuột phải hai lần vào nó"], ["ja", "お願いすると道をあけてくれる", "右クリックを2回続ける"]]) {
+    const p = (path) => page(c, path).html;
+    const home = lang === "en" ? "/" : "/" + lang + "/", how = lang === "en" ? "/how-it-works/" : "/" + lang + "/how-it-works/";
+    assert.ok(p(home).includes(title), lang + ": the card on the home page");
+    assert.ok(p(how).includes(title) && p(how).includes(row), lang + ": the card and the row on the how-it-works page");
+  }
+  assert.ok(c.files["llms-full.txt"].includes("Steps aside when asked"));
+});

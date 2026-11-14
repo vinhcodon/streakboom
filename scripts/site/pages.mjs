@@ -356,7 +356,7 @@ export function howPage(lang, ctx) {
   const path = PATHS[lang].how;
   const features = FEATURE_IDS
     .map((i) => `        <h3>${s(`f${i}_h`)}</h3>\n        <p>${s(`f${i}_p`)}</p>`).join("\n");
-  const gestures = [1, 2, 3, 8, 4, 5, 7, 6]
+  const gestures = [1, 2, 3, 8, 9, 4, 5, 7, 6]
     .map((i) => `          <tr><th>${s(`g${i}_a`)}</th><td>${s(`g${i}_b`)}</td></tr>`).join("\n");
   const sections = STRINGS[lang].hw_sections
     .map((sec) => `      <section>
