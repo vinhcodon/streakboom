@@ -8,6 +8,7 @@ import type { Lang } from "./lines.ts";
 
 import { dayKey } from "./state.ts";
 import { parseKept, type KeptDay } from "./remind.ts";
+import { parseSeat } from "./seat.ts";
 
 const DAY = 24 * 3_600_000;
 export const MAX_NAME = 20;
@@ -38,6 +39,7 @@ export interface Memory {
   facts: { id: string; text: string; t: number }[];
   // Days the person told Peak to keep (ADR-0106, ADR-0115): added in 0.11; an older build ignores it and keeps the rest.
   keptDays: KeptDay[];
+  seat: number | null; // Peak's usual place along the floor, 0 (left) to 1 (right), taught by "sit here"; null = the default (ADR-0117)
   keptCheck: string; // the date key of the last time Peak looked at the kept days ("" = never)
 }
 
@@ -61,6 +63,7 @@ export const defaultMemory = (): Memory => ({
   facts: [],
   keptDays: [],
   keptCheck: "",
+  seat: null,
 });
 
 /** A name typed by the user: trimmed, single line, no control characters, at most MAX_NAME. */
@@ -123,6 +126,7 @@ function parseRaw(json: string | null | undefined): Memory {
             .filter((f: { text: string }) => f.text.length > 0)
         : [],
       keptDays: parseKept(o.keptDays),
+      seat: parseSeat(o.seat),
       keptCheck: typeof o.keptCheck === "string" && /^\d{4}-\d{2}-\d{2}$/.test(o.keptCheck) ? o.keptCheck : "",
       said: o.said && typeof o.said === "object" ? Object.fromEntries(Object.entries(o.said).filter(([, v]) => typeof v === "number").slice(0, 40)) as Record<string, number> : {},
     };
@@ -227,7 +231,7 @@ export const cooled = (m: Memory, kind: string, now: number, ms: number): boolea
 /** Forget what was learned from use; keeps the names and the on/off switch. */
 export function forgetHabits(m: Memory): Memory {
   const d = defaultMemory();
-  return { ...d, learn: m.learn, petName: m.petName, callMe: m.callMe, asks: m.asks, aiLearn: m.aiLearn, aiNotice: m.aiNotice, facts: m.facts, keptDays: m.keptDays, keptCheck: m.keptCheck }; // the days the person told Peak are not a habit
+  return { ...d, learn: m.learn, petName: m.petName, callMe: m.callMe, asks: m.asks, aiLearn: m.aiLearn, aiNotice: m.aiNotice, facts: m.facts, keptDays: m.keptDays, keptCheck: m.keptCheck, seat: m.seat }; // the days the person told Peak are not a habit
 }
 /** Forget everything, names included; keeps only the on/off switch. */
 export const forgetAll = (m: Memory): Memory => ({ ...defaultMemory(), learn: m.learn, aiLearn: m.aiLearn, aiNotice: m.aiNotice });
@@ -284,6 +288,8 @@ export const setFact = (m: Memory, id: string, raw: string): Memory => {
 };
 export const removeFact = (m: Memory, id: string): Memory => ({ ...m, facts: m.facts.filter((f) => f.id !== id) });
 /** Forget the days the person told Peak to keep (the list in Settings, Memory). */
+/** Back to the default place. */
+export const forgetSeat = (m: Memory): Memory => ({ ...m, seat: null });
 export const forgetKept = (m: Memory): Memory => ({ ...m, keptDays: [] });
 export const forgetFacts = (m: Memory): Memory => ({ ...m, facts: [], sinceExtract: 0 });
 

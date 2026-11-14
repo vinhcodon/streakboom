@@ -11,7 +11,8 @@
   import { MAX_CLARIFY, addKept, describeDate, dueToday, fallsOn, hasKept, keptForModel, markDone, missedSince, parseRemindAnswer, parseRemindArgs, pendingAlive, pruneOneOff, remindSay, replyKind, type Pending, type RemindLine } from "$lib/remind";
   import { clickResolver } from "$lib/clickresolver";
   import { gatesPass, pickLine as pickFromPool, runSteps, type Host } from "$lib/skill-run";
-  import { ASIDE_SKILL, LEAVE_SKILL, SEAT_SKILL } from "$lib/skills";
+  import { ASIDE_SKILL, LEAVE_SKILL, SEAT_HERE_SKILL, SEAT_SKILL } from "$lib/skills";
+  import { seatFraction, seatMove, seatWalkMs } from "$lib/seat";
   import { LEAVE_PACE_PX_S, RETRY_SECS, isLeaveCommand, leaveDeadlineMs, mayLeave, nearerEdge } from "$lib/farewell";
   import { matchIntent, shortEnoughForSkill } from "$lib/intents";
   import { emitTo } from "@tauri-apps/api/event";
@@ -31,6 +32,7 @@
     forgetAll,
     forgetFacts,
     forgetKept,
+    forgetSeat,
     knownFor,
     removeFact,
     resetExtract,
@@ -147,6 +149,8 @@
   let away = false;
   let leaving = false; // on the way out: the goodbye, then the walk to the edge
   let awayWalkActive = false; // the next walk is the walk to the edge
+  /** The walk to its usual place along the floor (ADR-0117): physical px to go, the time given, and who waits for it. */
+  let homeGoal: { px: number; ms: number; done: (reached: boolean) => void } | null = null;
   let lastFarewell: string | null = null;
   let data = $state<PetData>(defaultData(Date.now()));
   let mem = $state<Memory>(defaultMemory()); // what the pet remembers (its own file, memory.json)
@@ -749,6 +753,12 @@
   let wakeThen: PetState | null = null; // what to do once the pet has finished waking up
 
   function enter(requested: PetState) {
+    // anything else taking over ends the walk to its place without arriving
+    if (homeGoal && requested !== "walk") {
+      const g = homeGoal;
+      homeGoal = null;
+      g.done(false);
+    }
     // something else took over while it was leaving (picked up, touched, a hop, a fall): it does not leave
     // While it walks to the edge, a plain "idle", "look" or "nod" would stop the walk without ending the leaving (the person would
     // see Peak standing and the next command would be refused as "already leaving"): they are ignored until the walk ends.
@@ -1331,6 +1341,7 @@
 
   function startWalk() {
     if (awayWalkActive) return runLeaveWalk();
+    if (homeGoal) return runHomeWalk();
     const plan = walkPlan;
     walkPlan = null;
     const leaving = plan !== null; // walking away from the user's work
@@ -2072,11 +2083,23 @@
   async function tryLeaveFromChat(text: string): Promise<boolean> {
     const m = matchIntent(text, [mem.petName]);
     if (m?.skill === "seat" && m.kind === "exact") {
-      // "go back to your place": not a wish to be left alone (ADR-0108). Peak only nods; it does not know a usual place yet.
+      // "go back to your place": not a wish to be left alone (ADR-0108). Peak goes down to the floor if it is up on a window, walks to
+      // its usual place (taught by "sit here", or the right end of the floor) and nods (ADR-0117).
       if (!gatesPass(SEAT_SKILL.gates, { quiet, held: pose === "held", flying, away, leaving })) return false;
       lt(`command_seat pose=${pose}`);
       closePanel();
-      void runSteps(SEAT_SKILL.steps, skillHost, () => true, lt);
+      void runSteps(SEAT_SKILL.steps, skillHost, () => true, lt).then((r) => {
+        lt(`seat ${r}`);
+        if (r === "failed" && !flying && pose !== "held") enter("nod"); // it could not walk there: it only nods, as before
+      });
+      return true;
+    }
+    if (m?.skill === "seat_here" && m.kind === "exact") {
+      // "sit here from now on": the place where Peak stands along the floor becomes its usual place (ADR-0117)
+      if (!gatesPass(SEAT_HERE_SKILL.gates, { quiet, held: pose === "held", flying, away, leaving })) return false;
+      lt(`command_seat_here pose=${pose}`);
+      closePanel();
+      void runSteps(SEAT_HERE_SKILL.steps, skillHost, () => true, lt);
       return true;
     }
     if (m?.skill === "aside" && m.kind === "exact") {
@@ -2171,6 +2194,57 @@
       enter("walk"); // the walk ends when the pointer is clear (LEAVE_PX), as when it makes way
       return true;
     },
+    async walkHome() {
+      // Down to the floor if it is up on a window, then along the floor to its usual place (ADR-0117).
+      if (isDozing(pose)) enter("idle");
+      if (flying) return false;
+      if (perchWall) await descend();
+      else {
+        leavePerch();
+        let down = 0;
+        try {
+          down = (await invoke<{ up: number; down: number }>("vertical_room")).down;
+        } catch {
+          /* unknown: it walks where it is */
+        }
+        if (down >= 30) await fly(splitHop(0, down), "walk");
+      }
+      if (pose !== "idle" && pose !== "look") enter("idle");
+      let roomL = 0;
+      let roomR = 0;
+      try {
+        roomL = await invoke<number>("edge_room", { dir: -1 });
+        roomR = await invoke<number>("edge_room", { dir: 1 });
+      } catch {
+        /* unknown: it does not walk */
+      }
+      const go = seatMove(roomL, roomR, mem.seat);
+      lt(`home from=${Math.round((seatFraction(roomL, roomR) ?? -1) * 100)} to=${Math.round((mem.seat ?? -1) * 100)} px=${go ? Math.round(go.px) : 0}`);
+      if (!go) return true; // there already, or no room to tell
+      dir = go.dir;
+      const scale = window.devicePixelRatio || 1;
+      return new Promise<boolean>((resolve) => {
+        homeGoal = { px: go.px * scale, ms: seatWalkMs(go.px, LEAVE_PACE_PX_S), done: resolve };
+        enter("walk"); // startWalk sees homeGoal and runs the walk to the place
+      });
+    },
+    async saveSeat() {
+      let roomL = 0;
+      let roomR = 0;
+      try {
+        roomL = await invoke<number>("edge_room", { dir: -1 });
+        roomR = await invoke<number>("edge_room", { dir: 1 });
+      } catch {
+        /* unknown */
+      }
+      const f = seatFraction(roomL, roomR);
+      lt(`seat_saved at=${f === null ? -1 : Math.round(f * 100)}`);
+      if (f === null) return false;
+      mem = { ...mem, seat: f };
+      scheduleSave();
+      pushSettings();
+      return true;
+    },
     async hide(minutes) {
       if (!leaving || away) return false;
       clearInterval(walkTimer);
@@ -2217,6 +2291,42 @@
       leaving = false;
       awayWalkActive = false;
     }
+  }
+
+  /** The walk to its usual place: straight along the floor at the trot, until the distance is covered, the edge is reached or the time is up. */
+  function runHomeWalk() {
+    const g = homeGoal;
+    if (!g) return;
+    const scale = window.devicePixelRatio || 1;
+    const fullStep = (LEAVE_PACE_PX_S * scale * WALK_TICK_MS) / 1000;
+    let ticks = 0;
+    let carry = 0;
+    let moved = 0;
+    const finish = (ok: boolean) => {
+      clearInterval(walkTimer);
+      clearTimeout(walkEndTimer);
+      if (homeGoal === g) homeGoal = null; // before enter(): enter() would otherwise report the walk as broken off
+      lt(`home_walk ${ok ? "arrived" : "stopped"} moved=${Math.round(moved)} of=${Math.round(g.px)}`);
+      enter("idle");
+      g.done(ok);
+    };
+    walkTimer = setInterval(async () => {
+      try {
+        ticks++;
+        const s = takeSteps(carry, Math.min(fullStep * rampIn(ticks * WALK_TICK_MS), g.px - moved));
+        carry = s.carry;
+        if (s.move === 0) {
+          if (g.px - moved < 1) finish(true);
+          return;
+        }
+        const hitEdge = await invoke<boolean>("move_by", { dx: dir * s.move });
+        moved += s.move;
+        if (hitEdge || moved >= g.px - 0.5) finish(true);
+      } catch {
+        finish(false);
+      }
+    }, WALK_TICK_MS);
+    walkEndTimer = setTimeout(() => finish(false), g.ms);
   }
 
   /** The walk to the edge: straight on, at the trot, until the window cannot go further (or the time is up). */
@@ -2620,6 +2730,7 @@
       marks: mem.marks.map((m) => m.id),
       aiLearn: mem.aiLearn,
       facts: mem.facts.map((f) => ({ id: f.id, text: f.text })),
+      seat: mem.seat,
       keptDays: mem.keptDays.map((k) => ({ id: k.id, md: k.md, year: k.year, label: k.label })),
     };
   }
@@ -2630,6 +2741,7 @@
     else if (p.action === "ai") mem = { ...mem, aiLearn: p.value, sinceExtract: 0 };
     else if (p.action === "fact-set") mem = setFact(mem, p.id, p.value);
     else if (p.action === "fact-del") mem = removeFact(mem, p.id);
+    else if (p.action === "seat-del") mem = forgetSeat(mem);
     else if (p.action === "kept-del") mem = { ...mem, keptDays: mem.keptDays.filter((k) => k.id !== p.id) };
     else if (p.action === "forget-kept") {
       mem = forgetKept(mem);

@@ -6,7 +6,7 @@
 // Pure: the page gives a `host` that does the real things (a bubble, a pose, a walk, hiding the window); this file only decides
 // the order, stops when a step fails or when the skill is no longer alive, and checks that a skill file is well formed.
 
-export const VERBS = ["say", "pose", "wait", "walk_to_edge", "step_aside", "hide", "count"] as const;
+export const VERBS = ["say", "pose", "wait", "walk_to_edge", "step_aside", "walk_home", "save_seat", "hide", "count"] as const;
 export type Verb = (typeof VERBS)[number];
 
 export const GATES = ["not_quiet", "not_held", "not_flying", "not_away", "not_leaving"] as const;
@@ -18,6 +18,8 @@ export type Step =
   | { verb: "wait"; ms: number }
   | { verb: "walk_to_edge" }
   | { verb: "step_aside" }
+  | { verb: "walk_home" }
+  | { verb: "save_seat" }
   | { verb: "hide"; minutes: number }
   | { verb: "count"; key: string };
 
@@ -41,6 +43,10 @@ export interface Host {
   walkToEdge(): Promise<boolean>;
   /** Walk away from the pointer until it is clear, or nod and stay when there is no room. True when it moved. */
   stepAside(): Promise<boolean>;
+  /** Down to the floor if it is up on a window, then along the floor to its usual place. True when it got there (or was there). */
+  walkHome(): Promise<boolean>;
+  /** Keep where it stands along the floor as its usual place. */
+  saveSeat(): Promise<boolean>;
   hide(minutes: number): Promise<boolean>;
   count(key: string): void;
 }
@@ -69,6 +75,12 @@ export async function runSteps(steps: readonly Step[], host: Host, alive: () => 
         break;
       case "step_aside":
         if (!(await host.stepAside())) return alive() ? "failed" : "cancelled";
+        break;
+      case "walk_home":
+        if (!(await host.walkHome())) return alive() ? "failed" : "cancelled";
+        break;
+      case "save_seat":
+        if (!(await host.saveSeat())) return "failed";
         break;
       case "hide":
         if (!(await host.hide(s.minutes))) return "failed";
@@ -118,6 +130,8 @@ const STEP_KEYS: Record<Verb, string[]> = {
   wait: ["verb", "ms"],
   walk_to_edge: ["verb"],
   step_aside: ["verb"],
+  walk_home: ["verb"],
+  save_seat: ["verb"],
   hide: ["verb", "minutes"],
   count: ["verb", "key"],
 };

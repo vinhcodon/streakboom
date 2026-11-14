@@ -1,6 +1,6 @@
 {
   "skill": "seat",
-  "description": "Go back to your place: a command for the table only, never named by the model. In this first version Peak nods and stays where it is, because it does not know a usual place yet (ADR-0108).",
+  "description": "Go back to your place: a command for the table only, never named by the model. Peak goes down to the floor if it is up on a window, walks along it to its usual place (the one the person taught with sit here, or the right end of the floor) and nods (ADR-0108, ADR-0117).",
   "phrases": [
     "về chỗ đi",
     "về chỗ",
@@ -20,6 +20,7 @@
   ],
   "pools": {},
   "gates": [
+    "not_quiet",
     "not_held",
     "not_flying",
     "not_away",
@@ -27,6 +28,9 @@
   ],
   "limits": {},
   "steps": [
+    {
+      "verb": "walk_home"
+    },
     {
       "verb": "pose",
       "pose": "nod"

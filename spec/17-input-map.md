@@ -74,7 +74,8 @@ The table below is the contract for every action, existing or proposed. A name i
 | `shove` | right click | | `shove` | not Quiet, not held, cooldown | built |
 | `step_aside` | right double click | xê ra, tránh ra, move over, どいて | skill `aside` | not quiet, not held, not flying, not away, not leaving, cooldown | built (not seen) |
 | `leave` | | lượn đi, go away, 消えて, ... | skill `leave` | spec 14 section 7.4 | built (Stable 0.8.0) |
-| `seat` | | về chỗ đi, go to your spot, 席に戻って | skill `seat` | not held, not flying, not away | built in Preview (nods only) |
+| `seat` | | về chỗ đi, go to your spot, 席に戻って | skill `seat` | not quiet, not held, not flying, not away | built on branch `vanish` (walks to its usual place, ADR-0117) |
+| `seat_here` | | ngồi đây, this is your spot, ここが定位置 | skill `seat_here` | not held, not flying, not away, not leaving | built on branch `vanish` (ADR-0117) |
 | `toggle_visibility` | tray left click | | Rust | none | built |
 | `quiet_toggle`, `settings`, `quit` | tray menu | | Rust | none | built |
 | `make_way` | (the person typing near it) | | `makeWay` | the focus gates | built, not a command |

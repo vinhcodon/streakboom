@@ -1,0 +1,53 @@
+{
+  "skill": "seat_here",
+  "description": "Sit here from now on: a command for the table only, never named by the model. Peak keeps the place where it stands as its usual place, where 'go to your spot' sends it (ADR-0117).",
+  "phrases": [
+    "ngồi đây",
+    "ngồi đây luôn",
+    "đây là chỗ của bạn",
+    "đây là chỗ của mình",
+    "chỗ này là chỗ của bạn",
+    "chỗ này là chỗ của mình",
+    "this is your spot",
+    "this is your place",
+    "this is your seat",
+    "sit here from now on",
+    "this is where you sit",
+    "ここが定位置",
+    "ここがあなたの席",
+    "ここが君の席",
+    "ここに座って"
+  ],
+  "patterns": [
+    "^(please )?(this is|that is|here is) (your )?(spot|place|seat)$"
+  ],
+  "pools": {
+    "taught": {
+      "vi": ["Ok, chỗ này là chỗ của mình.", "Mình nhớ chỗ này rồi nha."],
+      "en": ["Okay, this is my spot now.", "Got it, I'll remember this place."],
+      "ja": ["わかった、ここが私の場所ね。", "ここを覚えたよ。"]
+    }
+  },
+  "gates": [
+    "not_held",
+    "not_flying",
+    "not_away",
+    "not_leaving"
+  ],
+  "limits": {},
+  "steps": [
+    {
+      "verb": "save_seat"
+    },
+    {
+      "verb": "say",
+      "pool": "taught",
+      "ms": 3000
+    },
+    {
+      "verb": "pose",
+      "pose": "nod"
+    }
+  ],
+  "after_return": []
+}

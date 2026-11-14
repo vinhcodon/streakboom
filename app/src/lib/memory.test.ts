@@ -264,3 +264,17 @@ test("an older memory.json has no kept days and reads as an empty list; a stored
   assert.deepEqual(parseMemory(JSON.stringify(m)), m);
   assert.equal(parseMemory(JSON.stringify({ keptCheck: "yesterday" })).keptCheck, "");
 });
+
+import { forgetSeat } from "./memory.ts";
+
+test("Peak's usual place is a number from 0 to 1, kept with habits, removed by forget-everything and by its own button", () => {
+  const m = { ...defaultMemory(), seat: 0.35, petName: "Mun" };
+  assert.equal(parseMemory(JSON.stringify(m)).seat, 0.35);
+  assert.equal(parseMemory(JSON.stringify({ v: 1 })).seat, null, "an older file has none");
+  assert.equal(parseMemory(JSON.stringify({ seat: 7 })).seat, null);
+  assert.equal(parseMemory(JSON.stringify({ seat: "left" })).seat, null);
+  assert.equal(forgetHabits(m).seat, 0.35);
+  assert.equal(forgetSeat(m).seat, null);
+  assert.equal(forgetSeat(m).petName, "Mun");
+  assert.equal(forgetAll(m).seat, null);
+});

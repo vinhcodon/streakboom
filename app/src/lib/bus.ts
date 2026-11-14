@@ -65,6 +65,7 @@ export interface MemoryView {
   marks: string[]; // ids of shared milestones
   aiLearn: boolean;
   facts: { id: string; text: string }[];
+  seat: number | null; // Peak's usual place along the floor (0 left, 1 right) or null = the default (ADR-0117)
   keptDays: { id: string; md: string; year: number; label: string }[]; // the days the person told Peak to keep (ADR-0115)
 }
 
@@ -105,6 +106,7 @@ export type SettingsPatch =
   | { type: "mem"; action: "fact-set"; id: string; value: string }
   | { type: "mem"; action: "fact-del"; id: string }
   | { type: "mem"; action: "kept-del"; id: string }
+  | { type: "mem"; action: "seat-del" }
   | { type: "mem"; action: "ai"; value: boolean }
   | { type: "mem"; action: "forget-habits" | "forget-facts" | "forget-kept" | "forget-all" }
   | { type: "track"; event: "get_key_clicked" | "returned_to_app" | "key_pasted" };

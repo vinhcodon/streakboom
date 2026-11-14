@@ -134,6 +134,10 @@ export interface UiStrings {
   memFacts: string;
   memFactsNone: string;
   memKept: string;
+  memSeat: string;
+  memSeatDefault: string;
+  memSeatTaught: string;
+  memForgetSeat: string;
   memKeptNone: string;
   memForgetKept: string;
   memForgetFacts: string;
@@ -380,6 +384,10 @@ export const UI: Record<Lang, UiStrings> = {
     memFacts: "What it noted from chats",
     memFactsNone: "Nothing noted yet. Edit or delete anything here.",
     memKept: "Days Peak keeps (you told it in the chat)",
+    memSeat: "Peak's usual place (say: sit here, where it stands; and: go to your spot, to send it back)",
+    memSeatDefault: "Not taught yet: the right end of the floor.",
+    memSeatTaught: "Taught: {pct}% of the way along the floor, from the left.",
+    memForgetSeat: "Back to the default place",
     memKeptNone: "No days yet. Tell Peak in the chat, for example: remember my mum's birthday, 12 March.",
     memForgetKept: "Forget these days",
     memForgetFacts: "Forget noted facts",
@@ -633,6 +641,10 @@ export const UI: Record<Lang, UiStrings> = {
     memFacts: "Những điều đã ghi từ trò chuyện",
     memFactsNone: "Chưa ghi gì. Bạn có thể sửa hoặc xóa mọi mục ở đây.",
     memKept: "Những ngày Peak giữ (bạn đã kể trong chat)",
+    memSeat: "Chỗ của Peak (nói: ngồi đây nhé, khi nó đứng ở chỗ muốn dạy; và: về chỗ đi, để gọi nó về)",
+    memSeatDefault: "Chưa dạy: đầu bên phải của sàn.",
+    memSeatTaught: "Đã dạy: cách đầu trái của sàn {pct}% chiều dài.",
+    memForgetSeat: "Về chỗ mặc định",
     memKeptNone: "Chưa có ngày nào. Hãy kể cho Peak trong chat, ví dụ: nhớ sinh nhật mẹ mình, 12 tháng 3.",
     memForgetKept: "Quên các ngày này",
     memForgetFacts: "Quên các điều đã ghi",
@@ -886,6 +898,10 @@ export const UI: Record<Lang, UiStrings> = {
     memFacts: "おしゃべりからメモしたこと",
     memFactsNone: "まだメモはないよ。ここで直したり消したりできるよ。",
     memKept: "Peakが覚えている日（チャットで教えてくれた日）",
+    memSeat: "Peakの定位置（立っている場所で「ここが定位置」と言うと覚えて、「席に戻って」で戻るよ）",
+    memSeatDefault: "まだ教えてないよ：床の右はしだよ。",
+    memSeatTaught: "教えてもらった場所：床の左から{pct}%のところ。",
+    memForgetSeat: "初期の場所に戻す",
     memKeptNone: "まだ日付はないよ。チャットで教えてね。例：母の誕生日は3月12日、覚えておいて。",
     memForgetKept: "これらの日を忘れる",
     memForgetFacts: "メモしたことを忘れる",

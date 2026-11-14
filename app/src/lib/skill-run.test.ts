@@ -11,6 +11,8 @@ function fakeHost(log: string[], over: Partial<Host> = {}): Host {
     wait: async (ms) => void log.push(`wait ${ms}`),
     walkToEdge: async () => (log.push("walk"), true),
     stepAside: async () => (log.push("aside"), true),
+    walkHome: async () => (log.push("home"), true),
+    saveSeat: async () => (log.push("save"), true),
     hide: async (m) => (log.push(`hide ${m}`), true),
     count: (k) => void log.push(`count ${k}`),
     ...over,
@@ -91,13 +93,13 @@ test("a skill file that steps outside the closed list is refused", () => {
   assert.ok(validateSkill(null).length > 0 && validateSkill("x").length > 0);
 });
 
-test("the verbs are a closed list of seven and the interpreter knows each of them", () => {
-  assert.deepEqual([...VERBS], ["say", "pose", "wait", "walk_to_edge", "step_aside", "hide", "count"]);
-  const every: Step[] = [{ verb: "say", pool: "p" }, { verb: "pose", pose: "idle" }, { verb: "wait", ms: 1 }, { verb: "walk_to_edge" }, { verb: "step_aside" }, { verb: "hide", minutes: 1 }, { verb: "count", key: "k" }];
+test("the verbs are a closed list of nine and the interpreter knows each of them", () => {
+  assert.deepEqual([...VERBS], ["say", "pose", "wait", "walk_to_edge", "step_aside", "walk_home", "save_seat", "hide", "count"]);
+  const every: Step[] = [{ verb: "say", pool: "p" }, { verb: "pose", pose: "idle" }, { verb: "wait", ms: 1 }, { verb: "walk_to_edge" }, { verb: "step_aside" }, { verb: "walk_home" }, { verb: "save_seat" }, { verb: "hide", minutes: 1 }, { verb: "count", key: "k" }];
   const log: string[] = [];
   return runSteps(every, fakeHost(log), () => true).then((r) => {
     assert.equal(r, "done");
-    assert.equal(log.length, 7);
+    assert.equal(log.length, 9);
   });
 });
 
@@ -117,11 +119,11 @@ test("step aside moves, then counts; when it cannot move nothing is counted", as
   assert.deepEqual(log2, []);
 });
 
-import { REMIND_SKILL, SEAT_SKILL } from "./skills.ts";
+import { REMIND_SKILL, SEAT_HERE_SKILL, SEAT_SKILL } from "./skills.ts";
 import { MAX_KEPT, MAX_LABEL, MISSED_WINDOW_DAYS, PENDING_MS } from "./remind.ts";
 
 test("a skill with a table has phrases; remind is named by the model only and its limits are the program's", () => {
-  for (const s of [LEAVE_SKILL, SEAT_SKILL, ASIDE_SKILL]) assert.ok(s.phrases.length > 0, s.skill);
+  for (const s of [LEAVE_SKILL, SEAT_SKILL, SEAT_HERE_SKILL, ASIDE_SKILL]) assert.ok(s.phrases.length > 0, s.skill);
   assert.deepEqual(REMIND_SKILL.phrases, []);
   assert.deepEqual(REMIND_SKILL.steps, []);
   assert.equal(REMIND_SKILL.limits.max_kept, MAX_KEPT);
@@ -129,4 +131,16 @@ test("a skill with a table has phrases; remind is named by the model only and it
   assert.equal(REMIND_SKILL.limits.pending_secs * 1000, PENDING_MS);
   assert.equal(REMIND_SKILL.limits.missed_window_days, MISSED_WINDOW_DAYS);
   assert.match(REMIND_SKILL.description, /\[skill:remind\|/);
+});
+
+test("go to your spot walks home and nods; sit here saves the place, says so and nods; a failed walk stops the skill", async () => {
+  const log: string[] = [];
+  assert.equal(await runSteps(SEAT_SKILL.steps, fakeHost(log), () => true), "done");
+  assert.deepEqual(log, ["home", "pose nod"]);
+  const log2: string[] = [];
+  assert.equal(await runSteps(SEAT_HERE_SKILL.steps, fakeHost(log2), () => true), "done");
+  assert.deepEqual(log2, ["save", "say taught 3000", "pose nod"]);
+  const log3: string[] = [];
+  assert.equal(await runSteps(SEAT_SKILL.steps, fakeHost(log3, { walkHome: async () => false }), () => true), "failed");
+  assert.deepEqual(log3, []);
 });

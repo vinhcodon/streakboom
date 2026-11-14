@@ -400,3 +400,10 @@ Why: the author keeps building features and lets a few adults try them (ADR-0089
 | UD-5 | Measure first: on a failed update, write the status and the quota GitHub reports (numbers only) into `update-trace.log`, as `leave-trace.log` does, so that the cause is known and not guessed. Built: the status is read from the plugin's error text; the quota comes from `api.github.com/rate_limit` (which is free), because the plugin does not give back the headers | S | built, not seen |
 
 **Order.** UD-5 and UD-1 first (cheap, and they tell whether UD-2 is worth its size), then UD-2, UD-3 and UD-4 together. A change to the updater is a change to every future release: it is tried on a Preview before a Stable.
+
+## E26: Peak's usual place (ADR-0117; built, not seen)
+
+| # | Story | Size | Status |
+|---|---|---|---|
+| SE-1 | The place as a number along the floor (`seat.ts`), the field `seat` in `memory.json`, the skill `seat_here` ("sit here"), `seat` walking there (verbs `walk_home` and `save_seat`), the row in Settings, Memory | M | built on branch `vanish` 2026-11-15, not seen |
+| SE-2 | Favourite places learned from habit (spec 06 section 2.3: a count of resting minutes in a grid) | M | not decided; ADR-0117 chose teaching by words instead |

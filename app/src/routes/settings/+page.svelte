@@ -647,6 +647,11 @@
       {:else}
         <p class="muted">{ui.memFactsNone}</p>
       {/each}
+      <div class="muted">{ui.memSeat}</div>
+      <div class="row">
+        <span class="txt wide">{snap.memory.seat === null ? ui.memSeatDefault : ui.memSeatTaught.replace("{pct}", String(Math.round(snap.memory.seat * 100)))}</span>
+        <button class="seg" disabled={snap.memory.seat === null} onclick={() => fromSettings({ type: "mem", action: "seat-del" })}>{ui.memForgetSeat}</button>
+      </div>
       <div class="muted">{ui.memKept}</div>
       {#each snap.memory.keptDays as k (k.id)}
         <div class="row">
