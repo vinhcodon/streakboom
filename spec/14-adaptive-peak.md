@@ -15,7 +15,7 @@ Instead of a Settings page of tastes, **Peak notices** how the person lives with
 | # | Decision |
 |---|---|
 | A1 | **No choices of taste in Settings** (colour, accessory, voice, seat). Peak notices and suggests. |
-| A2 | **Skills are body language and presence only.** They never touch the person's apps, files or data. No timer, no reminder, nothing an assistant does. |
+| A2 | **Skills are body language and presence only.** They never touch the person's apps, files or data. No timer, nothing an assistant does. **One exception (ADR-0106):** celebrating a day the person told Peak (by date, said once, confirmed in the chat, listed and removable in Settings, memory). A timed or recurring reminder still needs its own ADR. |
 | A3 | **Voice, first version: a held hotkey only** ("press and hold to talk"). No wake word. |
 | A4 | **The first skill is "Lượn đi"** (say goodbye, go, come back). The phone, the favourite sleeping place and the transformation are **not chosen** for the first slice. |
 | A5 | **Calling or sending the cat away by words does not count toward Bond Days** in this stage. It is counted separately. |
@@ -31,7 +31,7 @@ Earlier decisions still stand: the bond is the core, workplace humour is the voi
 | 2 The attention is theirs | Suggestions use the existing unprompted slot (every 10 to 15 minutes, `free` or `play` only); the return from "away" waits for the person to be free; no second channel of interruption |
 | 3 Gentle | A leave is a walk, not a vanish; a return is a landing, not an arrival |
 | 4 Shapes, not meaning | Counts and coarse places only. Voice is a new sense: off, switched on in the open, its own ADR (section 9) |
-| 5 Companion, not assistant | Skills are the cat's body (P1); no reminders, no tools |
+| 5 Companion, not assistant | Skills are the cat's body (P1); no tools; the one reminder allowed is celebrating a day the person told Peak (ADR-0106, "it remembers") |
 | 6 Works without AI | Tier 1 needs no key. Voice needs one provider (open question) |
 | 7 Never dies, absence costs nothing | "Away" is not saved, is never a sulk, never counted aloud, and a banned-patterns test covers the new lines |
 | Few settings | No setting for an amount of behaviour. The only new settings are a consent (voice), a value Peak cannot infer (the hotkey) and Forget buttons |

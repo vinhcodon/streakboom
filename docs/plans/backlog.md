@@ -369,3 +369,10 @@ Why: the author keeps building features and lets a few adults try them (ADR-0089
 | PV-11 | The check by hand shows the one version; on a Stable copy a small link "Test builds..." with a warning and a confirmation before the newest Preview is shown; the texts in three languages; the author looks at it in a test build | M | **released in Preview 0.7.2 (2026-11-14); the author updated to it and checked, OK** (the Stable-side "Test builds..." link and the three languages not reported as seen) | PV-10 |
 | PV-12 | `release-finish.ps1`: `preview.json` holds only the newest Preview and `latest.json` only the Stable (the "newest of both" rule is dropped), tests; done only after PV-10 and PV-11 are released in a Preview | S | **built 2026-11-14** (`Get-ManifestFilesToWrite`: a Stable writes `latest.json` only, a Preview writes `preview.json` only when newer; 61 script checks; the first real publish with it is the next release) | PV-11 |
 
+## E23: Remind, the first slice (ADR-0106; nothing built)
+
+| # | Story | Size | Status |
+|---|---|---|---|
+| RM-1 | After ADR-0103 stage 1: the skill file for "celebrate a day the person told Peak": the tag, the confirmation in the chat, the list in `memory.json` (add-only) and in the memory area of Settings (removable), the line pools in three languages under the banned-patterns test, the delivery on the day and once on return | L | not started |
+| RM-2 | A harness of labelled date phrases in vi, en and ja (for the author to run with his own key) before RM-1 is released | M | not started |
+| RM-3 | R2 (timed one-off reminders) and R3 (recurring nudges): each only by its own ADR, after the author has used R1 | M | not decided |
