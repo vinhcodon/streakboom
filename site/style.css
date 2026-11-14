@@ -316,7 +316,8 @@ summary h3 { display: inline; font-size: inherit; font-weight: 600; margin: 0; }
 /* the tagline above the title of the home page: a fixed place of two lines, so a longer or shorter one moves nothing; no transition (ADR-0104) */
 .kicker { margin: 0 0 8px; min-height: 2.7em; font-size: .98rem; line-height: 1.35; color: var(--link); text-wrap: balance; }
 .kicker::before { content: ""; display: inline-block; width: 1em; height: 1em; margin-right: .4em; vertical-align: -.12em; background: center / contain no-repeat url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cg fill='%23d98f2b'%3E%3Cellipse cx='16' cy='21' rx='8' ry='6.5'/%3E%3Cellipse cx='6.5' cy='13' rx='3' ry='3.8'/%3E%3Cellipse cx='12.5' cy='7.5' rx='3' ry='3.8'/%3E%3Cellipse cx='19.5' cy='7.5' rx='3' ry='3.8'/%3E%3Cellipse cx='25.5' cy='13' rx='3' ry='3.8'/%3E%3C/g%3E%3C/svg%3E"); }
-.hero h1 .h1-sub { display: block; margin-top: .4em; font-size: 1.05rem; font-weight: 400; line-height: 1.4; color: var(--muted); text-wrap: balance; }
+/* the title of the home page is one sentence of about 50 characters: a smaller size keeps it to two lines (ADR-0104) */
+.hero h1 { font-size: clamp(1.5rem, 5.2vw, 2.4rem); text-wrap: balance; }
 @media (max-width: 639px) { .brand-slogan { font-size: .78rem; } .kicker { font-size: .95rem; } }
 /* the header on a phone (ADR-0104): the name and slogan may shrink and the slogan wraps, the two language buttons never drop to the next line (a font a little wider than the one tried, as on an iPhone 8, pushed them down when the block kept its full width) */
 @media (max-width: 1000px) {

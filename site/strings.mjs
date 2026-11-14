@@ -6,8 +6,7 @@ import { SCENES } from "./scenes.js";
 export const STRINGS = {
   en: {
     title: "Streakboom: meet Peak, a desktop pet cat for Windows", nav_install: "Install", nav_privacy: "Privacy", nav_faq: "FAQ",
-    hero_title: "Meet Peak",
-    hero_sub: "A little cat that lives on your screen.",
+    hero_title: "Meet Peak: a little cat that lives on your screen",
     brand_slogan: "Beside you, not instead of you.",
     tg1: "Can't write emails. Very good at sitting next to you.",
     tg2: "It's not good at anything. It's just there.",
@@ -196,8 +195,7 @@ export const STRINGS = {
   },
   vi: {
     title: "Streakboom: gặp Peak, chú mèo thú cưng cho màn hình Windows", nav_install: "Cài đặt", nav_privacy: "Riêng tư", nav_faq: "Hỏi đáp",
-    hero_title: "Gặp Peak",
-    hero_sub: "Một chú mèo nhỏ sống trên màn hình của bạn.",
+    hero_title: "Gặp Peak: một chú mèo nhỏ sống trên màn hình của bạn",
     brand_slogan: "Ở bên bạn, không làm thay bạn.",
     tg1: "Không biết viết email. Rất biết ngồi cạnh bạn.",
     tg2: "Nó không giỏi việc gì. Nó chỉ ở đó.",
@@ -388,8 +386,7 @@ export const STRINGS = {
     nav_install: "インストール",
     nav_privacy: "プライバシー",
     nav_faq: "よくある質問",
-    hero_title: "ネコのPeakと出会おう",
-    hero_sub: "画面の隅にいる、小さなネコ。",
+    hero_title: "ネコのPeakと出会おう：画面の隅にいる、小さなネコ",
     brand_slogan: "そばにいる。代わりにはやらない。",
     tg1: "メールは書けません。そばに座るのは大得意です。",
     tg2: "何も得意じゃありません。ただ、そこにいます。",

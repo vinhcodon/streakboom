@@ -344,7 +344,7 @@ export function check({ ctx, pages, files, out }) {
   for (const lang of LANGS) {
     const list = TAGLINE_KEYS.map((k) => STRINGS[lang][k]);
     if (list.some((t) => typeof t !== "string" || !t)) { bad(`taglines: ${lang} lacks one of ${TAGLINE_KEYS.length}`); continue; }
-    for (const t of [...list, STRINGS[lang].brand_slogan, STRINGS[lang].hero_sub]) {
+    for (const t of [...list, STRINGS[lang].brand_slogan, STRINGS[lang].hero_title]) {
       if (t.length > (MAX_TAGLINE_LENGTH[lang] || 80)) bad(`taglines: ${lang} "${t.slice(0, 30)}..." is longer than ${MAX_TAGLINE_LENGTH[lang] || 80} characters`);
       for (const [re, why] of [...BANNED, ...OUTDATED]) if (re.test(t)) bad(`taglines: ${lang} "${t.slice(0, 30)}...": ${why}`);
     }
