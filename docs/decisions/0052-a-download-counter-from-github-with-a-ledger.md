@@ -10,7 +10,7 @@ The author wants a counter of downloads and installs on the website. What can be
 - GitHub keeps only the newest two releases (ADR-0028), so the count of an older version disappears with its release. The total therefore cannot be read from GitHub alone.
 - The app's updater downloads the same installer file, so an update counts as a download: the number is higher than the number of people.
 - **Installs and active users cannot be counted from GitHub.** Nothing in the app calls home, by design: the privacy page says nothing is sent automatically except what the person sends to the AI provider they chose, and the update check. The count of `latest.json` downloads is too small and cannot tell an app from a check. Counting installs would need a server and an opt-in ping in the app (a consent in the sense of charter article 1 and the "few settings" rule), which is work for the app session and a change of the privacy text.
-- The site has no analytics on purpose (ADR-0034) and makes no request to a third party; a badge service or a visit counter would add one.
+- The site has no analytics on purpose (ADR-0034) and makes no request to a third party; a badge service or a visit counter would add one. *(Since ADR-0096 the site may carry the measurement tools the author approves; the download counter itself still reads only GitHub.)*
 
 ## Decision
 1. **Count downloads, not installs.** The site shows the total number of downloads of the Windows installer from GitHub, and says what it counts: downloads from GitHub, including updates, not people. It does not say or imply "installs", "users" or "people".
@@ -40,3 +40,5 @@ A private script for the author only (a number that is never shown; safe while t
 
 ## Sources
 GitHub REST API (`/releases`, asset `download_count`), `scripts/release.ps1` and ADR-0028 (only the newest two releases are kept), ADR-0034 (no analytics), ADR-0031 and `docs/charter.md` (what is sent and what is consent), `.github/workflows/pages.yml`.
+
+*(Amended by ADR-0099, 2026-11-14: the previous ledger is read from the copy kept in Actions; the live site is only the fallback.)*

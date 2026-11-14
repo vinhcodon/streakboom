@@ -1,9 +1,9 @@
 # ADR-0092: Measure sticker copies with a small Worker, for a thirty-day reading first
 
-- **Status:** accepted (Vinh asked on 2026-11-13: "tôi vẫn muốn đo để có số liệu cho danh sách hot", and chose a Cloudflare Worker, 30 days, copies only); **built, switched off** (the Worker is not deployed; counting starts only when the author has deployed it and its address is in `counting.json`)
+- **Status:** accepted (Vinh asked on 2026-11-13: "tôi vẫn muốn đo để có số liệu cho danh sách hot", and chose a Cloudflare Worker, 30 days, copies only); **built; the Worker was deployed by the author on 2026-11-13** (`https://streakboom-sticker-count.vinhcodon.workers.dev`); counting starts when the address in `counting.json` is pushed
 - **Date:** 2026-11-13
 - **Decided by:** Vinh (author) for measuring, the Worker and the event; Claude (the website session) for the design
-- **Supersedes** ADR-0091 (the pause); keeps what ADR-0077 Q7 approved
+- **Supersedes** ADR-0091 (the pause); keeps what ADR-0077 Q7 approved. *(Since ADR-0096 the limits below — no identifier, no cookie, one event — are this counter's own design, not a rule of the website.)*
 
 ## Context
 ADR-0091 paused counting because a GitHub counter lags by 15 to 25 minutes, may merge close requests, and sits next to the pruned releases. Vinh still wants numbers for the HOT list. Q7 (ADR-0077) already allows anonymous counting with a small Cloudflare Worker, texts changed first.

@@ -1,11 +1,11 @@
 {
-    "version":  "0.5.1",
-    "notes":  "A second Preview build, to prove the update inside the app. It behaves exactly as 0.5.0 and 0.4.2; nothing you can see has changed. If you run 0.5.0, the app should offer this one by itself.",
-    "pub_date":  "2026-11-13T15:20:44Z",
+    "version":  "0.9.5",
+    "notes":  "Peak no longer says goodbye and stays, and a leaving is no longer stopped by Peak dodging your typing. In a chat, telling Peak to go away now gets a playful answer instead of a goodbye. And when it really goes, it no longer breaks off to make way for the typing you have just done beside it, which...",
+    "pub_date":  "2026-11-14T05:28:04Z",
     "platforms":  {
                       "windows-x86_64":  {
-                                             "signature":  "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVUcHBlQXhYUlVURm81WDFRWURVNHBoalRCVW15cE5NZEtKclRaOVBNL1ZOWVZnSldKbnFiM01FYVByT09FVk9ENDMyK0o4NTIrQnA2VFhKbFZzY3MxSUJQY0dOR3FEUkE4PQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzk0NTgzMjQ0CWZpbGU6U3RyZWFrYm9vbV8wLjUuMV94NjQtc2V0dXAuZXhlCXZlcnNpb246MC41LjEKOERGRGptZEVHaWNsOG9HazN3UXRpV1VhemhmWE1WSHNJb2ExaWxtWWNGQ1NaU0s4VXhnaUp6QkxrbnY2WjU1UFFkc3FVdHdYMHV5WTZ2cE9FUjZqQXc9PQo=",
-                                             "url":  "https://api.github.com/repos/vinhcodon/streakboom/releases/assets/744116242"
+                                             "signature":  "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVUcHBlQXhYUlVURnNDSGpvQ1pwS1ozWjdhblBOdmhxRmRpRVFQK2FaK2Y1UUtHZkVPZlQyaWNqTk1pOGM5bDFocDN2a0RVN1VVVDFDR3lCenVMd2tSb2c0aFVUdXJobEE4PQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzk0NjM0MDgzCWZpbGU6U3RyZWFrYm9vbV8wLjkuNV94NjQtc2V0dXAuZXhlCXZlcnNpb246MC45LjUKeUZQVjN6UTV3dW52c21VWnlwNkpzeFNCT3diUHR1NkhENnE5MFEyc1ljQUtLblVsWDBJUUorZlplZkllUUVCaXpxU2ZZVHVKNVRkVGpkNDU1QUg3Qnc9PQo=",
+                                             "url":  "https://api.github.com/repos/vinhcodon/streakboom/releases/assets/746416876"
                                          }
                   }
 }

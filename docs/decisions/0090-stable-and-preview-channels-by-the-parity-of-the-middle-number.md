@@ -16,7 +16,7 @@ The author wants to keep building features and let a few adults try them (ADR-00
 6. **Preview releases are marked pre-release on GitHub**, so `releases/latest`, the website's download button and the Stable update path never point at one. Their notes live in a file of their own, not in `CHANGELOG.md`; pruning keeps the newest two of each channel.
 7. **Data is shared** between the channels (one `pet.json`, one `memory.json`). A Preview may only **add** fields until the version is promoted to Stable: no renaming, no deletion, no migration of existing ones; a test shows that Stable reads a file written by Preview.
 8. **Adults only** for anyone on Preview (ADR-0089). The About page says "Preview" when it is one.
-9. **A Stable fix while `main` carries unfinished work** needs a release branch of the Stable line (a story of the plan); it is not decided here how it is cut.
+9. **A Stable fix while `main` carries unfinished work:** decided by ADR-0093 (released only when `main` is shippable; a release branch only the day a fix cannot wait).
 
 ## Consequences
 - ADR-0089's open question (the build channel) is closed by this record.

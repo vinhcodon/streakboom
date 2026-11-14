@@ -30,7 +30,7 @@ Source of the facts below: the live site on 2026-11-09 (fetched with `curl`), `s
 - **Show crawlers something different** from what visitors see (hidden text, pages only for bots). `llms.txt` is a plain summary of the same facts, not a different story.
 - **Stuff keywords** or write pages for phrases nobody asks.
 - **Auto-translate** into more languages. English and Vietnamese are the two the app speaks.
-- **Add visitor tracking** to measure. The product's promise is privacy; the site should not need a cookie banner (see D7).
+- **Add visitor tracking** to measure. The product's promise is privacy; the site should not need a cookie banner (see D7). *(Superseded by ADR-0096, 2026-11-14: the author wants the usual tools on the site, approved one by one, with a consent notice for visitors outside Vietnam and Japan when a tool sets cookies.)*
 - **Add a framework** for a handful of pages unless the author prefers it (D2 option C).
 - **Promise what is not built:** macOS, code signing, a stats server. A visible "What Streakboom is not" block says so, so that assistants do not guess.
 
@@ -148,7 +148,7 @@ Answered by Vinh on 2026-11-09; recorded in [ADR-0034](../decisions/0034-website
 | D4 structured data | **B**: SoftwareApplication, Person, WebSite, FAQPage | 2026-11-09 |
 | D5 files for AI engines | **C**: `llms.txt` and `llms-full.txt` | 2026-11-09 |
 | D6 crawler policy | **A**: allow everything, name the sitemap | 2026-11-09 |
-| D7 measuring | **A**: Search Console, Bing Webmaster, an assistant answer log; no analytics script | 2026-11-09 |
+| D7 measuring | **A**: Search Console, Bing Webmaster, an assistant answer log; no analytics script | 2026-11-09 (superseded by ADR-0096, 2026-11-14: the website may carry the tools the author approves) |
 
 ## 9. Next improvements after 0.3.0 (proposal 2026-11-09; **the author chose the recommended option of N1 to N5 the same day, ADR-0040; N4, N2 and the N5 budget are built (see section 11); N3 is not**)
 

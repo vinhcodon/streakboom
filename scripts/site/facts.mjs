@@ -35,8 +35,16 @@ export function parseChangelog(text) {
   return out.filter((e) => e.items.length);
 }
 
+/** The words the site does not say (ADR-0089, ADR-0095, ADR-0101): Preview is a pre-release, never a download, the link Test builds... in Settings is not announced, and neither is the small log file of the leaving, leave-trace.log (0.8.1). */
+export const HIDDEN_WORDS = /\b(preview|test builds?)\b|leave-trace/i;
+
+/** The entries as the site shows them: a line of the app's changelog that names a Preview or the test builds is left out (the file itself is not touched); an entry left with no line is left out too. */
+export function publicEntries(entries) {
+  return entries.map((e) => ({ ...e, items: e.items.filter((it) => !HIDDEN_WORDS.test(it)) })).filter((e) => e.items.length);
+}
+
 export function changelog() {
-  return parseChangelog(readFileSync(join(ROOT, "CHANGELOG.md"), "utf8"));
+  return publicEntries(parseChangelog(readFileSync(join(ROOT, "CHANGELOG.md"), "utf8")));
 }
 
 const MONTHS = {

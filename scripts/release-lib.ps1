@@ -176,13 +176,27 @@ function Set-WorkspaceVersion {
 
 <#
 .SYNOPSIS
-  Should the manifest of a newly published release be written to updates/preview.json? preview.json always shows the NEWEST
-  release of both channels (the updater takes the first address that answers, not the highest version), so it is written when
-  the new version is greater than the one it holds now, or when there is none.
+  Should the manifest of a newly published PREVIEW be written to updates/preview.json? preview.json holds only the newest
+  Preview (ADR-0094, ADR-0095), so it is written when the new version is greater than the one it holds now, or when there is
+  none. A version that is not a Preview (the older rule put a Stable there) does not count as the one it holds.
 #>
 function Test-ShouldWritePreviewManifest {
   param([Parameter(Mandatory = $true)][string]$NewVersion, [string]$ExistingVersion = "")
   if ($ExistingVersion -notmatch '^\d+\.\d+\.\d+$') { return $true }
+  if ((Get-ReleaseChannel -Version $ExistingVersion) -ne "preview") { return $true }
   return ([version]$NewVersion) -gt ([version]$ExistingVersion)
+}
+
+<#
+.SYNOPSIS
+  Which manifest files of updates/ a publish writes (ADR-0095). A STABLE writes updates/latest.json and nothing else; a PREVIEW
+  writes updates/preview.json only when it is newer than the Preview that file holds, and never touches latest.json. The two
+  files are separate: latest.json holds only the newest Stable, preview.json only the newest Preview.
+#>
+function Get-ManifestFilesToWrite {
+  param([Parameter(Mandatory = $true)][string]$Channel, [Parameter(Mandatory = $true)][string]$NewVersion, [string]$ExistingPreviewVersion = "")
+  if ($Channel -eq "stable") { return @("latest.json") }
+  if (Test-ShouldWritePreviewManifest -NewVersion $NewVersion -ExistingVersion $ExistingPreviewVersion) { return @("preview.json") }
+  return @()
 }
 

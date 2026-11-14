@@ -103,6 +103,11 @@ struct AppState {
     /// Bumped whenever the bubble is shown or hidden; lets the delayed "destroy when idle"
     /// know whether the bubble was used again in the meantime.
     bubble_gen: AtomicU64,
+    /// "Lượn đi" (spec 14, story S2): Peak has walked off and its window is hidden until a timer runs out or the person calls it
+    /// back (the tray, or starting the program again). Never saved: after a restart Peak is simply on screen. `away_gen`
+    /// numbers each leaving, so that a timer of an earlier leaving does nothing.
+    away: AtomicBool,
+    away_gen: AtomicU64,
     /// Latest focus-safety readings (spec/06 section 3.2, ADR-0029), written by the hit-test thread (which
     /// already wakes every 30 to 150 ms and already reads the pointer) and read by `focus_probe`.
     /// `u32::MAX` = the idle time is unknown; the offsets are `f64` bits.
@@ -111,6 +116,9 @@ struct AppState {
     focus_dy: AtomicU64,
     /// The pointer reading is valid (the pet window is visible and the pointer was read).
     focus_ptr: AtomicBool,
+    /// Fullscreen, presentation mode or a locked session (`busy_now`), read by the hit-test thread about once a second so
+    /// that `focus_probe` still makes no system call; the page keeps the cat still and quiet while it holds (spec 14, AP-08).
+    focus_busy: AtomicBool,
     /// The pointer is on the cat (inside its hit region).
     focus_over: AtomicBool,
     /// The cat's centre in logical px of the screen (physical px divided by the window's scale): the common frame of
@@ -201,6 +209,12 @@ fn save_memory(state: State<AppState>, json: String) -> Result<(), String> {
 /// or a locked/absent session (Windows only; false elsewhere).
 #[tauri::command]
 fn is_busy() -> bool {
+    busy_now()
+}
+
+/// The system's answer to "is the person in something full-screen, presenting, or away?" (a shell call, about once a second
+/// from the hit-test thread, never from `focus_probe`).
+fn busy_now() -> bool {
     #[cfg(windows)]
     {
         use windows_sys::Win32::UI::Shell::SHQueryUserNotificationState;
@@ -236,6 +250,8 @@ struct FocusProbe {
     button_down: bool,
     /// The last click away from the cat, if any.
     click: Option<ClickInfo>,
+    /// The person is in something full-screen, presenting, or the session is locked (read about once a second).
+    busy: bool,
 }
 
 /// Where and how long ago the user last clicked away from the cat (logical px of the screen).
@@ -295,6 +311,7 @@ fn focus_probe(state: State<AppState>) -> FocusProbe {
         cat_x: ptr.then(|| f64::from_bits(state.focus_cat_x.load(Ordering::Relaxed))),
         cat_y: ptr.then(|| f64::from_bits(state.focus_cat_y.load(Ordering::Relaxed))),
         button_down: state.button_down.load(Ordering::Relaxed),
+        busy: state.focus_busy.load(Ordering::Relaxed),
         click: {
             let at = state.click_at.load(Ordering::Relaxed);
             (at != 0).then(|| ClickInfo {
@@ -676,6 +693,10 @@ fn drag_end(state: State<AppState>) {
 
 /// How long a hidden bubble window is kept before it is destroyed to free its memory.
 const BUBBLE_IDLE_DESTROY: Duration = Duration::from_secs(45);
+/// How often the hit-test thread asks the system whether the person is busy (fullscreen, presenting, locked): about once a second.
+const BUSY_READ_EVERY: Duration = Duration::from_millis(1000);
+/// How often the return timer of "Lượn đi" looks at the clock while Peak is away.
+const AWAY_SLICE: Duration = Duration::from_secs(20);
 
 /// A transparent topmost window of its own, so the bubble is never clipped by the small pet
 /// window and can sit on whichever side of the pet has room.
@@ -1133,6 +1154,9 @@ fn brain_set_model(state: State<AppState>, model: Option<String>) -> Result<Stri
 struct ChatReply {
     text: String,
     mood: String,
+    /// A skill the model named in a `[skill:name]` tag, if it is on the closed list (S4); the page checks it again.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    skill: Option<String>,
 }
 
 #[tauri::command]
@@ -1145,6 +1169,9 @@ async fn brain_chat(
     known: Option<Vec<String>>,
     follow_user: Option<bool>,
     event: Option<String>,
+    skills: Option<bool>,
+    clock: Option<String>,
+    banter: Option<bool>,
 ) -> Result<ChatReply, AiError> {
     tauri::async_runtime::spawn_blocking(move || {
         let state = app.state::<AppState>();
@@ -1152,11 +1179,15 @@ async fn brain_chat(
         // A remark after a reflex (RX-7) uses the persona and the card of that event, never the user's notes.
         let system = match event.as_deref() {
             Some(ev) if brain::reaction_card(ev).is_some() => brain::persona_with_card(&lang, tier, gentle, ev),
-            _ => brain::persona_with(&lang, tier, gentle, known.as_deref().unwrap_or(&[]), follow_user.unwrap_or(false)),
+            _ => brain::persona_with_skills(&lang, tier, gentle, known.as_deref().unwrap_or(&[]), follow_user.unwrap_or(false), skills.unwrap_or(false)),
         };
+        let system = brain::with_clock(system, clock.as_deref());
+        let system = brain::with_banter(system, banter.unwrap_or(false));
         let raw = run_generate(&state, &key, &system, &history)?;
-        let (text, mood) = brain::split_mood(&raw);
-        Ok(ChatReply { text, mood })
+        let r = brain::split_reply(&raw);
+        // Without the skills layer the model was not told about the tag: a tag it still wrote is ignored, never acted on.
+        let skill = if skills.unwrap_or(false) { r.skill } else { None };
+        Ok(ChatReply { text: r.text, mood: r.mood, skill })
     })
     .await
     .map_err(|_| task_failed())?
@@ -1267,8 +1298,13 @@ fn spawn_hit_test(app: AppHandle, win: WebviewWindow) {
         let mut cover_checked = Instant::now();
         let mut cover_told = Instant::now();
         let mut was_covered = false;
+        let mut busy_checked = Instant::now() - Duration::from_secs(5); // read at once on the first round
         loop {
             let state = app.state::<AppState>();
+            if busy_checked.elapsed() >= BUSY_READ_EVERY {
+                state.focus_busy.store(busy_now(), Ordering::Relaxed);
+                busy_checked = Instant::now();
+            }
             let mut delay = 150;
             let mut ptr_ok = false;
             let mut offset: Option<(f64, f64)> = None;
@@ -1431,8 +1467,153 @@ fn toggle_visibility(app: &AppHandle) {
             bubble_hide(app.clone(), app.state::<AppState>());
         } else {
             let _ = win.show();
+            end_away(app);
         }
     }
+}
+
+/// The person showed Peak (the tray, or starting the program again) while it was away: the leaving is over, its timer is
+/// cancelled and the page is told, so that it stretches and goes on.
+fn end_away(app: &AppHandle) {
+    let state = app.state::<AppState>();
+    if state.away.swap(false, Ordering::SeqCst) {
+        state.away_gen.fetch_add(1, Ordering::SeqCst);
+        let _ = app.emit_to("main", "away-ended", ());
+    }
+}
+
+/// One step of the "Luợn đi" flow as a line of `leave-trace.log` in the data folder (V-132): only a fixed step name and numbers the page
+/// chose, never chat text, so that a failure the author sees can be read afterwards. Anything outside letters, digits and
+/// `_ - : . , = space` is dropped, a line is at most 120 characters, and the file is cut to its newest half past 64 KB.
+fn trace_line(step: &str, now_ms: u128) -> Option<String> {
+    let clean: String = step
+        .chars()
+        .filter(|c| c.is_ascii_alphanumeric() || matches!(c, '_' | '-' | ':' | '.' | ',' | '=' | ' '))
+        .take(120)
+        .collect();
+    let clean = clean.trim();
+    if clean.is_empty() {
+        None
+    } else {
+        Some(format!("{now_ms} {clean}\n"))
+    }
+}
+
+const TRACE_MAX_BYTES: usize = 64 * 1024;
+
+fn trim_trace(text: &str) -> String {
+    if text.len() <= TRACE_MAX_BYTES {
+        return text.to_string();
+    }
+    let mut start = text.len() / 2;
+    while !text.is_char_boundary(start) {
+        start += 1;
+    }
+    match text[start..].find('\n') {
+        Some(i) => text[start + i + 1..].to_string(),
+        None => String::new(),
+    }
+}
+
+#[tauri::command]
+fn leave_trace(app: AppHandle, step: String) {
+    let now = std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).map(|d| d.as_millis()).unwrap_or(0);
+    let Some(line) = trace_line(&step, now) else { return };
+    let Ok(dir) = app.path().app_data_dir() else { return };
+    let _ = fs::create_dir_all(&dir);
+    let path = dir.join("leave-trace.log");
+    let old = fs::read_to_string(&path).unwrap_or_default();
+    let _ = fs::write(&path, trim_trace(&(old + &line)));
+}
+
+/// Peak walks off (S2): hide the pet window and its bubble and start the return timer. The page decides whether it may leave.
+#[tauri::command]
+fn pet_leave(app: AppHandle, state: State<AppState>, minutes: u32) -> bool {
+    let Some(win) = app.get_webview_window("main") else { return false };
+    if !win.is_visible().unwrap_or(false) || state.away.swap(true, Ordering::SeqCst) {
+        return false;
+    }
+    let _ = win.hide();
+    bubble_hide(app.clone(), app.state::<AppState>());
+    let secs = away_secs(std::env::var("STREAKBOOM_AWAY_SECS").ok().as_deref(), u64::from(minutes.clamp(1, 24 * 60)) * 60);
+    arm_return(&app, Duration::from_secs(secs));
+    true
+}
+
+/// Peak comes back (S2): show the pet window where it left. False if it was not away.
+#[tauri::command]
+fn pet_return(app: AppHandle, state: State<AppState>) -> bool {
+    if !state.away.swap(false, Ordering::SeqCst) {
+        return false;
+    }
+    state.away_gen.fetch_add(1, Ordering::SeqCst);
+    if let Some(win) = app.get_webview_window("main") {
+        // The timer, not the person, shows it: it must not take the keyboard from the program they are typing in.
+        show_without_activating(&win);
+    }
+    true
+}
+
+/// Show a window without making it the active one (Windows: `SW_SHOWNOACTIVATE`), so that Peak reappearing by itself never takes
+/// the keyboard focus. Elsewhere, and if the call fails, it is an ordinary `show`.
+fn show_without_activating(win: &WebviewWindow) {
+    #[cfg(windows)]
+    {
+        use windows_sys::Win32::UI::WindowsAndMessaging::{ShowWindow, SW_SHOWNOACTIVATE};
+        if let Ok(hwnd) = win.hwnd() {
+            // SAFETY: a plain call with the window handle of our own window; no pointers are passed.
+            unsafe { ShowWindow(hwnd.0 as _, SW_SHOWNOACTIVATE) };
+            return;
+        }
+    }
+    let _ = win.show();
+}
+
+/// The page found the moment of the return not right (a full-screen program, for example): ask again later.
+#[tauri::command]
+fn pet_away_retry(app: AppHandle, state: State<AppState>, secs: u32) {
+    if state.away.load(Ordering::SeqCst) {
+        let wait = away_secs(std::env::var("STREAKBOOM_AWAY_RETRY_SECS").ok().as_deref(), u64::from(secs.clamp(10, 3600)));
+        arm_return(&app, Duration::from_secs(wait));
+    }
+}
+
+/// Start (or restart) the return timer of the current leaving; when it runs out and the same leaving still holds, the page is
+/// told with "away-due" (the page keeps the rules about when Peak may reappear).
+fn arm_return(app: &AppHandle, after: Duration) {
+    let state = app.state::<AppState>();
+    let turn = state.away_gen.fetch_add(1, Ordering::SeqCst) + 1;
+    let deadline = now_ms().saturating_add(after.as_millis() as u64);
+    let app = app.clone();
+    std::thread::spawn(move || loop {
+        // Look at the wall clock in short slices, not one long sleep: a long sleep does not count the time the computer slept, so
+        // a Peak sent away before a lid was closed would come back late. A leaving that was ended or replaced stops the thread.
+        let state = app.state::<AppState>();
+        if !state.away.load(Ordering::SeqCst) || state.away_gen.load(Ordering::SeqCst) != turn {
+            return;
+        }
+        match next_wait(now_ms(), deadline) {
+            Some(wait) => std::thread::sleep(wait),
+            None => {
+                let _ = app.emit_to("main", "away-due", ());
+                return;
+            }
+        }
+    });
+}
+
+/// A test aid, like STREAKBOOM_UPDATE_URL: the environment variables STREAKBOOM_AWAY_SECS and STREAKBOOM_AWAY_RETRY_SECS (5 to 3600)
+/// replace the 20 minutes and the 5-minute retry of "Lượn đi", so that the return can be tried in a minute. Anything else is ignored.
+fn away_secs(over: Option<&str>, default_secs: u64) -> u64 {
+    over.and_then(|s| s.trim().parse::<u64>().ok()).filter(|s| (5..=3600).contains(s)).unwrap_or(default_secs)
+}
+
+/// How long to sleep before looking at the clock again: the time left, at most `AWAY_SLICE`; None when the deadline has come.
+fn next_wait(now_ms: u64, deadline_ms: u64) -> Option<Duration> {
+    if now_ms >= deadline_ms {
+        return None;
+    }
+    Some(Duration::from_millis((deadline_ms - now_ms).min(AWAY_SLICE.as_millis() as u64)))
 }
 
 fn build_tray(app: &AppHandle, quiet: bool) -> tauri::Result<()> {
@@ -1494,6 +1675,7 @@ pub fn run() {
             if let Some(win) = app.get_webview_window("main") {
                 if !win.is_visible().unwrap_or(true) {
                     let _ = win.show();
+                    end_away(app);
                 }
             }
         }))
@@ -1532,6 +1714,7 @@ pub fn run() {
                 focus_dx: AtomicU64::new(0),
                 focus_dy: AtomicU64::new(0),
                 focus_ptr: AtomicBool::new(false),
+                focus_busy: AtomicBool::new(false),
                 focus_over: AtomicBool::new(false),
                 focus_cat_x: AtomicU64::new(0),
                 focus_cat_y: AtomicU64::new(0),
@@ -1547,6 +1730,8 @@ pub fn run() {
                 tray_items: Mutex::new(None),
                 settings_section: Mutex::new(None),
                 bubble_gen: AtomicU64::new(0),
+                away: AtomicBool::new(false),
+                away_gen: AtomicU64::new(0),
             });
 
             let win = app.get_webview_window("main").expect("main window");
@@ -1581,6 +1766,10 @@ pub fn run() {
             set_hit_rect,
             get_prefs,
             move_by,
+            pet_leave,
+            leave_trace,
+            pet_return,
+            pet_away_retry,
             drag_start,
             drag_move,
             drag_end,
@@ -1624,4 +1813,58 @@ pub fn run() {
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
+}
+
+#[cfg(test)]
+mod away_tests {
+    use super::*;
+
+    #[test]
+    fn a_trace_line_keeps_only_a_step_name_and_numbers() {
+        assert_eq!(trace_line("walk_start room=640 dir=1", 5).as_deref(), Some("5 walk_start room=640 dir=1\n"));
+        assert_eq!(trace_line("say \"x\" <b>hi</b>\n", 5).as_deref(), Some("5 say x bhib\n"));
+        assert_eq!(trace_line("   \n", 5), None);
+        assert!(trace_line(&"a".repeat(500), 5).unwrap().len() <= 130);
+    }
+
+    #[test]
+    fn the_trace_file_is_cut_to_its_newest_lines() {
+        let line = "1 step\n";
+        let big = line.repeat(TRACE_MAX_BYTES / line.len() + 100);
+        let cut = trim_trace(&big);
+        assert!(cut.len() < TRACE_MAX_BYTES && cut.len() > 1000 && cut.ends_with('\n') && cut.starts_with("1 step"));
+        assert_eq!(trim_trace("1 a\n"), "1 a\n");
+    }
+
+    #[test]
+    fn the_return_timer_sleeps_in_slices_and_stops_at_the_deadline() {
+        let slice = AWAY_SLICE.as_millis() as u64;
+        // far away: a full slice
+        assert_eq!(next_wait(0, 20 * 60_000), Some(AWAY_SLICE));
+        // close: only what is left
+        assert_eq!(next_wait(1_000, 1_000 + 7_500), Some(Duration::from_millis(7_500)));
+        assert_eq!(next_wait(0, slice), Some(AWAY_SLICE));
+        assert_eq!(next_wait(0, slice - 1), Some(Duration::from_millis(slice - 1)));
+        // due now, or long past (the computer slept: the clock is far ahead)
+        assert_eq!(next_wait(5_000, 5_000), None);
+        assert_eq!(next_wait(5_001, 5_000), None);
+        assert_eq!(next_wait(10_000_000, 1_200_000), None);
+    }
+
+    #[test]
+    fn the_test_aid_replaces_the_times_only_by_a_sane_number() {
+        assert_eq!(away_secs(None, 1200), 1200);
+        assert_eq!(away_secs(Some("60"), 1200), 60);
+        assert_eq!(away_secs(Some(" 45 "), 1200), 45);
+        assert_eq!(away_secs(Some("5"), 1200), 5);
+        assert_eq!(away_secs(Some("3600"), 1200), 3600);
+        for bad in ["", "abc", "4", "3601", "-5", "1.5", "0", "99999999999999999999"] {
+            assert_eq!(away_secs(Some(bad), 1200), 1200, "{bad}");
+        }
+    }
+
+    #[test]
+    fn a_slice_is_short_enough_to_notice_a_wake_and_long_enough_to_cost_nothing() {
+        assert!(AWAY_SLICE >= Duration::from_secs(5) && AWAY_SLICE <= Duration::from_secs(60));
+    }
 }

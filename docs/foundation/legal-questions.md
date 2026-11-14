@@ -28,3 +28,7 @@ Nghiên cứu chỉ là thông tin. Phần lớn nguồn pháp lý chưa đượ
 ## Tự kiểm tra trước khi gặp luật sư (không cần luật sư)
 
 - Điều khoản gói miễn phí của Gemini về việc dùng dữ liệu để cải thiện sản phẩm: bản nháp requirements v0.4 (mục E4) đã ghi nhận rủi ro này nhưng chưa xác minh. Nếu gói miễn phí cho phép dùng nội dung để huấn luyện, nó mâu thuẫn quy tắc 9 và Privacy trong app phải nói rõ.
+
+## Trang web (thêm 2026-11-14, ADR-0096)
+
+9. **Công cụ đo lường và tracking trên trang web.** Trang web dùng Cloudflare Web Analytics và một bộ đếm ẩn danh cho lượt chép sticker, và tác giả muốn thêm các công cụ tracking thông thường (từng cái một, ADR-0096). Ở Việt Nam, Nhật Bản và EU/UK: khi nào cần thông báo đồng ý (cookie hoặc mã nhận dạng), băng đồng ý chỉ cho khách ngoài Việt Nam và Nhật Bản có đủ không, cách xác định khách (múi giờ, ngôn ngữ) có chấp nhận được không, và câu chữ trên trang riêng tư (do AI viết, chưa có người bản ngữ đọc) đã đủ chưa?

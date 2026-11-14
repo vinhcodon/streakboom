@@ -170,11 +170,6 @@ test("absence costs nothing: mood and closeness never fall, however long (spec 1
 
 // What no line may say (spec 12 sections 1 and 2, ADR-0059): a count of days away, missing the person, loneliness, a
 // streak, or asking the person for attention out of boredom.
-const BANNED: Record<Lang, RegExp[]> = {
-  en: [/miss(ed)? you/i, /\bmiss\b/i, /lonel/i, /without you/i, /totally fine/i, /in a row/i, /days? running/i, /streak/i, /entertain me/i, /not even a/i, /remembered i exist/i, /took you long/i],
-  vi: [/nhớ bạn/i, /cô đơn/i, /buồn quá/i, /buồn lắm/i, /hoàn toàn ổn/i, /liên tục/i, /ngày liền/i, /giải trí cho mình/i, /nhớ ra là mình/i, /lâu thật/i, /không có \{me\}/i],
-  ja: [/さびしが/, /さびしかったよ/, /さびしくなんか/, /さみしが/, /恋しい/, /ぜんぜん平気/, /連続/, /相手して/, /思い出したんだ/, /遅かったね/, /日ぶり/],
-};
 test("no line counts an absence, misses the person, is lonely, keeps a streak or begs for attention", () => {
   const all: { lang: Lang; text: string }[] = LINES.map((l) => ({ lang: l.lang, text: l.text }));
   for (const lang of LANGS) for (const text of allMemTexts(lang)) all.push({ lang, text });
@@ -368,6 +363,7 @@ test("parse restores brain bookkeeping and defaults old saves", () => {
 });
 
 import { recordBellyHint, recordRub, shouldHintBelly } from "./state.ts";
+import { BANNED } from "./banned.ts";
 
 test("belly lines exist in every language, in gentle tone, and stay short", () => {
   for (const lang of ["en", "vi", "ja"] as const)

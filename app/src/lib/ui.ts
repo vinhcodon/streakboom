@@ -153,6 +153,15 @@ export interface UiStrings {
   checkingUpdates: string;
   upToDate: string;
   updateAvailable: string; // contains {v}
+  // Test builds (ADR-0095): a Preview is shown only by hand
+  updateAvailablePreview: string; // contains {v}: a newer test build, on a test build
+  updateAvailableSwitch: string; // contains {v}: a newer regular version, on a test build
+  testBuildsLink: string;
+  testBuildsWarn: string;
+  testBuildsGo: string;
+  testBuildsCancel: string;
+  testBuildsNone: string;
+  updatesNoteAutoPreview: string;
   updateNow: string;
   updating: string;
   updateFailed: string;
@@ -384,6 +393,14 @@ export const UI: Record<Lang, UiStrings> = {
     checkingUpdates: "Checking…",
     upToDate: "You have the latest version.",
     updateAvailable: "A new version is available: {v}",
+    updateAvailablePreview: "A new test build is available: {v}",
+    updateAvailableSwitch: "A new regular version is available: {v}. You are on a test build; installing it takes you back to the regular version.",
+    testBuildsLink: "Test builds...",
+    testBuildsWarn: "Test builds are for people who want to try new things early. They may have rough edges and can change from one build to the next. To go back to the regular version, install it again from the website. Continue?",
+    testBuildsGo: "Show test builds",
+    testBuildsCancel: "Not now",
+    testBuildsNone: "There is no newer test build right now.",
+    updatesNoteAutoPreview: "On a test build the pet asks first instead of installing by itself.",
     updateNow: "Update now",
     updating: "Downloading the update… I will restart by myself.",
     updateFailed: "The update did not work. Try again later.",
@@ -626,6 +643,14 @@ export const UI: Record<Lang, UiStrings> = {
     checkingUpdates: "Đang kiểm tra…",
     upToDate: "Bạn đang dùng bản mới nhất.",
     updateAvailable: "Có bản mới: {v}",
+    updateAvailablePreview: "Có bản thử nghiệm mới: {v}",
+    updateAvailableSwitch: "Có bản chính thức mới: {v}. Bạn đang dùng bản thử nghiệm; cài bản này sẽ đưa bạn về bản chính thức.",
+    testBuildsLink: "Bản thử nghiệm...",
+    testBuildsWarn: "Bản thử nghiệm dành cho người muốn dùng thử cái mới sớm. Chúng có thể còn trục trặc và thay đổi từ bản này sang bản khác. Muốn quay lại bản chính thức, bạn cài lại bản đó từ trang web. Tiếp tục?",
+    testBuildsGo: "Xem bản thử nghiệm",
+    testBuildsCancel: "Thôi",
+    testBuildsNone: "Hiện chưa có bản thử nghiệm nào mới hơn.",
+    updatesNoteAutoPreview: "Trên bản thử nghiệm, pet hỏi trước khi cài thay vì tự cài.",
     updateNow: "Cập nhật ngay",
     updating: "Đang tải bản mới… Mình sẽ tự khởi động lại.",
     updateFailed: "Cập nhật không được. Lát nữa thử lại nhé.",
@@ -868,6 +893,14 @@ export const UI: Record<Lang, UiStrings> = {
     checkingUpdates: "確認中…",
     upToDate: "最新のバージョンだよ。",
     updateAvailable: "新しいバージョンがあるよ：{v}",
+    updateAvailablePreview: "新しいテスト版があるよ：{v}",
+    updateAvailableSwitch: "新しい正式版があるよ：{v}。今はテスト版を使っているので、入れると正式版に戻るよ。",
+    testBuildsLink: "テスト版...",
+    testBuildsWarn: "テスト版は、新しいものをいち早く試したい人向けだよ。まだ不具合があるかもしれないし、版ごとに変わることもあるよ。正式版に戻したいときは、ウェブサイトから入れ直してね。続ける？",
+    testBuildsGo: "テスト版を見る",
+    testBuildsCancel: "やめる",
+    testBuildsNone: "今は、新しいテスト版はないよ。",
+    updatesNoteAutoPreview: "テスト版では、勝手にインストールせず、先に聞くよ。",
     updateNow: "いまアップデート",
     updating: "アップデートをダウンロード中…自分で再起動するよ。",
     updateFailed: "アップデートがうまくいかなかったよ。あとでもう一度ためしてね。",

@@ -1,0 +1,120 @@
+{
+  "skill": "leave",
+  "description": "You can send yourself away. If, and only if, the user's latest message is plainly a short command to you to go away or to leave them alone for a while (for example \"go away\", \"lượn đi\", \"đi chỗ khác chơi đi\", \"消えて\"), put the tag [skill:leave] right after your mood tag and then say only one very short, warm goodbye in the user's language. A message that merely mentions leaving or going somewhere (\"I'm going away for the weekend\", \"I'll go to a meeting\"), a question, a request to be quiet or to sleep, or anything else is not a command: never use the tag for it. Going back to your place or seat (\"về chỗ đi\", \"go to your spot\", \"席に戻って\") is not leaving: never use the tag for it. [skill:leave] is the only tag of this kind; never invent another one. The tag is never part of what you say aloud.",
+  "phrases": [
+    "lượn đi",
+    "lượn",
+    "lượn đi chỗ khác",
+    "lượn chỗ khác",
+    "biến đi",
+    "đi chỗ khác",
+    "đi chỗ khác đi",
+    "đi chỗ khác chơi",
+    "đi chỗ khác chơi đi",
+    "đi chơi đi",
+    "đi chơi chỗ khác",
+    "đi đâu đó chơi đi",
+    "go away",
+    "scram",
+    "shoo",
+    "leave me alone",
+    "beat it",
+    "go play",
+    "go somewhere else",
+    "get lost",
+    "take a walk",
+    "go for a walk",
+    "消えて",
+    "どっか行って",
+    "あっち行って",
+    "どこか行って",
+    "出てって",
+    "いなくなって",
+    "cút đi",
+    "cút",
+    "biến",
+    "cút đi chỗ khác",
+    "get out",
+    "buzz off"
+  ],
+  "patterns": [
+    "^go (and )?play( outside)?$",
+    "^(đi|ra) chỗ (khác|nào đó) (chơi|đi)$",
+    "^(please )?go away( for a while)?$"
+  ],
+  "pools": {
+    "farewells": {
+      "vi": [
+        "Ừ, mình đi chơi chỗ khác nhé.",
+        "Được rồi, mình đi dạo một lát.",
+        "Mình lượn đây. Làm việc vui nha.",
+        "Okê, mình đi tìm chỗ nắng.",
+        "Mình đi đây, bạn cứ làm việc.",
+        "Mình ra ngoài hóng gió nhé."
+      ],
+      "en": [
+        "Okay, off I go.",
+        "Sure, I'll wander off for a bit.",
+        "Alright, going for a stroll.",
+        "Off to find a sunny spot.",
+        "I'll leave you to it.",
+        "Going for a little walk."
+      ],
+      "ja": [
+        "うん、ちょっとお散歩してくるね。",
+        "わかった、あっちで遊んでくるよ。",
+        "じゃあ、ひなたぼっこしてくるね。",
+        "ちょっと出かけてくるね。",
+        "お仕事がんばってね。じゃあね。",
+        "ぶらっとしてくるよ。"
+      ]
+    }
+  },
+  "gates": [
+    "not_quiet",
+    "not_held",
+    "not_flying",
+    "not_away",
+    "not_leaving"
+  ],
+  "limits": {
+    "away_minutes": 20,
+    "retry_secs": 300,
+    "bubble_ms": 2400,
+    "pace_px_s": 110,
+    "deadline_min_ms": 6000,
+    "deadline_max_ms": 20000
+  },
+  "steps": [
+    {
+      "verb": "say",
+      "pool": "farewells",
+      "ms": 2400
+    },
+    {
+      "verb": "pose",
+      "pose": "nod"
+    },
+    {
+      "verb": "wait",
+      "ms": 2400
+    },
+    {
+      "verb": "walk_to_edge"
+    },
+    {
+      "verb": "hide",
+      "minutes": 20
+    },
+    {
+      "verb": "count",
+      "key": "leave"
+    }
+  ],
+  "after_return": [
+    {
+      "verb": "pose",
+      "pose": "wake"
+    }
+  ]
+}

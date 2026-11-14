@@ -3,7 +3,7 @@
 The static website (streakboom.com) is owned by the website session; the app session does not edit `site/` or `scripts/site/` and tells it what changed through [`handoff/website-release-prompt.md`](handoff/website-release-prompt.md). **This file is the website session's: it is rewritten when the site changes (last checked 2026-11-13).**
 
 ## What it is
-Static pages with no framework, no bundler, no npm dependency and no third-party script, built by `node scripts/build-site.mjs` (Node 24) into `_site/` and served by **GitHub Pages** (ADR-0034). Every fact is in the HTML, so no script is needed to read it.
+Static pages with no framework, no bundler, no npm dependency and no third-party script except the measurement tools the author has approved and listed in ADR-0096 (today the Cloudflare Web Analytics script, added by Cloudflare itself in `auto` mode), built by `node scripts/build-site.mjs` (Node 24) into `_site/` and served by **GitHub Pages** (ADR-0034). Every fact is in the HTML, so no script is needed to read it.
 
 | Pages | Addresses |
 |---|---|
@@ -42,3 +42,5 @@ The build turns `app/src/lib/rig/*.ts` into browser JavaScript in `site/peak/` (
 
 ## Plans
 [`../spec/13-sticker-page.md`](../spec/13-sticker-page.md) and [`plans/sticker-page-plan.md`](plans/sticker-page-plan.md) (the sticker page as a picker); [`plans/website-seo-geo.md`](plans/website-seo-geo.md) (search engines and AI answer engines); the unchecked items are the W- rows of [`plans/verification-debt.md`](plans/verification-debt.md).
+
+- **The slogan and the taglines** (ADR-0104): the fixed slogan is under the name in the header of every page; the home page has a small line above the title with one of twelve taglines (the default is in the HTML, a tiny script picks one at random at each load; no timer, nothing stored). The words are in `site/strings.mjs` (`brand_slogan`, `hero_sub`, `tg1` to `tg12`) and the list in `scripts/site/taglines.mjs`.

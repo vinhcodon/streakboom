@@ -129,7 +129,12 @@
   let version = $state("");
   let updatesOn = $state(false);
   let upBusy = $state(false);
-  let upInfo = $state<{ version: string } | null>(null);
+  let upInfo = $state<{ version: string; channel?: string } | null>(null);
+  // The "Test builds..." step (ADR-0095): a Stable copy that was told it is up to date may, as a second deliberate step, ask to see
+  // the newest Preview; a warning and a confirmation come first. A Preview copy has no such step (its own check already shows one).
+  let testLink = $state(false);
+  let testConfirm = $state(false);
+  const ownChannel = $derived(channelOf(version));
   let upMsg = $state("");
 
   // Start with Windows (the real setting lives in Windows; this only reads and flips it)
@@ -167,10 +172,39 @@
     upBusy = true;
     upInfo = null;
     upMsg = "";
+    testLink = false;
+    testConfirm = false;
     try {
-      const info = await invoke<{ version: string } | null>("update_check");
+      // By hand: a Stable if there is a newer one; on a Preview copy, else the newest Preview (ADR-0095).
+      const info = await invoke<{ version: string; channel?: string } | null>("update_check", { scope: "manual" });
       upInfo = info;
-      upMsg = info ? ui.updateAvailable.replace("{v}", info.version) : ui.upToDate;
+      upMsg = info ? offerText(info) : ui.upToDate;
+      testLink = !info && ownChannel === "stable";
+    } catch {
+      upMsg = ui.updateFailed;
+    } finally {
+      upBusy = false;
+    }
+  }
+
+  /** The sentence for the one version on offer: a test build, a regular version for a test build copy, or a plain new version. */
+  function offerText(info: { version: string; channel?: string }): string {
+    if (info.channel === "preview") return ui.updateAvailablePreview.replace("{v}", info.version);
+    if (ownChannel === "preview") return ui.updateAvailableSwitch.replace("{v}", info.version);
+    return ui.updateAvailable.replace("{v}", info.version);
+  }
+
+  /** After the confirmation: ask for the newest Preview (scope "test"); installing it makes this copy a Preview. */
+  async function showTestBuilds() {
+    testConfirm = false;
+    testLink = false;
+    upBusy = true;
+    upInfo = null;
+    upMsg = "";
+    try {
+      const info = await invoke<{ version: string; channel?: string } | null>("update_check", { scope: "test" });
+      upInfo = info;
+      upMsg = info ? offerText(info) : ui.testBuildsNone;
     } catch {
       upMsg = ui.updateFailed;
     } finally {
@@ -453,7 +487,7 @@
           <button class="seg" class:on={s.updates === v} onclick={() => patch("updates", v as Settings["updates"])}>{label}</button>
         {/each}
       </div>
-      <p class="muted">{s.updates === "auto" ? ui.updatesNoteAuto : s.updates === "off" ? ui.updatesNoteOff : ui.updatesNoteAsk}</p>
+      <p class="muted">{s.updates === "auto" ? (ownChannel === "preview" ? ui.updatesNoteAutoPreview : ui.updatesNoteAuto) : s.updates === "off" ? ui.updatesNoteOff : ui.updatesNoteAsk}</p>
     </section>
     {/if}
 
@@ -674,6 +708,16 @@
           {/if}
         </div>
         {#if upMsg}<p class="muted">{upMsg}</p>{/if}
+        {#if testLink && !upBusy}
+          <button class="linkbtn" onclick={() => (testConfirm = true)}>{ui.testBuildsLink}</button>
+        {/if}
+        {#if testConfirm}
+          <p class="muted">{ui.testBuildsWarn}</p>
+          <div class="row">
+            <button class="seg" disabled={upBusy} onclick={showTestBuilds}>{ui.testBuildsGo}</button>
+            <button class="seg" onclick={() => (testConfirm = false)}>{ui.testBuildsCancel}</button>
+          </div>
+        {/if}
       {/if}
     </section>
     {/if}
@@ -783,6 +827,17 @@
     margin: 8px 0 0;
     font-size: 13px;
     font-weight: 600;
+  }
+  .linkbtn {
+    align-self: flex-start;
+    padding: 0;
+    border: 0;
+    background: none;
+    font: inherit;
+    font-size: 12.5px;
+    color: #777;
+    text-decoration: underline;
+    cursor: pointer;
   }
   .muted.help {
     user-select: text;

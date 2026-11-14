@@ -27,7 +27,8 @@ export default {
     }
     if (request.method !== "POST" || url.pathname !== "/") return reply(404);
     const origin = request.headers.get("origin");
-    if (origin && origin !== env.ALLOWED_ORIGIN) return reply(403);
+    // Safari (WebKit) sends the origin "null" for a POST that asks for no referrer, which the page does; so "null" is accepted too. The check only turns away other sites that name themselves (ADR-0092).
+    if (origin && origin !== "null" && origin !== env.ALLOWED_ORIGIN) return reply(403);
     if (env.LIMITER) {
       const { success } = await env.LIMITER.limit({ key: request.headers.get("cf-connecting-ip") || "none" });
       if (!success) return reply(429);

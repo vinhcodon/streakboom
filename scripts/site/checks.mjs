@@ -4,7 +4,9 @@ import { existsSync, readFileSync, readdirSync } from "node:fs";
 import { gzipSync } from "node:zlib";
 import { join } from "node:path";
 import { ORIGIN, RELEASES_URL, ROOT, fmtDate } from "./facts.mjs";
-import { countingOn, countingProblems } from "./counting.mjs";
+import { HIDDEN_WORDS } from "./facts.mjs";
+import { DEFAULT_TAGLINE, FORBIDDEN_IN_SCRIPT, MAX_TAGLINE_LENGTH, TAGLINE_KEYS } from "./taglines.mjs";
+import { BEACON_SRC, countingOn, countingProblems, measurementProblems, siteParagraph, stickerNote, webAnalyticsManual, webAnalyticsOn } from "./counting.mjs";
 import { catalogProblems, loadOverrides, loadPopular, loadVocabulary, normalize, popularProblems, proposalMarkdown } from "./catalog.mjs";
 import { STICKER_DIR } from "./stickers.mjs";
 import { formatCount } from "./downloads.mjs";
@@ -311,6 +313,54 @@ export function check({ ctx, pages, files, out }) {
     }
   }
 
+  // the third parties of the pages are exactly the list of ADR-0096 (the Cloudflare Web Analytics script, only when the switch is on), and the
+  // privacy words and the sticker note say what the build does (they are composed from the switches, so a page cannot say otherwise)
+  if (ctx.measurement) {
+    for (const p of measurementProblems(ctx.measurement)) bad(p);
+    for (const p of pages) {
+      const tags = [...p.html.matchAll(/<script[^>]*\ssrc="(https?:[^"]*)"[^>]*>/g)];
+      for (const t of tags) if (!(webAnalyticsManual(ctx) && t[1] === BEACON_SRC)) bad(`${p.path}: a script from a third party: ${t[1]} (ADR-0096 lists the only one allowed)`);
+      const beacons = tags.filter((t) => t[1] === BEACON_SRC);
+      if (webAnalyticsManual(ctx) && beacons.length !== 1) bad(`${p.path}: the visit count is in manual mode but the page has ${beacons.length} of its scripts (one is needed)`);
+      if (webAnalyticsManual(ctx) && beacons[0] && !beacons[0][0].includes(`"token": "${ctx.measurement.webAnalyticsToken}"`)) bad(`${p.path}: the script of the visit count has another token than measurement.json`);
+      if (/cloudflareinsights|\/cdn-cgi\//.test(p.html.replace(/<script[^>]*\ssrc="https:\/\/static\.cloudflareinsights\.com\/beacon\.min\.js"[^>]*><\/script>/, ""))) bad(`${p.path}: the page mentions a Cloudflare script of its own (ADR-0096)`);
+    }
+    for (const lang of LANGS) {
+      const pv = byPath.get(PATHS[lang].privacy).html;
+      if (!pv.includes(esc(siteParagraph(lang, ctx)))) bad(PATHS[lang].privacy + ": the paragraph about this website is not the one composed from what the build does");
+      if (!byPath.get(PATHS[lang].stickers).html.includes(esc(stickerNote(lang, ctx)))) bad(PATHS[lang].stickers + ": the note about what is sent is not the one composed from what the build does");
+      if (!webAnalyticsOn(ctx) && /Web Analytics/.test(pv)) bad(PATHS[lang].privacy + ": the page names Cloudflare Web Analytics while it is off");
+      if (webAnalyticsOn(ctx) && /no analytics|không có công cụ phân tích|アクセス解析も行いません/.test(pv)) bad(PATHS[lang].privacy + ": the visit count is on but the page says there is no analytics");
+    }
+  }
+
+  // Preview and the test builds are not for the site (ADR-0089, ADR-0095, ADR-0101): the words are in no page text and in no generated file
+  const visible = (html) => html.replace(/<script[\s\S]*?<\/script>/g, " ").replace(/<style[\s\S]*?<\/style>/g, " ").replace(/<[^>]*>/g, " ");
+  for (const p of pages) { const m = HIDDEN_WORDS.exec(visible(p.html)); if (m) bad(`${p.path}: the page says "${m[0]}" (Preview and the test builds are not announced: ADR-0101)`); }
+  for (const [name, text] of Object.entries(files)) { if (!/\.(xml|txt)$/.test(name) || name === "sitemap.xml") continue; const m = HIDDEN_WORDS.exec(text); if (m) bad(`${name}: says "${m[0]}" (Preview and the test builds are not announced: ADR-0101)`); }
+
+  // the slogan and the taglines (ADR-0104): every page has the slogan under the name; the home page has the list in a script with no timer and no storage, the default in
+  // the HTML, and every line passes the same word lists as the rest of the site
+  for (const lang of LANGS) {
+    const list = TAGLINE_KEYS.map((k) => STRINGS[lang][k]);
+    if (list.some((t) => typeof t !== "string" || !t)) { bad(`taglines: ${lang} lacks one of ${TAGLINE_KEYS.length}`); continue; }
+    for (const t of [...list, STRINGS[lang].brand_slogan, STRINGS[lang].hero_title]) {
+      if (t.length > (MAX_TAGLINE_LENGTH[lang] || 80)) bad(`taglines: ${lang} "${t.slice(0, 30)}..." is longer than ${MAX_TAGLINE_LENGTH[lang] || 80} characters`);
+      for (const [re, why] of [...BANNED, ...OUTDATED]) if (re.test(t)) bad(`taglines: ${lang} "${t.slice(0, 30)}...": ${why}`);
+    }
+    if (new Set(list).size !== list.length) bad(`taglines: ${lang} has a line twice`);
+    for (const p of pages.filter((x) => x.lang === lang && !/changelog|404/.test(x.path))) {
+      if (!p.html.includes(`<span class="brand-slogan">${esc(STRINGS[lang].brand_slogan)}</span>`)) bad(`${p.path}: the slogan under the name is missing`);
+    }
+    const home = pages.find((x) => x.path === PATHS[lang].home);
+    const m = home && home.html.match(/<script id="tagline-script">([\s\S]*?)<\/script>/);
+    if (!m) { bad(`${PATHS[lang].home}: the tagline script is missing`); continue; }
+    for (const w of FORBIDDEN_IN_SCRIPT) if (m[1].includes(w)) bad(`${PATHS[lang].home}: the tagline script mentions ${w} (no timer, no animation, nothing stored, nothing sent)`);
+    const inScript = JSON.parse(m[1].slice(m[1].indexOf("var T=") + 6, m[1].indexOf(",e=document")));
+    if (JSON.stringify(inScript) !== JSON.stringify(list)) bad(`${PATHS[lang].home}: the list in the script is not the list of the strings`);
+    if (!home.html.includes(`<span id="tagline">${esc(STRINGS[lang][DEFAULT_TAGLINE])}</span>`)) bad(`${PATHS[lang].home}: the tagline in the HTML is not the default`);
+  }
+
   // the menu stays short (ADR-0053): four links in the header, the rest in the footer
   for (const p of pages) {
     const nav = (p.html.match(/<nav aria-label="Main">([\s\S]*?)<\/nav>/) || [])[1];
@@ -357,7 +407,7 @@ export function check({ ctx, pages, files, out }) {
       // what the author does not want: a Download button per sticker, a ZIP, a copy icon of two squares
       if (/<a\b[^>]*\sdownload(=|\s|>)|\.zip["' ]|\bzip\b/i.test(html.replace(/<script[\s\S]*?<\/script>/g, ""))) bad(`${p.path}: a download or a ZIP of the stickers (the author does not want them)`);
       // no third-party script or tracker
-      for (const m of html.matchAll(/<script[^>]*\ssrc="([^"]*)"/g)) if (!m[1].startsWith("/")) bad(`${p.path}: a script from outside the site: ${m[1]}`);
+      for (const m of html.matchAll(/<script[^>]*\ssrc="([^"]*)"/g)) if (!m[1].startsWith("/") && !(webAnalyticsManual(ctx) && m[1] === BEACON_SRC)) bad(`${p.path}: a script from outside the site: ${m[1]}`);
     }
     // the page script records nothing and stores nothing
     const js = existsSync(join(out, "stickers.js")) ? readFileSync(join(out, "stickers.js"), "utf8") : "";
@@ -369,19 +419,11 @@ export function check({ ctx, pages, files, out }) {
     if (ctx.counting) {
       for (const p of countingProblems(ctx.counting)) bad(p);
       for (const lang of LANGS) {
-        const st = byPath.get(PATHS[lang].stickers).html, pv = byPath.get(PATHS[lang].privacy).html;
-        const hasEndpoint = st.includes("data-count=");
-        const stText = st.includes(esc(STRINGS[lang].st_privacy_on)), pvText = pv.includes(esc(STRINGS[lang].pv_site_on));
+        const st = byPath.get(PATHS[lang].stickers).html;
         if (countingOn(ctx)) {
           if (!st.includes(`data-count="${ctx.counting.endpoint}"`)) bad(PATHS[lang].stickers + ": counting is on but the page has no address to send to");
-          if (!stText) bad(PATHS[lang].stickers + ": counting is on but the page does not say a copy is counted");
-          if (!pvText) bad(PATHS[lang].privacy + ": counting is on but the privacy page does not say a copy is counted");
-          if (/no analytics|không có công cụ phân tích|アクセス解析も行いません/.test(pv)) bad(PATHS[lang].privacy + ": counting is on but the page still says there is no analytics");
           if (st.includes(esc(STRINGS[lang].st_privacy))) bad(PATHS[lang].stickers + ": counting is on but the page still says nothing is sent");
-        } else {
-          if (hasEndpoint) bad(PATHS[lang].stickers + ": the page has an address to send to while counting is off");
-          if (stText || pvText) bad(PATHS[lang].stickers + ": the text says a copy is counted while counting is off");
-        }
+        } else if (st.includes("data-count=")) bad(PATHS[lang].stickers + ": the page has an address to send to while counting is off");
       }
     }
     if ((js.match(/localStorage/g) || []).length !== 3 || !js.includes("streakboom-stickers-mine") || !js.includes("streakboom-sticker-recent")) bad("stickers.js: local storage is only for the recent stickers (one key, by slug: read, write, remove; the older keys are only dropped)");

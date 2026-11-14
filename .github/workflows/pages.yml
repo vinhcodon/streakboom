@@ -24,6 +24,7 @@ permissions:
   contents: read
   pages: write
   id-token: write
+  actions: read      # the previous download ledger is fetched from the artifact of an earlier run (ADR-0099)
 
 concurrency:
   group: pages
@@ -40,6 +41,25 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 24
+      # the previous download ledger, from the copy the last run kept in Actions (artifact downloads-ledger, 90 days), so the build does not ask
+      # the live site, which Cloudflare's bot protection may turn away (ADR-0099, W-64). No artifact (the first run, or it expired): the build
+      # falls back to the live site as before
+      - name: Fetch the previous download ledger from Actions
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          id=$(gh api "repos/$GITHUB_REPOSITORY/actions/artifacts?name=downloads-ledger&per_page=20" --jq '[.artifacts[] | select(.expired == false)] | .[0].id // empty' || true)
+          if [ -n "$id" ]; then
+            mkdir -p previous-ledger
+            if gh api "repos/$GITHUB_REPOSITORY/actions/artifacts/$id/zip" > previous-ledger/ledger.zip && unzip -o -q previous-ledger/ledger.zip -d previous-ledger; then
+              echo "previous ledger: artifact $id"
+            else
+              echo "::warning::could not read the artifact $id; the live site will be asked"
+              rm -f previous-ledger/downloads.json
+            fi
+          else
+            echo "::warning::no earlier ledger artifact; the live site will be asked"
+          fi
       # builds Peak for the browser, the pages and the crawler files into _site/, and runs the checks: if one fails
       # nothing is deployed and the site stays as it was
       - name: Build and check the site (_site/)
@@ -48,6 +68,7 @@ jobs:
           # the download counter reads the releases from GitHub and the previous ledger from the live site (ADR-0052);
           # if either cannot be read the build fails and the site stays as it was
           STREAKBOOM_DOWNLOADS: live
+          STREAKBOOM_PREVIOUS_LEDGER: previous-ledger/downloads.json
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
@@ -62,3 +83,8 @@ jobs:
         with:
           name: downloads-ledger
           path: _site/downloads.json
+
+      # the LIVE pages must carry only what the privacy page says (ADR-0096): Cloudflare sits in front of the site and can add scripts, headers or
+      # cookies after the build checked its own files. Last, after the deploy and the ledger copy, so a failure is an alert and undoes nothing
+      - name: Check the live site against the privacy page
+        run: sleep 20 && node scripts/site/livecheck.mjs

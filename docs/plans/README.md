@@ -41,6 +41,7 @@ The files are grouped here, not in folders (decided at gate 2 of the foundation 
 | File | What | Status |
 |---|---|---|
 | [`website-seo-geo.md`](website-seo-geo.md) | A site structure friendly to search engines and AI answer engines: static facts, per-language URLs, a crawlable changelog, structured data, `llms.txt`, `robots.txt`, a way to measure; seven decisions as multiple choice | proposal 2026-11-09; the author chose D1 to D7 (ADR-0034); **built and deployed 2026-11-09**; the baseline, validators and Search Console are still open |
+| [`website-measurement-review.md`](website-measurement-review.md) | The website and measurement, reviewed 2026-11-14: what Cloudflare adds to the live site, what the documents promise about the app and about the site, an evaluation and a proposal (the author decides; no ADR yet) |
 
 ### Releases
 
@@ -60,6 +61,7 @@ The files are grouped here, not in folders (decided at gate 2 of the foundation 
 | [`adaptive-peak-plan.md`](adaptive-peak-plan.md) | The order of work, cheapest first, to settle H18 (the phrase table) and H19 ("Lượn đi"): the survey, the offline matcher, the smallest build for the author, the alpha reading, then the model tag | proposed 2026-11-13; **waiting for Vinh**; S0 and S1 change nothing in the app |
 | [`adaptive-peak-survey.md`](adaptive-peak-survey.md) | Step S0 of the adaptive-peak plan: the phrase survey (the Vietnamese form, the sheet, and how the answers are read, fixed before any answer is seen) | drafted 2026-11-13; **ready for Vinh to send**; nothing sent |
 | [`customization-plan.md`](customization-plan.md) | The order of work, cheapest first, to settle H23 (demand for a skin) and H24 (a palette is cheap): the code reading (done), the colour question in the alpha form, the palette proof, sticker variants, then accessories and the dryness dial | proposed 2026-11-13; **waiting for Vinh**; C0 done, C1 changes no code |
+| [`lun-di-checklist.md`](lun-di-checklist.md) | What the author still has to see before "Lượn đi" goes to Stable: the return, the tray call back, a second start, the full-screen retry, a touch in the goodbye, Quiet, two monitors, the wordings, the three languages, the laptop lid, the model test (H20); with a test aid to shorten the waiting | written 2026-11-14; **waiting for the author's results** |
 | [`preview-channel-plan.md`](preview-channel-plan.md) | The steps for two release channels, Stable (even middle number) and Preview (odd), with in-app updates for both and shared data (PV-0 to PV-8) | proposed 2026-11-13 (ADR-0090); **waiting for Vinh**; nothing built |
 | [`requirements-v0.5.md`](requirements-v0.5.md) | The statement of requirements after the handoffs of 2026-11-13: the spec numbers, each handoff against what exists, the v0.4 draft item by item, the new decisions, the cross-check of contradictions and what to measure first, the order of work | written 2026-11-13; replaces the v0.4 draft as the working statement |
 | [`bond-days.md`](bond-days.md) | Implementing the north star counters: steps, files, risks, test plan, what could not be verified | built and released in 0.1.15; some checks not verified |

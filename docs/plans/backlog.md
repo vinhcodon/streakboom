@@ -29,9 +29,9 @@ Status: **proposed 2026-11-08, asked by Vinh to be carried out story by story.**
 | E17 | Foundation alignment (spec/12, ADR-0056 to ADR-0059, ADR-0061) | 11 / 11, released in 0.4.0 | The review, the decisions (Q1 to Q9), spec 12 and the release: absence costs nothing, no streak, the bored lines, the persona rules, the help text, 18+, the outward lines, the claim-word audit. Open: a lawyer for the age gate, the Vietnamese and Japanese reading, the chat rules with real keys on all four brains |
 | E18 | Language and one instance (ADR-0066, ADR-0068, ADR-0055 amendment) | 3 / 3, released in 0.4.1 | The tray menu in the chosen language; the default language from the system's list of preferred languages and a picker in the tour (never the IP); one Peak per user. Open: the author's checks (V-108 to V-110) and the in-app update to 0.4.1 |
 | E19 | Alpha readiness and signing (roadmap v2, ADR-0071, ADR-0072) | 6 / 13 | The signed installer, the guardrail counters, the tester consent text, a strict CSP; the checks themselves are in E6 (ME-1 to ME-4), E7 (VE-2, VE-3, VE-8), E5 (PF-3), E1 (PR-8) and E3 (PE-1, PE-4) |
-| E20 | Adaptive Peak: skills of the body and suggestions (spec/14, ADR-0080, plan `adaptive-peak-plan.md`) | 0 / 6 | A direction decided by the author; drafted, **nothing approved to build**: the phrase survey, the offline table, the smallest "Lượn đi", the alpha reading, the model tag, later suggestions and voice |
+| E20 | Adaptive Peak: skills of the body and suggestions (spec/14, ADR-0080, plan `adaptive-peak-plan.md`) | 3 / 7 | A direction decided by the author; drafted, **nothing approved to build**: the phrase survey, the offline table, the smallest "Lượn đi", the alpha reading, the model tag, later suggestions and voice |
 | E21 | Customization after the adaptive turn (spec/15, plan `customization-plan.md`) | 1 / 7 | Colour, accessory and voice that Peak changes in itself and offers; the code reading is done, the rest waits for Vinh's approval |
-| E22 | Stable and Preview channels (ADR-0090, plan `preview-channel-plan.md`) | 6 / 9 | Two release channels told apart by the middle version number, in-app updates for both; nothing built, each step waits for Vinh's approval |
+| E22 | Stable and Preview channels (ADR-0090, ADR-0094, ADR-0095, plan `preview-channel-plan.md`) | 10 / 13 | Two release channels told apart by the middle version number, in-app updates for both; nothing built, each step waits for Vinh's approval |
 | E13 | Fresh words: more variety in the scripted lines | 6 / 9 | Lines more varied: the shuffle bag, tokens, the smallest pools raised (LN-1 to LN-3, LN-5 partly, 0.3.1); the line factory script is built and waits for the author to run it (LN-4); rare lines blocked; the brain's top-up declined for now |
 | E12 | Reactions: one way to express what happens | 10 / 11 | Spec 09 and ADR-0041: events, appraisal, beats, words after the body, escalation, the persona in layers, the remark after a fall (RX-1 to RX-8; the first part released in 0.3.1, the remark and the gate not yet); RX-9 later |
 | E11 | Reach: languages and brains | 4 / 5 | Groq is the fourth brain and Japanese is built in full, both released in 0.3.0 (BR-1, JA-1 to JA-3, ADR-0037, ADR-0038); BR-2 needs a key |
@@ -329,11 +329,12 @@ Why: the author wants Peak to notice and suggest instead of asking, and to answe
 
 | ID | Story | Size | Status | Depends on |
 |---|---|---|---|---|
+| AP-08 | Wire `is_busy` (fullscreen, presentation, locked) into movement and unprompted lines, so that Peak keeps still and quiet then (spec 14 section 6) | S | **built 2026-11-14**; not yet seen on a screen | none |
 | AP-S0 | The phrase survey: a form and a sheet for the alpha people (phrases to send Peak away, call it back, put it to sleep; ordinary short chat lines), no private text | S | **form drafted 2026-11-13** (`adaptive-peak-survey.md`); **not to be sent until the author calls the alpha (ADR-0088)** | none |
-| AP-S1 | The intent table as data and a pure matcher with tests, run offline on the two halves of the survey and the negative set; the verdict on H18 | S | proposed; needs Vinh's go for the module | AP-S0 |
-| AP-S2 | The smallest "Lượn đi" (tier 1, typed, walk to the edge, hide, timed return, call back from the tray, `is_busy` on the return, the leave counters), behind a test switch; the author looks at it before it is committed | M | proposed; needs Vinh's approval to code and the answers to Q1, N8, N9 | AP-S1 |
+| AP-S1 | The intent table as data and a pure matcher with tests, run offline on the two halves of the survey and the negative set; the verdict on H18 | S | **module built 2026-11-14** (`intents.ts`, a seed table and `evaluate`; not called by the app); the H18 verdict waits for the survey, which waits for the alpha (ADR-0088) | AP-S0 |
+| AP-S2 | The smallest "Lượn đi" (tier 1, typed, walk to the edge, hide, timed return, call back from the tray, `is_busy` on the return, the leave counters), behind a test switch; the author looks at it before it is committed | M | **done: released in Stable 0.8.0 (2026-11-14, ADR-0100) after Previews 0.7.3 to 0.7.7; the author's report was OK without itemising the checklist; several monitors, the three languages and the laptop lid not reported** | AP-S1 |
 | AP-S3 | The alpha reading of H18 and H19: tier counters, leave counters in "Copy stats", five end-of-week questions | S | **later: needs the alpha (ADR-0088)** | AP-S2, roadmap R4 |
-| AP-S4 | The skill tag (`skills.md` layer, one parser) and the harness of labelled messages per brain; the verdict on H20 | M | proposed; Q7 and N3 | AP-S3 |
+| AP-S4 | The skill tag (`skills.md` layer, one parser) and the harness of labelled messages per brain; the verdict on H20 | M | **done: released in Stable 0.8.0 (ADR-0100); the harness (H20) was not reported run: the model's false-tag rate is not measured** | AP-S3 |
 | AP-S5 | Later: local behaviour counters and suggestions (H17, H22), the hotkey spike (H21), the recording with its own ADR | L | not started; after the answers to S1 to S3 | AP-S4 |
 
 ## E21. Customization (spec 15, `customization-plan.md`)
@@ -360,7 +361,27 @@ Why: the author keeps building features and lets a few adults try them (ADR-0089
 | PV-3 | The Preview build in CI: odd-minor tags, the version written in the workspace only, notes from `CHANGELOG-preview.md`, pre-release draft | M | **done 2026-11-13** (rehearsed, then used for the real v0.5.0; one bug found and fixed in the real run) | PV-1 |
 | PV-4 | `release-finish.ps1` for Preview: `updates/preview.json`, `--prerelease`, never `--latest`, pruning per channel, tests | M | **done 2026-11-13** (published Preview 0.5.0; Stable-after-Preview and pruning not yet exercised) | PV-3 |
 | PV-5 | The website stays true (a note to the website session; the site by that session) | S | **note written 2026-11-13; the website session has not answered** | none |
-| PV-6 | The first Preview (0.5.0) as an end-to-end rehearsal, then 0.5.1 by the in-app update | M | **half done 2026-11-13** (v0.5.0 built and published as a pre-release; installing it and the in-app update to 0.5.1 are left) | PV-4 |
+| PV-6 | The first Preview (0.5.0) as an end-to-end rehearsal, then 0.5.1 by the in-app update | M | **done 2026-11-13** (0.5.0, 0.5.1, 0.7.0 as Previews and 0.6.0 as the first Stable after them; the in-app update 0.5.0 to 0.5.1 taken; pruning per channel and the `preview.json` rule seen; the updates that cross channels are for the author to take) | PV-4 |
 | PV-7 | A release branch of the Stable line for a fix while `main` carries unfinished work | M | later; only when needed | PV-4 |
 | PV-8 | Docs with each step: `releasing.md`, `PROJECT.md`, `README.md`, `CONTRIBUTING.md` | S | with each step | all |
+| PV-9 | The rules for managing version numbers (`spec/16-versioning.md`): what each number means, when it moves, how a Preview line is promoted; the author answers four questions, then an ADR and the checks of its section 10 | S | **approved 2026-11-13 (ADR-0093); the checks of spec 16 section 10 are not built** | PV-6 |
+| PV-10 | The updater by the rule of ADR-0095: one candidate (the newest Stable higher than the copy, else on a Preview copy the newest Preview higher than it); background checks read Stable only; Auto installs on a Stable copy and behaves as Ask on a Preview copy; two separate manifests; tests of every case of the table in spec 16 section 11 (`updater.rs`) | M | **released in Preview 0.7.2 (2026-11-14); the author updated to it and checked, OK** | PV-6 |
+| PV-11 | The check by hand shows the one version; on a Stable copy a small link "Test builds..." with a warning and a confirmation before the newest Preview is shown; the texts in three languages; the author looks at it in a test build | M | **released in Preview 0.7.2 (2026-11-14); the author updated to it and checked, OK** (the Stable-side "Test builds..." link and the three languages not reported as seen) | PV-10 |
+| PV-12 | `release-finish.ps1`: `preview.json` holds only the newest Preview and `latest.json` only the Stable (the "newest of both" rule is dropped), tests; done only after PV-10 and PV-11 are released in a Preview | S | **built 2026-11-14** (`Get-ManifestFilesToWrite`: a Stable writes `latest.json` only, a Preview writes `preview.json` only when newer; 61 script checks; the first real publish with it is the next release) | PV-11 |
 
+## E23: Remind, the first slice (ADR-0106; nothing built)
+
+| # | Story | Size | Status |
+|---|---|---|---|
+| RM-1 | After ADR-0103 stage 1: the skill file for "celebrate a day the person told Peak": the tag, the confirmation in the chat, the list in `memory.json` (add-only) and in the memory area of Settings (removable), the line pools in three languages under the banned-patterns test, the delivery on the day and once on return | L | not started |
+| RM-2 | A harness of labelled date phrases in vi, en and ja (for the author to run with his own key) before RM-1 is released | M | not started |
+| RM-3 | R2 (timed one-off reminders) and R3 (recurring nudges): each only by its own ADR, after the author has used R1 | M | not decided |
+
+## E24: The input map and "step aside" (spec 17; proposed, nothing built)
+
+| # | Story | Size | Status |
+|---|---|---|---|
+| IM-1 | `bindings.ts`: the table of named actions and gestures with tests (one action per gesture, one skill per phrase), and the handlers calling it | M | proposed |
+| IM-2 | The right click resolver (about 250 ms) and the double right click | S | proposed |
+| IM-3 | Skill `aside` ("xê ra", "tránh ra", "move over") and the verb `step_aside` | M | proposed |
+| IM-4 | The one-time hint after repeated pushes, three languages, under the banned-patterns test | S | proposed |

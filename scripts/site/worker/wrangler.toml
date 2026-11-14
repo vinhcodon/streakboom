@@ -1,5 +1,5 @@
 # The counter of sticker copies (ADR-0092). Deploy from this folder: see README.md.
-name = "streakboom-count"
+name = "streakboom-sticker-count"
 main = "count.mjs"
 compatibility_date = "2026-11-01"
 
@@ -9,11 +9,13 @@ ALLOWED_ORIGIN = "https://streakboom.com"
 [[d1_databases]]
 binding = "DB"
 database_name = "streakboom-count"
-# database_id = "..."   # the id that `wrangler d1 create streakboom-count` prints; put it here before deploying
+database_id = "1f407624-3210-42ea-a6f5-0b2461d2a75a"   # printed by `wrangler d1 create streakboom-count` (not a secret)
 
-# A limit per address, kept by Cloudflare (this code stores no address): 30 copies a minute is far above a person.
-[[unsafe.bindings]]
+# A limit per address, kept by Cloudflare (this code stores no address): 120 copies a minute per address leaves room for a class or an office on one network; a person does a few.
+[[ratelimits]]
 name = "LIMITER"
-type = "ratelimit"
 namespace_id = "1001"
-simple = { limit = 30, period = 60 }
+
+  [ratelimits.simple]
+  limit = 120
+  period = 60

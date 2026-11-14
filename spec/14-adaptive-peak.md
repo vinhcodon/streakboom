@@ -15,7 +15,7 @@ Instead of a Settings page of tastes, **Peak notices** how the person lives with
 | # | Decision |
 |---|---|
 | A1 | **No choices of taste in Settings** (colour, accessory, voice, seat). Peak notices and suggests. |
-| A2 | **Skills are body language and presence only.** They never touch the person's apps, files or data. No timer, no reminder, nothing an assistant does. |
+| A2 | **Skills are body language and presence only.** They never touch the person's apps, files or data. No timer, nothing an assistant does. **One exception (ADR-0106):** celebrating a day the person told Peak (by date, said once, confirmed in the chat, listed and removable in Settings, memory). A timed or recurring reminder still needs its own ADR. |
 | A3 | **Voice, first version: a held hotkey only** ("press and hold to talk"). No wake word. |
 | A4 | **The first skill is "Lượn đi"** (say goodbye, go, come back). The phone, the favourite sleeping place and the transformation are **not chosen** for the first slice. |
 | A5 | **Calling or sending the cat away by words does not count toward Bond Days** in this stage. It is counted separately. |
@@ -31,7 +31,7 @@ Earlier decisions still stand: the bond is the core, workplace humour is the voi
 | 2 The attention is theirs | Suggestions use the existing unprompted slot (every 10 to 15 minutes, `free` or `play` only); the return from "away" waits for the person to be free; no second channel of interruption |
 | 3 Gentle | A leave is a walk, not a vanish; a return is a landing, not an arrival |
 | 4 Shapes, not meaning | Counts and coarse places only. Voice is a new sense: off, switched on in the open, its own ADR (section 9) |
-| 5 Companion, not assistant | Skills are the cat's body (P1); no reminders, no tools |
+| 5 Companion, not assistant | Skills are the cat's body (P1); no tools; the one reminder allowed is celebrating a day the person told Peak (ADR-0106, "it remembers") |
 | 6 Works without AI | Tier 1 needs no key. Voice needs one provider (open question) |
 | 7 Never dies, absence costs nothing | "Away" is not saved, is never a sulk, never counted aloud, and a banned-patterns test covers the new lines |
 | Few settings | No setting for an amount of behaviour. The only new settings are a consent (voice), a value Peak cannot infer (the hotkey) and Forget buttons |
@@ -56,7 +56,7 @@ H18 and H19 are the ones to settle first; the plan orders the work so that they 
 
 1. The person types (or, later, says) something.
 2. **Tier 1, the local table** ([`intents.ts`](../app/src/lib/) when built): normalise (lower case, with and without diacritics for Vietnamese, NFKC and kana folding for Japanese, strip final polite words and punctuation); the **whole** message, about six words or fewer and with no question mark, must equal a phrase or fit a pattern. A match acts at once if it is `exact`; a `pattern` match first shows the `ask` card. Two skills may not share a phrase (a test). It needs no key and no network.
-3. **Tier 2, the model** (only if tier 1 found nothing and a key is connected): the reply may begin with `[skill:name]`, in the same way it already begins with a mood tag (`mood.md`, `split_mood` in `brain.rs`). One extra persona layer, `skills.md`, says to use it only when the last message is plainly a command from the closed list. The client **checks the name against the list** before doing anything and takes **no parameters** in the first slice. *Proposal, instead of native function calling (feasibility, item 3): one parser for four providers, no extra call, nothing to pass.*
+3. **Tier 2, the model** (only if tier 1 found nothing and a key is connected): the reply may begin with `[skill:name]`, in the same way it already begins with a mood tag (`mood.md`, `split_mood` in `brain.rs`). One extra persona layer (the `description` of each skill file, ADR-0103) says to use it only when the last message is plainly a command from the closed list. The client **checks the name against the list** before doing anything and takes **no parameters** in the first slice. *Proposal, instead of native function calling (feasibility, item 3): one parser for four providers, no extra call, nothing to pass.*
 4. **Hiding the wait.** While the model thinks (one to three seconds) Peak already reacts locally (`think` or ears up).
 5. **The safety gate** (section 6). It decides whether the skill may run now.
 6. **Execution** with poses and movement that exist.
@@ -68,7 +68,7 @@ A tier-1 hit makes no API call. A tier-2 skill is one ordinary chat turn and cou
 
 A skill does not run, or waits, when any of these is true: Quiet mode is on; the clock says night (23:00 to 07:00) and the skill is not the goodbye the person just asked for; `is_busy` (a fullscreen program, presentation mode, a locked session); a panel is open; Peak is being held or is falling; a cooldown for that skill has not passed; or **the person is typing** (the focus-safety rules, spec 06 section 3, apply to every movement). A skill the **person** just triggered is allowed to run in `work` mode (they asked), but its **automatic parts** (the return, the suggestions) are not.
 
-Known gap: `is_busy` is today used only before an unprompted line and before an update; the movement path passes `busy: false`. **Wiring it is part of the first slice** (AP-08). It does not see a window shared in Teams, Zoom or Meet; Quiet mode and Hide remain the person's answer (feasibility, item 8).
+Gap (closed 2026-11-14): `is_busy` was used only before an unprompted line and before an update, and the movement path passed `busy: false`. AP-08 wires it into the focus decision, so while the person is in something full-screen, presenting, or the session is locked, Peak starts no walk, hop or perch, stops a walk in progress and shows no unprompted line. It does not see a window shared in Teams, Zoom or Meet; Quiet mode and Hide remain the person's answer (feasibility, item 8).
 
 ## 7. The skills
 
@@ -84,7 +84,11 @@ Known gap: `is_busy` is today used only before an unprompted line and before an 
 
 **Lines.** A new pool of goodbye and return lines in the three languages, under the existing banned-patterns test: no guilt, no counting of time away, no "missed you", no reproach, no "come back soon" (a character that needs the person is forbidden).
 
-**Decided (Vinh, 2026-11-13, ADR-0086):** it stays away **20 minutes** and is called back at once with the tray (Show). **Cost:** no new art; the walk, the nod, the hide and a timer.
+**Decided (Vinh, 2026-11-13, ADR-0086; 2026-11-14, ADR-0097):** it stays away **20 minutes** and is called back at once with the tray (Show). **Built 2026-11-14 as S2 (not released, not yet seen):** a short goodbye (six per language, `farewell.ts`), the walk to the nearer side edge, the hide by Rust, the return at the same edge with a stretch and no line, the 5-minute retry while a full-screen program runs, only on a Preview build until 0.7.7 and **on every build from Stable 0.8.0 (ADR-0100)**; a pattern match asks nothing yet (not built); needs a connected brain for the chat box. **Cost:** no new art; the walk, the nod, the hide and a timer.
+
+**Walk rule (ADR-0102, built 2026-11-14, not yet seen):** Peak trots to the edge at 110 px/s and has `clamp(distance/110 x 1.3 + 2 s, 6 s, 20 s)` to get there; if it does not, it stays where it is and the leaving is cancelled. It never vanishes away from an edge, and the leave is counted when the window is hidden.
+
+**When it acts (ADR-0108):** a dismissal typed within 2 minutes of the person's last chat message is chat, not an order, unless it is said 3 times within 3 minutes; "go to your place" is the command `seat` (Peak nods; no usual place yet).
 
 **What is measured:** leaves a day; returns by timer against calls back by the person; the same person's Quiet starts and hides before and after; Bond Days of leavers against non-leavers. All as counts, and **separate from Bond Days** (A5).
 
@@ -101,6 +105,33 @@ The real bottleneck is **new poses and states in the rig**, not the model's func
 ### 7.3 What Peak can change in itself (the merge)
 
 The store of what can change on Peak itself, in three tiers: **colour**, **accessory** and **voice**, is specified in [`15-customization.md`](15-customization.md). The change of this spec is only in how it is reached: the person does not pick from a list; Peak **proposes** (section 8) and applies on yes, or the person asks in words (a skill of the closed list, which spec 15 asks Vinh to decide: N11). Nothing is sold, and there is no content made by users.
+
+### 7.4 When a command acts (the gates and the context; ADR-0097, 0098, 0100, 0102, 0108)
+
+A command is **not only its words**. Whether it acts depends on the state of Peak and on the conversation:
+1. **The gate** (`gatesPass`, from the `gates` of the skill file): for "leave", not in Quiet mode, not carried, not in the air, not already away, not already leaving. Any build (ADR-0100).
+2. **The context** (`dismissal.ts`, ADR-0108): a dismissal typed within **2 minutes** of the person's last chat message is **chat, not an order**: Peak answers in character and stays. Said **3 times within 3 minutes** in a conversation, it is an order. With no recent chat it is an order at once. Only the phrases of the table count in a conversation. In a conversation the model is not offered the skill (`skills: false`) and is told in one sentence that a "go away" is a tease: it does not say goodbye, answers with one playful line and never begs.
+3. **The model's tag** `[skill:leave]` acts only from a message of at most 10 words, with no question mark, outside a conversation, through the same gates. Going back to a place is not leaving and the description says so.
+4. **The walk** (ADR-0102): a trot of 110 px/s to the nearer side edge, with the time `clamp(distance/110 x 1.3 + 2 s, 6 s, 20 s)`; if the edge is not reached Peak stays and the leaving is cancelled; the leave is counted when the window is hidden. While Peak walks to the edge nothing else takes it over: the typing-lane reflex, the "notice" beat and the next-move timer do nothing while it is leaving or away, and a plain idle, look or nod request is ignored (ADR-0103 stage 1, ADR-0108 addendum; found in `leave-trace.log`).
+5. **The trace** (`leave-trace.log` in the data folder): each step of a leaving as a fixed name and numbers, never the person's words, at most 64 KB, local only.
+
+### 7.5 Skills are text files (ADR-0103, stage 1 built)
+
+A skill is one file in `app/src/lib/skills/*.skill.json`: `skill` (the name), `description` (the text the model is given, if the model may name it), `phrases` and `patterns` (the table), `pools` (lines per language), `gates`, `limits`, `steps` and `after_return`. The steps use a **closed list of six verbs** (`say`, `pose`, `wait`, `walk_to_edge`, `hide`, `count`); a new verb is an ADR. `validateSkill` refuses a file with any key, verb or gate outside the lists, a pool missing a language, a number out of range or a `count` before the `hide`. The interpreter (`skill-run.ts`) runs the steps in order and stops on a failed walk or hide or when the skill is no longer alive; the page gives the verbs. Rust reads the name and the description of the same file for the persona layer (`brain::skill_files`). Nothing the model writes is ever run: it may only name a skill from the closed list in `SKILLS`.
+
+### 7.6 The skills so far
+
+| Skill | State | Note |
+|---|---|---|
+| `leave` | built, Stable 0.8.0, fixed in 0.8.1 | section 7.1 and 7.4 |
+| `seat` ("về chỗ đi", "go to your spot", "席に戻って") | built in Preview (0.9.4), table only | Peak nods and stays: it has no usual place yet (spec 06, favourite places, not built). Going to a remembered coarse zone is a later skill with its own ADR (ADR-0108) |
+| `aside` ("xê ra", "tránh ra", "move over") | proposed | with the double right click, spec 17 |
+| `remind` (celebrate the days the person told Peak) | decided as a direction, not built | ADR-0106: by date, said in the chat and confirmed there, no setting, a removable list in the memory area of Settings, said once, a missed day said once on return, a brain needed to create, none to deliver; timed and recurring reminders are separate ADRs; this amends A2 above |
+| `sleep`, `quiet`, `return` | phrases in the table, no skill | candidates (section 7.2) |
+
+### 7.7 What the model is told besides the persona (ADR-0105, 0108)
+
+After the persona and the notes about the user, a chat turn may carry, in this order: the **skills layer** (outside a conversation, not in Quiet mode), the **clock line** (the local time, the weekday and the part of the day, in English, such as `10:05, Saturday, morning`; no date, no zone, no place; the page builds it, Rust cleans it to letters, digits and `: , -`, 40 characters), and the **banter rule** (in a conversation). The unprompted AI line states the hour as 24-hour time with the part of the day in words (`clock.ts`), because "Bây giờ là 10 giờ" alone was read as 10 at night at 10 in the morning. The clock goes only to the brain the person connected, with their chat or their optional unprompted lines (`docs/privacy.md`).
 
 ## 8. Learning from behaviour and making suggestions
 
@@ -130,7 +161,7 @@ Replaces the voice item of `requirements-draft-v0.4.md` (E1); the wake word move
 | AP-05 | The hotkey, hold to talk | the spike answers repeat and release; the key can be changed; no focus is taken from the app being typed in |
 | AP-06 | A short recording to the brain | format and limit checked on the day; the mic closed at release; indicator seen |
 | AP-07 | Local behaviour counters and suggestions | in `memory.json`; Forget and the learn switch remove them; frequency rules tested |
-| AP-08 | `is_busy` applies to movement and to the return | a test that the walk and the return respect busy |
+| AP-08 | `is_busy` applies to movement and to the return | a test that the walk and the return respect busy. **Built 2026-11-14** for movement and unprompted lines (`decideFocus` with `busy`; the hit-test thread reads `is_busy` about once a second); the return from "Lượn đi" will use the same answer; **not yet seen on a screen** (a full-screen video, a presentation, a locked screen) |
 | AP-09 | Counters: skills used, undo rate, suggestions accepted and declined, hide rate; calls and sends-away separate from Bond Days | in "Copy stats" as counts only; Bond Days unchanged by them |
 | AP-10 | New lines under the banned-patterns test | the test passes in three languages |
 
@@ -157,11 +188,11 @@ From the handoff (section 13):
 New, from this analysis:
 - **N1.** *Answered 2026-11-13: the spec stays number 14.*
 - **N2.** The thresholds for H17 to H22 (the register's rule: before looking at data). *Answered 2026-11-13 for H18 and H19 (section 4); H17 and H20 to H22 are still open.*
-- **N3.** Tag in the reply (recommended) or native function calling.
+- **N3.** *Answered by doing, 2026-11-14 (ADR-0098): the tag.*
 - **N4.** Voice for Gemini only in the first version, or wait.
 - **N5.** The default hotkey, and whether it can be changed (a setting by necessity).
 - **N6.** Does pressing the suggestion's button count as `engaged` for Bond Days?
-- **N7.** Does a tier-2 leave act at once, or ask first with the `ask` card?
+- **N7.** *Answered 2026-11-14 (ADR-0098): it acts at once, from a short message (at most 10 words, no question mark), through the same gates; the goodbye is Peak's own line; undo is the tray.*
 - **N8.** What "đi ngủ đi" does until a `sleep` skill exists: yawn and go drowsy, or pass to chat.
 - **N9.** Whether "away" survives a restart (recommended: no).
 - **N10.** *Answered 2026-11-13: the file was found and is read; see spec 15.*

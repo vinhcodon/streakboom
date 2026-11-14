@@ -1,7 +1,7 @@
 // Tests of the download counter (ADR-0052). Run: node --test scripts/site/
 import test from "node:test";
 import assert from "node:assert/strict";
-import { mkdtempSync } from "node:fs";
+import { mkdtempSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { checkLedger, formatCount, installerCounts, liveLedger, mergeLedger, previousLedger } from "./downloads.mjs";
@@ -139,4 +139,20 @@ test("assertInstaller: the release and its installer must be published", async (
   assert.throws(() => assertInstaller([], "1.2.3", "Streakboom_1.2.3_x64-setup.exe"), /no published release v1\.2\.3/);
   assert.throws(() => assertInstaller([{ ...ok[0], draft: true }], "1.2.3", "Streakboom_1.2.3_x64-setup.exe"), /draft/);
   assert.throws(() => assertInstaller([{ tag_name: "v1.2.3", assets: [{ name: "latest.json" }] }], "1.2.3", "Streakboom_1.2.3_x64-setup.exe"), /no asset named/);
+});
+
+test("the previous ledger is read from the copy kept in Actions when there is one, and the live site is not asked (ADR-0099)", async () => {
+  const dir = mkdtempSync(join(tmpdir(), "sb-led-"));
+  const file = join(dir, "downloads.json");
+  writeFileSync(file, JSON.stringify({ total: 9, perTag: { v1: 9 } }));
+  const never = async () => { throw new Error("the live site must not be asked"); };
+  assert.deepEqual((await previousLedger({ file, fetchFn: never })).perTag, { v1: 9 });
+  // a copy that is not a ledger stops the build, it is not replaced by another source
+  writeFileSync(file, "not json");
+  await assert.rejects(previousLedger({ file, fetchFn: never }), /kept copy of the ledger is not readable/);
+  writeFileSync(file, JSON.stringify({ nonsense: true }));
+  await assert.rejects(previousLedger({ file, fetchFn: never }), /unexpected shape/);
+  // no file (the first run, or the artifact expired): the live site, as before
+  assert.equal(await previousLedger({ file: join(dir, "missing.json"), fetchFn: async () => reply(404) }), null);
+  assert.equal(await previousLedger({ file: undefined, fetchFn: async () => reply(404) }), null);
 });

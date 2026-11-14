@@ -16,8 +16,9 @@
   A PREVIEW tag (an odd middle number, ADR-0090) is finished the same way with these differences: its version need not be the
   one in tauri.conf.json (main still says the last Stable; the CI wrote the Preview version into its build folder only), its
   notes come from CHANGELOG-preview.md, it is published as a PRE-RELEASE (never the latest), its manifest goes to
-  updates\preview.json, and only the previous Preview is kept. updates\preview.json always shows the newest release of both
-  channels, so a Stable publish also writes it when the Stable version is higher than the one it holds.
+  updates\preview.json, and only the previous Preview is kept. The two manifests are separate (ADR-0094, ADR-0095):
+  updates\latest.json holds only the newest Stable, updates\preview.json only the newest Preview; a Stable publish writes the
+  first, a Preview publish the second (and only when it is newer than the one it holds).
   scripts\release.ps1 remains the all-local fallback (it builds, signs and publishes by itself).
   The key is passed by path and never printed. Needs `gh` logged in. Run it with powershell.exe -File.
 .EXAMPLE
@@ -155,25 +156,31 @@ Push-Location $root
 try {
   New-Item -ItemType Directory -Force (Join-Path $root "updates") | Out-Null
   $stage = @()
-  if ($channel -eq "stable") {
-    Copy-Item $manifestPath (Join-Path $root "updates\latest.json") -Force
-    $stage += "updates/latest.json"
-  }
-  # updates/preview.json always shows the newest release of both channels (the updater takes the first address that answers)
+  # The two manifests are separate: latest.json holds only the newest Stable, preview.json only the newest Preview
   $previewPath = Join-Path $root "updates\preview.json"
   $existing = ""
   if (Test-Path $previewPath) { $existing = [string]((Get-Content $previewPath -Raw -Encoding UTF8 | ConvertFrom-Json).version) }
-  if (Test-ShouldWritePreviewManifest -NewVersion $version -ExistingVersion $existing) {
-    Copy-Item $manifestPath $previewPath -Force
-    $stage += "updates/preview.json"
-  } else {
+  $files = @(Get-ManifestFilesToWrite -Channel $channel -NewVersion $version -ExistingPreviewVersion $existing)
+  foreach ($f in $files) {
+    Copy-Item $manifestPath (Join-Path $root "updates\$f") -Force
+    $stage += "updates/$f"
+  }
+  if ($channel -eq "preview" -and $files.Count -eq 0) {
     Write-Host "updates/preview.json already shows $existing, which is newer than ${version}: left as it is"
   }
   if ($stage.Count) {
     git add -- @stage
     git commit -m "Update manifest for $version"
     git push origin HEAD
-    if ($LASTEXITCODE -ne 0) { throw "git push failed" }
+    if ($LASTEXITCODE -ne 0) {
+      # another session pushed to main since the check at the start (the release is already published): put the manifest commit
+      # on top of it and push again, once
+      Write-Warning "git push was refused; rebasing the manifest commit onto origin/main and trying once more"
+      git pull --rebase origin main
+      if ($LASTEXITCODE -ne 0) { throw "git pull --rebase failed: the manifest commit ($($stage -join ', ')) is made but not pushed; release is published" }
+      git push origin HEAD
+      if ($LASTEXITCODE -ne 0) { throw "git push failed twice: the manifest commit is made but not pushed; the release is published, so push it and delete the old releases by hand" }
+    }
   }
 
   # keep the new release and the one before it IN THE SAME CHANNEL; delete every older release of that channel and its tag

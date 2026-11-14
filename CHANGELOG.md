@@ -2,6 +2,22 @@
 
 Release notes of every version of Streakboom, newest first. **GitHub keeps the latest release and the one right before it** (installer and update manifest; the previous one is a way back if the newest is bad); when a new version is published, anything older is deleted together with its tag and its notes stay here (ADR-0028). The git history keeps every commit.
 
+## 0.8.1 (2026-11-14)
+- **Peak no longer vanishes in the middle of the screen when you send it away.** It now trots to the edge, faster than its ordinary walk, with a time that depends on how far the edge is; if something stops it before it gets there, it stays where it is instead of disappearing. Sending it away is counted only when it has really left.
+- Peak writes the steps of that leaving (a fixed step name and numbers, never your words or anything from the chat) to a small file, leave-trace.log, in its data folder, on your computer only; nothing is sent. It is there to find out why, twice on a test build, Peak nodded and stayed without a goodbye.
+- Not yet tried: the new walk on more than one monitor or on a scaled display, and the cause of the nod-and-stay (not reproduced in three tries).
+
+## 0.8.0 (2026-11-14)
+- **You can send Peak away.** Type a plain command in the chat box, such as lượn đi, go away or 消えて: Peak says a short goodbye, walks to the nearer side edge and leaves. After 20 minutes it comes back at the same edge, stretches and says nothing, or at once when you show it from the tray icon or start the program again. It understands some wordings by itself, and, when a brain is connected, other ones through the chat model. It does nothing while Quiet mode is on, and it needs the chat box, so it needs a brain connected.
+- **Peak keeps still and quiet while you watch a full-screen video, present or lock the screen.** Before, it could start a walk, a hop or a perch then; now it starts nothing, stops a walk in progress and says nothing until you are out of it.
+- **Updates show one version at a time.** In Settings, About, the check shows one version. A few new things are shared early as test builds with a few people; the quiet background check and the Auto setting never offer one, and under You have the latest version there is a small link, Test builds..., that asks for a confirmation before it shows one.
+- Not yet tried: how often the chat model sends Peak away when you only mention leaving (the test is written and has not been run); sending Peak away on more than one monitor, in all three languages and with a closed laptop lid have not been reported as checked.
+
+## 0.6.0 (2026-11-13)
+- **Nothing you can see changes.** This version finishes the groundwork for two kinds of builds: Stable (this one, for everyone) and Preview (a build for a few testers). The program now knows which one it is from its version number, and a Preview says so beside the version in Settings, About. A Stable copy keeps reading the same update file as before.
+- Behind the scenes, the way releases are built, published and updated was reworked and tried on two Preview builds (0.5.0 and 0.5.1); this is the first Stable built after that.
+- Not yet tried: updating a Stable copy from 0.4.2 to this version inside the app.
+
 ## 0.4.2 (2026-11-13)
 - **The licenses of the open-source packages now travel with the program.** `THIRD-PARTY-NOTICES.md`, the license notices of the Rust crates and the JavaScript packages that Streakboom is built from, is installed next to the program, as their licenses ask. Nothing else changes for you: Peak behaves as in 0.4.1.
 - This version is built by GitHub's CI from the public source and finished on the author's computer (the update signature is added there). The installer is still not code-signed.

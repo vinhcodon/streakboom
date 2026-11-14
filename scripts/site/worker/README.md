@@ -11,8 +11,8 @@ You need a Cloudflare account (free) and Node 20 or newer. From this folder (`sc
 1. `npx wrangler login` (opens the browser; you sign in yourself).
 2. `npx wrangler d1 create streakboom-count`, then copy the `database_id` it prints into `wrangler.toml` (the line that is commented out).
 3. `npx wrangler d1 execute streakboom-count --remote --file=schema.sql`
-4. Make a long random string for reading the totals and store it as a secret: `npx wrangler secret put READ_TOKEN` (paste the string when asked). Keep a copy in your password manager; the build will need it as a GitHub secret named `STICKER_COUNT_TOKEN`.
-5. `npx wrangler deploy`. It prints the address of the Worker, like `https://streakboom-count.<your-name>.workers.dev`.
+4. `npx wrangler deploy`. The first time it asks you to choose a name for your `workers.dev` address (any short name, for example your own name); it then prints the address of the Worker, like `https://streakboom-count.<your-name>.workers.dev`. Until step 5 the totals are closed to everyone (no token is set).
+5. Make a long random string for reading the totals (`node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"`) and store it as a secret: `npx wrangler secret put READ_TOKEN` (paste the string when asked). Keep a copy in your password manager; the build will need it as a GitHub secret named `STICKER_COUNT_TOKEN`.
 6. Tell the website session the address. It puts it in `counting.json`, builds, and you say "Đẩy lên" as usual.
 
 ## Checks after it is live

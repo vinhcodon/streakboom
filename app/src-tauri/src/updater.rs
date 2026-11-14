@@ -59,36 +59,94 @@ pub struct PendingUpdate(pub Mutex<Option<Update>>);
 pub struct UpdateInfo {
     pub version: String,
     pub notes: Option<String>,
+    /// The channel of the offered version: "stable" or "preview" (by its middle number).
+    pub channel: String,
+}
+
+/// Which kind of check this is (ADR-0095, spec 16 section 11).
+/// - `Background`: the quiet check and the Ask card. Stable only, never a Preview.
+/// - `Manual`: the person pressed "Check for updates": a Stable if there is a newer one, else, on a copy that is itself a
+///   Preview, the newest Preview.
+/// - `Test`: the person confirmed "Test builds...": the newest Stable if newer, else the newest Preview, on any copy.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum Scope {
+    Background,
+    Manual,
+    Test,
+}
+
+/// The scope named by the page; anything unknown is the safe one (a background check, Stable only).
+pub fn scope_of(name: Option<&str>) -> Scope {
+    match name.map(str::trim) {
+        Some("manual") => Scope::Manual,
+        Some("test") => Scope::Test,
+        _ => Scope::Background,
+    }
+}
+
+/// May a Preview be offered at all in this kind of check, for a copy on this channel?
+pub fn wants_preview(scope: Scope, own: Channel) -> bool {
+    match scope {
+        Scope::Background => false,
+        Scope::Manual => own == Channel::Preview,
+        Scope::Test => true,
+    }
+}
+
+/// The one candidate: the newer Stable if there is one, else (when a Preview may be offered) the newer Preview. The inputs are
+/// what the updater found NEWER than this copy, so "higher than the copy in hand" is already settled; the channel of each
+/// version is checked here, so a manifest that holds the other channel's version (the older rule put the newest of both in
+/// `preview.json`) never offers it by mistake.
+pub fn choose(stable_newer: Option<&str>, preview_newer: Option<&str>, want_preview: bool) -> Option<(String, Channel)> {
+    if let Some(v) = stable_newer.filter(|v| channel_of(v) == Channel::Stable) {
+        return Some((v.to_string(), Channel::Stable));
+    }
+    if want_preview {
+        if let Some(v) = preview_newer.filter(|v| channel_of(v) == Channel::Preview) {
+            return Some((v.to_string(), Channel::Preview));
+        }
+    }
+    None
 }
 
 /// The manifest addresses, in the order they are tried. Normally the built-in ones; for testing,
 /// STREAKBOOM_UPDATE_URL may hold one address or several separated by commas. The override is
 /// safe to allow: an update is only installed if its signature verifies. Empty = updates are off.
-fn endpoints() -> Vec<Url> {
-    parse_endpoints(std::env::var("STREAKBOOM_UPDATE_URL").ok().as_deref(), channel_of(env!("CARGO_PKG_VERSION")))
+fn override_list() -> Option<String> {
+    std::env::var("STREAKBOOM_UPDATE_URL").ok().filter(|s| !s.trim().is_empty())
 }
 
-fn parse_endpoints(over: Option<&str>, channel: Channel) -> Vec<Url> {
+fn from_list(list: &str) -> Vec<Url> {
+    list.split(',').filter_map(|u| Url::parse(u.trim()).ok()).collect()
+}
+
+/// The addresses of the STABLE manifest, in the order they are tried: the repository copy, then the release asset.
+fn stable_endpoints(over: Option<&str>) -> Vec<Url> {
     match over.map(str::trim).filter(|s| !s.is_empty()) {
-        Some(list) => list.split(',').filter_map(|u| Url::parse(u.trim()).ok()).collect(),
+        Some(list) => from_list(list),
         None if UPDATE_URL.is_empty() => Vec::new(),
-        None => {
-            let first = if channel == Channel::Preview { PREVIEW_URL } else { FALLBACK_URL };
-            [first, UPDATE_URL].iter().filter_map(|u| Url::parse(u).ok()).collect()
-        }
+        None => [FALLBACK_URL, UPDATE_URL].iter().filter_map(|u| Url::parse(u).ok()).collect(),
+    }
+}
+
+/// The addresses of the PREVIEW manifest: the repository copy only (a Preview release has no asset address of its own).
+fn preview_endpoints(over: Option<&str>) -> Vec<Url> {
+    match over.map(str::trim).filter(|s| !s.is_empty()) {
+        Some(list) => from_list(list),
+        None if UPDATE_URL.is_empty() => Vec::new(),
+        None => Url::parse(PREVIEW_URL).into_iter().collect(),
     }
 }
 
 /// True when updates are configured.
 #[tauri::command]
 pub fn update_enabled() -> bool {
-    !endpoints().is_empty()
+    !stable_endpoints(override_list().as_deref()).is_empty()
 }
 
-/// Ask the server whether a newer version exists. `None` = up to date (or updates are off).
-#[tauri::command]
-pub async fn update_check(app: AppHandle, pending: State<'_, PendingUpdate>) -> Result<Option<UpdateInfo>, String> {
-    let urls = endpoints();
+/// One manifest, asked once (with one more round after a short pause if every address failed). The updater offers a release
+/// only if its version is higher than this copy's.
+async fn check_one(app: &AppHandle, urls: Vec<Url>) -> Result<Option<Update>, String> {
     if urls.is_empty() {
         return Ok(None);
     }
@@ -101,16 +159,46 @@ pub async fn update_check(app: AppHandle, pending: State<'_, PendingUpdate>) -> 
             .map_err(|e| e.to_string())
     };
     // The plugin tries every address in turn; if all fail, one more round after a short pause.
-    let found = match build()?.check().await {
-        Ok(f) => f,
+    match build()?.check().await {
+        Ok(f) => Ok(f),
         Err(_) => {
             let _ = tauri::async_runtime::spawn_blocking(|| std::thread::sleep(RETRY_PAUSE)).await;
-            build()?.check().await.map_err(|e| e.to_string())?
+            build()?.check().await.map_err(|e| e.to_string())
+        }
+    }
+}
+
+/// Ask whether a newer version exists, by the rule of ADR-0095 (spec 16 section 11): one candidate, the newer Stable, else (when
+/// the check is by hand on a Preview copy, or confirmed through "Test builds...") the newer Preview. `scope` is "background"
+/// (the default: Stable only), "manual" or "test". `None` = up to date (or updates are off). With STREAKBOOM_UPDATE_URL set,
+/// that one list is asked and whatever it offers is taken (a test aid).
+#[tauri::command]
+pub async fn update_check(app: AppHandle, pending: State<'_, PendingUpdate>, scope: Option<String>) -> Result<Option<UpdateInfo>, String> {
+    let scope = scope_of(scope.as_deref());
+    let own = channel_of(env!("CARGO_PKG_VERSION"));
+    let found = match override_list() {
+        Some(list) => check_one(&app, from_list(&list)).await?,
+        None => {
+            let stable = check_one(&app, stable_endpoints(None)).await?;
+            let stable_v = stable.as_ref().map(|u| u.version.clone());
+            // Ask for the Preview manifest only when it could matter: no newer Stable and a Preview may be offered.
+            let preview = if stable_v.as_deref().is_some_and(|v| channel_of(v) == Channel::Stable) || !wants_preview(scope, own) {
+                None
+            } else {
+                check_one(&app, preview_endpoints(None)).await?
+            };
+            let preview_v = preview.as_ref().map(|u| u.version.clone());
+            match choose(stable_v.as_deref(), preview_v.as_deref(), wants_preview(scope, own)) {
+                Some((_, Channel::Stable)) => stable,
+                Some((_, Channel::Preview)) => preview,
+                None => None,
+            }
         }
     };
     let info = found.as_ref().map(|u| UpdateInfo {
         version: u.version.clone(),
         notes: u.body.clone(),
+        channel: if channel_of(&u.version) == Channel::Preview { "preview" } else { "stable" }.to_string(),
     });
     *pending.0.lock().unwrap() = found;
     Ok(info)
@@ -151,21 +239,22 @@ mod tests {
 
     #[test]
     fn the_built_in_addresses_are_the_repository_copy_first_then_the_release_asset() {
-        let v = parse_endpoints(None, Channel::Stable);
+        let v = stable_endpoints(None);
         assert_eq!(v.len(), 2);
         assert_eq!(v[0].host_str(), Some("raw.githubusercontent.com"));
         assert!(v[0].path().ends_with("/updates/latest.json"));
         assert_eq!(v[1].host_str(), Some("github.com"));
-        assert_eq!(parse_endpoints(Some("   "), Channel::Stable).len(), 2); // blank means "not set"
+        assert_eq!(stable_endpoints(Some("   ")).len(), 2); // blank means "not set"
     }
 
     #[test]
     fn the_override_can_list_several_addresses_and_skips_bad_ones() {
-        let v = parse_endpoints(Some("http://127.0.0.1:1/a.json, not a url ,https://example.com/b.json"), Channel::Stable);
+        let v = stable_endpoints(Some("http://127.0.0.1:1/a.json, not a url ,https://example.com/b.json"));
         assert_eq!(v.len(), 2);
         assert_eq!(v[0].as_str(), "http://127.0.0.1:1/a.json");
         assert_eq!(v[1].host_str(), Some("example.com"));
-        assert!(parse_endpoints(Some("nonsense"), Channel::Stable).is_empty());
+        assert!(stable_endpoints(Some("nonsense")).is_empty());
+        assert!(preview_endpoints(Some("nonsense")).is_empty());
     }
 
     #[test]
@@ -197,15 +286,101 @@ mod tests {
     }
 
     #[test]
-    fn a_preview_reads_its_own_manifest_first_and_the_stable_address_second() {
-        let v = parse_endpoints(None, Channel::Preview);
-        assert_eq!(v.len(), 2);
+    fn the_preview_manifest_is_the_repository_copy_only_and_the_override_applies_to_both() {
+        let v = preview_endpoints(None);
+        assert_eq!(v.len(), 1);
         assert_eq!(v[0].host_str(), Some("raw.githubusercontent.com"));
         assert!(v[0].path().ends_with("/updates/preview.json"));
-        assert_eq!(v[1].host_str(), Some("github.com"));
-        assert!(v[1].path().ends_with("/releases/latest/download/latest.json"));
-        // The override ignores the channel.
-        let o = parse_endpoints(Some("https://example.com/x.json"), Channel::Preview);
+        // the Stable manifest is never the Preview one
+        assert!(!stable_endpoints(None).iter().any(|u| u.path().ends_with("preview.json")));
+        let o = preview_endpoints(Some("https://example.com/x.json"));
         assert_eq!(o.len(), 1);
+        assert_eq!(stable_endpoints(Some("https://example.com/x.json")).len(), 1);
+    }
+
+    #[test]
+    fn the_kind_of_check_is_named_by_the_page_and_the_unknown_is_the_safe_one() {
+        assert_eq!(scope_of(Some("manual")), Scope::Manual);
+        assert_eq!(scope_of(Some(" test ")), Scope::Test);
+        assert_eq!(scope_of(Some("background")), Scope::Background);
+        assert_eq!(scope_of(None), Scope::Background);
+        assert_eq!(scope_of(Some("")), Scope::Background);
+        assert_eq!(scope_of(Some("TEST")), Scope::Background); // exact words only
+        assert_eq!(scope_of(Some("anything")), Scope::Background);
+    }
+
+    #[test]
+    fn a_preview_may_be_offered_only_by_hand_on_a_preview_copy_or_after_the_confirmation() {
+        // ADR-0095: never in the background; by hand only on a copy that is itself a Preview; on a Stable copy only through "Test builds..."
+        assert!(!wants_preview(Scope::Background, Channel::Stable));
+        assert!(!wants_preview(Scope::Background, Channel::Preview));
+        assert!(!wants_preview(Scope::Manual, Channel::Stable));
+        assert!(wants_preview(Scope::Manual, Channel::Preview));
+        assert!(wants_preview(Scope::Test, Channel::Stable));
+        assert!(wants_preview(Scope::Test, Channel::Preview));
+    }
+
+    // The table of spec 16 section 11, with real version numbers. `newer` is what the updater would find newer than the copy.
+    fn newer<'a>(current: &str, manifest: Option<&'a str>) -> Option<&'a str> {
+        let t = |v: &str| -> (u64, u64, u64) {
+            let mut p = v.split('.').map(|n| n.parse::<u64>().unwrap());
+            (p.next().unwrap(), p.next().unwrap(), p.next().unwrap())
+        };
+        manifest.filter(|m| t(m) > t(current))
+    }
+    fn offer(current: &str, scope: Scope, stable_manifest: Option<&str>, preview_manifest: Option<&str>) -> Option<(String, Channel)> {
+        let own = channel_of(current);
+        choose(newer(current, stable_manifest), newer(current, preview_manifest), wants_preview(scope, own))
+    }
+    fn stable(v: &str) -> Option<(String, Channel)> {
+        Some((v.to_string(), Channel::Stable))
+    }
+    fn preview(v: &str) -> Option<(String, Channel)> {
+        Some((v.to_string(), Channel::Preview))
+    }
+
+    #[test]
+    fn a_stable_copy_is_offered_a_newer_stable_and_never_a_preview_unless_it_asked_for_test_builds() {
+        // Stable 0.4.2; the newest Stable is 0.6.0; the newest Preview is 0.7.1
+        for scope in [Scope::Background, Scope::Manual, Scope::Test] {
+            assert_eq!(offer("0.4.2", scope, Some("0.6.0"), Some("0.7.1")), stable("0.6.0"), "{scope:?}");
+        }
+        // Stable 0.6.0 is the newest Stable; a Preview 0.7.1 exists
+        assert_eq!(offer("0.6.0", Scope::Background, Some("0.6.0"), Some("0.7.1")), None);
+        assert_eq!(offer("0.6.0", Scope::Manual, Some("0.6.0"), Some("0.7.1")), None, "a Stable copy sees up to date");
+        assert_eq!(offer("0.6.0", Scope::Test, Some("0.6.0"), Some("0.7.1")), preview("0.7.1"), "only after the confirmation");
+        // nothing newer anywhere
+        assert_eq!(offer("0.6.0", Scope::Test, Some("0.6.0"), Some("0.5.1")), None);
+    }
+
+    #[test]
+    fn a_preview_copy_is_offered_a_newer_preview_by_hand_and_never_in_the_background() {
+        // Preview 0.7.0; no newer Stable (the newest is 0.6.0); the newest Preview is 0.7.1
+        assert_eq!(offer("0.7.0", Scope::Manual, Some("0.6.0"), Some("0.7.1")), preview("0.7.1"));
+        assert_eq!(offer("0.7.0", Scope::Test, Some("0.6.0"), Some("0.7.1")), preview("0.7.1"));
+        assert_eq!(offer("0.7.0", Scope::Background, Some("0.6.0"), Some("0.7.1")), None, "never a Preview in the background");
+        // a Stable that is lower than the copy is not offered: no downgrade
+        assert_eq!(offer("0.7.1", Scope::Manual, Some("0.6.0"), Some("0.7.1")), None);
+    }
+
+    #[test]
+    fn a_preview_copy_is_offered_the_stable_first_when_both_are_newer() {
+        // Preview 0.7.1; a Stable 0.8.0 and a Preview 0.9.0 exist
+        for scope in [Scope::Background, Scope::Manual, Scope::Test] {
+            assert_eq!(offer("0.7.1", scope, Some("0.8.0"), Some("0.9.0")), stable("0.8.0"), "{scope:?}");
+        }
+        // after taking it (a Stable copy now), the next check by hand does not show the Preview (a Stable copy)...
+        assert_eq!(offer("0.8.0", Scope::Manual, Some("0.8.0"), Some("0.9.0")), None);
+        // ...unless it is a Preview copy: a copy on 0.9.0 sees its own line's next build
+        assert_eq!(offer("0.9.0", Scope::Manual, Some("0.8.0"), Some("0.9.1")), preview("0.9.1"));
+    }
+
+    #[test]
+    fn a_manifest_that_holds_the_other_channels_version_never_offers_it_by_mistake() {
+        // The older rule put the newest of both channels in preview.json: here it holds a Stable 0.8.0, a Preview copy by hand
+        assert_eq!(choose(None, Some("0.8.0"), true), None, "a Stable number in the Preview manifest is not a Preview");
+        assert_eq!(choose(Some("0.9.1"), None, true), None, "a Preview number in the Stable manifest is not a Stable");
+        assert_eq!(choose(Some("0.8.0"), Some("0.9.0"), false), stable("0.8.0"));
+        assert_eq!(choose(None, None, true), None);
     }
 }

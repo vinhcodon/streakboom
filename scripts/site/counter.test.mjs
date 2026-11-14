@@ -51,6 +51,12 @@ test("anything but exactly that note is refused: other text, other languages, a 
   assert.equal(e.DB.rows.size, 0);
 });
 
+test("Safari sends the origin null for a POST that asks for no referrer: it is counted (seen on an iPhone, 2026-11-14)", async () => {
+  const e = env();
+  assert.equal((await worker.fetch(post("thank-you vi", { origin: "null" }), e)).status, 204);
+  assert.equal(e.DB.rows.size, 1);
+});
+
 test("a day with too many different names stops counting new ones, and the known ones still count", async () => {
   const e = env();
   for (let i = 0; i < MAX_STICKERS_PER_DAY; i++) await worker.fetch(post(`s${i} en`), e);
@@ -80,7 +86,7 @@ test("the totals need the secret token", async () => {
 });
 
 test("the switch: off by default; an endpoint must be a plain https address of the Worker", () => {
-  assert.equal(loadCounting().endpoint, "", "counting is off until the author has deployed the Worker");
+  assert.deepEqual(countingProblems(loadCounting()), [], "the switch in the repository is valid (off, or the address of the Worker)");
   assert.deepEqual(countingProblems({ endpoint: "" }), []);
   assert.deepEqual(countingProblems({ endpoint: "https://streakboom-count.example-name.workers.dev" }), []);
   assert.deepEqual(countingProblems({ endpoint: "https://count.streakboom.com" }), []);
@@ -90,9 +96,14 @@ test("the switch: off by default; an endpoint must be a plain https address of t
 });
 
 test("counting on: the pages carry the address and the text that says a copy is counted; the checks refuse the page and the text apart", () => {
-  const off = build({ out: join(mkdtempSync(join(tmpdir(), "sb-cnt-")), "_site") });
+  // the pages with counting off are built from an empty switch, whatever the repository has now
+  const offDir = mkdtempSync(join(tmpdir(), "sb-cnt-"));
+  writeFileSync(join(offDir, "counting.json"), JSON.stringify({ endpoint: "" }));
+  process.env.STREAKBOOM_COUNTING_FILE = join(offDir, "counting.json");
+  let off;
+  try { off = build({ out: join(offDir, "_site") }); } finally { delete process.env.STREAKBOOM_COUNTING_FILE; }
   for (const p of off.pages.filter((x) => /stickers|privacy/.test(x.path))) assert.doesNotMatch(p.html, /data-count=|a copy is counted|bộ đếm|カウンター/, p.path);
-  assert.doesNotMatch(off.files["llms-full.txt"], /only adds one to that day/);
+  assert.doesNotMatch(off.files["llms-full.txt"], /adds one to that day.s total/);
   const on = () => ({ ...off.ctx, counting: { endpoint: "https://streakboom-count.x.workers.dev" } });
   // build the pages again with counting on, through the same function the build uses
   const dir = mkdtempSync(join(tmpdir(), "sb-cnt2-"));
@@ -107,11 +118,11 @@ test("counting on: the pages carry the address and the text that says a copy is 
       assert.match(st, /data-count="https:\/\/streakboom-count\.x\.workers\.dev"/);
       assert.doesNotMatch(pv, /no analytics|không có công cụ phân tích|アクセス解析も行いません/);
     }
-    assert.match(b.files["llms-full.txt"], /only adds one to that day/);
+    assert.match(b.files["llms-full.txt"], /adds one to that day.s total/);
     const run = (mutate) => { const c = { ctx: { ...b.ctx }, pages: b.pages.map((p) => ({ ...p })), files: { ...b.files }, out: b.out }; mutate(c); return () => check(c); };
     assert.doesNotThrow(run(() => {}));
     assert.throws(run((c) => { const p = c.pages.find((x) => x.path === "/stickers/"); p.html = p.html.replace(/ data-count="[^"]*"/, ""); }), /no address to send to/);
-    assert.throws(run((c) => { const p = c.pages.find((x) => x.path === "/privacy/"); p.html = off.pages.find((x) => x.path === "/privacy/").html; }), /does not say a copy is counted/);
+    assert.throws(run((c) => { const p = c.pages.find((x) => x.path === "/privacy/"); p.html = off.pages.find((x) => x.path === "/privacy/").html; }), /not the one composed from what the build does/);
     assert.throws(run((c) => { const p = c.pages.find((x) => x.path === "/vi/stickers/"); p.html = off.pages.find((x) => x.path === "/vi/stickers/").html; }), /no address to send to/);
   } finally {
     delete process.env.STREAKBOOM_COUNTING_FILE;
