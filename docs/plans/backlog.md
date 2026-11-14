@@ -249,7 +249,7 @@ Why: the author finds the scripted lines repetitive. The pools behind what users
 | ID | Story | Size | Status | Depends on |
 |---|---|---|---|---|
 | BR-1 | Groq as the fourth brain, offered right after Gemini, with a free-tier tag: the Rust client over the OpenAI client (`groq.rs`), the provider list and keys, the model-name rule, the strings in two languages, 7 tests | M | done (released in 0.3.0; not tried with a real key: verification-debt) | |
-| BR-2 | Try the Groq brain with a real key: connect, chat, the 429 texts, the default model, `reasoning_effort`, Peak's voice | S | blocked (a key; free to get) | BR-1 |
+| BR-2 | Try the Groq brain with a real key: connect, chat, the 429 texts, the default model, `reasoning_effort`, Peak's voice | S | done in part 2026-11-14 (the author connected a Groq key and chatted: "ok like Google"; the 429 texts, the free tier serving the default model and `reasoning_effort` are not specifically seen) | BR-1 |
 | JA-1 | Japanese interface: Settings, the tour, bubbles, buttons, errors (the UI table), the language setting with the third value and `ja` detection, the beta label | M | done (the UI table, the language setting with `ja` detection, the beta label, the document language, the prompts) | |
 | JA-2 | Japanese lines: the whole pool of scripted lines in the warm casual voice, with the tests that the pools match across the languages | L | done (182 lines translated one to one, the casual voice checked by a test; not read by a native speaker) | JA-1 |
 | JA-3 | Japanese memory lines and the prompts to the brain (the persona, the greeting, the fact extractor) | M | done (the memory lines, `knownFor` and the Rust prompts with the Japanese voice rule) | JA-1 |

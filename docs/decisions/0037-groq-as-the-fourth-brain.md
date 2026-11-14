@@ -20,3 +20,6 @@ Groq as the only recommended free brain (rejected: the author chose two); automa
 - Four brains; `Provider::ALL` has four entries and the picker, the keys and the stored model per brain all know Groq.
 - Rust tests 54 to 61 (Groq's errors, the reasoning rule, the model list, a request with the key in the header only, an error response, the model-name rule).
 - **Not verified:** a real key (the default model name, whether the free tier serves it, the `reasoning_effort` parameter, the 429 texts, how Peak's voice reads on an open model); Groq's terms for data and age; that the free tier needs no card. Listed in `docs/plans/verification-debt.md`.
+
+## Addendum (2026-11-14)
+The author connected a real Groq key in Settings and chatted; it worked like Gemini ("ok giống Google"). Still not specifically seen: the 429 texts, whether the free tier serves the default model, and `reasoning_effort` (V-58, BR-2). Claude and OpenAI remain untried.

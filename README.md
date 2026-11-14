@@ -21,7 +21,7 @@
   <a href="CONTRIBUTING.md">Contributing</a>
 </p>
 
-> **Status: first official release line (v0.10.0), Windows 10/11 only.** Earlier 0.1.x builds were development builds and have been withdrawn. The installer is not code-signed yet, so Windows SmartScreen will warn when you run it. The Groq, Claude and OpenAI brains have not yet been tried with real keys (Gemini has).
+> **Status: first official release line (v0.10.0), Windows 10/11 only.** Earlier 0.1.x builds were development builds and have been withdrawn. The installer is not code-signed yet, so Windows SmartScreen will warn when you run it. The Claude and OpenAI brains have not yet been tried with real keys (Gemini and Groq have).
 
 Peak lives on top of your screen, reacts to being stroked, poked and carried, perches on the edges of your windows, says short lines in Vietnamese, English or Japanese (Japanese is a beta: written by Claude and not yet read by a native speaker), and keeps you company. It is a companion, not an assistant: it is lovable with no AI at all, and if you give it your own API key (Gemini, Groq, Claude or OpenAI) it can also chat and remember a few things about you.
 
@@ -87,7 +87,7 @@ More in [`docs/development.md`](docs/development.md) (layout, windows, release b
 
 Released so far: **0.2** the naive pet, the key flow, memory, gestures, signed auto-update; **0.2.4 and 0.2.5** focus-safety and hops; **0.3.0** Japanese (beta) and Groq; **0.3.1 and 0.3.2** reactions, perching and climbing on windows, calmer behaviour; **0.4.0** aligned with the research in [`docs/foundation/`](docs/foundation/README.md) (your absence costs nothing, no streak, for adults, safety rules in chat); **0.4.1** one Peak at a time and a tray menu in your language; **0.4.2** the open-source licenses travel with the program, built in public CI; **0.6.0** the groundwork for how releases are built and updated; **0.8.0 and 0.8.1** you can send Peak away by a typed command (it walks to the edge and leaves for 20 minutes), and Peak stays still and quiet in full-screen programs; **0.10.0** you can ask Peak to step aside, a dismissal in the middle of a chat is taken as a joke, and the time of day is right in the model's own lines.
 
-Next (roadmap version 2): the checks that need other machines (the Groq, Claude and OpenAI brains with real keys, a lower-end computer, several monitors) and small steps on how Peak notices and answers. A closed alpha with a handful of observed adults, and an application for free code signing, come last, when the author calls them, and before anything public. The ordered plan is in [`docs/plans/roadmap.md`](docs/plans/roadmap.md), the stories in [`docs/plans/backlog.md`](docs/plans/backlog.md) and what is built but not yet checked in [`docs/plans/verification-debt.md`](docs/plans/verification-debt.md).
+Next (roadmap version 2): the checks that need other machines (the Claude and OpenAI brains with real keys, a lower-end computer, several monitors) and small steps on how Peak notices and answers. A closed alpha with a handful of observed adults, and an application for free code signing, come last, when the author calls them, and before anything public. The ordered plan is in [`docs/plans/roadmap.md`](docs/plans/roadmap.md), the stories in [`docs/plans/backlog.md`](docs/plans/backlog.md) and what is built but not yet checked in [`docs/plans/verification-debt.md`](docs/plans/verification-debt.md).
 
 ## Contributing
 

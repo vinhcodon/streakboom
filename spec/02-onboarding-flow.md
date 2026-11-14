@@ -66,4 +66,4 @@ Each is recorded once per install, only after consent, as a name and a timestamp
 - Exact trigger thresholds and snooze durations: tune in the alpha.
 - Observe 5 to 10 first-time users to complement telemetry (and to see the tour, the trap rate and the new Settings pages for the first time).
 - Whether to add a short "what can I say?" prompt right after the key is connected.
-- Groq, Claude and OpenAI connection flows have not been run with real keys.
+- The Claude and OpenAI connection flows have not been run with real keys. The Groq flow was run by the author with a real key on 2026-11-14 (connect and chat worked, like Gemini).

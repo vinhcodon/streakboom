@@ -13,7 +13,7 @@ Thank you for looking. Streakboom is a small project with a clear character, so 
 | You can | How |
 |---|---|
 | Report a bug | The "Bug" issue form. Say the Peak version, your Windows version, and the monitors and display scale. **Never paste an API key.** |
-| Test on a machine or a setup we have not | Windows 11, several monitors, mixed display scales, a lower-end computer, a real key for Groq, Claude or OpenAI. These are the open checks in [`docs/plans/verification-debt.md`](docs/plans/verification-debt.md); tell us what you saw. |
+| Test on a machine or a setup we have not | Windows 11, several monitors, mixed display scales, a lower-end computer, a real key for Claude or OpenAI. These are the open checks in [`docs/plans/verification-debt.md`](docs/plans/verification-debt.md); tell us what you saw. |
 | Read the Japanese | The Japanese text was written by Claude and has no native reader (it is a beta). A careful read of `app/src/lib/ui.ts` and `app/src/lib/lines.ts`, with corrections, is one of the most useful things you can give. The Vietnamese and English lines are welcome too. |
 | Fix a bug or build a story | Pick an open story in [`docs/plans/backlog.md`](docs/plans/backlog.md) or an open issue, say so in the issue, then open a pull request. |
 | Improve the documents | Welcome. Keep each fact in its one home ([`docs/README.md`](docs/README.md)). |
