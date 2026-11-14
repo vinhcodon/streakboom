@@ -4,6 +4,7 @@
   import { invoke } from "@tauri-apps/api/core";
   import { getVersion } from "@tauri-apps/api/app";
   import { channelOf, effectiveUpdateMode } from "$lib/channel";
+  import { clockLine, clockPhrase } from "$lib/clock";
   import { AWAY_MINUTES, FAREWELL_BUBBLE_MS, LEAVE_PACE_PX_S, RETRY_SECS, isLeaveCommand, leaveDeadlineMs, mayLeave, nearerEdge, pickFarewell } from "$lib/farewell";
   import { shortEnoughForSkill } from "$lib/intents";
   import { emitTo } from "@tauri-apps/api/event";
@@ -2119,6 +2120,7 @@
         known: knownFor(mem, lang),
         followUser: true, // answer in the language the user writes in
         skills: !quiet && !away && !leaving,
+        clock: clockLine(new Date()), // the local time, the weekday and the part of the day, so the model does not guess them (ADR-0104)
       });
       // The model's own word is checked again here: the name is on the closed list, the message is short and not a question,
       // and the same gates as for the table (Preview, not Quiet, not carried, not in the air). Its words are not shown: Peak says
@@ -2456,10 +2458,10 @@
     const mood = bandOf(data, hour);
     const prompt =
       lang === "vi"
-        ? `Bây giờ là ${hour} giờ. Tâm trạng của bạn: ${mood}. Tình huống: ${trigger}. Hãy tự nói một câu ngắn với mình, không cần mình trả lời.`
+        ? `${clockPhrase(lang, hour)} Tâm trạng của bạn: ${mood}. Tình huống: ${trigger}. Hãy tự nói một câu ngắn với mình, không cần mình trả lời.`
         : lang === "ja"
-          ? `いまは${hour}時だよ。きみの気分：${mood}。状況：${trigger}。自分から短くひとこと話しかけてね。返事はいらないよ。`
-          : `It is ${hour}:00. Your mood: ${mood}. Situation: ${trigger}. Say one short thing to me unprompted; no reply needed.`;
+          ? `${clockPhrase(lang, hour)}きみの気分：${mood}。状況：${trigger}。自分から短くひとこと話しかけてね。返事はいらないよ。`
+          : `${clockPhrase(lang, hour)} Your mood: ${mood}. Situation: ${trigger}. Say one short thing to me unprompted; no reply needed.`;
     try {
       const out = await invoke<{ text: string; mood: string }>("brain_chat", {
         lang,

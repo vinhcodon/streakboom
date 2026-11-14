@@ -1170,6 +1170,7 @@ async fn brain_chat(
     follow_user: Option<bool>,
     event: Option<String>,
     skills: Option<bool>,
+    clock: Option<String>,
 ) -> Result<ChatReply, AiError> {
     tauri::async_runtime::spawn_blocking(move || {
         let state = app.state::<AppState>();
@@ -1179,6 +1180,7 @@ async fn brain_chat(
             Some(ev) if brain::reaction_card(ev).is_some() => brain::persona_with_card(&lang, tier, gentle, ev),
             _ => brain::persona_with_skills(&lang, tier, gentle, known.as_deref().unwrap_or(&[]), follow_user.unwrap_or(false), skills.unwrap_or(false)),
         };
+        let system = brain::with_clock(system, clock.as_deref());
         let raw = run_generate(&state, &key, &system, &history)?;
         let r = brain::split_reply(&raw);
         // Without the skills layer the model was not told about the tag: a tag it still wrote is ignored, never acted on.

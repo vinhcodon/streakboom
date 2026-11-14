@@ -2,6 +2,10 @@
 
 Release notes of the **Preview** builds (an odd middle number: 0.5.x, 0.7.x), newest first. A Preview is a build the author hands to a few adults (ADR-0089, ADR-0090). It is published on GitHub as a pre-release, **never** as the download of the website, and its notes are **not** in [`CHANGELOG.md`](CHANGELOG.md), which the website reads. The format is the same as there: `## x.y.z (YYYY-MM-DD)`, then lines starting with `- `, the first a short bold sentence. When a Preview line is promoted, the Stable version takes its entry in `CHANGELOG.md`.
 
+## 0.9.3 (2026-11-14)
+- **Peak no longer mistakes the morning for the night.** Its own unprompted lines from the chat model were told only "it is 10 o'clock", and the model read that as 10 at night. Peak now tells the model the time with the part of the day in words, and the chat is given your local time, the weekday and the part of the day (nothing else: no date, no place), so asking Peak what time it is no longer makes it guess. This needs a brain connected; the time goes to that brain only with your chat or the optional unprompted lines.
+- Not yet tried: the new wording with a real model in all three languages.
+
 ## 0.9.2 (2026-11-14)
 - **A small log of what happens when Peak is sent away, to find out why it sometimes only nods and stays.** Two reports said that after typing lượn đi or biến đi the chat box closed, Peak nodded twice and then stood there with no goodbye. Peak now writes each step of the leaving (a fixed step name and numbers, never your words or anything from the chat) to a file named leave-trace.log in its data folder, on your computer only; nothing is sent. If it happens again, that file shows which step stopped.
 - Not yet found: the cause. This build does not fix the problem, it records it.
