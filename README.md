@@ -58,7 +58,7 @@ The short version of [`docs/charter.md`](docs/charter.md), which ranks what Peak
 
 ## Highlights
 
-- **Alive without any AI.** A mood and closeness model and 263 hand-written lines per language, with stages when you keep poking it, a sleepy night (23:00 to 07:00 it dozes and says nothing on its own), and "gentle tone" for those who prefer no sarcasm.
+- **Alive without any AI.** A mood and closeness model and 265 hand-written lines per language, with stages when you keep poking it, a sleepy night (23:00 to 07:00 it dozes and says nothing on its own), and "gentle tone" for those who prefer no sarcasm.
 - **Gestures, not buttons.** Sweep the cursor over its head to scratch it, over its belly to rub it (usually bliss, sometimes a trap), click to poke, drag to carry it, right-click to push it, double right-click (or type xê ra, move over, どいて) to ask it to step aside, double-click to chat.
 - **It lives on your desktop.** It wanders, hops between rows, hops onto and climbs the edges of your windows, looks over an edge, falls to the window below if its seat goes away, and gets out from under the Start menu.
 - **Bring your own brain.** Gemini and Groq have free tiers (with limits); Claude and OpenAI are paid. Daily caps keep it frugal; it answers in the language you write in.

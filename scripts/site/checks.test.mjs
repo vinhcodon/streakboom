@@ -191,8 +191,8 @@ test("the size budget passes on the real site and fails when exceeded", async ()
 
 test("a number of hand-written lines that differs from the README", () => fails((c) => {
   const p = page(c, "/ja/how-it-works/");
-  p.html = p.html.replaceAll("263個", "182個");
-}, /does not say 263個/));
+  p.html = p.html.replaceAll("265個", "182個");
+}, /does not say 265個/));
 test("a privacy page that lacks the sense under Peak's feet (README says it has it)", () => fails((c) => {
   const p = page(c, "/vi/privacy/");
   p.html = p.html.replaceAll("dưới chân nó", "ở đâu đó");
