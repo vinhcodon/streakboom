@@ -1177,6 +1177,7 @@ async fn brain_chat(
     banter: Option<bool>,
     remind: Option<bool>,
     open_day: Option<String>,
+    kept_days: Option<Vec<String>>,
 ) -> Result<ChatReply, AiError> {
     tauri::async_runtime::spawn_blocking(move || {
         let state = app.state::<AppState>();
@@ -1189,6 +1190,8 @@ async fn brain_chat(
         let system = brain::with_clock(system, clock.as_deref());
         let system = brain::with_banter(system, banter.unwrap_or(false));
         let system = if remind.unwrap_or(false) { brain::with_open_day(system, open_day.as_deref()) } else { system };
+        // the days the person asked it to keep, so that it can answer about them; never in a remark after a reflex (that path has its own card)
+        let system = if event.is_none() { brain::with_kept_days(system, kept_days.as_deref().unwrap_or(&[])) } else { system };
         let raw = run_generate(&state, &key, &system, &history)?;
         let r = brain::split_reply(&raw);
         // Without the skills layer the model was not told about the tag: a tag it still wrote is ignored, never acted on.

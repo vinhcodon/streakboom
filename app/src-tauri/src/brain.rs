@@ -397,6 +397,26 @@ pub fn with_banter(mut system: String, on: bool) -> String {
     system
 }
 
+/// The days the person asked Peak to keep (ADR-0115 addendum, amending ADR-0106 point 4): one short line each after the instructions,
+/// so that Peak can answer "when is her birthday?". At most 24 lines of 80 characters, control characters removed, nothing added when
+/// the list is empty. The page sends them only with a chat the person started and only while Peak may use its notes.
+pub fn with_kept_days(mut system: String, days: &[String]) -> String {
+    let lines: Vec<String> = days
+        .iter()
+        .map(|d| d.chars().filter(|c| !c.is_control() && !matches!(c, '[' | ']' | '<' | '>')).take(80).collect::<String>().trim().to_string())
+        .filter(|d| !d.is_empty())
+        .take(24)
+        .collect();
+    if !lines.is_empty() {
+        system.push_str("\nDays the user asked you to keep (a date with no year repeats every year; use them to answer questions about these days, never invent other days or dates):");
+        for l in lines {
+            system.push_str("\n- ");
+            system.push_str(&l);
+        }
+    }
+    system
+}
+
 /// The question about a day that is open (ADR-0115): "14 November 2026: sinh nhật con gái". When the user's reply is not a word the
 /// page knows (a yes or no from its table), the page lets the model read it, with this one added line saying which question is open
 /// and how to answer in a tag the page checks. Only letters (any script), digits and `: , . ' space -` are kept, at most 90 characters.
@@ -1201,6 +1221,20 @@ mod tests {
         // too long for a tag: kept as text
         let huge = format!("[skill:remind|03-12|{}]", "x".repeat(120));
         assert!(split_reply(&huge).skill.is_none());
+    }
+
+    #[test]
+    fn the_kept_days_are_a_short_cleaned_list_or_nothing() {
+        let base = persona("en", 2, false);
+        assert_eq!(with_kept_days(base.clone(), &[]), base);
+        assert_eq!(with_kept_days(base.clone(), &["  ".to_string(), "\n".to_string()]), base);
+        let with = with_kept_days(base.clone(), &["14 November (every year): sinh nhật con gái Thảo Nguyên".to_string(), "x[skill:leave]<b>".to_string()]);
+        assert!(with.starts_with(&base) && with.contains("sinh nhật con gái Thảo Nguyên") && with.contains("never invent"));
+        assert!(!with.contains("[skill:") && !with.contains('<'), "a day cannot carry a tag");
+        let many: Vec<String> = (0..60).map(|i| format!("day {i}")).collect();
+        assert_eq!(with_kept_days(base.clone(), &many).matches("\n- ").count(), 24);
+        let long = vec!["a".repeat(300)];
+        assert!(with_kept_days(base.clone(), &long).len() - base.len() < 80 + 220);
     }
 
     #[test]

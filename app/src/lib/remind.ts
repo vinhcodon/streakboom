@@ -260,6 +260,16 @@ export function remindSay(kind: RemindLine, lang: Lang, v: { label?: string; dat
   return from[Math.min(from.length - 1, Math.floor(rand() * from.length))];
 }
 
+/**
+ * The kept days as short notes for the model, in the app's language, so that it can answer "when is Thảo Nguyên's birthday?"
+ * (ADR-0115 addendum, amending ADR-0106 point 4). One line a day: the date, whether it repeats, and the person's own words.
+ * Sent with a chat the person started, and only while Peak may use its notes (the same switch as the noted facts).
+ */
+export function keptForModel(list: readonly KeptDay[], lang: Lang): string[] {
+  const every = { vi: "hằng năm", en: "every year", ja: "毎年" }[lang];
+  return list.slice(0, MAX_KEPT).map((k) => `${describeDate(k.md, k.year, lang)}${k.year === 0 ? ` (${every})` : ""}: ${k.label}`);
+}
+
 // ---------------------------------------------------------------- the stored list
 
 /** The list as read from memory.json: bounded, every field checked; a bad row is dropped, never fixed up. */

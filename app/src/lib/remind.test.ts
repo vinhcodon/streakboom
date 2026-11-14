@@ -2,7 +2,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import {
   MAX_CLARIFY, MAX_KEPT, MAX_LABEL, MISSED_WINDOW_DAYS, PENDING_MS, REMIND_LINES, addKept, answerOf, cleanLabel, describeDate, dueToday, fallsOn,
-  hasKept, markDone, missedSince, parseKept, parseRemindAnswer, parseRemindArgs, pendingAlive, pruneOneOff, remindSay, removeKept, replyKind, validMd, type KeptDay, type RemindLine,
+  hasKept, keptForModel, markDone, missedSince, parseKept, parseRemindAnswer, parseRemindArgs, pendingAlive, pruneOneOff, remindSay, removeKept, replyKind, validMd, type KeptDay, type RemindLine,
 } from "./remind.ts";
 import { BANNED } from "./banned.ts";
 import { dayKey } from "./state.ts";
@@ -168,4 +168,13 @@ test("the model's answer to the open question is exactly yes or no, and never ta
   assert.equal(parseRemindAnswer(" No "), "no");
   for (const bad of ["maybe", "yes please", "", null, undefined, "03-12|mẹ"]) assert.equal(parseRemindAnswer(bad as string), null, String(bad));
   assert.equal(parseRemindArgs("yes"), null); // a yes is not a day
+});
+
+test("the kept days go to the model as one short line each, in the app's language", () => {
+  const list = [kept("03-12", { label: "sinh nhật mẹ" }), kept("11-20", { year: 2027, label: "thi" })];
+  assert.deepEqual(keptForModel(list, "vi"), ["ngày 12 tháng 3 (hằng năm): sinh nhật mẹ", "ngày 20 tháng 11 năm 2027: thi"]);
+  assert.deepEqual(keptForModel(list, "en"), ["12 March (every year): sinh nhật mẹ", "20 November 2027: thi"]);
+  assert.deepEqual(keptForModel(list, "ja"), ["3月12日 (毎年): sinh nhật mẹ", "2027年11月20日: thi"]);
+  assert.deepEqual(keptForModel([], "en"), []);
+  assert.ok(keptForModel(Array.from({ length: 40 }, (_, i) => kept("01-01", { id: "i" + i })), "en").length <= MAX_KEPT);
 });

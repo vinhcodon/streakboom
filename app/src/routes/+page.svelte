@@ -8,7 +8,7 @@
   import { decideDismissal, freshDismissalState, inConversation } from "$lib/dismissal";
   import { resolveGesture } from "$lib/bindings";
   import { recordPush, shouldHintAside } from "$lib/asidehint";
-  import { MAX_CLARIFY, addKept, describeDate, dueToday, fallsOn, hasKept, markDone, missedSince, parseRemindAnswer, parseRemindArgs, pendingAlive, pruneOneOff, remindSay, replyKind, type Pending, type RemindLine } from "$lib/remind";
+  import { MAX_CLARIFY, addKept, describeDate, dueToday, fallsOn, hasKept, keptForModel, markDone, missedSince, parseRemindAnswer, parseRemindArgs, pendingAlive, pruneOneOff, remindSay, replyKind, type Pending, type RemindLine } from "$lib/remind";
   import { clickResolver } from "$lib/clickresolver";
   import { gatesPass, pickLine as pickFromPool, runSteps, type Host } from "$lib/skill-run";
   import { ASIDE_SKILL, LEAVE_SKILL, SEAT_SKILL } from "$lib/skills";
@@ -2404,6 +2404,7 @@
         gentle: data.settings.gentle,
         history,
         known: knownFor(mem, lang),
+        keptDays: mem.aiLearn ? keptForModel(mem.keptDays, lang) : undefined, // so Peak can answer about the days it keeps (the same switch as the notes)
         followUser: true, // answer in the language the user writes in
         skills: !quiet && !away && !leaving && !talking,
         openDay: asked ? `${describeDate(asked.md, asked.year, lang)}: ${asked.label}` : undefined,
