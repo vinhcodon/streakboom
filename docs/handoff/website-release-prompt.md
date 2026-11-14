@@ -34,6 +34,12 @@ Summarise what changed, list what you did not verify (the state on the Pages hos
 
 ---
 
+## 0.10.0 (published 2026-11-14): one new thing to show, nothing to restructure
+- **The Pages build:** the README changed its status line (v0.10.0); `docs/features.md` has a new bullet (it steps aside when asked) and a new row (double right-click, or type xê ra, move over, どいて); `CHANGELOG.md` has a new first entry whose first sentence is the short bold **"You can ask Peak to step aside."** (the home page shows it). The entry does not name Previews or test builds, as the build requires (ADR-0101).
+- **What to say, if the site has a features list or an FAQ:** you can ask Peak to get out of the way by double right-clicking it or typing a short phrase; it walks away from the pointer and never leaves; in a light chat, "go away" is taken as a joke unless said three times; the date and part of the day are now right in the model's own lines. Nothing needs a new page. For SEO and answer engines (GEO): keep the short plain sentence "You can ask Peak to step aside" near the features, in the three languages.
+- **Still not for the site:** Previews and test builds (ADR-0089, ADR-0095); `update-trace.log` and `leave-trace.log` need not be mentioned (local files, numbers only).
+- **GitHub keeps the newest two Stable releases:** `v0.10.0` and `v0.8.1` (`v0.8.0` is deleted when 0.10.0 is published); Preview `v0.11.0` and `v0.9.8`.
+
 ## 0.8.1 (a fix, published 2026-11-14): nothing to change on the site
 - **The Pages build:** the README changed only its status line (v0.8.1); `CHANGELOG.md` has a new first entry whose first sentence is the short bold **"Peak no longer vanishes in the middle of the screen when you send it away."** (the home page shows it). `tauri.conf.json` says 0.8.1, so the build's check that a release `v0.8.1` is published (ADR-0065) passes once it is.
 - **Behaviour to know about:** none new to announce; the walk to the edge is faster and Peak stays if it cannot reach the edge. The new local file `leave-trace.log` holds only step names and numbers, is never sent, and need not be mentioned on the site. Previews and test builds stay unannounced (ADR-0089, ADR-0095, ADR-0101).

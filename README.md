@@ -21,7 +21,7 @@
   <a href="CONTRIBUTING.md">Contributing</a>
 </p>
 
-> **Status: first official release line (v0.8.1), Windows 10/11 only.** Earlier 0.1.x builds were development builds and have been withdrawn. The installer is not code-signed yet, so Windows SmartScreen will warn when you run it. The Groq, Claude and OpenAI brains have not yet been tried with real keys (Gemini has).
+> **Status: first official release line (v0.10.0), Windows 10/11 only.** Earlier 0.1.x builds were development builds and have been withdrawn. The installer is not code-signed yet, so Windows SmartScreen will warn when you run it. The Groq, Claude and OpenAI brains have not yet been tried with real keys (Gemini has).
 
 Peak lives on top of your screen, reacts to being stroked, poked and carried, perches on the edges of your windows, says short lines in Vietnamese, English or Japanese (Japanese is a beta: written by Claude and not yet read by a native speaker), and keeps you company. It is a companion, not an assistant: it is lovable with no AI at all, and if you give it your own API key (Gemini, Groq, Claude or OpenAI) it can also chat and remember a few things about you.
 
