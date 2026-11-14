@@ -1,11 +1,11 @@
 {
-    "version":  "0.11.3",
-    "notes":  "Peak no longer asks the same question about a day again and again. The small answers people really type (uh, vâng, dạ, ko, nah and more) are understood. With a brain connected, Peak lets the chat model read an answer it does not know, even a corrected day (không phải, ngày mai mới đúng); without...",
-    "pub_date":  "2026-11-14T19:03:59Z",
+    "version":  "0.11.4",
+    "notes":  "Peak can now answer about the days it keeps. Ask it, for example, when someone\u0027s birthday is: the days you asked it to keep are sent to your chat model with each chat you start, a short line each, so it can answer. They go with the same switch as the noted facts (Settings, Memory, Remember things...",
+    "pub_date":  "2026-11-14T19:34:37Z",
     "platforms":  {
                       "windows-x86_64":  {
-                                             "signature":  "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVUcHBlQXhYUlVURnJJOTREaEZPNVFrd285SmMyc3dLeC9VckZ1alR5QnJraGNqTTZDVEtIZld0UXd0ckZqaVZzdzkrM2d1QzcvZVVSd1pBV1FYa25PMXFCMlpLaUs5VFFZPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzk0NjgzMDM4CWZpbGU6U3RyZWFrYm9vbV8wLjExLjNfeDY0LXNldHVwLmV4ZQl2ZXJzaW9uOjAuMTEuMwp3bXJXMDk4akZlZFBiMElRWVRYa1ptd3M4NlJiVGc5RHJTT2FiaHd1Y3FiTWN0NWhaeHNJOGwzNnBTMDlDRmhzU05JbUFKWnBLTmhvUXlPcHViRnVCZz09Cg==",
-                                             "url":  "https://api.github.com/repos/vinhcodon/streakboom/releases/assets/748477744"
+                                             "signature":  "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVUcHBlQXhYUlVURm8rVkFBcmdoU0NpeUZ0Si9Sd2piaXJtdlUvb0pPMFlxc0tMZ3JIOG5UbG5QMysrTXBCT0RNYW9GVTJ2eDZ4MG5BSGxPZHU1R0ZBcFBCWld4VjMrZndZPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzk0Njg0ODc1CWZpbGU6U3RyZWFrYm9vbV8wLjExLjRfeDY0LXNldHVwLmV4ZQl2ZXJzaW9uOjAuMTEuNApoT2hiQUlmcFNyWE5EZWVDS1VxZjBhT0NQdW9CUHBZRVlPU1gvTk5RbTRNZFBLUEwwK01JbVpnRXU2cDF0eXBxMjBSclduMk82bkdzNXBnM2UzSGZEZz09Cg==",
+                                             "url":  "https://api.github.com/repos/vinhcodon/streakboom/releases/assets/748554122"
                                          }
                   }
 }
