@@ -18,3 +18,6 @@
 
 ## Amendment 2 (2026-11-14, night): the title is one level
 The author did not like the two levels inside the `<h1>`. The title is now **one sentence at one size**, punctuated as a headline (a colon, a lower-case start after it, no full stop at the end; the author chose this from three forms): "Gặp Peak: một chú mèo nhỏ sống trên màn hình của bạn", "Meet Peak: a little cat that lives on your screen", 「ネコのPeakと出会おう：画面の隅にいる、小さなネコ」. The hero title is smaller (`clamp(1.5rem, 5.2vw, 2.4rem)`, balanced lines) so a sentence of about 50 characters takes two lines instead of three. The hidden full stop and the sub-line (`hero_sub`) are gone.
+
+## Amendment 3 (2026-11-14, night): the tagline is under the title
+The author suggested moving the rotating tagline from above the title to **under it**: the title first (the page says what it is), then the playful line, then the lead. The place keeps its fixed height of two lines, so nothing moves when the script swaps the line, and the script still comes right after the element.

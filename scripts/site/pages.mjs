@@ -247,9 +247,9 @@ export function homePage(lang, ctx) {
     <!-- HERO -->
     <section class="hero">
       <div class="hero-text">
+        <h1>${s("hero_title")}</h1>
         <p class="kicker"><span id="tagline">${s(DEFAULT_TAGLINE)}</span></p>
         <script id="tagline-script">${taglineScript(TAGLINE_KEYS.map((k) => raw(lang, k, ctx)))}</script>
-        <h1>${s("hero_title")}</h1>
         <p class="lead">${s("hero_lead")}</p>
         <div class="cta">
           <a id="download-btn" class="btn primary" href="${ctx.installerUrl}">
