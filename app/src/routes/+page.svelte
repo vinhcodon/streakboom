@@ -6,6 +6,8 @@
   import { channelOf, effectiveUpdateMode } from "$lib/channel";
   import { clockLine, clockPhrase } from "$lib/clock";
   import { decideDismissal, freshDismissalState, inConversation } from "$lib/dismissal";
+  import { resolveGesture } from "$lib/bindings";
+  import { clickResolver } from "$lib/clickresolver";
   import { gatesPass, pickLine as pickFromPool, runSteps, type Host } from "$lib/skill-run";
   import { LEAVE_SKILL, SEAT_SKILL } from "$lib/skills";
   import { LEAVE_PACE_PX_S, RETRY_SECS, isLeaveCommand, leaveDeadlineMs, mayLeave, nearerEdge } from "$lib/farewell";
@@ -1866,10 +1868,27 @@
   }
 
   // Right-click: no menu (the only menu is the tray's, ADR-0055). It is a push away from the pointer (see `shove`).
+  // One right click waits RIGHT_DOUBLE_MS for a second (ADR-0109): a single is the push, a double is "step aside". Until
+  // step aside is built (IM-3) `resolveGesture` reaches nothing for the double, and then it is a push as before.
+  const rightClicks = clickResolver<number>(
+    (dx) => void shove(dx),
+    (dx) => {
+      const act = resolveGesture("right_double_click", {
+        held: pose === "held",
+        quiet,
+        flying,
+        away,
+        leaving,
+        cooldownOk: Date.now() - lastShove >= 2500,
+      });
+      if (act === null) void shove(dx);
+      // the action `step_aside` is run here by name once its skill exists
+    },
+  );
   function onPetMenu(e: MouseEvent) {
     e.preventDefault();
     const r = (e.currentTarget as HTMLElement).getBoundingClientRect();
-    void shove(e.clientX - (r.left + r.width / 2));
+    rightClicks.click(e.clientX - (r.left + r.width / 2));
   }
 
   // ----------------------------------------------------------------- brain
