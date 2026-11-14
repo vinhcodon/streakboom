@@ -2,6 +2,10 @@
 
 Release notes of the **Preview** builds (an odd middle number: 0.5.x, 0.7.x), newest first. A Preview is a build the author hands to a few adults (ADR-0089, ADR-0090). It is published on GitHub as a pre-release, **never** as the download of the website, and its notes are **not** in [`CHANGELOG.md`](CHANGELOG.md), which the website reads. The format is the same as there: `## x.y.z (YYYY-MM-DD)`, then lines starting with `- `, the first a short bold sentence. When a Preview line is promoted, the Stable version takes its entry in `CHANGELOG.md`.
 
+## 0.11.4 (2026-11-15)
+- **Peak can now answer about the days it keeps.** Ask it, for example, when someone's birthday is: the days you asked it to keep are sent to your chat model with each chat you start, a short line each, so it can answer. They go with the same switch as the noted facts (Settings, Memory, Remember things I tell it in chats): turn that off and neither is sent. Settings says so.
+- Not yet tried: asking about the days with a real chat model, and that turning the switch off makes Peak not know them.
+
 ## 0.11.3 (2026-11-15)
 - **Peak no longer asks the same question about a day again and again.** The small answers people really type (uh, vâng, dạ, ko, nah and more) are understood. With a brain connected, Peak lets the chat model read an answer it does not know, even a corrected day (không phải, ngày mai mới đúng); without one it says how to answer. A day it already keeps, or one you said no to, is not offered again.
 - **The question about a day stays open when the chat box closes by itself** (half an hour), and is shown again when you open the box. If you tell several days in one message Peak takes them one at a time. A day Peak could not make out is said plainly, not as if it were kept.
