@@ -68,8 +68,8 @@ export function parseRemindArgs(args: string | null | undefined): Pending | null
   return { md, year, label, t: 0 };
 }
 
-const YES = ["đúng", "đúng rồi", "đúng vậy", "đúng đó", "phải", "phải rồi", "ừ", "ừm", "ờ", "ok", "okay", "yes", "yep", "yeah", "right", "correct", "that's right", "sure", "keep it", "keep", "please", "do it", "giữ", "giữ đi", "giữ nhé", "nhớ đi", "はい", "うん", "そう", "そうだよ", "合ってる", "あってる", "お願い", "覚えて"];
-const NO = ["không", "không phải", "không đúng", "sai", "sai rồi", "chưa đúng", "no", "nope", "wrong", "not right", "that's wrong", "don't", "no thanks", "đừng", "đừng giữ", "thôi", "いいえ", "ちがう", "違う", "ううん", "ちがうよ", "やめて"];
+const YES = ["đúng", "đúng rồi", "đúng vậy", "đúng đó", "phải", "phải rồi", "ừ", "ừm", "ừa", "ờ", "uh", "uhm", "uh huh", "um", "uk", "vâng", "dạ", "dạ vâng", "được", "được rồi", "ok", "okay", "oke", "okie", "yup", "yes", "yep", "yeah", "right", "correct", "that's right", "sure", "keep it", "keep", "please", "do it", "giữ", "giữ đi", "giữ nhé", "nhớ đi", "はい", "うん", "そう", "そうだよ", "合ってる", "あってる", "お願い", "覚えて"];
+const NO = ["không", "không phải", "không đúng", "sai", "sai rồi", "chưa đúng", "no", "nope", "wrong", "not right", "that's wrong", "don't", "no thanks", "đừng", "đừng giữ", "thôi", "ko", "hông", "nah", "いいえ", "ちがう", "違う", "ううん", "ちがうよ", "やめて"];
 const norm = (xs: string[]) => new Set(xs.map(normalize));
 const YES_SET = norm(YES);
 const NO_SET = norm(NO);
@@ -82,13 +82,32 @@ export function answerOf(text: string): "yes" | "no" | null {
   return null;
 }
 
+/** How many times a short reply that is neither a yes nor a no is answered with "say it again" before the question is dropped. */
+export const MAX_CLARIFY = 2;
+
+/**
+ * What a message is to the question about a day: a yes, a no, "short" (a few words that are neither: probably an answer in words
+ * Peak does not know, such as "uh"), or "other" (a real new message). A short reply is not sent on to the model, which does not
+ * know there is a question and would ask it again (Preview 0.11.2: it asked three times).
+ */
+export function replyKind(text: string): "yes" | "no" | "short" | "other" {
+  const a = answerOf(text);
+  if (a) return a;
+  const n = normalize(text);
+  const words = n.split(" ").filter(Boolean);
+  return words.length > 0 && words.length <= 3 && n.length <= 24 ? "short" : "other";
+}
+
+/** Is this day (same month and day, same year, same words) already kept? */
+export const hasKept = (list: readonly KeptDay[], p: Pending): boolean => list.some((k) => k.md === p.md && k.year === p.year && k.label.toLowerCase() === p.label.toLowerCase());
+
 export function pendingAlive(p: Pending | null, now: number): p is Pending {
   return p !== null && now - p.t >= 0 && now - p.t < PENDING_MS;
 }
 
 /** Keep a confirmed day. The same day with the same words is not kept twice; the list has a limit. */
 export function addKept(list: readonly KeptDay[], p: Pending, now: number, id: string): { list: KeptDay[]; result: "added" | "same" | "full" } {
-  if (list.some((k) => k.md === p.md && k.year === p.year && k.label.toLowerCase() === p.label.toLowerCase())) return { list: [...list], result: "same" };
+  if (hasKept(list, p)) return { list: [...list], result: "same" };
   if (list.length >= MAX_KEPT) return { list: [...list], result: "full" };
   return { list: [...list, { id, md: p.md, year: p.year, label: p.label, t: now, done: "" }], result: "added" };
 }
@@ -162,7 +181,7 @@ export function describeDate(md: string, year: number, lang: Lang): string {
   return `${d} ${MONTHS_EN[mo - 1]}${year ? ` ${year}` : ""}`;
 }
 
-export type RemindLine = "today" | "missed" | "ask" | "kept" | "same" | "full" | "dropped";
+export type RemindLine = "today" | "missed" | "ask" | "kept" | "same" | "full" | "dropped" | "clarify";
 
 /** Scripted lines, three languages, no key needed (ADR-0106 point 6). {label} and {date} are filled in by `say`. */
 export const REMIND_LINES: Record<RemindLine, Record<Lang, string[]>> = {
@@ -195,6 +214,11 @@ export const REMIND_LINES: Record<RemindLine, Record<Lang, string[]>> = {
     en: ["I keep as many days as I can. You can remove some in Settings, Memory.", "My list of days is full. You can clear some in Settings, Memory."],
     vi: ["Mình giữ hết sức rồi. Bạn có thể xóa bớt trong Cài đặt, Bộ nhớ.", "Danh sách ngày của mình đầy rồi. Bạn xóa bớt trong Cài đặt, Bộ nhớ nhé."],
     ja: ["これ以上は覚えられないよ。設定のメモリーで減らせるよ。", "日付のリストがいっぱい。設定のメモリーで消してね。"],
+  },
+  clarify: {
+    en: ["Not sure I got that. Say 'keep it' to keep the day, or 'no' to skip it.", "I did not catch that. 'Keep it' or 'no'?"],
+    vi: ["Mình chưa rõ nè. Giữ ngày này thì nói 'giữ đi', không thì nói 'không' nhé.", "Mình chưa hiểu ý. 'Giữ đi' hay 'không' nhỉ?"],
+    ja: ["ごめん、わからなかった。覚えるなら「お願い」、やめるなら「やめて」って言ってね。", "うまく伝わらなかったみたい。「お願い」か「やめて」で教えてね。"],
   },
   dropped: {
     en: ["Okay, I won't keep it.", "No problem, I'll leave it out."],

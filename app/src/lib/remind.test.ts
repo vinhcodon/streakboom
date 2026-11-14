@@ -1,8 +1,8 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import {
-  MAX_KEPT, MAX_LABEL, MISSED_WINDOW_DAYS, PENDING_MS, REMIND_LINES, addKept, answerOf, cleanLabel, describeDate, dueToday, fallsOn,
-  markDone, missedSince, parseKept, parseRemindArgs, pendingAlive, pruneOneOff, remindSay, removeKept, validMd, type KeptDay, type RemindLine,
+  MAX_CLARIFY, MAX_KEPT, MAX_LABEL, MISSED_WINDOW_DAYS, PENDING_MS, REMIND_LINES, addKept, answerOf, cleanLabel, describeDate, dueToday, fallsOn,
+  hasKept, markDone, missedSince, parseKept, parseRemindArgs, pendingAlive, pruneOneOff, remindSay, removeKept, replyKind, validMd, type KeptDay, type RemindLine,
 } from "./remind.ts";
 import { BANNED } from "./banned.ts";
 import { dayKey } from "./state.ts";
@@ -143,4 +143,19 @@ test("the stored list is read with bounds and bad rows are dropped", () => {
   assert.equal(parseKept(Array.from({ length: 80 }, (_, i) => ({ id: `i${i}`, md: "01-01", label: `l${i}` }))).length, MAX_KEPT);
   assert.equal(parseKept([{ id: "d", md: "01-01", label: "x", year: 1850 }])[0].year, 0);
   assert.equal(dayKey(at(2026, 11, 14)), "2026-11-14");
+});
+
+test("'uh' and the other small yeses are yeses; a few unknown words are 'short'; a real message is 'other'", () => {
+  for (const y of ["uh", "Uhm", "uh huh", "vâng", "dạ", "được rồi", "okie", "yup"]) assert.equal(replyKind(y), "yes", y);
+  for (const n of ["ko", "nah", "hông"]) assert.equal(replyKind(n), "no", n);
+  for (const sh of ["uhh", "ờ thì", "chắc vậy", "hmm", "maybe"]) assert.equal(replyKind(sh), "short", sh);
+  for (const o of ["hôm nay mình đi làm về muộn quá", "what is the date today and also something else", ""]) assert.equal(replyKind(o), "other", o);
+  assert.equal(MAX_CLARIFY, 2);
+});
+
+test("a day already kept is recognised, so the model naming it again is not asked about again", () => {
+  const p = { md: "11-14", year: 0, label: "Sinh nhật Thảo Nguyên", t: 0 };
+  assert.equal(hasKept([kept("11-14", { label: "sinh nhật thảo nguyên" })], p), true);
+  assert.equal(hasKept([kept("11-15", { label: "sinh nhật thảo nguyên" })], p), false);
+  assert.equal(hasKept([], p), false);
 });

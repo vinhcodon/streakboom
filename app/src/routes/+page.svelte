@@ -8,7 +8,7 @@
   import { decideDismissal, freshDismissalState, inConversation } from "$lib/dismissal";
   import { resolveGesture } from "$lib/bindings";
   import { recordPush, shouldHintAside } from "$lib/asidehint";
-  import { addKept, answerOf, describeDate, dueToday, fallsOn, markDone, missedSince, parseRemindArgs, pendingAlive, pruneOneOff, remindSay, type Pending, type RemindLine } from "$lib/remind";
+  import { MAX_CLARIFY, addKept, describeDate, dueToday, fallsOn, hasKept, markDone, missedSince, parseRemindArgs, pendingAlive, pruneOneOff, remindSay, replyKind, type Pending, type RemindLine } from "$lib/remind";
   import { clickResolver } from "$lib/clickresolver";
   import { gatesPass, pickLine as pickFromPool, runSteps, type Host } from "$lib/skill-run";
   import { ASIDE_SKILL, LEAVE_SKILL, SEAT_SKILL } from "$lib/skills";
@@ -2244,6 +2244,7 @@
   }
 
   // ------------------------------------------------------- kept days (ADR-0106, ADR-0115)
+  let pendingTries = 0; // short replies to the open question that were answered with "say it again"
   let pendingDay: Pending | null = null; // a day waiting for the person's yes or no; memory only, gone after five minutes
   let lastRemindLine: string | null = null;
   function remindLine(kind: RemindLine, v: { label?: string; date?: string }): string {
@@ -2260,9 +2261,18 @@
       pendingDay = null;
       return false;
     }
-    const a = answerOf(text);
+    const kind = replyKind(text);
+    if (kind === "short" && pendingTries < MAX_CLARIFY) {
+      // a few words that are neither yes nor no ("uh"): the model does not know there is a question and would ask it again, so Peak says
+      // how to answer, keeps the question, and does not send the words on
+      pendingTries++;
+      lt("remind_clarify");
+      showLocalReply(text, remindLine("clarify", {}));
+      return true;
+    }
     pendingDay = null; // answered, or something else was said: the question is over either way
-    if (!a) return false;
+    if (kind !== "yes" && kind !== "no") return false;
+    const a = kind;
     let line: string;
     if (a === "no") line = remindLine("dropped", {});
     else {
@@ -2277,13 +2287,18 @@
       } else line = remindLine(r.result === "same" ? "same" : "full", {});
     }
     lt(`remind_answer ${a}`);
+    showLocalReply(text, line);
+    return true;
+  }
+
+  /** Peak's own answer in the chat box, without the model. */
+  function showLocalReply(text: string, line: string) {
     chatUser = text;
     chatReply = line;
     chatPhase = "reply";
     replyMood = "neutral";
     history = [...history, { role: "user" as const, text }, { role: "model" as const, text: line }].slice(-8);
     resetMenuTimer();
-    return true;
   }
 
   /**
@@ -2390,8 +2405,11 @@
         // The model named a day. Its form is checked here; Peak asks in its own words and keeps nothing until the person says yes.
         const p = parseRemindArgs(out.skillArgs);
         lt(`model_remind valid=${p !== null}`);
-        if (p) {
+        if (p && hasKept(mem.keptDays, p)) {
+          reply = remindLine("same", {}); // already kept: the model naming it again is not asked about again
+        } else if (p) {
           pendingDay = { ...p, t: Date.now() };
+          pendingTries = 0;
           reply = remindLine("ask", { date: describeDate(p.md, p.year, lang), label: p.label });
         }
       }
