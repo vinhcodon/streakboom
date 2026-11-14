@@ -2,6 +2,10 @@
 
 Release notes of the **Preview** builds (an odd middle number: 0.5.x, 0.7.x), newest first. A Preview is a build the author hands to a few adults (ADR-0089, ADR-0090). It is published on GitHub as a pre-release, **never** as the download of the website, and its notes are **not** in [`CHANGELOG.md`](CHANGELOG.md), which the website reads. The format is the same as there: `## x.y.z (YYYY-MM-DD)`, then lines starting with `- `, the first a short bold sentence. When a Preview line is promoted, the Stable version takes its entry in `CHANGELOG.md`.
 
+## 0.9.8 (2026-11-14)
+- **When an update cannot be downloaded, Peak now writes a small note about why.** It is a line in update-trace.log in its data folder: a number for the answer of the server (such as 403) and how many calls GitHub says are left for your network. No words, no account, nothing is sent anywhere. It is there to find out why an update to 0.9.7 failed, not to fix it.
+- Not yet tried: the note on a real failed update; whether the number is read correctly from the error.
+
 ## 0.9.7 (2026-11-14)
 - **The hint about xê ra now really shows.** After three pushes in a short while Peak is meant to say once that you can also say xê ra; in 0.9.6 the line could be swallowed by the bubble of the push and then never come back. It now waits for the bubble to go and counts as said only when you have seen it.
 - Not yet tried: seeing the hint on a real screen (push three times before ever using xê ra).
