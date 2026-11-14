@@ -11,7 +11,7 @@ What Peak is told when a brain is connected (spec/09 section 6, RX-5). `persona(
 | tone | `gentle.md` | the Gentle setting is on | no |
 | mood | `mood.md` | always | **yes**: the leading mood tag the app needs to act the feeling out (ADR-0016) |
 | closeness | `closeness-shy.md` or `closeness-close.md` | tiers 0 and 1, or 3 and 4 | no |
-| skills | `skills.md` | **only in a chat the user started, not in Quiet mode** (S4, spec 14; on every build from 0.7.7, ADR-0100): the closed list of skills the model may name in a tag, now `[skill:leave]`; added after everything else by `persona_with_skills`, never part of `persona()` | no |
+| skills | the `description` of each skill file, `../src/lib/skills/*.skill.json` (ADR-0103) | **only in a chat the user started, not in Quiet mode** (S4, spec 14; on every build from 0.7.7, ADR-0100): the closed list of skills the model may name in a tag, now `[skill:leave]`; added after everything else by `persona_with_skills`, never part of `persona()` | no |
 
 A **reaction card** (`cards/<event>.md`, RX-7) is added after the persona when Peak asks its brain for a short remark after a reflex; it holds only how the remark should sound, and the request carries only the event name and five appraisal numbers. After these, a chat the user started adds what the user told Peak earlier (`persona_with`), which Settings already shows under "What the pet remembers".
 

@@ -4,7 +4,8 @@ Release notes of the **Preview** builds (an odd middle number: 0.5.x, 0.7.x), ne
 
 ## 0.9.3 (2026-11-14)
 - **Peak no longer mistakes the morning for the night.** Its own unprompted lines from the chat model were told only "it is 10 o'clock", and the model read that as 10 at night. Peak now tells the model the time with the part of the day in words, and the chat is given your local time, the weekday and the part of the day (nothing else: no date, no place), so asking Peak what time it is no longer makes it guess. This needs a brain connected; the time goes to that brain only with your chat or the optional unprompted lines.
-- Not yet tried: the new wording with a real model in all three languages.
+- Under the hood, sending Peak away is now described in a text file (phrases, goodbyes, steps) that a small interpreter runs; it should look and behave as before. It also fixes a case where Peak could stop walking to the edge and then stand still, refusing the next command.
+- Not yet tried: the new wording with a real model in all three languages, and sending Peak away again on a real screen after this change.
 
 ## 0.9.2 (2026-11-14)
 - **A small log of what happens when Peak is sent away, to find out why it sometimes only nods and stays.** Two reports said that after typing lượn đi or biến đi the chat box closed, Peak nodded twice and then stood there with no goodbye. Peak now writes each step of the leaving (a fixed step name and numbers, never your words or anything from the chat) to a file named leave-trace.log in its data folder, on your computer only; nothing is sent. If it happens again, that file shows which step stopped.

@@ -5,7 +5,9 @@
   import { getVersion } from "@tauri-apps/api/app";
   import { channelOf, effectiveUpdateMode } from "$lib/channel";
   import { clockLine, clockPhrase } from "$lib/clock";
-  import { AWAY_MINUTES, FAREWELL_BUBBLE_MS, LEAVE_PACE_PX_S, RETRY_SECS, isLeaveCommand, leaveDeadlineMs, mayLeave, nearerEdge, pickFarewell } from "$lib/farewell";
+  import { pickLine as pickFromPool, runSteps, type Host } from "$lib/skill-run";
+  import { LEAVE_SKILL } from "$lib/skills";
+  import { LEAVE_PACE_PX_S, RETRY_SECS, isLeaveCommand, leaveDeadlineMs, mayLeave, nearerEdge } from "$lib/farewell";
   import { shortEnoughForSkill } from "$lib/intents";
   import { emitTo } from "@tauri-apps/api/event";
   import { getCurrentWebviewWindow } from "@tauri-apps/api/webviewWindow";
@@ -740,10 +742,17 @@
 
   function enter(requested: PetState) {
     // something else took over while it was leaving (picked up, touched, a hop, a fall): it does not leave
+    // While it walks to the edge, a plain "idle", "look" or "nod" would stop the walk without ending the leaving (the person would
+    // see Peak standing and the next command would be refused as "already leaving"): they are ignored until the walk ends.
+    if (leaving && awayWalkActive && (requested === "idle" || requested === "look" || requested === "nod")) {
+      lt(`ignored_${requested}_during_walk`);
+      return;
+    }
     if (leaving && requested !== "walk" && requested !== "nod" && requested !== "idle" && requested !== "look") {
       lt(`cancelled_by_pose pose=${requested}`);
       leaving = false;
       awayWalkActive = false;
+      settleWalk(false);
     }
     if (requested === "held") {
       leavePerch(); // carried away: it is no longer where it perched
@@ -1978,34 +1987,80 @@
   }
 
   let leaveRoom = 0; // logical px from Peak to the edge it walks to
+  let walkDone: ((reached: boolean) => void) | null = null; // the walk_to_edge step waits for this
+  function settleWalk(reached: boolean) {
+    const r = walkDone;
+    walkDone = null;
+    r?.(reached);
+  }
+
+  /** What the six verbs of a skill file do on this page (ADR-0103). Nothing else can be asked of the page by a skill. */
+  const skillHost: Host = {
+    say(poolName, ms) {
+      const pools = LEAVE_SKILL.pools[poolName] as Record<string, string[]>;
+      const line = pickFromPool(pools[lang] ?? pools.en, lastFarewell);
+      lastFarewell = line;
+      showBubble(line, ms);
+      lt(`bubble on=${bubbleOn} len=${line.length}`);
+    },
+    pose(p) {
+      enter(p as PetState);
+    },
+    wait: (ms) => new Promise((r) => setTimeout(r, ms)),
+    async walkToEdge() {
+      let roomLeft = 0;
+      let roomRight = 0;
+      try {
+        roomLeft = await invoke<number>("edge_room", { dir: -1 });
+        roomRight = await invoke<number>("edge_room", { dir: 1 });
+      } catch {
+        /* unknown: it walks right */
+      }
+      if (!leaving) return false;
+      dir = nearerEdge(roomLeft, roomRight);
+      leaveRoom = dir < 0 ? roomLeft : roomRight;
+      lt(`walk_start left=${Math.round(roomLeft)} right=${Math.round(roomRight)} dir=${dir} deadline=${leaveDeadlineMs(leaveRoom)}`);
+      return new Promise<boolean>((resolve) => {
+        walkDone = resolve;
+        awayWalkActive = true;
+        enter("walk"); // startWalk sees awayWalkActive and runs the walk to the edge
+      });
+    },
+    async hide(minutes) {
+      if (!leaving || away) return false;
+      clearInterval(walkTimer);
+      clearTimeout(walkEndTimer);
+      leaving = false;
+      awayWalkActive = false;
+      away = true; // from here nothing moves or speaks (scheduleNext, showBubble and the proactive line look at it)
+      enter("idle");
+      const left = await invoke<boolean>("pet_leave", { minutes }).catch(() => false);
+      lt(`pet_leave left=${left}`);
+      if (!left) {
+        away = false; // the window could not be hidden: Peak simply stays
+        scheduleNext();
+      }
+      return left;
+    },
+    count(key) {
+      count(key as Parameters<typeof count>[0]); // counted when it has really gone: the skill file puts this step after the hide
+    },
+  };
+
   async function startLeave() {
     leaving = true;
     lt(`start pose=${pose} away=${away}`);
     closePanel(); // the chat box goes
-    const line = pickFarewell(lang, lastFarewell);
-    lastFarewell = line;
-    showBubble(line, FAREWELL_BUBBLE_MS);
-    lt(`bubble on=${bubbleOn} len=${line.length}`);
-    enter("nod");
-    await new Promise((r) => setTimeout(r, FAREWELL_BUBBLE_MS));
-    if (!leaving) return lt("stopped_after_goodbye"); // something took over (it was picked up, for example)
-    let roomLeft = 0;
-    let roomRight = 0;
-    try {
-      roomLeft = await invoke<number>("edge_room", { dir: -1 });
-      roomRight = await invoke<number>("edge_room", { dir: 1 });
-    } catch {
-      /* unknown: it walks right */
+    const result = await runSteps(LEAVE_SKILL.steps, skillHost, () => leaving || away, lt);
+    lt(`run ${result}`);
+    if (leaving) {
+      // nothing is left half done
+      leaving = false;
+      awayWalkActive = false;
     }
-    if (!leaving) return lt("stopped_after_edge_room");
-    dir = nearerEdge(roomLeft, roomRight);
-    leaveRoom = dir < 0 ? roomLeft : roomRight;
-    lt(`walk_start left=${Math.round(roomLeft)} right=${Math.round(roomRight)} dir=${dir} deadline=${leaveDeadlineMs(leaveRoom)}`);
-    awayWalkActive = true;
-    enter("walk"); // startWalk sees awayWalkActive and runs the walk to the edge
   }
 
-  /** The walk to the edge: straight on, at the usual pace, until the window cannot go further (or the time is up). */
+  /** The walk to the edge: straight on, at the trot, until the window cannot go further (or the time is up). */
   function runLeaveWalk() {
     const scale = window.devicePixelRatio || 1;
     const fullStep = (LEAVE_PACE_PX_S * scale * WALK_TICK_MS) / 1000;
@@ -2019,13 +2074,17 @@
         if (s.move === 0) return;
         const hitEdge = await invoke<boolean>("move_by", { dx: dir * s.move });
         if (ticks === 1 || ticks % 100 === 0) lt(`walk_tick n=${ticks} hit=${hitEdge}`);
-        if (hitEdge) await finishLeave();
+        if (hitEdge) {
+          clearInterval(walkTimer);
+          clearTimeout(walkEndTimer);
+          settleWalk(true);
+        }
       } catch {
         lt("walk_error");
-        await finishLeave();
+        giveUpLeave();
       }
     }, WALK_TICK_MS);
-    // It leaves only at the edge. If the time given for the distance runs out first, it stays (ADR-0101): never a vanishing in the middle of the screen.
+    // It leaves only at the edge. If the time given for the distance runs out first, it stays (ADR-0102): never a vanishing in the middle of the screen.
     walkEndTimer = setTimeout(() => giveUpLeave(), leaveDeadlineMs(leaveRoom));
   }
 
@@ -2038,23 +2097,7 @@
     leaving = false;
     awayWalkActive = false;
     enter("idle");
-  }
-
-  async function finishLeave() {
-    if (!leaving || away) return;
-    clearInterval(walkTimer);
-    clearTimeout(walkEndTimer);
-    leaving = false;
-    awayWalkActive = false;
-    away = true; // from here nothing moves or speaks (scheduleNext, showBubble and the proactive line look at it)
-    enter("idle");
-    const left = await invoke<boolean>("pet_leave", { minutes: AWAY_MINUTES }).catch(() => false);
-    lt(`pet_leave left=${left}`);
-    if (left) count("leave"); // counted when it has really gone, not when the command was taken
-    else {
-      away = false; // the window could not be hidden: Peak simply stays
-      scheduleNext();
-    }
+    settleWalk(false);
   }
 
   /** The timer ran out. Peak comes back unless the person is in something full-screen or presenting; then it asks again later. */
@@ -2076,7 +2119,7 @@
     leaving = false;
     awayWalkActive = false;
     if (byPerson) count("callback");
-    enter("wake");
+    void runSteps(LEAVE_SKILL.after_return, skillHost, () => true); // a stretch (the skill file says so), no line
   }
 
   async function sendChat(raw: string) {

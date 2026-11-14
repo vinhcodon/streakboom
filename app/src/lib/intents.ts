@@ -14,6 +14,8 @@
 //    extended from the phrase survey (docs/plans/adaptive-peak-survey.md). Coverage is measured by `evaluate` on held-out
 //    phrases, never on the ones the table was written from.
 
+import { LEAVE_SKILL } from "./skills.ts";
+
 export type Skill = "leave" | "return" | "sleep" | "quiet";
 export const SKILLS: readonly Skill[] = ["leave", "return", "sleep", "quiet"];
 
@@ -35,17 +37,8 @@ interface SkillTable {
 
 /** Vietnamese, English and Japanese together: the languages do not share phrases, so one table serves all three. */
 export const TABLE: Record<Skill, SkillTable> = {
-  leave: {
-    phrases: [
-      // vi
-      "lượn đi", "lượn", "lượn đi chỗ khác", "lượn chỗ khác", "biến đi", "đi chỗ khác", "đi chỗ khác đi", "đi chỗ khác chơi", "đi chỗ khác chơi đi", "đi chơi đi", "đi chơi chỗ khác", "đi đâu đó chơi đi",
-      // en
-      "go away", "scram", "shoo", "leave me alone", "beat it", "go play", "go somewhere else", "get lost", "take a walk", "go for a walk",
-      // ja
-      "消えて", "どっか行って", "あっち行って", "どこか行って", "出てって", "いなくなって",
-    ],
-    patterns: [/^go (and )?play( outside)?$/, /^(đi|ra) chỗ (khác|nào đó) (chơi|đi)$/, /^(please )?go away( for a while)?$/],
-  },
+  // the phrases and patterns of "leave" are written in its skill file (ADR-0103)
+  leave: { phrases: LEAVE_SKILL.phrases, patterns: LEAVE_SKILL.patterns.map((s) => new RegExp(s)) },
   return: {
     phrases: [
       "quay lại đi", "quay về đi", "trở lại đi", "về đi", "lại đây", "ra đây đi", "ra đây",

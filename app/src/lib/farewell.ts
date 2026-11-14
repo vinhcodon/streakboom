@@ -8,21 +8,25 @@
 // back soon". Peak asks nothing and promises nothing; it just goes for a walk.
 
 import { matchIntent } from "./intents.ts";
+import { gatesPass, pickLine } from "./skill-run.ts";
+import { LEAVE_SKILL } from "./skills.ts";
+
+const LIM = LEAVE_SKILL.limits;
 
 export type FarewellLang = "vi" | "en" | "ja";
 
 /** How long Peak stays away before it comes back by itself (the author's answer, ADR-0086). */
-export const AWAY_MINUTES = 20;
+export const AWAY_MINUTES = LIM.away_minutes;
 /** The goodbye stays this long on the screen before the walk to the edge begins. */
-export const FAREWELL_BUBBLE_MS = 2400;
+export const FAREWELL_BUBBLE_MS = LIM.bubble_ms;
 /**
  * The pace of the walk to the edge (logical px a second), about three times the ordinary walk (36): the pace Peak already uses to
  * walk to a wall it will climb. At the ordinary pace half a screen took 20 to 40 seconds.
  */
-export const LEAVE_PACE_PX_S = 110;
+export const LEAVE_PACE_PX_S = LIM.pace_px_s;
 /** The walk to the edge gets its time from the distance (`leaveDeadlineMs`), within these bounds. */
-export const LEAVE_DEADLINE_MIN_MS = 6000;
-export const LEAVE_DEADLINE_MAX_MS = 20_000;
+export const LEAVE_DEADLINE_MIN_MS = LIM.deadline_min_ms;
+export const LEAVE_DEADLINE_MAX_MS = LIM.deadline_max_ms;
 
 /**
  * How long the walk to the edge may take for `roomPx` logical px to go: the walking time with a margin of 30 % and two seconds,
@@ -36,40 +40,14 @@ export function leaveDeadlineMs(roomPx: number): number {
   return Math.min(LEAVE_DEADLINE_MAX_MS, Math.max(LEAVE_DEADLINE_MIN_MS, ms));
 }
 /** If the moment of the return is not right (a full-screen program), try again after this many seconds. */
-export const RETRY_SECS = 300;
+export const RETRY_SECS = LIM.retry_secs;
 
-export const FAREWELLS: Record<FarewellLang, string[]> = {
-  vi: [
-    "Ừ, mình đi chơi chỗ khác nhé.",
-    "Được rồi, mình đi dạo một lát.",
-    "Mình lượn đây. Làm việc vui nha.",
-    "Okê, mình đi tìm chỗ nắng.",
-    "Mình đi đây, bạn cứ làm việc.",
-    "Mình ra ngoài hóng gió nhé.",
-  ],
-  en: [
-    "Okay, off I go.",
-    "Sure, I'll wander off for a bit.",
-    "Alright, going for a stroll.",
-    "Off to find a sunny spot.",
-    "I'll leave you to it.",
-    "Going for a little walk.",
-  ],
-  ja: [
-    "うん、ちょっとお散歩してくるね。",
-    "わかった、あっちで遊んでくるよ。",
-    "じゃあ、ひなたぼっこしてくるね。",
-    "ちょっと出かけてくるね。",
-    "お仕事がんばってね。じゃあね。",
-    "ぶらっとしてくるよ。",
-  ],
-};
+/** The goodbyes are written in the skill file (pool "farewells"); this is the same object. */
+export const FAREWELLS = LEAVE_SKILL.pools.farewells as Record<FarewellLang, string[]>;
 
 /** One goodbye, not the one just said (`last`), chosen with `rand` (a number in [0, 1), so that a test can fix it). */
 export function pickFarewell(lang: FarewellLang, last: string | null, rand: () => number = Math.random): string {
-  const pool = FAREWELLS[lang].filter((l) => l !== last);
-  const from = pool.length ? pool : FAREWELLS[lang];
-  return from[Math.min(from.length - 1, Math.floor(rand() * from.length))];
+  return pickLine(FAREWELLS[lang], last, rand);
 }
 
 /** Is this whole message the command to go away? Only an exact phrase of the table acts; a pattern match would need a confirmation (not built). */
@@ -89,7 +67,7 @@ export interface LeaveGate {
 
 /** May Peak leave now? Not while it is in Quiet mode, carried, in the air, away or already leaving (any build: ADR-0100). */
 export function mayLeave(g: LeaveGate): boolean {
-  return !g.quiet && !g.held && !g.flying && !g.away && !g.leaving;
+  return gatesPass(LEAVE_SKILL.gates, g);
 }
 
 /** Which side edge is nearer: -1 (left) or 1 (right), from the room left to each edge in px; a tie goes right. */

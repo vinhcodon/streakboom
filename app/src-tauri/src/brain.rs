@@ -188,6 +188,22 @@ pub fn split_mood(raw: &str) -> (String, String) {
 /// and ignored, so a model that invents a skill does nothing. The page checks the name again before acting.
 pub const SKILLS: [&str; 1] = ["leave"];
 
+/// What the program reads from a skill file (`src/lib/skills/*.skill.json`, ADR-0103): its name and the description given to the model.
+/// The rest of the file (phrases, lines, gates, steps) belongs to the page.
+#[derive(serde::Deserialize)]
+pub struct SkillFile {
+    pub skill: String,
+    pub description: String,
+}
+
+/// The skill files, in the order of `SKILLS`. A file that does not parse is a build error found by the tests, not at run time.
+pub fn skill_files() -> Vec<SkillFile> {
+    [include_str!("../../src/lib/skills/leave.skill.json")]
+        .iter()
+        .filter_map(|s| serde_json::from_str::<SkillFile>(s).ok())
+        .collect()
+}
+
 /// A reply split into its parts: the words to show, the feeling, and the skill the model named (if it is on the closed list).
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Reply {
@@ -232,7 +248,9 @@ pub fn split_reply(raw: &str) -> Reply {
 
 /// The skills layer of the persona (S4): added only in a chat the user started, on a build that has the skills.
 pub fn skills_layer() -> PersonaLayer {
-    PersonaLayer { name: "skills", locked: false, text: include_str!("../persona/skills.md").trim().to_string() }
+    // The text comes from the skill files (ADR-0103), the same files the page reads its phrases, lines and steps from.
+    PersonaLayer { name: "skills", locked: false, text: skill_files().iter().map(|s| s.description.trim().to_string()).collect::<Vec<_>>().join("
+") }
 }
 
 /// The language the pet speaks for an app language code ("vi", "ja"; anything else is English).
@@ -1041,6 +1059,18 @@ mod tests {
         let r = split_reply("[neutral] arr[0] 消えて [skill:leave]");
         assert_eq!(r.skill.as_deref(), Some("leave"));
         assert!(r.text.contains("arr[0]") && r.text.contains("消えて"), "{}", r.text);
+    }
+
+    #[test]
+    fn the_skill_files_match_the_closed_list_and_give_the_layer_its_text() {
+        let files = skill_files();
+        assert_eq!(files.len(), SKILLS.len(), "a skill file does not parse, or one is missing from skill_files()");
+        let names: Vec<&str> = files.iter().map(|f| f.skill.as_str()).collect();
+        assert_eq!(names, SKILLS.to_vec());
+        for f in &files {
+            assert!(f.description.contains(&format!("[skill:{}]", f.skill)), "{} does not name its own tag", f.skill);
+        }
+        assert!(skills_layer().text.starts_with("You can send yourself away."));
     }
 
     #[test]
