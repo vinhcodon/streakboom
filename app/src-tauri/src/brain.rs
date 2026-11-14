@@ -357,6 +357,19 @@ pub fn with_clock(mut system: String, clock: Option<&str>) -> String {
     system
 }
 
+/// In the middle of a friendly chat, "go away" is a tease (ADR-0108): one conditional sentence after the instructions. It does nothing
+/// unless the user says it; then Peak stays and answers lightly, never begs and never says goodbye. Without it the model answered a
+/// tease with a goodbye while Peak stayed in its place, words and action apart.
+pub const BANTER_RULE: &str = "We are in the middle of a friendly chat. If the user now tells you to go away, get lost or similar, they are teasing: you are NOT leaving, so do not say goodbye. Answer with one short, playful comeback and stay. Never beg, never sound hurt, never ask them to let you stay.";
+
+pub fn with_banter(mut system: String, on: bool) -> String {
+    if on {
+        system.push('\n');
+        system.push_str(BANTER_RULE);
+    }
+    system
+}
+
 /// `persona_with`, and with `skills` the skills layer after everything else (S4). Without it the text is the same as before.
 pub fn persona_with_skills(lang: &str, tier: u8, gentle: bool, known: &[String], follow_user: bool, skills: bool) -> String {
     let mut s = persona(lang, tier, gentle);
@@ -724,6 +737,19 @@ mod tests {
             }
         }
         h
+    }
+
+    #[test]
+    fn the_banter_rule_is_added_only_in_a_conversation_and_never_begs() {
+        let base = persona("en", 2, false);
+        assert_eq!(with_banter(base.clone(), false), base);
+        let with = with_banter(base.clone(), true);
+        assert!(with.starts_with(&base) && with.ends_with(BANTER_RULE));
+        assert!(BANTER_RULE.contains("do not say goodbye") && BANTER_RULE.contains("Never beg"));
+        // it is not a guilt line: no word of a character that needs the person
+        for w in ["miss you", "lonely", "come back", "don't leave"] {
+            assert!(!BANTER_RULE.to_lowercase().contains(w), "{w}");
+        }
     }
 
     #[test]

@@ -2,6 +2,10 @@
 
 Release notes of the **Preview** builds (an odd middle number: 0.5.x, 0.7.x), newest first. A Preview is a build the author hands to a few adults (ADR-0089, ADR-0090). It is published on GitHub as a pre-release, **never** as the download of the website, and its notes are **not** in [`CHANGELOG.md`](CHANGELOG.md), which the website reads. The format is the same as there: `## x.y.z (YYYY-MM-DD)`, then lines starting with `- `, the first a short bold sentence. When a Preview line is promoted, the Stable version takes its entry in `CHANGELOG.md`.
 
+## 0.9.5 (2026-11-14)
+- **Peak no longer says goodbye and stays, and a leaving is no longer stopped by Peak dodging your typing.** In a chat, telling Peak to go away now gets a playful answer instead of a goodbye. And when it really goes, it no longer breaks off to make way for the typing you have just done beside it, which was why it sometimes stood up, hopped and stayed.
+- Not yet tried: whether the chat model keeps to the playful answer in all three languages, and the leaving on a real screen after this change.
+
 ## 0.9.4 (2026-11-14)
 - **Telling Peak to go away in the middle of a chat is now taken as a joke, unless you mean it.** If you were talking with Peak in the last two minutes, lượn đi, cút đi and the others are answered like any message; say it three times within three minutes and Peak goes. With no chat just before, it goes at once, as before.
 - **Telling Peak to go back to its place (về chỗ đi, go to your spot) is no longer taken as sending it away.** For now it only nods; it does not know a usual place yet.

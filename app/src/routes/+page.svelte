@@ -548,6 +548,7 @@
    * calm (walking, held, busy) skips the beat.
    */
   async function noticeBeat(dx: number, dy: number): Promise<boolean> {
+    if (leaving || awayState()) return false; // leaving: no beat before an action that is not the leaving
     if (pose !== "idle" && pose !== "look") return true;
     attentionGaze = toGaze(dx, dy);
     enter("notice");
@@ -583,6 +584,7 @@
   };
 
   async function makeWay(away: 1 | -1) {
+    if (leaving || awayState()) return; // it was told to go: it does not also dodge the typing (the trace of 0.9.4 showed a "notice" cancelling the leaving)
     const now = Date.now();
     if (laneOut.crowded && laneOut.lane && !flying) {
       const why = quiet ? "quiet" : panel !== null ? "a panel is open" : now - lastLaneHop < LANE_COOLDOWN_MS ? "cool-down" : pose === "held" ? "held" : null;
@@ -801,6 +803,7 @@
   }
 
   function pickNext() {
+    if (leaving) return scheduleNext(); // the leaving is Peak's only business until it ends
     if (flying) return scheduleNext();
     if (pose === "peek" || pose === "ledge") return scheduleNext(); // a rest at the edge is not cut short
     if (quiet) return pose === "sleep" || pose === "drowsy" ? undefined : enter("drowsy");
@@ -1976,6 +1979,9 @@
     void invoke("leave_trace", { step }).catch(() => {});
   }
 
+  function awayState() {
+    return away;
+  }
   let lastUserChatAt: number | null = null; // when the person last sent a chat message in this run (a conversation is going on if it was just now)
   let dismissState = freshDismissalState(); // dismissals typed in the middle of a conversation (ADR-0108); memory only
 
@@ -2184,6 +2190,7 @@
         known: knownFor(mem, lang),
         followUser: true, // answer in the language the user writes in
         skills: !quiet && !away && !leaving && !talking,
+        banter: talking, // in a conversation a "go away" is a tease: stay and answer in kind (ADR-0108)
         clock: clockLine(new Date()), // the local time, the weekday and the part of the day, so the model does not guess them (ADR-0105)
       });
       // The model's own word is checked again here: the name is on the closed list, the message is short and not a question,
