@@ -79,7 +79,7 @@ const withClarity = (projectId) => {
 const tryRun = (b, mutate) => { const c = { ctx: { ...b.ctx }, pages: b.pages.map((p) => ({ ...p })), files: { ...b.files }, out: b.out }; mutate(c); return () => check(c); };
 
 test("the switch: the repository's file has Clarity off; ids are checked", () => {
-  assert.equal(loadMeasurement().clarity.projectId, "", "off until the author gives the id");
+  assert.deepEqual(clarityProblems(loadMeasurement()), [], "the repository's own file is valid");
   assert.deepEqual(clarityProblems({ clarity: { projectId: "" } }), []);
   assert.deepEqual(clarityProblems({ clarity: { projectId: ID } }), []);
   assert.deepEqual(clarityProblems({}), []);
@@ -88,7 +88,7 @@ test("the switch: the repository's file has Clarity off; ids are checked", () =>
 });
 
 test("Clarity off: no loader, no notice, no word of it on any page; Clarity on: one loader per page, the privacy words and the sticker note say so, the search box is masked", () => {
-  const off = build({ out: join(mkdtempSync(join(tmpdir(), "sb-cl-off-")), "_site") });
+  const off = withClarity("");
   for (const p of off.pages) assert.ok(!/clarity/i.test(p.html.replace(/<style[\s\S]*?<\/style>/g, "").replace(/data-clarity-mask="True"/g, "")), p.path + ": nothing of Clarity when it is off");
   const on = withClarity(ID);
   for (const p of on.pages) {
@@ -110,7 +110,7 @@ test("Clarity off: no loader, no notice, no word of it on any page; Clarity on: 
 });
 
 test("the checks refuse: a loader with another id or another address, a second loader, a missing loader, a loader while off, the words of Clarity while off", () => {
-  const on = withClarity(ID), off = build({ out: join(mkdtempSync(join(tmpdir(), "sb-cl-off-")), "_site") });
+  const on = withClarity(ID), off = withClarity("");
   const home = (c) => c.pages.find((p) => p.path === "/");
   assert.throws(tryRun(on, (c) => { home(c).html = home(c).html.replace(ID, "zzzz9999zz"); }), /another project id/);
   assert.throws(tryRun(on, (c) => { home(c).html = home(c).html.replace(CLARITY_SRC, "https://evil.example/tag/"); }), /address other than/);

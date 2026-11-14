@@ -1,6 +1,6 @@
 # ADR-0118: Microsoft Clarity on the website, with a notice outside Vietnam and Japan
 
-- **Status:** accepted (Vinh named Clarity and chose the two points below on 2026-11-15); **built and switched off** until the author gives the project id; not published
+- **Status:** accepted (Vinh named Clarity and chose the two points below on 2026-11-15); **built; the author gave the project id on 2026-11-15 and it is in the build (switched on); not published until he says so**
 - **Date:** 2026-11-15
 - **Decided by:** Vinh (author)
 - **Builds on** ADR-0096 (decisions 2, 4 and 8: each tool is approved by the author and listed; the first tool that sets a cookie brings the consent notice; the build and the live check refuse what the words do not say)
