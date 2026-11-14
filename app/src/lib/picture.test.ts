@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { PICTURE, analyse, hasRoom, type Grid } from "./picture.ts";
+import { KIND, PICTURE, analyse, hasRoom, type Grid } from "./picture.ts";
 
 /** A grid with a rectangle of one grey on a background of another. */
 function box(gw: number, gh: number, bg: number, fg: number, x0: number, y0: number, x1: number, y1: number): Grid {
@@ -70,7 +70,8 @@ test("the result holds numbers and its own mask, never the grid", () => {
   const g = box(48, 32, 20, 220, 12, 10, 35, 22);
   const s = analyse(g);
   assert.notEqual(s.empty.buffer, (g.data as Uint8Array).buffer);
-  assert.deepEqual(Object.keys(s).sort(), ["edgeCells", "empty", "gh", "gw", "hsegs", "threshold", "vsegs"]);
+  assert.deepEqual(Object.keys(s).sort(), ["edgeCells", "empty", "gh", "gw", "hsegs", "kinds", "regions", "threshold", "vsegs"]);
+  assert.notEqual(s.kinds.buffer, (g.data as Uint8Array).buffer);
   for (const h of s.hsegs) assert.deepEqual(Object.keys(h).sort(), ["brighterBelow", "roomAbove", "strength", "x0", "x1", "y"]);
 });
 
@@ -78,4 +79,56 @@ test("a too small or a short grid is read as nothing", () => {
   assert.equal(analyse({ gw: 3, gh: 3, data: new Uint8Array(9) }).hsegs.length, 0);
   assert.equal(analyse({ gw: 40, gh: 30, data: new Uint8Array(10) }).hsegs.length, 0);
   assert.ok(PICTURE.minThreshold > 0);
+});
+
+const kindAt = (s: ReturnType<typeof analyse>, x: number, y: number) => s.kinds[y * s.gw + x];
+
+test("a flat picture is one plain", () => {
+  const s = analyse({ gw: 60, gh: 40, data: new Uint8Array(2400).fill(90) });
+  assert.equal(s.regions.length, 1);
+  assert.equal(s.regions[0].kind, "plain");
+  assert.ok(s.regions[0].area > 2200);
+  assert.equal(kindAt(s, 30, 20), KIND.plain);
+});
+
+test("a bordered box on a plain is a panel, and what is around it stays a plain", () => {
+  const s = analyse(box(60, 40, 30, 200, 15, 10, 44, 29));
+  assert.equal(kindAt(s, 30, 20), KIND.panel, JSON.stringify(s.regions));
+  assert.equal(kindAt(s, 3, 3), KIND.plain);
+  const panel = s.regions.find((r) => r.kind === "panel")!;
+  assert.ok(panel.borderShare >= 0.6, String(panel.borderShare));
+  assert.ok(panel.x0 >= 15 && panel.x1 <= 44 && panel.y0 >= 10 && panel.y1 <= 29, "the panel is inside the box");
+  const plain = s.regions.find((r) => r.kind === "plain")!;
+  assert.ok(plain.borderShare < 0.6, String(plain.borderShare));
+});
+
+test("a patch of fine stripes is rough ground", () => {
+  const g = box(60, 40, 40, 40, 0, 0, 0, 0);
+  const d = g.data as Uint8Array;
+  for (let y = 10; y < 30; y++) for (let x = 15; x < 45; x++) d[y * 60 + x] = x % 2 === 0 ? 40 : 130;
+  const s = analyse(g);
+  assert.equal(kindAt(s, 30, 20), KIND.rough, JSON.stringify(s.regions));
+  const rough = s.regions.find((r) => r.kind === "rough")!;
+  assert.ok(rough.area >= PICTURE.minRough && rough.x0 >= 10 && rough.x1 <= 50, JSON.stringify(rough));
+  assert.equal(kindAt(s, 3, 3), KIND.plain);
+});
+
+test("a speck is noise: no region of its own", () => {
+  const g = box(60, 40, 40, 200, 30, 20, 31, 21); // 2 x 2 bright
+  const s = analyse(g);
+  assert.equal(s.regions.filter((r) => r.kind !== "plain").length, 0, JSON.stringify(s.regions));
+  assert.equal(kindAt(s, 30, 20), KIND.none);
+});
+
+test("the regions are listed largest first and a screen of noise is read quickly", () => {
+  const s = analyse(box(60, 40, 30, 200, 15, 10, 44, 29));
+  for (let i = 1; i < s.regions.length; i++) assert.ok(s.regions[i - 1].area >= s.regions[i].area);
+  let seed = 11;
+  const rnd = () => ((seed = (seed * 1103515245 + 12345) & 0x7fffffff) / 0x7fffffff);
+  const data = new Uint8Array(192 * 108);
+  for (let i = 0; i < data.length; i++) data[i] = Math.round(rnd() * 255); // the worst case: every cell an edge
+  const t0 = Date.now();
+  const big = analyse({ gw: 192, gh: 108, data });
+  assert.ok(Date.now() - t0 < 500, "slow: " + (Date.now() - t0) + " ms");
+  assert.ok(big.regions.length <= PICTURE.maxRegions);
 });

@@ -23,6 +23,9 @@
       hsegs: { x0: number; x1: number; y: number; strength: number; roomAbove: number; room: boolean }[];
       vsegs: { x: number; y0: number; y1: number; strength: number }[];
       empty: number[];
+      /** The kind of each cell: 0 none, 1 plain, 2 panel, 3 rough (stage 2a, plan section 8). */
+      kinds: number[];
+      regions: { kind: "plain" | "panel" | "rough"; x0: number; y0: number; x1: number; y1: number; area: number; grey: number; borderShare: number }[];
     } | null;
   }
   let canvas: HTMLCanvasElement;
@@ -96,8 +99,22 @@
     if (pic) {
       const sx = canvas.width / pic.gw;
       const sy = canvas.height / pic.gh;
-      g.fillStyle = "rgba(80,160,255,0.10)";
-      for (let y = 0; y < pic.gh; y++) for (let x = 0; x < pic.gw; x++) if (pic.empty[y * pic.gw + x]) g.fillRect(x * sx, y * sy, sx, sy);
+      // the kinds of ground in three faint tints: plains blue, panels purple, rough ground red; each area outlined
+      const tint = ["", "rgba(80,160,255,0.12)", "rgba(170,90,255,0.22)", "rgba(255,70,70,0.22)"];
+      for (let y = 0; y < pic.gh; y++)
+        for (let x = 0; x < pic.gw; x++) {
+          const k = pic.kinds[y * pic.gw + x];
+          if (k) {
+            g.fillStyle = tint[k];
+            g.fillRect(x * sx, y * sy, sx, sy);
+          }
+        }
+      g.lineWidth = 1;
+      for (const r of pic.regions) {
+        if (r.kind === "plain") continue;
+        g.strokeStyle = r.kind === "panel" ? "rgba(170,90,255,0.9)" : "rgba(255,70,70,0.9)";
+        g.strokeRect(r.x0 * sx + 0.5, r.y0 * sy + 0.5, (r.x1 - r.x0 + 1) * sx - 1, (r.y1 - r.y0 + 1) * sy - 1);
+      }
       g.lineWidth = 3;
       for (const h of pic.hsegs) {
         g.strokeStyle = h.room ? "rgb(0,230,90)" : "rgba(170,170,170,0.9)";
@@ -115,10 +132,14 @@
       }
     }
     g.fillStyle = "rgba(0,0,0,0.65)";
-    g.fillRect(8, 8, 520, pic ? 44 : 24);
+    g.fillRect(8, 8, 620, pic ? 64 : 24);
     g.fillStyle = "white";
     g.font = "13px sans-serif";
     g.fillText(data.note, 14, 25);
+    if (pic) {
+      const n = (k: string) => pic.regions.filter((r) => r.kind === k).length;
+      g.fillText(`areas: ${n("plain")} plains (blue), ${n("panel")} panels (purple), ${n("rough")} rough (red)`, 14, 63);
+    }
     if (pic) g.fillText(`picture: ${pic.hsegs.length} ledges (${pic.hsegs.filter((h) => h.room).length} with room), ${pic.vsegs.length} walls, threshold ${pic.threshold}, cat = ${pic.catCells} cells`, 14, 44);
   }
 
