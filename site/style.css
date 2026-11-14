@@ -289,13 +289,17 @@ html[data-want="en"] a.lang[hreflang="en"], html[data-want="vi"] a.lang[hreflang
   .recent-grid::-webkit-scrollbar { display: none; }
   .recent-grid .sticker-item { flex: 0 0 88px; scroll-snap-align: start; }
 }
-/* the two small rows have the same tile everywhere (ADR-0085, amended): 8 in one line from 900 px, 4 by 4 from 640 px (8 is two full lines, never a
+/* the two small rows have the same tile everywhere (ADR-0085, amended): 8 in one line from 854 px, 4 by 4 from 640 px (an upright tablet: see below) (8 is two full lines, never a
    lone tile on a second line); the recent row shows its first 8 here (up to 10 are kept and all 10 are swiped on a phone) */
 @media (min-width: 640px) {
   .recent-grid, .popular-grid { grid-template-columns: repeat(4, minmax(0, 112px)); gap: 14px; }
   .recent-grid .sticker-item:nth-child(n+9) { display: none; }
 }
-@media (min-width: 900px) {
+/* a tablet held upright (690 to 853 px, where the full list below has 4 columns): the two small rows take the very columns of that list, so their tile is the same size and their edges are straight with it; from 854 px the full list has 5 columns and 8 tiles go in one line (ADR-0112) */
+@media (min-width: 690px) and (max-width: 853px) {
+  .recent-grid, .popular-grid { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); }
+}
+@media (min-width: 854px) {
   .recent-grid, .popular-grid { grid-template-columns: repeat(8, minmax(0, 112px)); }
 }
 /* the head of the sticker pages on a phone is tighter (ADR-0085, amended), so the recent stickers and Peak's picks come up the screen for the person who returns */
