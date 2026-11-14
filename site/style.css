@@ -231,6 +231,10 @@ summary h3 { display: inline; font-size: inherit; font-weight: 600; margin: 0; }
 .sticker-recent { margin: 0 0 24px; }
 .sticker-recent[hidden] { display: none; }
 .sticker-recent h2 { font-size: 1.05rem; margin: 0 0 10px; }
+/* the Clear button is on the line of the heading, at its right edge, so the note below is one short line and the recent region is as tall as the picks (ADR-0113) */
+.recent-head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
+.recent-head h2 { margin: 0 0 10px; }
+.recent-head .linklike { margin: -8px -6px 0 0; padding: 10px 8px; flex: none; }   /* a touch target of 40 px, the line does not grow */
 .recent-grid { grid-template-columns: repeat(auto-fill, minmax(84px, 100px)); margin-bottom: 0; }
 .linklike { font: inherit; font-size: .9rem; font-weight: 400; margin-left: 10px; padding: 4px 6px; background: none; border: 0; color: var(--muted); text-decoration: underline; cursor: pointer; }
 .sticker .paw {
@@ -268,7 +272,7 @@ html[data-want="en"] a.lang[hreflang="en"], html[data-want="vi"] a.lang[hreflang
 .sticker-item[hidden] { display: none; }
 .stickers-page.searching .sticker-recent { display: none; }
 /* the recent stickers (plan v0.3): a small row and one line with the Clear */
-.sticker-mine-foot { margin: -10px 0 24px; font-size: .9rem; color: var(--muted); }
+.sticker-mine-foot { margin: -10px 0 24px; font-size: .82rem; color: var(--muted); }
 .sticker-mine-foot[hidden] { display: none; }
 .stickers-page.searching .sticker-mine-foot { display: none; }
 /* the editorial row "Peak's picks" (plan v0.8): static, above the grid; hidden while a search is typed */

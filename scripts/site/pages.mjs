@@ -487,10 +487,10 @@ export function stickersPage(lang, ctx) {
       </div>
       <noscript><p class="note">${s("st_nojs")}</p></noscript>
       <div id="sticker-recent" class="sticker-recent" data-set="${esc(set.version)}" hidden>
-        <h2>${s("st_recent")}</h2>
+        <div class="recent-head"><h2>${s("st_recent")}</h2><button id="sticker-recent-clear" class="linklike" type="button">${s("st_recent_clear")}</button></div>
         <ul id="sticker-recent-list" class="sticker-grid recent-grid"></ul>
       </div>
-      <p id="sticker-mine-foot" class="sticker-mine-foot" hidden>${s("st_mine_note")} <button id="sticker-recent-clear" class="linklike" type="button">${s("st_recent_clear")}</button></p>
+      <p id="sticker-mine-foot" class="sticker-mine-foot" hidden>${s("st_mine_note")}</p>
       <div id="sticker-popular" class="sticker-recent sticker-popular">
         <h2>${s("st_popular")}</h2>
         <ul class="sticker-grid recent-grid popular-grid">

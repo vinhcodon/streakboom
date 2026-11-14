@@ -427,3 +427,12 @@ test("the story of Peak (ADR-0110): three pages, five voices each, the dialogue 
   assert.ok(c.files["sitemap.xml"].includes("/story/") && c.files["sitemap.xml"].includes("/vi/story/") && c.files["sitemap.xml"].includes("/ja/story/"));
   assert.ok(c.files["llms.txt"].includes("/story/"));
 });
+
+test("the Clear button of the recent stickers is on the heading line, in every language", () => {
+  const c = clone();
+  for (const path of ["/stickers/", "/vi/stickers/", "/ja/stickers/"]) {
+    const h = page(c, path).html;
+    assert.match(h, /<div class="recent-head"><h2>[^<]+<\/h2><button id="sticker-recent-clear"/, path);
+    assert.match(h, /<p id="sticker-mine-foot" class="sticker-mine-foot" hidden>[^<]+<\/p>/, path + ": the note has no button");
+  }
+});
