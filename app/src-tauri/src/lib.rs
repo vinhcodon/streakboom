@@ -1157,6 +1157,9 @@ struct ChatReply {
     /// A skill the model named in a `[skill:name]` tag, if it is on the closed list (S4); the page checks it again.
     #[serde(skip_serializing_if = "Option::is_none")]
     skill: Option<String>,
+    /// The arguments of the tag, for `remind` only (`MM-DD|words`); the page checks the form again.
+    #[serde(skip_serializing_if = "Option::is_none", rename = "skillArgs")]
+    skill_args: Option<String>,
 }
 
 #[tauri::command]
@@ -1172,6 +1175,7 @@ async fn brain_chat(
     skills: Option<bool>,
     clock: Option<String>,
     banter: Option<bool>,
+    remind: Option<bool>,
 ) -> Result<ChatReply, AiError> {
     tauri::async_runtime::spawn_blocking(move || {
         let state = app.state::<AppState>();
@@ -1179,15 +1183,20 @@ async fn brain_chat(
         // A remark after a reflex (RX-7) uses the persona and the card of that event, never the user's notes.
         let system = match event.as_deref() {
             Some(ev) if brain::reaction_card(ev).is_some() => brain::persona_with_card(&lang, tier, gentle, ev),
-            _ => brain::persona_with_skills(&lang, tier, gentle, known.as_deref().unwrap_or(&[]), follow_user.unwrap_or(false), skills.unwrap_or(false)),
+            _ => brain::persona_with_skill_set(&lang, tier, gentle, known.as_deref().unwrap_or(&[]), follow_user.unwrap_or(false), skills.unwrap_or(false), remind.unwrap_or(false)),
         };
         let system = brain::with_clock(system, clock.as_deref());
         let system = brain::with_banter(system, banter.unwrap_or(false));
         let raw = run_generate(&state, &key, &system, &history)?;
         let r = brain::split_reply(&raw);
         // Without the skills layer the model was not told about the tag: a tag it still wrote is ignored, never acted on.
-        let skill = if skills.unwrap_or(false) { r.skill } else { None };
-        Ok(ChatReply { text: r.text, mood: r.mood, skill })
+        let skill = match r.skill.as_deref() {
+            Some("leave") if skills.unwrap_or(false) => r.skill.clone(),
+            Some("remind") if remind.unwrap_or(false) => r.skill.clone(),
+            _ => None,
+        };
+        let skill_args = if skill.as_deref() == Some("remind") { r.skill_args } else { None };
+        Ok(ChatReply { text: r.text, mood: r.mood, skill, skill_args })
     })
     .await
     .map_err(|_| task_failed())?

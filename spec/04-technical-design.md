@@ -90,7 +90,7 @@ The brains are offered in this order: Gemini, Groq, Claude, OpenAI (ADR-0037).
 Files in `%APPDATA%\com.streakboom.app\`:
 - `state.json`: window position, Quiet mode, the active provider and the chosen model per provider.
 - `pet.json`: mood, closeness, settings (including the update mode), recent lines, AI usage, gesture, startup, tour and update bookkeeping, telemetry consent and queue. Written atomically (temp file, then rename).
-- `memory.json`: the pet's name and what to call the user, coarse habit counts, touch counts, shared milestones, noted facts, and the memory settings. Written atomically; the user can see, edit and delete all of it in Settings > Memory.
+- `memory.json`: the pet's name and what to call the user, coarse habit counts, touch counts, shared milestones, noted facts, the days the person told Peak to keep (`keptDays`, `keptCheck`, ADR-0115), and the memory settings. Written atomically; the user can see, edit and delete all of it in Settings > Memory.
 - API keys: Windows Credential Manager, one entry per provider (`gemini-api-key`, `groq-api-key`, `claude-api-key`, `openai-api-key`, service `streakboom`).
 - Chat history: in memory only, never persisted. The facts noted from chats are persisted (see above) and are sent to the active provider with later chats the user starts.
 - Telemetry: opt-in, off by default, a random install id created only on consent and deleted on opt-out, funnel event names and timestamps, each once per install, plus per-day counters (`telemetry.days`, 60 days, counts only) recorded only at consent version 2 (`telemetry.consentV`); the queue and the counters stay on the machine and nothing is sent automatically (ADR-0009, spec/05). Pure rules for the counters are in `src/lib/bond.ts`.

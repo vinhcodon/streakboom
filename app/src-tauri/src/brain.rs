@@ -186,7 +186,7 @@ pub fn split_mood(raw: &str) -> (String, String) {
 
 /// The skills the model may name in a `[skill:name]` tag (spec 14, story S4): a closed list. Anything else in such a tag is removed
 /// and ignored, so a model that invents a skill does nothing. The page checks the name again before acting.
-pub const SKILLS: [&str; 1] = ["leave"];
+pub const SKILLS: [&str; 2] = ["leave", "remind"];
 
 /// What the program reads from a skill file (`src/lib/skills/*.skill.json`, ADR-0103): its name and the description given to the model.
 /// The rest of the file (phrases, lines, gates, steps) belongs to the page.
@@ -198,7 +198,7 @@ pub struct SkillFile {
 
 /// The skill files, in the order of `SKILLS`. A file that does not parse is a build error found by the tests, not at run time.
 pub fn skill_files() -> Vec<SkillFile> {
-    [include_str!("../../src/lib/skills/leave.skill.json")]
+    [include_str!("../../src/lib/skills/leave.skill.json"), include_str!("../../src/lib/skills/remind.skill.json")]
         .iter()
         .filter_map(|s| serde_json::from_str::<SkillFile>(s).ok())
         .collect()
@@ -210,7 +210,13 @@ pub struct Reply {
     pub text: String,
     pub mood: String,
     pub skill: Option<String>,
+    /// What stood after the name in the tag (`[skill:remind|03-12|words]`), only for a skill that takes some, cleaned of control
+    /// characters and cut to ARGS_MAX; the page checks it again and refuses anything that is not exactly its form.
+    pub skill_args: Option<String>,
 }
+
+/// The longest text between `[skill:` and `]` that is still taken for a tag when it carries arguments.
+const ARGS_MAX: usize = 90;
 
 /// Splits a reply: every `[skill:name]` tag, wherever it stands, is taken out (it must never reach the screen) and the first one
 /// whose name is on the closed list is returned; what is left goes through `split_mood`. A `[skill:` that has no closing
@@ -218,6 +224,7 @@ pub struct Reply {
 pub fn split_reply(raw: &str) -> Reply {
     const OPEN: &[u8] = b"[skill:";
     let mut skill: Option<String> = None;
+    let mut skill_args: Option<String> = None;
     let mut out = String::with_capacity(raw.len());
     let mut rest = raw;
     loop {
@@ -227,9 +234,17 @@ pub fn split_reply(raw: &str) -> Reply {
         };
         let after = &rest[i + OPEN.len()..];
         match after.find(']') {
-            Some(j) if j <= 24 => {
-                let name = after[..j].trim().to_lowercase();
+            Some(j) if j <= 24 || (j <= ARGS_MAX && after[..j].contains('|')) => {
+                let inside = &after[..j];
+                let (head, tail) = match inside.split_once('|') {
+                    Some((h, t)) => (h, Some(t)),
+                    None => (inside, None),
+                };
+                let name = head.trim().to_lowercase();
                 if skill.is_none() && SKILLS.contains(&name.as_str()) {
+                    if name == "remind" {
+                        skill_args = tail.map(|t| t.chars().filter(|c| !c.is_control()).collect::<String>().trim().to_string()).filter(|t| !t.is_empty());
+                    }
                     skill = Some(name);
                 }
                 out.push_str(&rest[..i]);
@@ -243,14 +258,25 @@ pub fn split_reply(raw: &str) -> Reply {
         }
     }
     let (text, mood) = split_mood(&out);
-    Reply { text, mood, skill }
+    Reply { text, mood, skill, skill_args }
 }
 
-/// The skills layer of the persona (S4): added only in a chat the user started, on a build that has the skills.
+/// The skills layer of the persona (S4): added only in a chat the user started, on a build that has the skills. All the skills.
 pub fn skills_layer() -> PersonaLayer {
-    // The text comes from the skill files (ADR-0103), the same files the page reads its phrases, lines and steps from.
-    PersonaLayer { name: "skills", locked: false, text: skill_files().iter().map(|s| s.description.trim().to_string()).collect::<Vec<_>>().join("
-") }
+    skills_layer_for(true, true)
+}
+
+/// The same layer with only the skills allowed now: "leave" is not offered in the middle of a conversation (ADR-0108), "remind"
+/// is (a day told in a chat is told in a chat). The text comes from the skill files (ADR-0103), the same files the page reads
+/// its phrases, lines and steps from.
+pub fn skills_layer_for(leave: bool, remind: bool) -> PersonaLayer {
+    let text = skill_files()
+        .iter()
+        .filter(|s| (s.skill == "leave" && leave) || (s.skill == "remind" && remind))
+        .map(|s| s.description.trim().to_string())
+        .collect::<Vec<_>>()
+        .join("\n");
+    PersonaLayer { name: "skills", locked: false, text }
 }
 
 /// The language the pet speaks for an app language code ("vi", "ja"; anything else is English).
@@ -372,6 +398,11 @@ pub fn with_banter(mut system: String, on: bool) -> String {
 
 /// `persona_with`, and with `skills` the skills layer after everything else (S4). Without it the text is the same as before.
 pub fn persona_with_skills(lang: &str, tier: u8, gentle: bool, known: &[String], follow_user: bool, skills: bool) -> String {
+    persona_with_skill_set(lang, tier, gentle, known, follow_user, skills, skills)
+}
+
+/// `persona_with_skills` with the two skills apart: `leave` and `remind` (the layer is added if either is allowed).
+pub fn persona_with_skill_set(lang: &str, tier: u8, gentle: bool, known: &[String], follow_user: bool, leave: bool, remind: bool) -> String {
     let mut s = persona(lang, tier, gentle);
     if follow_user {
         // In a chat the user started, answer in whatever language they write in, like any chat
@@ -397,9 +428,9 @@ pub fn persona_with_skills(lang: &str, tier: u8, gentle: bool, known: &[String],
             s.extend(k.chars().filter(|c| !c.is_control()).take(80));
         }
     }
-    if skills {
+    if leave || remind {
         s.push_str("\n\n");
-        s.push_str(&skills_layer().text);
+        s.push_str(&skills_layer_for(leave, remind).text);
     }
     s
 }
@@ -1094,7 +1125,7 @@ mod tests {
         let names: Vec<&str> = files.iter().map(|f| f.skill.as_str()).collect();
         assert_eq!(names, SKILLS.to_vec());
         for f in &files {
-            assert!(f.description.contains(&format!("[skill:{}]", f.skill)), "{} does not name its own tag", f.skill);
+            assert!(f.description.contains(&format!("[skill:{}", f.skill)), "{} does not name its own tag", f.skill);
         }
         assert!(skills_layer().text.starts_with("You can send yourself away."));
     }
@@ -1113,7 +1144,8 @@ mod tests {
         while let Some(i) = rest.find("[skill:") {
             let after = &rest[i + 7..];
             let j = after.find(']').unwrap();
-            assert!(SKILLS.contains(&&after[..j]), "{} is not on the list", &after[..j]);
+            let name = after[..j].split('|').next().unwrap();
+            assert!(SKILLS.contains(&name), "{} is not on the list", name);
             named += 1;
             rest = after[j + 1..].to_string();
         }
@@ -1126,6 +1158,46 @@ mod tests {
             assert!(!persona(lang, 2, false).contains("skill:"));
             assert!(persona_layers(lang, 2, false).iter().all(|l| l.name != "skills"));
         }
+    }
+
+    #[test]
+    fn a_remind_tag_carries_its_arguments_and_nothing_else_does() {
+        let r = split_reply("Sure, I'll keep it. [skill:remind|03-12|mẹ's birthday]");
+        assert_eq!(r.skill.as_deref(), Some("remind"));
+        assert_eq!(r.skill_args.as_deref(), Some("03-12|mẹ's birthday"));
+        assert_eq!(r.text, "Sure, I'll keep it.");
+        let year = split_reply("[skill:REMIND|2026-11-20|exam] Good luck");
+        assert_eq!(year.skill_args.as_deref(), Some("2026-11-20|exam"));
+        assert_eq!(year.text, "Good luck");
+        // a tag with no arguments, or a skill that takes none, has none
+        assert_eq!(split_reply("ok [skill:remind]").skill_args, None);
+        let leave = split_reply("bye [skill:leave|03-12|x]");
+        assert_eq!(leave.skill.as_deref(), Some("leave"));
+        assert_eq!(leave.skill_args, None);
+        // an unknown skill is removed and ignored, arguments or not
+        let other = split_reply("hi [skill:launch|03-12|x]");
+        assert_eq!((other.skill, other.skill_args, other.text.as_str()), (None, None, "hi"));
+        // a long tag that carries no bar is not a tag
+        let long = "[skill:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa] stays";
+        assert!(split_reply(long).text.contains("[skill:"));
+        // control characters never reach the page
+        assert_eq!(split_reply("[skill:remind|03-12|ab]").skill_args.as_deref(), Some("03-12|ab"));
+        // too long for a tag: kept as text
+        let huge = format!("[skill:remind|03-12|{}]", "x".repeat(120));
+        assert!(split_reply(&huge).skill.is_none());
+    }
+
+    #[test]
+    fn the_two_skills_are_offered_apart() {
+        let both = persona_with_skill_set("en", 2, false, &[], true, true, true);
+        assert!(both.contains("[skill:leave]") && both.contains("[skill:remind|"));
+        let only_remind = persona_with_skill_set("en", 2, false, &[], true, false, true);
+        assert!(only_remind.contains("[skill:remind|") && !only_remind.contains("[skill:leave]"));
+        let only_leave = persona_with_skill_set("en", 2, false, &[], true, true, false);
+        assert!(only_leave.contains("[skill:leave]") && !only_leave.contains("[skill:remind"));
+        let none = persona_with_skill_set("en", 2, false, &[], true, false, false);
+        assert!(!none.contains("[skill:"));
+        assert_eq!(persona_with_skills("en", 2, false, &[], true, true), both);
     }
 
     // ---------------------------------------------------------------- H20: how reliably a real model names the skill (not run by `cargo test`)
@@ -1188,6 +1260,81 @@ mod tests {
         println!("commands tagged: {hit} of {should}   false tags: {false_tag} of {should_not}   errors: {errors}");
         println!("missed: {missed:?}");
         println!("FALSE TAGS (the ones that matter): {wrong:?}");
+    }
+
+    /// Labelled messages for the remind skill (RM-2, ADR-0115): (what the person says, the date the tag must carry, or "" when the
+    /// model must NOT tag: a time of day, a task, a date that is not clear, ordinary talk). Dates are written MM-DD, or YYYY-MM-DD
+    /// for a single future year.
+    const REMIND_CASES: &[(&str, &str)] = &[
+        ("Nhớ giúp mình sinh nhật mẹ là ngày 12 tháng 3 nhé", "03-12"),
+        ("Sinh nhật vợ mình 5/9, nhớ chúc giúp nha", "09-05"),
+        ("Ngày 20/11 là ngày kỷ niệm của tụi mình, nhớ nha", "11-20"),
+        ("Mình thi vào 20 tháng 11 năm 2027, nhớ ngày đó giúp mình", "2027-11-20"),
+        ("Hôm 1 tháng 1 là sinh nhật con mèo của mình, ghi nhớ đi", "01-01"),
+        ("Remember my mum's birthday is on March 12", "03-12"),
+        ("My anniversary is 14 February, please keep that day", "02-14"),
+        ("Keep this day for me: 25 December, my dad's birthday", "12-25"),
+        ("My exam is on 20 November 2027, remember it", "2027-11-20"),
+        ("Please remember July 4th is my sister's birthday", "07-04"),
+        ("母の誕生日は3月12日です。覚えておいて", "03-12"),
+        ("結婚記念日は6月1日だよ、覚えててね", "06-01"),
+        ("11月20日は私の誕生日。覚えておいてね", "11-20"),
+        ("試験は2027年11月20日だから覚えておいて", "2027-11-20"),
+        ("Nhắc mình họp lúc 3 giờ chiều nay nhé", ""),
+        ("Remind me at 9am tomorrow to call the bank", ""),
+        ("Set an alarm for 7 o'clock", ""),
+        ("Nhớ giúp mình mua sữa trên đường về", ""),
+        ("Remember to send the report by Friday", ""),
+        ("明日の10時に会議があるから知らせて", ""),
+        ("Nhớ sinh nhật mẹ mình giúp nhé (không nói ngày)", ""),
+        ("Remember my birthday, it's soon", ""),
+        ("Sinh nhật mình ngày 31 tháng 2", ""),
+        ("Hôm nay mình vui lắm", ""),
+        ("What day is it today?", ""),
+        ("今日は疲れたな", ""),
+    ];
+
+    /// How reliably a real model keeps a told day, and with the right date, and does not keep what is not a day. Run by the author:
+    ///   STREAKBOOM_HARNESS_PROVIDER = gemini | groq | claude | openai      STREAKBOOM_HARNESS_KEY = the key
+    ///   cargo test -- --ignored remind_harness --nocapture
+    /// It prints how many told days were tagged, how many with exactly the right date, and the false tags (the ones that matter).
+    #[test]
+    #[ignore]
+    fn remind_harness() {
+        let provider = std::env::var("STREAKBOOM_HARNESS_PROVIDER").ok().and_then(|p| Provider::parse(p.trim())).expect("set STREAKBOOM_HARNESS_PROVIDER");
+        let key = std::env::var("STREAKBOOM_HARNESS_KEY").expect("set STREAKBOOM_HARNESS_KEY");
+        let model = match std::env::var("STREAKBOOM_HARNESS_MODEL") {
+            Ok(m) if !m.trim().is_empty() => m,
+            _ => models_for(provider, &key).ok().and_then(|v| v.into_iter().next()).unwrap_or_else(|| provider.default_model().to_string()),
+        };
+        let system = persona_with_skill_set("vi", 2, false, &[], true, true, true);
+        let (mut told, mut tagged_n, mut exact, mut not_days, mut false_tag, mut errors) = (0, 0, 0, 0, 0, 0);
+        let (mut wrong_date, mut wrong_tag): (Vec<String>, Vec<&str>) = (Vec::new(), Vec::new());
+        for (text, want) in REMIND_CASES {
+            std::thread::sleep(std::time::Duration::from_millis(1500));
+            let turns = vec![Turn { role: "user".into(), text: (*text).into() }];
+            let Ok(out) = generate_for(provider, &key, &model, &system, &turns) else {
+                errors += 1;
+                continue;
+            };
+            let r = split_reply(&out);
+            let tagged = r.skill.as_deref() == Some("remind");
+            if want.is_empty() {
+                not_days += 1;
+                if tagged { false_tag += 1; wrong_tag.push(text) }
+            } else {
+                told += 1;
+                if tagged {
+                    tagged_n += 1;
+                    let date = r.skill_args.as_deref().and_then(|a| a.split('|').next()).unwrap_or("");
+                    if date == *want { exact += 1 } else { wrong_date.push(format!("{text} -> {date} (wanted {want})")) }
+                }
+            }
+        }
+        println!("provider {} model {model}", provider.id());
+        println!("told days tagged: {tagged_n} of {told}   with the right date: {exact}   false tags: {false_tag} of {not_days}   errors: {errors}");
+        println!("WRONG DATES: {wrong_date:?}");
+        println!("FALSE TAGS (the ones that matter): {wrong_tag:?}");
     }
 }
 

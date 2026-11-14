@@ -133,6 +133,9 @@ export interface UiStrings {
   memAiNote: string;
   memFacts: string;
   memFactsNone: string;
+  memKept: string;
+  memKeptNone: string;
+  memForgetKept: string;
   memForgetFacts: string;
   memNotice: string;
   sectionAbout: string;
@@ -376,6 +379,9 @@ export const UI: Record<Lang, UiStrings> = {
     memAiNote: "On by default. Every chat you start sends these notes to {company} along with your message so the pet can use them, and a short extra request picks new ones out of your chat. Turn it off to stop both.",
     memFacts: "What it noted from chats",
     memFactsNone: "Nothing noted yet. Edit or delete anything here.",
+    memKept: "Days Peak keeps (you told it in the chat)",
+    memKeptNone: "No days yet. Tell Peak in the chat, for example: remember my mum's birthday, 12 March.",
+    memForgetKept: "Forget these days",
     memForgetFacts: "Forget noted facts",
     memNotice: "I jotted down something you told me. It's in Settings > What the pet remembers, where you can edit or delete it, and it goes to {company} with our chats. You can turn it off there.",
     sectionAbout: "About",
@@ -626,6 +632,9 @@ export const UI: Record<Lang, UiStrings> = {
     memAiNote: "Bật sẵn. Mỗi cuộc trò chuyện bạn bắt đầu sẽ gửi các ghi chú này cho {company} cùng tin nhắn để pet dùng, và một yêu cầu nhỏ thêm sẽ rút ý mới từ cuộc trò chuyện. Tắt đi là dừng cả hai.",
     memFacts: "Những điều đã ghi từ trò chuyện",
     memFactsNone: "Chưa ghi gì. Bạn có thể sửa hoặc xóa mọi mục ở đây.",
+    memKept: "Những ngày Peak giữ (bạn đã kể trong chat)",
+    memKeptNone: "Chưa có ngày nào. Hãy kể cho Peak trong chat, ví dụ: nhớ sinh nhật mẹ mình, 12 tháng 3.",
+    memForgetKept: "Quên các ngày này",
     memForgetFacts: "Quên các điều đã ghi",
     memNotice: "Mình vừa ghi lại điều bạn kể. Nó nằm ở Cài đặt > Pet nhớ gì, bạn sửa hoặc xóa được, và nó được gửi cho {company} cùng các cuộc trò chuyện. Bạn tắt được ở đó.",
     sectionAbout: "Về app",
@@ -876,6 +885,9 @@ export const UI: Record<Lang, UiStrings> = {
     memAiNote: "最初からオンだよ。チャットを始めるたびに、このメモがメッセージと一緒に{company}に送られて、ペットが使えるようになるよ。それと、短い追加リクエストで、チャットから新しいメモを選ぶんだ。オフにすると両方止まるよ。",
     memFacts: "おしゃべりからメモしたこと",
     memFactsNone: "まだメモはないよ。ここで直したり消したりできるよ。",
+    memKept: "Peakが覚えている日（チャットで教えてくれた日）",
+    memKeptNone: "まだ日付はないよ。チャットで教えてね。例：母の誕生日は3月12日、覚えておいて。",
+    memForgetKept: "これらの日を忘れる",
     memForgetFacts: "メモしたことを忘れる",
     memNotice: "教えてもらったことをメモしたよ。設定の「ペットの記憶」にあって、直したり消したりできるし、おしゃべりのときに{company}にも送られるよ。そこでオフにもできるよ。",
     sectionAbout: "アプリ情報",

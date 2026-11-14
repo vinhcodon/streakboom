@@ -6,6 +6,7 @@
   import { invoke } from "@tauri-apps/api/core";
   import { getVersion } from "@tauri-apps/api/app";
   import { channelOf } from "$lib/channel";
+  import { describeDate } from "$lib/remind";
   import { emitTo } from "@tauri-apps/api/event";
   import { getCurrentWebviewWindow } from "@tauri-apps/api/webviewWindow";
   import { onMount, tick } from "svelte";
@@ -646,7 +647,17 @@
       {:else}
         <p class="muted">{ui.memFactsNone}</p>
       {/each}
+      <div class="muted">{ui.memKept}</div>
+      {#each snap.memory.keptDays as k (k.id)}
+        <div class="row">
+          <span class="txt wide">{describeDate(k.md, k.year, snap.lang)}: {k.label}</span>
+          <button class="seg" aria-label="delete" onclick={() => fromSettings({ type: "mem", action: "kept-del", id: k.id })}>×</button>
+        </div>
+      {:else}
+        <p class="muted">{ui.memKeptNone}</p>
+      {/each}
       <div class="row">
+        <button class="seg" disabled={snap.memory.keptDays.length === 0} onclick={() => fromSettings({ type: "mem", action: "forget-kept" })}>{ui.memForgetKept}</button>
         <button class="seg" disabled={snap.memory.facts.length === 0} onclick={() => fromSettings({ type: "mem", action: "forget-facts" })}>{ui.memForgetFacts}</button>
         <button class="seg" class:danger={wipe === "habits"} onclick={() => forget("habits")}>{wipe === "habits" ? ui.sure : ui.memForgetHabits}</button>
         <button class="seg" class:danger={wipe === "all"} onclick={() => forget("all")}>{wipe === "all" ? ui.sure : ui.memForgetAll}</button>

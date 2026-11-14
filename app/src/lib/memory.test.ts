@@ -242,3 +242,25 @@ test("an old memory file with a streak and a longest absence loads without them 
   const m = parseMemory(old) as unknown as Record<string, unknown>;
   assert.ok(!("bestStreak" in m) && !("longestAwayDays" in m));
 });
+
+import { forgetKept } from "./memory.ts";
+
+test("kept days survive forgetting habits, and go with forget-everything and forget-kept", () => {
+  const day = { id: "a", md: "03-12", year: 0, label: "mẹ", t: 1, done: "" };
+  const m = { ...defaultMemory(), keptDays: [day], keptCheck: "2026-11-14", petName: "Mun" };
+  assert.deepEqual(forgetHabits(m).keptDays, [day]);
+  assert.equal(forgetHabits(m).keptCheck, "2026-11-14");
+  assert.deepEqual(forgetKept(m).keptDays, []);
+  assert.equal(forgetKept(m).petName, "Mun");
+  assert.deepEqual(forgetAll(m).keptDays, []);
+  assert.equal(forgetAll(m).keptCheck, "");
+});
+
+test("an older memory.json has no kept days and reads as an empty list; a stored list round-trips", () => {
+  assert.deepEqual(parseMemory(JSON.stringify({ v: 1, petName: "x" })).keptDays, []);
+  assert.equal(parseMemory(JSON.stringify({ v: 1 })).keptCheck, "");
+  const day = { id: "a", md: "03-12", year: 2027, label: "thi", t: 1, done: "" };
+  const m = { ...defaultMemory(), keptDays: [day], keptCheck: "2026-11-14" };
+  assert.deepEqual(parseMemory(JSON.stringify(m)), m);
+  assert.equal(parseMemory(JSON.stringify({ keptCheck: "yesterday" })).keptCheck, "");
+});

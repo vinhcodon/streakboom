@@ -132,7 +132,8 @@ export function validateSkill(def: unknown): string[] {
   if (p.length) return p;
   if (typeof d.skill !== "string" || !/^[a-z][a-z_]{1,23}$/.test(d.skill)) p.push("the name must be 2 to 24 lowercase letters or _");
   if (typeof d.description !== "string" || d.description.length < 40 || d.description.length > 2000) p.push("the description must be 40 to 2000 characters");
-  if (!Array.isArray(d.phrases) || d.phrases.length === 0 || d.phrases.some((x) => typeof x !== "string" || !x.trim())) p.push("phrases must be a non-empty list of texts");
+  // a skill that only the model names (remind, ADR-0115) has no phrases of its own; the tests check that a table skill has some
+  if (!Array.isArray(d.phrases) || d.phrases.some((x) => typeof x !== "string" || !x.trim())) p.push("phrases must be a list of texts");
   if (!Array.isArray(d.patterns)) p.push("patterns must be a list");
   else
     for (const src of d.patterns as unknown[]) {

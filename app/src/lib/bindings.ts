@@ -39,6 +39,7 @@ export const BINDINGS: readonly Binding[] = [
   { name: "step_aside", gesture: "right_double_click", skill: "aside", gates: ["not_quiet", "not_held", "not_flying", "not_away", "not_leaving", "cooldown"], status: "built" },
   { name: "leave", gesture: null, skill: "leave", gates: ["not_held", "not_flying", "not_away", "not_leaving"], status: "built" },
   { name: "seat", gesture: null, skill: "seat", gates: ["not_held", "not_flying", "not_away"], status: "built" },
+  { name: "remind", gesture: null, skill: "remind", gates: ["not_away"], status: "built" },
   { name: "toggle_visibility", gesture: "tray_click", skill: null, gates: [], status: "built" },
   { name: "quiet_toggle", gesture: null, skill: null, gates: [], status: "built" },
   { name: "settings", gesture: null, skill: null, gates: [], status: "built" },

@@ -65,6 +65,7 @@ export interface MemoryView {
   marks: string[]; // ids of shared milestones
   aiLearn: boolean;
   facts: { id: string; text: string }[];
+  keptDays: { id: string; md: string; year: number; label: string }[]; // the days the person told Peak to keep (ADR-0115)
 }
 
 /** Pet window -> settings window, answering `settings-ready` and after every change. */
@@ -103,8 +104,9 @@ export type SettingsPatch =
   | { type: "mem"; action: "learn"; value: boolean }
   | { type: "mem"; action: "fact-set"; id: string; value: string }
   | { type: "mem"; action: "fact-del"; id: string }
+  | { type: "mem"; action: "kept-del"; id: string }
   | { type: "mem"; action: "ai"; value: boolean }
-  | { type: "mem"; action: "forget-habits" | "forget-facts" | "forget-all" }
+  | { type: "mem"; action: "forget-habits" | "forget-facts" | "forget-kept" | "forget-all" }
   | { type: "track"; event: "get_key_clicked" | "returned_to_app" | "key_pasted" };
 
 /** Settings window -> pet window, after the key or model changed (calls go straight to Rust). */

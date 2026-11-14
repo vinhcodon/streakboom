@@ -1,0 +1,23 @@
+# ADR-0115: Remind, the first slice, is built: the tag with arguments, the confirmation, the kept days
+
+- **Status:** accepted (the author ordered "Làm remind" on 2026-11-14 and chose three points from options); built on branch `vanish`, **not yet seen** (V-145). Builds ADR-0106; uses ADR-0103 and ADR-0111.
+- **Date:** 2026-11-14
+- **Decided by:** Vinh (author), recorded by Claude (the app session)
+
+## Context
+ADR-0106 decided the direction and left details open. Building it needed a few more choices, three of which were put to the author as options.
+
+## Decision
+1. **A kept day repeats every year by its month and day** (chosen by the author; rejected: once only, ask each time). When the person names one future year (an exam on 20 November 2027) the day is kept once, for that year only, and is dropped a week after it passes. 29 February is celebrated on 28 February in a year without it.
+2. **Peak confirms the day in the chat and the person answers by typing** (chosen; rejected: two buttons under the bubble). The question is Peak's own sentence with the date written out in the person's language ("12 March: mẹ's birthday. Did I get that right?"), not the model's. The answer is a whole short message, yes or no, from a fixed table in three languages (đúng, ừ, yes, はい; không, sai, no, いいえ). Anything else drops the question and goes on as chat. The question waits five minutes. Nothing is kept before a yes.
+3. **On the day Peak says a scripted line with the person's own words in it** (chosen; rejected: a line written by the model when a brain is connected). Two lines per kind per language under the banned-patterns test; no key is needed to deliver (ADR-0106 point 6).
+4. **How the model names a day:** a tag with arguments, `[skill:remind|MM-DD|words]` (or `YYYY-MM-DD` for one year). The Rust side keeps the name and, for `remind` only, the arguments (control characters removed, at most 90 characters inside the tag); the page checks the exact form again (`parseRemindArgs`) and refuses anything else. The model's own sentence is dropped when the form is good. The skill file `remind.skill.json` carries the description for the model and the limits; it has no phrases (only the model names it) and **no steps**: a dialogue with a pending question is not a sequence of verbs, so the page runs it, and the verbs for dialogue are a later stage of ADR-0103. The validator now allows an empty list of phrases, and a test checks that every skill with a table has some.
+5. **The skill is offered in a conversation too.** `leave` is withheld in a conversation (ADR-0108), but a day told in a chat is told in a chat, so the two skills are offered apart (`persona_with_skill_set(..., leave, remind)`; the chat call has a `remind` flag). Away or leaving, neither is offered.
+6. **Where it lives:** `memory.json` gets two added fields, `keptDays` (at most 24 rows: id, month-day, year, words of at most 40 characters, when kept, the date of the last cheer) and `keptCheck` (the date key of the last look); read with defaults, so an older build ignores them and keeps the rest (ADR-0090). "Forget habits" keeps the days (the person told them; they are not a habit); "forget everything" removes them; Settings, Memory lists them with a × on each row and a "Forget these days" button, in three languages.
+7. **Delivery:** once a minute (and 25 s after start, and 8 s after Peak is back from away) a check says one kept day that falls on today, or, within a week, one that came by since the last look, once, with a happy beat and a bubble. It waits for a free moment: not Quiet, not away, nothing open, not asleep, the person not at work (the usual focus gate, which includes full-screen programs). A day told on the day itself is not cheered right after the telling.
+8. **Measured:** not yet. ADR-0106 point 8 (how many days are kept, celebrated, removed) is **not built**; it needs day counters and a decision on where they are shown, and is left for a later step.
+
+## Consequences
+- RM-1 is built and unseen; RM-2 (the harness of labelled date phrases, `remind_harness` in `brain.rs`, 26 cases in three languages) is written and has **not been run** with any model (the author runs it with his own key).
+- The date understanding depends on the model: a wrong date is caught by the confirmation, which is why it is not optional.
+- Not built: timed reminders (R2), recurring nudges (R3), habits; each needs its own ADR (ADR-0106).

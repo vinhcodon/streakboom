@@ -116,3 +116,17 @@ test("step aside moves, then counts; when it cannot move nothing is counted", as
   assert.equal(r, "failed");
   assert.deepEqual(log2, []);
 });
+
+import { REMIND_SKILL, SEAT_SKILL } from "./skills.ts";
+import { MAX_KEPT, MAX_LABEL, MISSED_WINDOW_DAYS, PENDING_MS } from "./remind.ts";
+
+test("a skill with a table has phrases; remind is named by the model only and its limits are the program's", () => {
+  for (const s of [LEAVE_SKILL, SEAT_SKILL, ASIDE_SKILL]) assert.ok(s.phrases.length > 0, s.skill);
+  assert.deepEqual(REMIND_SKILL.phrases, []);
+  assert.deepEqual(REMIND_SKILL.steps, []);
+  assert.equal(REMIND_SKILL.limits.max_kept, MAX_KEPT);
+  assert.equal(REMIND_SKILL.limits.max_label, MAX_LABEL);
+  assert.equal(REMIND_SKILL.limits.pending_secs * 1000, PENDING_MS);
+  assert.equal(REMIND_SKILL.limits.missed_window_days, MISSED_WINDOW_DAYS);
+  assert.match(REMIND_SKILL.description, /\[skill:remind\|/);
+});

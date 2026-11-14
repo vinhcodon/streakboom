@@ -8,6 +8,7 @@
   import { decideDismissal, freshDismissalState, inConversation } from "$lib/dismissal";
   import { resolveGesture } from "$lib/bindings";
   import { recordPush, shouldHintAside } from "$lib/asidehint";
+  import { addKept, answerOf, describeDate, dueToday, fallsOn, markDone, missedSince, parseRemindArgs, pendingAlive, pruneOneOff, remindSay, type Pending, type RemindLine } from "$lib/remind";
   import { clickResolver } from "$lib/clickresolver";
   import { gatesPass, pickLine as pickFromPool, runSteps, type Host } from "$lib/skill-run";
   import { ASIDE_SKILL, LEAVE_SKILL, SEAT_SKILL } from "$lib/skills";
@@ -29,6 +30,7 @@
     defaultMemory,
     forgetAll,
     forgetFacts,
+    forgetKept,
     knownFor,
     removeFact,
     resetExtract,
@@ -2238,6 +2240,90 @@
     awayWalkActive = false;
     if (byPerson) count("callback");
     void runSteps(LEAVE_SKILL.after_return, skillHost, () => true); // a stretch (the skill file says so), no line
+    setTimeout(() => void keptTick(), 8_000); // a day that came by while Peak was away is said once, now that it is back
+  }
+
+  // ------------------------------------------------------- kept days (ADR-0106, ADR-0115)
+  let pendingDay: Pending | null = null; // a day waiting for the person's yes or no; memory only, gone after five minutes
+  let lastRemindLine: string | null = null;
+  function remindLine(kind: RemindLine, v: { label?: string; date?: string }): string {
+    const l = remindSay(kind, lang, v, lastRemindLine);
+    lastRemindLine = l;
+    return l;
+  }
+
+  /** The answer to the question about a day. True when the message was that answer (and so is not sent to the model). */
+  function answerDay(text: string): boolean {
+    const now = Date.now();
+    const p = pendingDay;
+    if (!pendingAlive(p, now)) {
+      pendingDay = null;
+      return false;
+    }
+    const a = answerOf(text);
+    pendingDay = null; // answered, or something else was said: the question is over either way
+    if (!a) return false;
+    let line: string;
+    if (a === "no") line = remindLine("dropped", {});
+    else {
+      const r = addKept(mem.keptDays, p, now, `d${now.toString(36)}${Math.floor(Math.random() * 1296).toString(36)}`);
+      if (r.result === "added") {
+        let list = r.list;
+        const last = list[list.length - 1];
+        if (fallsOn(last, new Date(now))) list = markDone(list, [last.id], now); // told on the day itself: no cheer right after the telling
+        mem = { ...mem, keptDays: list };
+        scheduleSave();
+        line = remindLine("kept", { date: describeDate(p.md, p.year, lang), label: p.label });
+      } else line = remindLine(r.result === "same" ? "same" : "full", {});
+    }
+    lt(`remind_answer ${a}`);
+    chatUser = text;
+    chatReply = line;
+    chatPhase = "reply";
+    replyMood = "neutral";
+    history = [...history, { role: "user" as const, text }, { role: "model" as const, text: line }].slice(-8);
+    resetMenuTimer();
+    return true;
+  }
+
+  /**
+   * Once a minute: say a kept day on its day, or a missed one when Peak is back, one at a time, once each, in a free moment
+   * (not Quiet, not away, nothing open, not asleep, the person not at work, no full-screen program). Nothing is counted aloud.
+   */
+  let keptBusy = false;
+  async function keptTick() {
+    if (keptBusy) return;
+    keptBusy = true;
+    try {
+      const now = Date.now();
+      const today = dayKey(now);
+      const list = pruneOneOff(mem.keptDays, now);
+      if (list.length !== mem.keptDays.length) {
+        mem = { ...mem, keptDays: list };
+        scheduleSave();
+      }
+      const due = dueToday(list, now);
+      const pick = due[0] ?? missedSince(list, mem.keptCheck, now)[0];
+      if (!pick) {
+        if (mem.keptCheck !== today) {
+          mem = { ...mem, keptCheck: today };
+          scheduleSave();
+        }
+        return;
+      }
+      const free = () => !(quiet || away || leaving || flying || pose === "held" || panel !== null || bubbleOn || busy || isDozing(pose));
+      if (!free()) return;
+      const fo = await probeFocus();
+      if (!fo.speakAllowed || !free()) return;
+      const kind: RemindLine = due.includes(pick) ? "today" : "missed";
+      enter(moodBeat("happy", data.settings.gentle).steps[0].pose);
+      showBubble(remindLine(kind, { label: pick.label }), 7000);
+      mem = { ...mem, keptDays: markDone(mem.keptDays, [pick.id], now) };
+      scheduleSave();
+      lt(`remind_said ${kind}`);
+    } finally {
+      keptBusy = false;
+    }
   }
 
   async function sendChat(raw: string) {
@@ -2245,6 +2331,8 @@
     if (!text) return;
     // A plain command to go away is Peak's own business, not a message to the model: no key, no chat turn counted (spec 14, A5).
     if (!busy && (await tryLeaveFromChat(text))) return;
+    // A yes or a no to the question about a day is Peak's business too (ADR-0115): no model call, no chat turn counted.
+    if (!busy && answerDay(text)) return;
     if (busy || !canChat) return;
     const gate = aiGate(data, "chat", Date.now());
     if (gate !== "ok") {
@@ -2275,7 +2363,7 @@
     let leftByModel = false; // the model named the skill and Peak is leaving: no chat answer is shown
     try {
       // The model may name a skill (S4, spec 14), but not while Quiet or away.
-      const out = await invoke<{ text: string; mood: string; skill?: string }>("brain_chat", {
+      const out = await invoke<{ text: string; mood: string; skill?: string; skillArgs?: string }>("brain_chat", {
         lang,
         tier: tierOf(data.closeness),
         gentle: data.settings.gentle,
@@ -2283,6 +2371,7 @@
         known: knownFor(mem, lang),
         followUser: true, // answer in the language the user writes in
         skills: !quiet && !away && !leaving && !talking,
+        remind: !away && !leaving, // a day told in a chat is told in a chat, so the model is offered this one in a conversation too (ADR-0115)
         banter: talking, // in a conversation a "go away" is a tease: stay and answer in kind (ADR-0108)
         clock: clockLine(new Date()), // the local time, the weekday and the part of the day, so the model does not guess them (ADR-0105)
       });
@@ -2296,7 +2385,16 @@
         void startLeave();
         return;
       }
-      const reply = clip(out.text);
+      let reply = clip(out.text);
+      if (out.skill === "remind") {
+        // The model named a day. Its form is checked here; Peak asks in its own words and keeps nothing until the person says yes.
+        const p = parseRemindArgs(out.skillArgs);
+        lt(`model_remind valid=${p !== null}`);
+        if (p) {
+          pendingDay = { ...p, t: Date.now() };
+          reply = remindLine("ask", { date: describeDate(p.md, p.year, lang), label: p.label });
+        }
+      }
       replyMood = out.mood;
       history = [...history, { role: "model" as const, text: reply }].slice(-8);
       chatReply = reply;
@@ -2433,6 +2531,7 @@
       marks: mem.marks.map((m) => m.id),
       aiLearn: mem.aiLearn,
       facts: mem.facts.map((f) => ({ id: f.id, text: f.text })),
+      keptDays: mem.keptDays.map((k) => ({ id: k.id, md: k.md, year: k.year, label: k.label })),
     };
   }
 
@@ -2442,6 +2541,8 @@
     else if (p.action === "ai") mem = { ...mem, aiLearn: p.value, sinceExtract: 0 };
     else if (p.action === "fact-set") mem = setFact(mem, p.id, p.value);
     else if (p.action === "fact-del") mem = removeFact(mem, p.id);
+    else if (p.action === "kept-del") mem = { ...mem, keptDays: mem.keptDays.filter((k) => k.id !== p.id) };
+    else if (p.action === "forget-kept") mem = forgetKept(mem);
     else if (p.action === "forget-facts") mem = forgetFacts(mem);
     else if (p.action === "forget-habits") mem = forgetHabits(mem);
     else mem = forgetAll(mem);
@@ -2846,7 +2947,9 @@
         if (tier >= 3) track("tier_3");
         if (mem.petName) track("pet_named");
         save();
+        void keptTick();
       }, MIN);
+      setTimeout(() => void keptTick(), 25_000); // the first look, soon after start
 
       // First update check a minute after start, then every six hours.
       updateFirst = setTimeout(autoCheckUpdate, 60_000);
