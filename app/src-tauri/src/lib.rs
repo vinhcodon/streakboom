@@ -1421,11 +1421,30 @@ fn spawn_hit_test(app: AppHandle, win: WebviewWindow) {
 
 // ---------------------------------------------------------------------- tray
 
+/// May this build open the terrain overlay? A developer build (cargo feature `terrain-overlay`) and every **Preview** build (an odd
+/// middle number, ADR-0116); never a Stable one. It draws on the screen only; nothing is saved or sent.
+fn overlay_allowed() -> bool {
+    cfg!(feature = "terrain-overlay") || updater::channel_of(env!("CARGO_PKG_VERSION")) == updater::Channel::Preview
+}
+
+/// The overlay belongs to Peak: when Peak is hidden (the tray, or away) it is hidden too, and shown again when Peak is.
+fn overlay_follow(app: &AppHandle, show: bool) {
+    if let Some(w) = app.get_webview_window("overlay") {
+        if show {
+            show_without_activating(&w);
+        } else {
+            let _ = w.hide();
+        }
+    }
+}
+
 /// The developer overlay (TT-1, spec/10 section 7): a click-through, transparent window over the monitor's work area that
 /// draws what Peak believes about the screen (the page `overlay`). Opens or closes it, tells the pet page, and puts the pet
 /// window back on top so the cat is never hidden by it.
-#[cfg(feature = "terrain-overlay")]
 fn toggle_overlay(app: &AppHandle) -> String {
+    if !overlay_allowed() {
+        return "not in this build".into();
+    }
     if let Some(w) = app.get_webview_window("overlay") {
         let _ = w.close();
         let _ = app.emit_to("main", "overlay-toggle", false);
@@ -1462,15 +1481,7 @@ fn toggle_overlay(app: &AppHandle) -> String {
 #[tauri::command]
 async fn overlay_toggle(app: AppHandle) -> String {
     // an async command: creating a window from a synchronous one blocks on Windows
-    #[cfg(feature = "terrain-overlay")]
-    {
-        toggle_overlay(&app)
-    }
-    #[cfg(not(feature = "terrain-overlay"))]
-    {
-        let _ = app;
-        "not in this build".to_string()
-    }
+    toggle_overlay(&app)
 }
 
 fn toggle_visibility(app: &AppHandle) {
@@ -1479,8 +1490,10 @@ fn toggle_visibility(app: &AppHandle) {
             let _ = win.hide();
             // the bubble belongs to the pet: hide it too
             bubble_hide(app.clone(), app.state::<AppState>());
+            overlay_follow(app, false);
         } else {
             let _ = win.show();
+            overlay_follow(app, true);
             end_away(app);
         }
     }
@@ -1545,6 +1558,13 @@ fn leave_trace(app: AppHandle, step: String) {
     append_trace(&app, "leave-trace.log", &step);
 }
 
+/// The same for the perches, climbs and hops (`perch-trace.log`, ADR-0116): which gate stopped an attempt, and the numbers of the
+/// map; fixed names and numbers only.
+#[tauri::command]
+fn perch_trace(app: AppHandle, step: String) {
+    append_trace(&app, "perch-trace.log", &step);
+}
+
 /// Peak walks off (S2): hide the pet window and its bubble and start the return timer. The page decides whether it may leave.
 #[tauri::command]
 fn pet_leave(app: AppHandle, state: State<AppState>, minutes: u32) -> bool {
@@ -1554,6 +1574,7 @@ fn pet_leave(app: AppHandle, state: State<AppState>, minutes: u32) -> bool {
     }
     let _ = win.hide();
     bubble_hide(app.clone(), app.state::<AppState>());
+    overlay_follow(&app, false);
     let secs = away_secs(std::env::var("STREAKBOOM_AWAY_SECS").ok().as_deref(), u64::from(minutes.clamp(1, 24 * 60)) * 60);
     arm_return(&app, Duration::from_secs(secs));
     true
@@ -1570,6 +1591,7 @@ fn pet_return(app: AppHandle, state: State<AppState>) -> bool {
         // The timer, not the person, shows it: it must not take the keyboard from the program they are typing in.
         show_without_activating(&win);
     }
+    overlay_follow(&app, true);
     true
 }
 
@@ -1641,9 +1663,10 @@ fn build_tray(app: &AppHandle, quiet: bool) -> tauri::Result<()> {
     let quiet_item = CheckMenuItem::with_id(app, "quiet", "Quiet mode", true, quiet, None::<&str>)?;
     let quit = MenuItem::with_id(app, "quit", "Quit", true, None::<&str>)?;
     let menu = Menu::with_items(app, &[&toggle, &settings, &quiet_item, &quit])?;
-    // a developer build only (cargo feature `terrain-overlay`, never in a release): show what Peak believes about the screen
-    #[cfg(feature = "terrain-overlay")]
-    menu.append(&MenuItem::with_id(app, "overlay", "Terrain overlay (dev)", true, None::<&str>)?)?;
+    // a developer build and every Preview build, never a Stable one (ADR-0116): show what Peak believes about the screen
+    if overlay_allowed() {
+        menu.append(&MenuItem::with_id(app, "overlay", "Terrain overlay (Preview)", true, None::<&str>)?)?;
+    }
     let quiet_ref = quiet_item.clone();
     *app.state::<AppState>().quiet_item.lock().unwrap() = Some(quiet_item.clone());
     *app.state::<AppState>().tray_items.lock().unwrap() = Some([toggle.clone(), settings.clone(), quit.clone()]);
@@ -1657,7 +1680,6 @@ fn build_tray(app: &AppHandle, quiet: bool) -> tauri::Result<()> {
             "settings" => open_settings_async(app),
             "quiet" => set_quiet(app, quiet_ref.is_checked().unwrap_or(false)),
             "quit" => quit_app(app),
-            #[cfg(feature = "terrain-overlay")]
             "overlay" => {
                 // from the tray handler: not on this thread (creating a window here can block on Windows)
                 let app = app.clone();
@@ -1787,6 +1809,7 @@ pub fn run() {
             move_by,
             pet_leave,
             leave_trace,
+            perch_trace,
             pet_return,
             pet_away_retry,
             drag_start,
@@ -1836,6 +1859,13 @@ pub fn run() {
 
 #[cfg(test)]
 mod away_tests {
+    #[test]
+    fn the_terrain_overlay_is_for_preview_builds_and_developer_builds_only() {
+        let minor: u64 = env!("CARGO_PKG_VERSION").split('.').nth(1).and_then(|m| m.parse().ok()).unwrap();
+        assert_eq!(overlay_allowed(), cfg!(feature = "terrain-overlay") || minor % 2 == 1);
+    }
+
+
     use super::*;
 
     #[test]

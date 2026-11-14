@@ -262,6 +262,7 @@ pub fn split_reply(raw: &str) -> Reply {
 }
 
 /// The skills layer of the persona (S4): added only in a chat the user started, on a build that has the skills. All the skills.
+#[cfg_attr(not(test), allow(dead_code))] // the chat builds the layer with `skills_layer_for`; the tests use this one
 pub fn skills_layer() -> PersonaLayer {
     skills_layer_for(true, true)
 }

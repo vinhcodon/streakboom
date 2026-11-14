@@ -906,10 +906,10 @@
     try {
       const map = await invoke<GroundMap>("ground_map");
       const at = await catFeet();
-      const perch = at ? choosePerch(map, at.feet, at.scale, undefined, 0) : null;
+      const perch = at ? choosePerch(map, at.feet, at.scale, { ...PERCH_LIMITS, maxRise: CLIMB_MAX_RISE }, 0) : null; // the limits of a real attempt, climbing included
       const target = perch && at ? { x: Math.round(at.feet.x + perch.dx * at.scale), y: Math.round(at.feet.y + perch.dy * at.scale) } : null;
       const ss = surfaces(map);
-      const note = `${summary(map)} | ${ss.length} surfaces (${ss.filter((s) => s.roomy).length} with room) | ${target ? "target at " + target.x + "," + target.y : "no target"}`;
+      const note = `${summary(map)} | ${ss.length} surfaces (${ss.filter((s) => s.roomy).length} with room) | ${target ? "target at " + target.x + "," + target.y : "no target"} | mode ${mode} | last: ${lastPerchWhy}`;
       await emitTo("overlay", "overlay-data", { map, surfaces: ss, target, feet: at ? at.feet : null, note });
     } catch {
       /* the overlay may have been closed meanwhile */
@@ -923,14 +923,29 @@
    */
   async function perchNow(fake?: GroundMap, force = false, how?: "hop" | "climb") {
     const now = Date.now();
-    if (flying || quiet || panel !== null || (pose !== "idle" && pose !== "look")) return scheduleNext();
-    if (!force && now - lastPerch < PERCH_COOLDOWN_MS) return scheduleNext();
+    if (flying || quiet || panel !== null || (pose !== "idle" && pose !== "look")) {
+      pt(`blocked busy flying=${flying ? 1 : 0} quiet=${quiet ? 1 : 0} panel=${panel !== null ? 1 : 0} pose=${pose}`);
+      return scheduleNext();
+    }
+    if (!force && now - lastPerch < PERCH_COOLDOWN_MS) {
+      pt(`blocked cooldown left_s=${Math.round((PERCH_COOLDOWN_MS - (now - lastPerch)) / 1000)}`);
+      return scheduleNext();
+    }
     const fo = await probeFocus();
-    if ((!fo.walkAllowed || !mayAct(mode, 2, "own", quiet)) && !force) return scheduleNext(); // a perch is brisk: only when the person is not working
+    if ((!fo.walkAllowed || !mayAct(mode, 2, "own", quiet)) && !force) {
+      pt(`blocked not_free mode=${mode} walk_allowed=${fo.walkAllowed ? 1 : 0}`);
+      return scheduleNext(); // a perch is brisk: only when the person is not working
+    }
     const map = fake ?? (await takeGroundMap());
-    if (!map) return scheduleNext();
+    if (!map) {
+      pt(`blocked no_map ground_map=${data.settings.groundMap ? 1 : 0}`);
+      return scheduleNext();
+    }
     const at = await catFeet();
-    if (!at) return scheduleNext();
+    if (!at) {
+      pt("blocked no_feet");
+      return scheduleNext();
+    }
     const { feet, scale } = at;
     const place = { scale };
     // a ledge up to CLIMB_MAX_RISE high counts when there is a wall to climb to it (spec/10 section 11); without one, the hop's limit
@@ -939,7 +954,15 @@
     const canClimb = !!wall && wall.width >= MIN_CLIMB_LEDGE * scale && how !== "hop";
     const climb = canClimb && (how === "climb" || -perch!.dy > 200 || Math.random() < 0.5);
     note(perch ? `perch: ledge ${perch.col},${perch.row}, go ${perch.dx},${perch.dy}${climb ? ", by climbing" : ""}` : "perch: no ledge");
-    if (!perch || (!climb && -perch.dy > HOP_MAX_PX)) return scheduleNext(); // by hop one hop up, so that one hop brings it down again
+    if (!perch) {
+      pt(`no_ledge ledges=${ledges(map).length} surfaces=${surfaces(map).length} desktop_pct=${Math.round(desktopShare(map) * 100)} scale=${scale}`);
+      return scheduleNext();
+    }
+    if (!climb && -perch.dy > HOP_MAX_PX) {
+      pt(`too_high rise=${-perch.dy} hop_max=${HOP_MAX_PX} wall=${wall ? 1 : 0} wall_width=${wall ? Math.round(wall.width) : 0}`);
+      return scheduleNext(); // by hop one hop up, so that one hop brings it down again
+    }
+    pt(`go ${climb ? "climb" : "hop"} dx=${perch.dx} dy=${perch.dy} wall=${wall ? 1 : 0}`);
     const run = surfaces(map).find((u) => u.row === perch.row && perch.col >= u.c0 && perch.col <= u.c1);
     const seat = run ? { x0: run.x0, x1: run.x1 } : null;
     lastPerch = now;
@@ -952,13 +975,18 @@
       if (await climbUp(map, wall, edge ?? Math.round(feet.y + dy * scale), feet, scale)) {
         perchedUntil = Date.now() + 3 * 60_000;
         perchSeat = seat;
-      } else perchWall = null;
+        pt("climb_done ok=1");
+      } else {
+        perchWall = null;
+        pt("climb_done ok=0");
+      }
       return;
     }
     if (!(await noticeBeat(perch.dx, dy))) return;
     await fly(splitHop(perch.dx, dy), "walk");
     perchedUntil = Date.now() + 3 * 60_000; // it stays up there a while, and never walks off the seat (CH-2)
     perchSeat = seat;
+    pt("hop_done");
   }
 
   /**
@@ -2025,6 +2053,12 @@
   // at once when the person shows it from the tray. On every build (ADR-0100). Counted as `leave` and `callback`, apart from
   // Bond Days. Nothing here is saved: after a restart Peak is simply on screen.
   /** One step of the leaving into leave-trace.log (V-132): a fixed name and numbers, never the person's words. */
+  /** One step of the perch attempts into perch-trace.log (ADR-0116): a fixed gate name and numbers. `lastPerchWhy` is shown on the terrain overlay. */
+  let lastPerchWhy = "no attempt yet";
+  function pt(step: string) {
+    lastPerchWhy = step.slice(0, 80);
+    void invoke("perch_trace", { step }).catch(() => {});
+  }
   function lt(step: string) {
     void invoke("leave_trace", { step }).catch(() => {});
   }
