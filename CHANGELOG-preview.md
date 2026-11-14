@@ -2,6 +2,11 @@
 
 Release notes of the **Preview** builds (an odd middle number: 0.5.x, 0.7.x), newest first. A Preview is a build the author hands to a few adults (ADR-0089, ADR-0090). It is published on GitHub as a pre-release, **never** as the download of the website, and its notes are **not** in [`CHANGELOG.md`](CHANGELOG.md), which the website reads. The format is the same as there: `## x.y.z (YYYY-MM-DD)`, then lines starting with `- `, the first a short bold sentence. When a Preview line is promoted, the Stable version takes its entry in `CHANGELOG.md`.
 
+## 0.11.5 (2026-11-15)
+- **Peak has a usual place now.** Say sit here (ngồi đây nhé, ここが定位置) where it stands and that spot along the floor becomes its place; say go to your spot (về chỗ đi) and it comes down to the floor if it is up on a window, walks to its place and nods. Until you teach it, its place is near the right end of the floor. Settings, Memory shows the place and lets you go back to the default. Nothing is watched to find it.
+- **Seeing the terrain.** A new tray item, Terrain overlay (Preview), draws a thin layer over the screen showing what Peak believes about the windows and where it would climb or hop; it hides when Peak hides. And a small log, perch-trace.log in the data folder, notes which rule stopped each try to climb or hop (the mode, the cool-down, no ledge and so on): names and numbers only.
+- Not yet tried: either of them on a real screen.
+
 ## 0.11.4 (2026-11-15)
 - **Peak can now answer about the days it keeps.** Ask it, for example, when someone's birthday is: the days you asked it to keep are sent to your chat model with each chat you start, a short line each, so it can answer. They go with the same switch as the noted facts (Settings, Memory, Remember things I tell it in chats): turn that off and neither is sent. Settings says so.
 - Not yet tried: asking about the days with a real chat model, and that turning the switch off makes Peak not know them.
