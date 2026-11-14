@@ -386,3 +386,17 @@ Why: the author keeps building features and lets a few adults try them (ADR-0089
 | IM-2 | The right click resolver (about 250 ms) and the double right click | S | built (resolver and handler; the double is step aside since IM-3, a push when a gate refuses it) |
 | IM-3 | Skill `aside` ("xê ra", "tránh ra", "move over") and the verb `step_aside` (ADR-0111) | M | built, not seen |
 | IM-4 | The one-time hint after repeated pushes (3 pushes in 25 s, once in a lifetime, kept in `said.hintaside`), three languages, under the banned-patterns test | S | built, not seen |
+
+## E25: A download path that survives the GitHub limit (ADR-0025; proposed, nothing built)
+
+**Why.** On 2026-11-14 the author could not update from Preview 0.9.6 to 0.9.7: `api.github.com` answered 403 "rate limit exceeded" for the public address of the author's machine (60 calls per hour for callers who are not signed in, counted by IP address, not by person or program). The installer address in `latest.json` and `preview.json` is the API asset address (`api.github.com/repos/.../releases/assets/ID`, ADR-0025), chosen on 2026-11-08 because the public download path of github.com had answered 504. So today the one path the app uses is the one with a small hourly limit per address; a person behind a shared address (CGNAT, an office, a school) can be blocked by others. Who used the author's quota is **not known** (the release script uses the signed-in `gh`, 5,000 an hour). The error the person sees is not known either (V-142).
+
+| # | Story | Size | Status |
+|---|---|---|---|
+| UD-1 | Decide the order of the download paths (ADR, as a multiple choice): public path first and API address on failure, API first and public path on failure, or both written in the manifest. The signed manifest and the signature check stay as they are (ADR-0025): the installer is verified whatever path brings it | S | proposed |
+| UD-2 | The updater tries the second path when the first answers 403, 429 or 5xx, with the same 20 s timeout and no retry storm; a pure function `downloadCandidates(manifest)` with tests (the plugin takes one address, so the app swaps the address of the `Update` before it downloads) | M | proposed |
+| UD-3 | `release-finish.ps1` writes whichever addresses UD-1 chose, and its tests (`test-release-lib.ps1`) cover the manifest shape; old builds must keep reading the manifest (an added field, never a changed one) | S | proposed |
+| UD-4 | When both paths fail, the message says what happened in the person's words ("GitHub is limiting downloads from your network for a while; try again later" for 403 and 429, the usual network message otherwise), in three languages, under the banned-patterns test | S | proposed |
+| UD-5 | Measure first: on the next failed update, record the HTTP status and the `x-ratelimit-remaining` header (numbers only) into a small log, as `leave-trace.log` does, so that the cause is known and not guessed | S | proposed |
+
+**Order.** UD-5 and UD-1 first (cheap, and they tell whether UD-2 is worth its size), then UD-2, UD-3 and UD-4 together. A change to the updater is a change to every future release: it is tried on a Preview before a Stable.
