@@ -1,4 +1,4 @@
-# ADR-0110: Step aside is built: the verb `step_aside`, the gates it really has, and the day counter `aside`
+# ADR-0111: Step aside is built: the verb `step_aside`, the gates it really has, and the day counter `aside`
 
 - **Status:** accepted (the author ordered the work, "Làm IM-3", on 2026-11-14); built on branch `vanish`, **not yet seen** (V-140). Builds ADR-0109 and ADR-0103.
 - **Date:** 2026-11-14

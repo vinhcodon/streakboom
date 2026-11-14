@@ -1,6 +1,6 @@
 {
   "skill": "aside",
-  "description": "Step aside: a command for the table and the double right click only, never named by the model. Peak walks away from the pointer along the surface it stands on until the pointer is clear, and never leaves or falls (ADR-0110).",
+  "description": "Step aside: a command for the table and the double right click only, never named by the model. Peak walks away from the pointer along the surface it stands on until the pointer is clear, and never leaves or falls (ADR-0111).",
   "phrases": [
     "xê ra",
     "xê ra chút",

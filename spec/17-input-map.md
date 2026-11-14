@@ -1,6 +1,6 @@
 # 17. The input map: what the person does, what it is called, what Peak does
 
-**Status:** **decided on 2026-11-14 (ADR-0109), written from an audit of the code of Preview 0.9.5. Built since on branch `vanish` (IM-1 to IM-4, ADR-0110; not seen, V-139 and V-140); the one-time hint (IM-4) too, V-141.** Two points differ from the text below: step aside keeps the gate `not_quiet`, and with no room it nods instead of hopping to another row (ADR-0110). The author asked for (a) a "step aside" action ("tránh ra", "xê ra") on a double right click, and (b) a review that names every action and ties each to the mouse events and keys that exist. The decisions of section 8 were taken as recommended (ADR-0109).
+**Status:** **decided on 2026-11-14 (ADR-0109), written from an audit of the code of Preview 0.9.5. Built since on branch `vanish` (IM-1 to IM-4, ADR-0111; not seen, V-139 and V-140); the one-time hint (IM-4) too, V-141.** Two points differ from the text below: step aside keeps the gate `not_quiet`, and with no room it nods instead of hopping to another row (ADR-0111). The author asked for (a) a "step aside" action ("tránh ra", "xê ra") on a double right click, and (b) a review that names every action and ties each to the mouse events and keys that exist. The decisions of section 8 were taken as recommended (ADR-0109).
 
 ## 1. Why
 

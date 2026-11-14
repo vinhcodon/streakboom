@@ -2028,7 +2028,7 @@
       return true;
     }
     if (m?.skill === "aside" && m.kind === "exact") {
-      // "step aside": get out of the way of the cursor, calmly; never a way to make it leave (ADR-0110)
+      // "step aside": get out of the way of the cursor, calmly; never a way to make it leave (ADR-0111)
       if (!gatesPass(ASIDE_SKILL.gates, { quiet, held: pose === "held", flying, away, leaving })) return false;
       lt(`command_aside pose=${pose}`);
       closePanel();

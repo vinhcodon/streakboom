@@ -41,7 +41,7 @@ export const TABLE: Record<Skill, SkillTable> = {
   leave: { phrases: LEAVE_SKILL.phrases, patterns: LEAVE_SKILL.patterns.map((s) => new RegExp(s)) },
   // "go back to your place" is NOT a wish to be left alone (ADR-0108); its phrases are in its skill file
   seat: { phrases: SEAT_SKILL.phrases, patterns: SEAT_SKILL.patterns.map((s) => new RegExp(s)) },
-  // "step aside" is a request to get out of the cursor's way, not to leave (ADR-0110); table only
+  // "step aside" is a request to get out of the cursor's way, not to leave (ADR-0111); table only
   aside: { phrases: ASIDE_SKILL.phrases, patterns: ASIDE_SKILL.patterns.map((s) => new RegExp(s)) },
   return: {
     phrases: [
