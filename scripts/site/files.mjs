@@ -62,7 +62,7 @@ export function robots() {
 export const BRAINS = [["Gemini", true], ["Groq", true], ["Claude", false], ["OpenAI", false]];
 const FACTS = `## Languages and AI brains
 - Languages of the app and Peak's built-in lines: English, Vietnamese and Japanese (Japanese is a beta, not yet read by a native speaker).
-- AI brains are optional and use your own API key, offered in this order: ${BRAINS.map(([n]) => n).join(", ")}. Free tiers with limits: ${BRAINS.filter(([, f]) => f).map(([n]) => n).join(" and ")}. Paid: ${BRAINS.filter(([, f]) => !f).map(([n]) => n).join(" and ")}. Only Gemini has been tried with a real key so far.`;
+- AI brains are optional and use your own API key, offered in this order: ${BRAINS.map(([n]) => n).join(", ")}. Free tiers with limits: ${BRAINS.filter(([, f]) => f).map(([n]) => n).join(" and ")}. Paid: ${BRAINS.filter(([, f]) => !f).map(([n]) => n).join(" and ")}. Gemini and Groq have been tried with a real key so far (the author's own try, on one machine); Claude and OpenAI have not.`;
 
 const en = (key, ctx) => fill(STRINGS.en[key], ctx, "en");
 const bullets = (list, ctx) => list.map((t) => `- ${fill(t, ctx, "en")}`).join("\n");

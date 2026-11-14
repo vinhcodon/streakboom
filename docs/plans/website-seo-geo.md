@@ -284,7 +284,7 @@ Japanese is counted in characters (about 3 per English word), so the columns are
 | No account | 5 | 3 / 1 / 1 |
 | The key stays on your computer (Credential Manager) | 4 | 2 / 1 / 1 |
 | How updates work | 4 | 2 / 1 / 1 |
-| Groq, Claude and OpenAI not yet tried with a real key | 3 | 3 / 0 / 0 |
+| Claude and OpenAI not yet tried with a real key (Gemini and Groq have; changed on 2026-11-14) | 3 | 3 / 0 / 0 |
 | Daily limit of 60 and 6 | 3 | 2 / 0 / 1 |
 | Memory use of 100 to 120 MB | 2 | 2 / 0 / 0 |
 
