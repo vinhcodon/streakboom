@@ -1,6 +1,6 @@
 # 17. The input map: what the person does, what it is called, what Peak does
 
-**Status:** **proposed (2026-11-14), written from an audit of the code of Preview 0.9.5; nothing here is built or decided.** The author asked for (a) a "step aside" action ("tránh ra", "xê ra") on a double right click, and (b) a review that names every action and ties each to the mouse events and keys that exist. The decisions are in section 8; each becomes an ADR when answered.
+**Status:** **decided on 2026-11-14 (ADR-0109), written from an audit of the code of Preview 0.9.5; nothing here is built.** The author asked for (a) a "step aside" action ("tránh ra", "xê ra") on a double right click, and (b) a review that names every action and ties each to the mouse events and keys that exist. The decisions of section 8 were taken as recommended (ADR-0109).
 
 ## 1. Why
 
@@ -93,9 +93,9 @@ The gesture column is a **closed list**: left click, left double click, left dra
 
 Small: one handler change, one timer, one skill file and one verb, one hint line in three languages (under the banned-patterns test). Risk: the 250 ms wait before a push (the push feels slower), and the extra concept for the person; both are mitigated by the typed phrase and by the hint after repeated pushes.
 
-## 8. Decisions for the author (not taken)
+## 8. The decisions (taken as recommended, ADR-0109)
 
-1. Is the double right click the right gesture for step aside? Alternatives: hold the right button, Shift plus right click, or only the typed phrase.
-2. Should a single right click wait about 250 ms so that a double can be told apart, or should the push start at once and a second click upgrade it into step aside?
-3. Should Peak give a one-time hint after the third push in a short time ("you can also say *xê ra*")?
-4. Is the table of section 5 the right place to name everything (a file in code, `bindings.ts`), or should the names live in each skill file only?
+1. **The double right click** is the gesture (rejected: holding the right button, only the typed phrase).
+2. **A single right click waits about 250 ms** (rejected: pushing at once and upgrading on the second click).
+3. **A one-time hint** after repeated pushes.
+4. **`bindings.ts` is the one table** (rejected: names only in each skill file).
