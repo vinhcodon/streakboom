@@ -60,9 +60,11 @@ test("a gate that is closed refuses the gesture", () => {
   assert.equal(resolveGesture("tray_click", { ...calm, quiet: true, held: true, away: true }), "toggle_visibility");
 });
 
-test("step aside is proposed: the double right click reaches nothing until it is built", () => {
-  assert.equal(bindingByName("step_aside")?.status, "proposed");
-  assert.equal(resolveGesture("right_double_click", calm), null);
+test("step aside is built: the double right click reaches it when the gates are open", () => {
+  assert.equal(bindingByName("step_aside")?.status, "built");
+  assert.equal(resolveGesture("right_double_click", calm), "step_aside");
+  assert.equal(resolveGesture("right_double_click", { ...calm, away: true }), null);
+  assert.equal(resolveGesture("right_double_click", { ...calm, cooldownOk: false }), null);
 });
 
 test("the typed commands have no gesture and are never a setting", () => {

@@ -9,7 +9,7 @@
   import { resolveGesture } from "$lib/bindings";
   import { clickResolver } from "$lib/clickresolver";
   import { gatesPass, pickLine as pickFromPool, runSteps, type Host } from "$lib/skill-run";
-  import { LEAVE_SKILL, SEAT_SKILL } from "$lib/skills";
+  import { ASIDE_SKILL, LEAVE_SKILL, SEAT_SKILL } from "$lib/skills";
   import { LEAVE_PACE_PX_S, RETRY_SECS, isLeaveCommand, leaveDeadlineMs, mayLeave, nearerEdge } from "$lib/farewell";
   import { matchIntent, shortEnoughForSkill } from "$lib/intents";
   import { emitTo } from "@tauri-apps/api/event";
@@ -1868,8 +1868,8 @@
   }
 
   // Right-click: no menu (the only menu is the tray's, ADR-0055). It is a push away from the pointer (see `shove`).
-  // One right click waits RIGHT_DOUBLE_MS for a second (ADR-0109): a single is the push, a double is "step aside". Until
-  // step aside is built (IM-3) `resolveGesture` reaches nothing for the double, and then it is a push as before.
+  // One right click waits RIGHT_DOUBLE_MS for a second (ADR-0109): a single is the push, a double is "step aside". A double
+  // is "step aside" (IM-3); when a gate refuses it, it falls back to the push, which has its own gates.
   const rightClicks = clickResolver<number>(
     (dx) => void shove(dx),
     (dx) => {
@@ -1881,8 +1881,8 @@
         leaving,
         cooldownOk: Date.now() - lastShove >= 2500,
       });
-      if (act === null) void shove(dx);
-      // the action `step_aside` is run here by name once its skill exists
+      if (act === "step_aside" && panel === null) void startAside(dx);
+      else void shove(dx); // a gate is closed (it refuses itself), or a panel is open
     },
   );
   function onPetMenu(e: MouseEvent) {
@@ -2014,6 +2014,14 @@
       void runSteps(SEAT_SKILL.steps, skillHost, () => true, lt);
       return true;
     }
+    if (m?.skill === "aside" && m.kind === "exact") {
+      // "step aside": get out of the way of the cursor, calmly; never a way to make it leave (ADR-0110)
+      if (!gatesPass(ASIDE_SKILL.gates, { quiet, held: pose === "held", flying, away, leaving })) return false;
+      lt(`command_aside pose=${pose}`);
+      closePanel();
+      void startAside(null);
+      return true;
+    }
     if (!isLeaveCommand(text, [mem.petName])) return false; // "peak" and the name the person gave it may stand around the command
     if (!mayLeave({ quiet, held: pose === "held", flying, away, leaving })) {
       lt(`command_refused quiet=${quiet} held=${pose === "held"} flying=${flying} away=${away} leaving=${leaving}`);
@@ -2070,6 +2078,34 @@
         enter("walk"); // startWalk sees awayWalkActive and runs the walk to the edge
       });
     },
+    async stepAside() {
+      // Away from the pointer (the side the click was on, or where the pointer is); a sleeper wakes first. No room: it nods and stays.
+      if (isDozing(pose)) enter("idle");
+      const now = Date.now();
+      let way: 1 | -1 | null = null;
+      const from = asideDx ?? lastPointer?.dx ?? null;
+      if (from !== null && Math.abs(from) > 2) way = from > 0 ? -1 : 1;
+      let roomL = 0;
+      let roomR = 0;
+      try {
+        roomL = await invoke<number>("edge_room", { dir: -1 });
+        roomR = await invoke<number>("edge_room", { dir: 1 });
+      } catch {
+        /* unknown: nods */
+      }
+      if (way === null) way = roomL > roomR ? -1 : 1;
+      const room = way < 0 ? roomL : roomR;
+      lt(`aside way=${way} room=${Math.round(room)} pose=${pose}`);
+      if (pose !== "idle" && pose !== "look") return false; // something else happened while asking
+      lastShove = now; // the cooldown is shared with the push
+      if (room < LEAVE_MIN_ROOM_PX) {
+        enter("nod");
+        return false;
+      }
+      walkPlan = { dir: way };
+      enter("walk"); // the walk ends when the pointer is clear (LEAVE_PX), as when it makes way
+      return true;
+    },
     async hide(minutes) {
       if (!leaving || away) return false;
       clearInterval(walkTimer);
@@ -2090,6 +2126,15 @@
       count(key as Parameters<typeof count>[0]); // counted when it has really gone: the skill file puts this step after the hide
     },
   };
+
+  let asideDx: number | null = null; // the pointer from the cat's middle when step aside was asked with the mouse; null when typed
+  async function startAside(dx: number | null) {
+    asideDx = dx;
+    lt(`aside_start pose=${pose}`);
+    const result = await runSteps(ASIDE_SKILL.steps, skillHost, () => true, lt);
+    lt(`aside ${result}`);
+    asideDx = null;
+  }
 
   async function startLeave() {
     leaving = true;

@@ -199,3 +199,11 @@ test("\"go back to your place\" is its own command and is never a wish to be lef
   assert.equal(skillOf("về chỗ"), "seat");
   assert.equal(skillOf("ve cho di"), "seat");
 });
+
+test("step aside is its own command, apart from leaving, in the three languages", () => {
+  for (const t of ["xê ra", "tránh ra", "Tránh ra đi!", "move over", "step aside", "please get out of the way", "どいて"]) {
+    assert.equal(skillOf(t), "aside", t);
+  }
+  assert.equal(skillOf("lượn đi"), "leave");
+  assert.notEqual(skillOf("xê ra"), "leave");
+});

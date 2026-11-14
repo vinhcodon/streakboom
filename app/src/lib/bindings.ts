@@ -36,7 +36,7 @@ export const BINDINGS: readonly Binding[] = [
   { name: "carry", gesture: "drag", skill: null, gates: ["not_quiet"], status: "built" },
   { name: "open_chat", gesture: "double_click", skill: null, gates: ["not_quiet"], status: "built" },
   { name: "shove", gesture: "right_click", skill: null, gates: ["not_quiet", "not_held", "cooldown"], status: "built" },
-  { name: "step_aside", gesture: "right_double_click", skill: "aside", gates: ["not_held", "not_flying", "not_away", "not_leaving", "cooldown"], status: "proposed" },
+  { name: "step_aside", gesture: "right_double_click", skill: "aside", gates: ["not_quiet", "not_held", "not_flying", "not_away", "not_leaving", "cooldown"], status: "built" },
   { name: "leave", gesture: null, skill: "leave", gates: ["not_held", "not_flying", "not_away", "not_leaving"], status: "built" },
   { name: "seat", gesture: null, skill: "seat", gates: ["not_held", "not_flying", "not_away"], status: "built" },
   { name: "toggle_visibility", gesture: "tray_click", skill: null, gates: [], status: "built" },

@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { GATES, VERBS, gatesPass, runSteps, validateSkill, type Host, type Step } from "./skill-run.ts";
-import { LEAVE_SKILL, SKILL_FILES } from "./skills.ts";
+import { ASIDE_SKILL, LEAVE_SKILL, SKILL_FILES } from "./skills.ts";
 import { FAREWELLS } from "./farewell.ts";
 
 function fakeHost(log: string[], over: Partial<Host> = {}): Host {
@@ -10,6 +10,7 @@ function fakeHost(log: string[], over: Partial<Host> = {}): Host {
     pose: (p) => void log.push(`pose ${p}`),
     wait: async (ms) => void log.push(`wait ${ms}`),
     walkToEdge: async () => (log.push("walk"), true),
+    stepAside: async () => (log.push("aside"), true),
     hide: async (m) => (log.push(`hide ${m}`), true),
     count: (k) => void log.push(`count ${k}`),
     ...over,
@@ -90,13 +91,13 @@ test("a skill file that steps outside the closed list is refused", () => {
   assert.ok(validateSkill(null).length > 0 && validateSkill("x").length > 0);
 });
 
-test("the verbs are a closed list of six and the interpreter knows each of them", () => {
-  assert.deepEqual([...VERBS], ["say", "pose", "wait", "walk_to_edge", "hide", "count"]);
-  const every: Step[] = [{ verb: "say", pool: "p" }, { verb: "pose", pose: "idle" }, { verb: "wait", ms: 1 }, { verb: "walk_to_edge" }, { verb: "hide", minutes: 1 }, { verb: "count", key: "k" }];
+test("the verbs are a closed list of seven and the interpreter knows each of them", () => {
+  assert.deepEqual([...VERBS], ["say", "pose", "wait", "walk_to_edge", "step_aside", "hide", "count"]);
+  const every: Step[] = [{ verb: "say", pool: "p" }, { verb: "pose", pose: "idle" }, { verb: "wait", ms: 1 }, { verb: "walk_to_edge" }, { verb: "step_aside" }, { verb: "hide", minutes: 1 }, { verb: "count", key: "k" }];
   const log: string[] = [];
   return runSteps(every, fakeHost(log), () => true).then((r) => {
     assert.equal(r, "done");
-    assert.equal(log.length, 6);
+    assert.equal(log.length, 7);
   });
 });
 
@@ -104,4 +105,14 @@ test("the goodbyes and the description of the skill file stay under the charter'
   assert.equal(FAREWELLS, LEAVE_SKILL.pools.farewells);
   assert.ok(LEAVE_SKILL.description.includes("[skill:leave]"));
   assert.deepEqual(LEAVE_SKILL.after_return, [{ verb: "pose", pose: "wake" }]);
+});
+
+test("step aside moves, then counts; when it cannot move nothing is counted", async () => {
+  const log: string[] = [];
+  assert.equal(await runSteps(ASIDE_SKILL.steps, fakeHost(log), () => true), "done");
+  assert.deepEqual(log, ["aside", "count aside"]);
+  const log2: string[] = [];
+  const r = await runSteps(ASIDE_SKILL.steps, fakeHost(log2, { stepAside: async () => false }), () => true);
+  assert.equal(r, "failed");
+  assert.deepEqual(log2, []);
 });

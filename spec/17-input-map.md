@@ -1,6 +1,6 @@
 # 17. The input map: what the person does, what it is called, what Peak does
 
-**Status:** **decided on 2026-11-14 (ADR-0109), written from an audit of the code of Preview 0.9.5; nothing here is built.** The author asked for (a) a "step aside" action ("tránh ra", "xê ra") on a double right click, and (b) a review that names every action and ties each to the mouse events and keys that exist. The decisions of section 8 were taken as recommended (ADR-0109).
+**Status:** **decided on 2026-11-14 (ADR-0109), written from an audit of the code of Preview 0.9.5. Built since on branch `vanish` (IM-1 to IM-3, ADR-0110; not seen, V-139 and V-140); the one-time hint (IM-4) is not.** Two points differ from the text below: step aside keeps the gate `not_quiet`, and with no room it nods instead of hopping to another row (ADR-0110). The author asked for (a) a "step aside" action ("tránh ra", "xê ra") on a double right click, and (b) a review that names every action and ties each to the mouse events and keys that exist. The decisions of section 8 were taken as recommended (ADR-0109).
 
 ## 1. Why
 
@@ -72,7 +72,7 @@ The table below is the contract for every action, existing or proposed. A name i
 | `carry` | left press and move | | the drag | not Quiet | built |
 | `open_chat` | left double click | | `onDblClick` | not Quiet | built |
 | `shove` | right click | | `shove` | not Quiet, not held, cooldown | built |
-| `step_aside` | right double click | xê ra, tránh ra, move over, どいて | skill `aside` | not held, not flying, not away, cooldown | **proposed** |
+| `step_aside` | right double click | xê ra, tránh ra, move over, どいて | skill `aside` | not quiet, not held, not flying, not away, not leaving, cooldown | built (not seen) |
 | `leave` | | lượn đi, go away, 消えて, ... | skill `leave` | spec 14 section 7.4 | built (Stable 0.8.0) |
 | `seat` | | về chỗ đi, go to your spot, 席に戻って | skill `seat` | not held, not flying, not away | built in Preview (nods only) |
 | `toggle_visibility` | tray left click | | Rust | none | built |

@@ -13,10 +13,11 @@ export interface DayStat {
   min: number; // minutes the app ran with the machine awake
   quiet: number; // times Quiet mode was switched on
   leave: number; // times Peak was sent away ("Lượn đi"); counted apart, never a Bond Days input (spec 14 A5)
+  aside: number; // times it stepped aside on request (double right click or "xê ra"); apart, never a Bond Days input
   callback: number; // ...and the person showed it again before the timer ran out (the tray, or starting the program again)
 }
 export type DayCounter = Exclude<keyof DayStat, "d">;
-export const DAY_COUNTERS: DayCounter[] = ["scratch", "rub", "poke", "chat", "shown", "engaged", "min", "quiet", "leave", "callback"];
+export const DAY_COUNTERS: DayCounter[] = ["scratch", "rub", "poke", "chat", "shown", "engaged", "min", "quiet", "leave", "aside", "callback"];
 
 export const TELEMETRY_DAYS_MAX = 60;
 export const ENGAGE_WINDOW_MS = 30_000;
@@ -49,7 +50,7 @@ export function lastDates(now: number, n: number): string[] {
   return Array.from({ length: n }, (_, i) => addDays(today, -i));
 }
 
-const blank = (d: string): DayStat => ({ d, scratch: 0, rub: 0, poke: 0, chat: 0, shown: 0, engaged: 0, min: 0, quiet: 0, leave: 0, callback: 0 });
+const blank = (d: string): DayStat => ({ d, scratch: 0, rub: 0, poke: 0, chat: 0, shown: 0, engaged: 0, min: 0, quiet: 0, leave: 0, aside: 0, callback: 0 });
 
 /** Adds `n` to a counter of `now`'s date. Finds the entry by date (the clock may go backwards), keeps the array ascending and unique, capped. */
 export function bumpDays(days: DayStat[], key: DayCounter, now: number, n = 1): DayStat[] {

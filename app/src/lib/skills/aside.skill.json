@@ -1,0 +1,46 @@
+{
+  "skill": "aside",
+  "description": "Step aside: a command for the table and the double right click only, never named by the model. Peak walks away from the pointer along the surface it stands on until the pointer is clear, and never leaves or falls (ADR-0110).",
+  "phrases": [
+    "xê ra",
+    "xê ra chút",
+    "xê ra một chút",
+    "tránh ra",
+    "tránh ra chút",
+    "tránh ra đi",
+    "tránh đường",
+    "tránh đường đi",
+    "nhường chỗ",
+    "nhường chỗ đi",
+    "move over",
+    "step aside",
+    "out of the way",
+    "make way",
+    "どいて",
+    "避けて",
+    "道をあけて"
+  ],
+  "patterns": [
+    "^(please )?(move|step) (over|aside)( a bit| a little)?$",
+    "^(please )?(get )?out of (the|my) way$"
+  ],
+  "pools": {},
+  "gates": [
+    "not_quiet",
+    "not_held",
+    "not_flying",
+    "not_away",
+    "not_leaving"
+  ],
+  "limits": {},
+  "steps": [
+    {
+      "verb": "step_aside"
+    },
+    {
+      "verb": "count",
+      "key": "aside"
+    }
+  ],
+  "after_return": []
+}

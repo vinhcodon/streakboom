@@ -20,7 +20,7 @@ import {
 } from "./bond.ts";
 
 const at = (y: number, mo: number, d: number, h = 12) => new Date(y, mo - 1, d, h, 0, 0).getTime();
-const day = (d: string, over: Partial<DayStat> = {}): DayStat => ({ d, scratch: 0, rub: 0, poke: 0, chat: 0, shown: 0, engaged: 0, min: 0, quiet: 0, leave: 0, callback: 0, ...over });
+const day = (d: string, over: Partial<DayStat> = {}): DayStat => ({ d, scratch: 0, rub: 0, poke: 0, chat: 0, shown: 0, engaged: 0, min: 0, quiet: 0, leave: 0, aside: 0, callback: 0, ...over });
 
 test("calendar arithmetic does not depend on the length of a day", () => {
   assert.equal(addDays("2026-03-01", -1), "2026-02-28");
