@@ -2,6 +2,11 @@
 
 Release notes of every version of Streakboom, newest first. **GitHub keeps the latest release and the one right before it** (installer and update manifest; the previous one is a way back if the newest is bad); when a new version is published, anything older is deleted together with its tag and its notes stay here (ADR-0028). The git history keeps every commit.
 
+## 0.8.1 (2026-11-14)
+- **Peak no longer vanishes in the middle of the screen when you send it away.** It now trots to the edge, faster than its ordinary walk, with a time that depends on how far the edge is; if something stops it before it gets there, it stays where it is instead of disappearing. Sending it away is counted only when it has really left.
+- Peak writes the steps of that leaving (a fixed step name and numbers, never your words or anything from the chat) to a small file, leave-trace.log, in its data folder, on your computer only; nothing is sent. It is there to find out why, twice on a test build, Peak nodded and stayed without a goodbye.
+- Not yet tried: the new walk on more than one monitor or on a scaled display, and the cause of the nod-and-stay (not reproduced in three tries).
+
 ## 0.8.0 (2026-11-14)
 - **You can send Peak away.** Type a plain command in the chat box, such as lượn đi, go away or 消えて: Peak says a short goodbye, walks to the nearer side edge and leaves. After 20 minutes it comes back at the same edge, stretches and says nothing, or at once when you show it from the tray icon or start the program again. It understands some wordings by itself, and, when a brain is connected, other ones through the chat model. It does nothing while Quiet mode is on, and it needs the chat box, so it needs a brain connected.
 - **Peak keeps still and quiet while you watch a full-screen video, present or lock the screen.** Before, it could start a walk, a hop or a perch then; now it starts nothing, stops a walk in progress and says nothing until you are out of it.

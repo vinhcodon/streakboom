@@ -34,6 +34,11 @@ Summarise what changed, list what you did not verify (the state on the Pages hos
 
 ---
 
+## 0.8.1 (a fix, published 2026-11-14): nothing to change on the site
+- **The Pages build:** the README changed only its status line (v0.8.1); `CHANGELOG.md` has a new first entry whose first sentence is the short bold **"Peak no longer vanishes in the middle of the screen when you send it away."** (the home page shows it). `tauri.conf.json` says 0.8.1, so the build's check that a release `v0.8.1` is published (ADR-0065) passes once it is.
+- **Behaviour to know about:** none new to announce; the walk to the edge is faster and Peak stays if it cannot reach the edge. The new local file `leave-trace.log` holds only step names and numbers, is never sent, and need not be mentioned on the site. Previews and test builds stay unannounced (ADR-0089, ADR-0095, ADR-0101).
+- **GitHub keeps the newest two Stable releases:** `v0.8.1` and `v0.8.0` (`v0.6.0` is deleted when 0.8.1 is published); Preview `v0.9.2` and `v0.9.1`.
+
 ## 0.8.0 (published 2026-11-14): one new thing to show, nothing to restructure
 - **The Pages build:** the README changed its status line (v0.8.0) and `docs/features.md` has a new bullet and a new row (a skill: type lượn đi, go away or 消えて in the chat box and Peak leaves for 20 minutes); the first sentence of `CHANGELOG.md` is now the short bold **"You can send Peak away."** (the home page shows it). `tauri.conf.json` says 0.8.0, so the Pages build is red between the push of the version files and the publishing of the release, on purpose, as before.
 - **What to say, if the site has a features list or an FAQ:** you can send Peak away by typing a plain command in the chat box (it needs a brain connected for the chat box), it leaves for 20 minutes and comes back at the same edge, or at once from the tray; it also keeps still and quiet in full-screen programs and presentations. Do not claim more: the model's reliability is not measured and two monitors, the three languages and the laptop lid are not reported as checked.
