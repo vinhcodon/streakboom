@@ -14,6 +14,16 @@
     target: { x: number; y: number } | null;
     feet: { x: number; y: number } | null;
     note: string;
+    /** The screen picture experiment (ADR-0119), or null while it is off: lines and a mask in grid cells. */
+    picture: {
+      gw: number;
+      gh: number;
+      threshold: number;
+      catCells: number;
+      hsegs: { x0: number; x1: number; y: number; strength: number; roomAbove: number; room: boolean }[];
+      vsegs: { x: number; y0: number; y1: number; strength: number }[];
+      empty: number[];
+    } | null;
   }
   let canvas: HTMLCanvasElement;
   let data: OverlayData | null = null;
@@ -80,11 +90,36 @@
       g.arc(px(data.target.x), py(data.target.y), 16, 0, Math.PI * 2);
       g.stroke();
     }
+    // what Peak sees in the picture of the screen: the empty space faintly, the ledges (green with room above for the cat, grey
+    // without), the walls (orange); drawn in grid cells, scaled to this window
+    const pic = data.picture;
+    if (pic) {
+      const sx = canvas.width / pic.gw;
+      const sy = canvas.height / pic.gh;
+      g.fillStyle = "rgba(80,160,255,0.10)";
+      for (let y = 0; y < pic.gh; y++) for (let x = 0; x < pic.gw; x++) if (pic.empty[y * pic.gw + x]) g.fillRect(x * sx, y * sy, sx, sy);
+      g.lineWidth = 3;
+      for (const h of pic.hsegs) {
+        g.strokeStyle = h.room ? "rgb(0,230,90)" : "rgba(170,170,170,0.9)";
+        g.beginPath();
+        g.moveTo(h.x0 * sx, (h.y + 0.5) * sy);
+        g.lineTo((h.x1 + 1) * sx, (h.y + 0.5) * sy);
+        g.stroke();
+      }
+      g.strokeStyle = "rgb(255,150,0)";
+      for (const v of pic.vsegs) {
+        g.beginPath();
+        g.moveTo((v.x + 0.5) * sx, v.y0 * sy);
+        g.lineTo((v.x + 0.5) * sx, (v.y1 + 1) * sy);
+        g.stroke();
+      }
+    }
     g.fillStyle = "rgba(0,0,0,0.65)";
-    g.fillRect(8, 8, 520, 24);
+    g.fillRect(8, 8, 520, pic ? 44 : 24);
     g.fillStyle = "white";
     g.font = "13px sans-serif";
     g.fillText(data.note, 14, 25);
+    if (pic) g.fillText(`picture: ${pic.hsegs.length} ledges (${pic.hsegs.filter((h) => h.room).length} with room), ${pic.vsegs.length} walls, threshold ${pic.threshold}, cat = ${pic.catCells} cells`, 14, 44);
   }
 
   onMount(() => {

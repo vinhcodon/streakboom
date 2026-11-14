@@ -1,0 +1,119 @@
+//! The screen picture sense, stage 1 (ADR-0119, `docs/plans/screen-picture-plan.md`): a very small grey picture of one monitor's work
+//! area, taken only when the person has turned the experiment on in a Preview build, handed to the pet window once and dropped.
+//! Never written, logged or sent. At most `GRID_W` by `GRID_H_MAX` cells, so small that no letter can be read from it.
+
+/// The width of the grid in cells (a cell is about 10 by 10 physical px on a 1920 px screen).
+pub const GRID_W: u32 = 192;
+/// The tallest the grid may be (a very tall work area is cut to this, not taken at more detail).
+pub const GRID_H_MAX: u32 = 216;
+
+/// The size of the grid for a work area of `w` by `h` physical px: `GRID_W` wide, the height in proportion, at least 1.
+pub fn grid_dims(w: i32, h: i32) -> Option<(u32, u32)> {
+    if w < 16 || h < 16 {
+        return None;
+    }
+    let gh = ((GRID_W as f64) * (h as f64) / (w as f64)).round() as u32;
+    Some((GRID_W, gh.clamp(1, GRID_H_MAX)))
+}
+
+/// Grey levels (0 to 255) from 32-bit pixels in the order blue, green, red, unused (what Windows gives): `0.299 R + 0.587 G + 0.114 B`.
+pub fn gray_from_bgra(buf: &[u8]) -> Vec<u8> {
+    buf.chunks_exact(4).map(|p| ((299 * p[2] as u32 + 587 * p[1] as u32 + 114 * p[0] as u32) / 1000) as u8).collect()
+}
+
+/// Take the picture: the screen rectangle (`x`, `y`, `w`, `h`, physical px) reduced by Windows itself (`StretchBlt`, halftone) into
+/// a `gw` by `gh` bitmap and read as grey. Windows layered windows are left out (no `CAPTUREBLT`), and Peak's own windows are
+/// layered, so Peak is not in its own picture. `None` on any failure; elsewhere than Windows always `None`.
+#[cfg(windows)]
+pub fn capture_gray(x: i32, y: i32, w: i32, h: i32, gw: u32, gh: u32) -> Option<Vec<u8>> {
+    use std::ptr::{null, null_mut};
+    use windows_sys::Win32::Graphics::Gdi::{
+        CreateCompatibleBitmap, CreateCompatibleDC, DeleteDC, DeleteObject, GetDC, GetDIBits, ReleaseDC, SelectObject, SetBrushOrgEx,
+        SetStretchBltMode, StretchBlt, BITMAPINFO, BITMAPINFOHEADER, BI_RGB, DIB_RGB_COLORS, HALFTONE, SRCCOPY,
+    };
+    if w < 16 || h < 16 || gw == 0 || gh == 0 {
+        return None;
+    }
+    unsafe {
+        let screen = GetDC(null_mut());
+        if screen.is_null() {
+            return None;
+        }
+        let mem = CreateCompatibleDC(screen);
+        let bmp = CreateCompatibleBitmap(screen, gw as i32, gh as i32);
+        let mut out = None;
+        if !mem.is_null() && !bmp.is_null() {
+            let old = SelectObject(mem, bmp as _);
+            SetStretchBltMode(mem, HALFTONE as _);
+            SetBrushOrgEx(mem, 0, 0, null_mut());
+            let ok = StretchBlt(mem, 0, 0, gw as i32, gh as i32, screen, x, y, w, h, SRCCOPY);
+            let mut info: BITMAPINFO = std::mem::zeroed();
+            info.bmiHeader.biSize = std::mem::size_of::<BITMAPINFOHEADER>() as u32;
+            info.bmiHeader.biWidth = gw as i32;
+            info.bmiHeader.biHeight = -(gh as i32); // top-down
+            info.bmiHeader.biPlanes = 1;
+            info.bmiHeader.biBitCount = 32;
+            info.bmiHeader.biCompression = BI_RGB;
+            let mut buf = vec![0u8; (gw * gh * 4) as usize];
+            let lines = GetDIBits(mem, bmp, 0, gh, buf.as_mut_ptr() as _, &mut info, DIB_RGB_COLORS);
+            if ok != 0 && lines != 0 {
+                out = Some(gray_from_bgra(&buf));
+            }
+            SelectObject(mem, old);
+        }
+        if !bmp.is_null() {
+            DeleteObject(bmp as _);
+        }
+        if !mem.is_null() {
+            DeleteDC(mem);
+        }
+        ReleaseDC(null_mut(), screen);
+        let _ = null::<u8>();
+        out
+    }
+}
+
+#[cfg(not(windows))]
+pub fn capture_gray(_x: i32, _y: i32, _w: i32, _h: i32, _gw: u32, _gh: u32) -> Option<Vec<u8>> {
+    None
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn the_grid_is_small_and_in_proportion() {
+        assert_eq!(grid_dims(1920, 1080), Some((192, 108)));
+        assert_eq!(grid_dims(2560, 1440), Some((192, 108)));
+        assert_eq!(grid_dims(1920, 1040), Some((192, 104)));
+        assert_eq!(grid_dims(1000, 100000).map(|d| d.1), Some(GRID_H_MAX));
+        assert_eq!(grid_dims(15, 1080), None);
+        assert_eq!(grid_dims(1920, 4), None);
+        let (w, h) = grid_dims(3840, 2160).unwrap();
+        assert!(w * h <= GRID_W * GRID_H_MAX, "never more cells than the limit");
+    }
+
+    #[test]
+    fn grey_is_taken_from_blue_green_red_pixels() {
+        // blue, green, red, unused
+        assert_eq!(gray_from_bgra(&[0, 0, 0, 0, 255, 255, 255, 0]), vec![0, 255]);
+        assert_eq!(gray_from_bgra(&[0, 0, 255, 0]), vec![76]); // pure red
+        assert_eq!(gray_from_bgra(&[0, 255, 0, 0]), vec![149]); // pure green
+        assert_eq!(gray_from_bgra(&[255, 0, 0, 0]), vec![29]); // pure blue
+        assert!(gray_from_bgra(&[1, 2, 3]).is_empty(), "a partial pixel is dropped");
+    }
+
+    /// Looks at the real screen once and prints only three numbers (never the picture): run by hand with `-- --ignored --nocapture`.
+    #[test]
+    #[ignore]
+    fn the_real_screen_gives_a_grid_that_is_not_empty() {
+        let (gw, gh) = grid_dims(1920, 1080).unwrap();
+        let g = capture_gray(0, 0, 1920, 1080, gw, gh).expect("the screen could be read");
+        assert_eq!(g.len() as u32, gw * gh);
+        let (min, max) = (*g.iter().min().unwrap(), *g.iter().max().unwrap());
+        let mean = g.iter().map(|&v| v as u64).sum::<u64>() / g.len() as u64;
+        println!("grid {gw}x{gh}: min {min}, max {max}, mean {mean}");
+        assert!(max > min, "a screen is not one flat grey");
+    }
+}

@@ -3,6 +3,7 @@ mod claude;
 mod ground;
 mod groq;
 mod openai;
+mod picture;
 mod layout;
 mod updater;
 
@@ -108,6 +109,9 @@ struct AppState {
     /// numbers each leaving, so that a timer of an earlier leaving does nothing.
     away: AtomicBool,
     away_gen: AtomicU64,
+    /// The screen picture experiment (ADR-0119): turned on by the person from the tray of a Preview build, off at every start. The
+    /// command `screen_grid` gives nothing while it is off.
+    picture_on: AtomicBool,
     /// Latest focus-safety readings (spec/06 section 3.2, ADR-0029), written by the hit-test thread (which
     /// already wakes every 30 to 150 ms and already reads the pointer) and read by `focus_probe`.
     /// `u32::MAX` = the idle time is unknown; the offsets are `f64` bits.
@@ -1484,6 +1488,47 @@ async fn overlay_toggle(app: AppHandle) -> String {
     toggle_overlay(&app)
 }
 
+/// The experiment of ADR-0119: turn the screen picture on or off (a tray item of a Preview build). Off at every start; the page is told.
+fn toggle_picture(app: &AppHandle) -> bool {
+    if !overlay_allowed() {
+        return false;
+    }
+    let now = !app.state::<AppState>().picture_on.load(Ordering::SeqCst);
+    app.state::<AppState>().picture_on.store(now, Ordering::SeqCst);
+    let _ = app.emit_to("main", "picture-toggle", now);
+    now
+}
+
+/// What the page is given: the work area it is a picture of (physical px), the size of the grid and the grey levels, row by row.
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+struct ScreenGrid {
+    x: i32,
+    y: i32,
+    w: i32,
+    h: i32,
+    gw: u32,
+    gh: u32,
+    data: Vec<u8>,
+}
+
+/// A very small grey picture of the monitor Peak is on (ADR-0119, `picture.rs`), only while the person has the experiment on and the
+/// overlay open; `None` otherwise. The picture is not kept here: it is built, returned and dropped.
+#[tauri::command]
+async fn screen_grid(app: AppHandle) -> Option<ScreenGrid> {
+    if !overlay_allowed() || !app.state::<AppState>().picture_on.load(Ordering::SeqCst) || app.get_webview_window("overlay").is_none() {
+        return None;
+    }
+    let main = app.get_webview_window("main")?;
+    let (pos, scale) = (main.outer_position().ok()?, main.scale_factor().ok()?);
+    let (l, t, s) = pet_px(scale);
+    let a = area_at(&main, (pos.x + l + s / 2) as f64, (pos.y + t + s / 2) as f64)?;
+    let (w, h) = (a.r - a.x, a.b - a.y);
+    let (gw, gh) = picture::grid_dims(w, h)?;
+    let data = tauri::async_runtime::spawn_blocking(move || picture::capture_gray(a.x, a.y, w, h, gw, gh)).await.ok()??;
+    Some(ScreenGrid { x: a.x, y: a.y, w, h, gw, gh, data })
+}
+
 fn toggle_visibility(app: &AppHandle) {
     if let Some(win) = app.get_webview_window("main") {
         if win.is_visible().unwrap_or(false) {
@@ -1666,6 +1711,7 @@ fn build_tray(app: &AppHandle, quiet: bool) -> tauri::Result<()> {
     // a developer build and every Preview build, never a Stable one (ADR-0116): show what Peak believes about the screen
     if overlay_allowed() {
         menu.append(&MenuItem::with_id(app, "overlay", "Terrain overlay (Preview)", true, None::<&str>)?)?;
+        menu.append(&MenuItem::with_id(app, "picture", "Screen picture on/off (experiment)", true, None::<&str>)?)?;
     }
     let quiet_ref = quiet_item.clone();
     *app.state::<AppState>().quiet_item.lock().unwrap() = Some(quiet_item.clone());
@@ -1680,6 +1726,9 @@ fn build_tray(app: &AppHandle, quiet: bool) -> tauri::Result<()> {
             "settings" => open_settings_async(app),
             "quiet" => set_quiet(app, quiet_ref.is_checked().unwrap_or(false)),
             "quit" => quit_app(app),
+            "picture" => {
+                toggle_picture(app);
+            }
             "overlay" => {
                 // from the tray handler: not on this thread (creating a window here can block on Windows)
                 let app = app.clone();
@@ -1773,6 +1822,7 @@ pub fn run() {
                 bubble_gen: AtomicU64::new(0),
                 away: AtomicBool::new(false),
                 away_gen: AtomicU64::new(0),
+                picture_on: AtomicBool::new(false),
             });
 
             let win = app.get_webview_window("main").expect("main window");
@@ -1839,7 +1889,7 @@ pub fn run() {
             edge_room,
             vertical_room,
             ground_at,
-            ground_under_cat, cover_probe, window_holds, persona_preview, ground_map, overlay_toggle,
+            ground_under_cat, cover_probe, window_holds, persona_preview, ground_map, overlay_toggle, screen_grid,
             monitors_info,
             move_to,
             pet_place,

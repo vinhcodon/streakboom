@@ -117,6 +117,7 @@
   import { endReaction, mayReact, newGate, startReaction } from "$lib/reactions";
   import { desktopShare, ledges, summary, type GroundKind, type GroundMap } from "$lib/groundmap";
   import { surfacesBelow, surfaces, wallFor, type Wall } from "$lib/terrain";
+  import { analyse, hasRoom } from "$lib/picture";
   import { believe, responseFor, startBelief, type Belief } from "$lib/perception";
   import { choosePerch, PERCH_LIMITS } from "$lib/perch";
   import { bodyPoints, escapePlaces } from "$lib/escape";
@@ -912,6 +913,7 @@
   // it. While it is open the page takes a map every 800 ms (whatever the switch says: it is for looking) and sends it, with
   // the surfaces, the cat's feet and the ledge it would choose, to the overlay window.
   let overlayTimer: ReturnType<typeof setInterval> | undefined;
+  let pictureOn = false; // the screen picture experiment (ADR-0119): turned on from the tray of a Preview build, off at every start
   async function feedOverlay() {
     try {
       const map = await invoke<GroundMap>("ground_map");
@@ -920,7 +922,18 @@
       const target = perch && at ? { x: Math.round(at.feet.x + perch.dx * at.scale), y: Math.round(at.feet.y + perch.dy * at.scale) } : null;
       const ss = surfaces(map);
       const note = `${summary(map)} | ${ss.length} surfaces (${ss.filter((s) => s.roomy).length} with room) | ${target ? "target at " + target.x + "," + target.y : "no target"} | mode ${mode} | last: ${lastPerchWhy}`;
-      await emitTo("overlay", "overlay-data", { map, surfaces: ss, target, feet: at ? at.feet : null, note });
+      // the screen picture (ADR-0119): a small grey grid, read for edges at once and dropped; only lines and a mask go to the overlay
+      let picture: unknown = null;
+      if (pictureOn) {
+        const grid = await invoke<{ w: number; h: number; gw: number; gh: number; data: number[] } | null>("screen_grid");
+        if (grid) {
+          const seen = analyse({ gw: grid.gw, gh: grid.gh, data: grid.data });
+          const cell = grid.w / grid.gw; // physical px of a cell
+          const catCells = Math.round((PET_SIZE * (window.devicePixelRatio || 1)) / cell);
+          picture = { gw: seen.gw, gh: seen.gh, threshold: seen.threshold, catCells, hsegs: seen.hsegs.map((h) => ({ ...h, room: hasRoom(h, catCells) })), vsegs: seen.vsegs, empty: Array.from(seen.empty) };
+        }
+      }
+      await emitTo("overlay", "overlay-data", { map, surfaces: ss, target, feet: at ? at.feet : null, note, picture });
     } catch {
       /* the overlay may have been closed meanwhile */
     }
@@ -3057,6 +3070,7 @@
           if (e.payload) setTimeout(feedOverlay, 600);
         }),
       );
+      cleanups.push(await win.listen<boolean>("picture-toggle", (e) => (pictureOn = e.payload)));
       cleanups.push(await win.listen<{ kind: string; on?: boolean }>("percept", (e) => onPercept(e.payload)));
       cleanups.push(await win.listen("bubble-ready", resendView));
       cleanups.push(await win.listen("settings-ready", pushSettings));
