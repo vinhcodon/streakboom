@@ -16,6 +16,7 @@ export function pageList(ctx = null) {
     // the sticker pages list their pictures in the sitemap (only the location: search engines ignore the rest)
     ...LANGS.map((l) => ({ path: PATHS[l].stickers, alternates: alternatesFor("stickers"), images: ctx && ctx.stickers ? ctx.stickers.stickers.map((st) => ORIGIN + stickerUrl(l, st.id)) : [] })),
     ...LANGS.map((l) => ({ path: PATHS[l].privacy, alternates: alternatesFor("privacy") })),
+    ...LANGS.map((l) => ({ path: PATHS[l].story, alternates: alternatesFor("story") })),
     { path: PATHS.changelog, alternates: [] },
   ];
 }
@@ -87,6 +88,7 @@ ${FACTS}
 - [How it works](${ORIGIN}/how-it-works/): Peak with no AI, adding your own AI key, what is stored, what is free, how updates work (also in /vi/ and /ja/)
 - [Peak stickers](${ORIGIN}/stickers/): free stickers of Peak as pictures to copy into a chat, CC BY 4.0 (also /vi/stickers/ and /ja/stickers/)
 - [Privacy](${ORIGIN}/privacy/): what Streakboom keeps, what it sends and to whom, what Peak notices around it
+- [The story behind Peak](${ORIGIN}/story/): why Peak exists, told by its author Vinh Codon and by Peak (also /vi/story/ and /ja/story/)
 - [Changelog](${ORIGIN}/changelog/): release notes of every version
 - [Changelog feed (Atom)](${ORIGIN}${PATHS.feed}): the same notes as a feed, newest first
 

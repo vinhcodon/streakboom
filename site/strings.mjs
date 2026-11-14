@@ -157,6 +157,62 @@ export const STRINGS = {
     hw_faq_title: "More questions",
     dl_count: "GitHub downloads so far: {n} (counts downloads, including updates, not people).",
     nav_stickers: "Stickers",
+    nav_story: "Story",
+    sb_page_title: "The story behind Peak: why a cat sits beside you on your break",
+    sb_desc: "Why Peak exists: a cat that sits beside you on your break, not an assistant. Told by Vinh Codon, who made it, and by Peak itself.",
+    sb_title: "The story behind Peak",
+    sb_scene: "2:14 a.m. The screen is still on.",
+    // the story of Peak: the author's text, kept word for word (docs/handoff/website-story-behind.md); the Japanese is an AI translation, not reviewed by a native reader
+    sb_blocks: [
+      {
+        "who": "Vinh Codon",
+        "parts": [
+          "The city outside my window is still lit. I'm in my room, in the middle of something I badly want to finish.",
+          "I don't lack anything at that moment.",
+          "The lack comes later, when I get up to fill a glass of water. A small gap, about the size of a cat."
+        ]
+      },
+      {
+        "who": "Peak",
+        "parts": [
+          "I'm Peak. My human stays up late. He clatters away all night and doesn't say a word to me. I don't mind. I'm busy. Busy sitting. Sitting is a profession, and I'm the best at it on this entire screen.",
+          "When he gets up for water, I finally get a glance. I glance back, like \"yeah, I'm here, go drink your water.\" Nobody says anything. Best conversation I've ever had."
+        ]
+      },
+      {
+        "who": "Vinh Codon",
+        "parts": [
+          "I'm a man of few words. I didn't need a conversation, and I didn't need someone to hand more work to. I just needed something sitting there, waiting for my break.",
+          "I built Peak for that silly reason."
+        ]
+      },
+      {
+        "who": "Peak",
+        "parts": [
+          "One day he talked to me a bit too much. I'm a cat. Cats have working hours, and they're very short. Session over.",
+          {
+            "q": [
+              [
+                "Him:",
+                "Out of ammo already?"
+              ],
+              [
+                "Me:",
+                "I said I'm tired. Pet me. I'll tell you more tomorrow."
+              ]
+            ]
+          },
+          "He laughed and patted my head. I purred. Don't read into it, my throat just vibrates sometimes. Then he went back to work, and I went back to sitting."
+        ]
+      },
+      {
+        "who": "Vinh Codon",
+        "parts": [
+          "That's all it was. And I knew it was exactly what I needed.",
+          "Peak is open source. If you stay up late and don't say much, go raise one."
+        ]
+      }
+    ],
     st_page_title: "Peak stickers: free cat stickers for your chats",
     st_desc: "Free stickers of Peak, the cat from Streakboom. Tap one to copy it, then paste it into Zalo, Telegram, Messenger or any chat. CC BY 4.0.",
     st_title: "Peak stickers",
@@ -345,6 +401,62 @@ export const STRINGS = {
     hw_faq_title: "Thêm vài câu hỏi",
     dl_count: "Lượt tải từ GitHub đến nay: {n} (đếm lượt tải, gồm cả cập nhật, không phải số người).",
     nav_stickers: "Sticker",
+    nav_story: "Story",
+    sb_page_title: "Story behind Peak: vì sao có một con mèo ngồi cạnh bạn lúc nghỉ",
+    sb_desc: "Vì sao Peak tồn tại: một con mèo ngồi cạnh lúc nghỉ, không phải một trợ lý. Do Vinh Codon, người làm ra Peak, và chính Peak kể.",
+    sb_title: "Story behind Peak",
+    sb_scene: "02:14. Màn hình vẫn sáng.",
+    // the story of Peak: the author's text, kept word for word (docs/handoff/website-story-behind.md); the Japanese is an AI translation, not reviewed by a native reader
+    sb_blocks: [
+      {
+        "who": "Vinh Codon",
+        "parts": [
+          "Thành phố ngoài cửa sổ vẫn sáng đèn. Tôi ngồi trong phòng, ở giữa một việc mình đang rất muốn làm.",
+          "Lúc đó tôi không thiếu gì cả.",
+          "Cái thiếu đến sau, khi tôi đứng dậy đi lấy nước. Một chỗ trống nhỏ, vừa bằng một con mèo."
+        ]
+      },
+      {
+        "who": "Peak",
+        "parts": [
+          "Tôi là Peak. Chủ tôi hay thức khuya. Cả đêm anh ấy gõ lạch cạch, không nói với tôi câu nào. Tôi không phiền. Tôi bận. Bận ngồi. Ngồi cũng là một nghề, và tôi làm nghề này giỏi nhất cái màn hình này.",
+          "Đến lúc anh ấy đứng dậy đi lấy nước, tôi mới được liếc một cái. Tôi liếc lại, kiểu \"ừ, tao đây, mày cứ uống đi\". Không ai nói gì. Cuộc trò chuyện hay nhất tôi từng có."
+        ]
+      },
+      {
+        "who": "Vinh Codon",
+        "parts": [
+          "Tôi vốn kiệm lời. Lúc ấy tôi không cần một cuộc trò chuyện, cũng không cần ai để giao thêm việc. Tôi chỉ cần có thứ gì đó ngồi đó, đợi tôi nghỉ.",
+          "Tôi làm ra Peak vì cái lý do tào lao ấy."
+        ]
+      },
+      {
+        "who": "Peak",
+        "parts": [
+          "Có hôm anh ấy nói chuyện với tôi hơi nhiều. Tôi là mèo, mèo thì có giờ làm việc, mà giờ làm việc của mèo ngắn lắm. Hết phiên.",
+          {
+            "q": [
+              [
+                "Anh ấy:",
+                "Hết đạn rồi à?"
+              ],
+              [
+                "Tôi:",
+                "Mình nói mình mệt rồi. Vuốt ve mình đi, mai mình kể tiếp."
+              ]
+            ]
+          },
+          "Anh ấy bật cười, vuốt đầu tôi. Tôi gừ gừ. Đừng hiểu lầm, chỉ là cổ họng tôi hơi rung. Rồi anh ấy quay lại làm việc, tôi quay lại nghề ngồi."
+        ]
+      },
+      {
+        "who": "Vinh Codon",
+        "parts": [
+          "Chỉ có vậy thôi. Mà tôi biết nó đúng cái mình cần.",
+          "Peak là mã nguồn mở. Nếu bạn cũng hay thức khuya và kiệm lời, cứ nuôi nó."
+        ]
+      }
+    ],
     st_page_title: "Sticker Peak: sticker mèo miễn phí cho cuộc trò chuyện của bạn",
     st_desc: "Sticker miễn phí của Peak, chú mèo của Streakboom. Bấm vào một sticker để chép, rồi dán vào Zalo, Telegram, Messenger hay bất kỳ khung chat nào. CC BY 4.0.",
     st_title: "Sticker Peak",
@@ -556,6 +668,62 @@ export const STRINGS = {
     hw_faq_title: "ほかのよくある質問",
     dl_count: "GitHubでのダウンロード数（これまで）：{n}（人数ではなく、更新を含むダウンロード回数です）。",
     nav_stickers: "ステッカー",
+    nav_story: "ストーリー",
+    sb_page_title: "Peak誕生の物語：休憩のそばに猫がいる理由",
+    sb_desc: "Peakが生まれた理由。休憩のそばに座る猫であって、アシスタントではありません。作った Vinh Codon と、Peak自身が語ります。",
+    sb_title: "Peak誕生の物語",
+    sb_scene: "午前2時14分。画面はまだついている。",
+    // the story of Peak: the author's text, kept word for word (docs/handoff/website-story-behind.md); the Japanese is an AI translation, not reviewed by a native reader
+    sb_blocks: [
+      {
+        "who": "Vinh Codon",
+        "parts": [
+          "窓の外の街は、まだ明るい。私は部屋で、どうしても終わらせたい作業の真ん中にいる。",
+          "その時の私には、足りないものなんて何もない。",
+          "足りなさは、あとからやってくる。水をくみに立ち上がったとき。小さなすき間。ちょうど猫一匹ぶんの。"
+        ]
+      },
+      {
+        "who": "Peak",
+        "parts": [
+          "わたしはPeak。飼い主は夜更かしをする。ひと晩じゅうカタカタと打ち続けて、わたしには一言も話しかけない。気にしてないよ。忙しいから。座るのに。座るのも立派な仕事で、この画面の中ではわたしがいちばん上手。",
+          "彼が水を飲みに立ち上がると、やっとちらっと見てもらえる。わたしも見返す。「うん、ここにいるよ、水を飲んでおいで」って感じで。誰も何も言わない。わたしの人生で、いちばんいい会話。"
+        ]
+      },
+      {
+        "who": "Vinh Codon",
+        "parts": [
+          "私は口数が少ない。あのとき必要だったのは、会話でも、仕事をさらに任せる相手でもなかった。ただ、そこに座って、私の休憩を待ってくれる何かが欲しかった。",
+          "そんなくだらない理由で、私はPeakを作った。"
+        ]
+      },
+      {
+        "who": "Peak",
+        "parts": [
+          "ある日、彼はわたしに話しかけすぎた。わたしは猫。猫には勤務時間があって、それはとても短い。本日は終了。",
+          {
+            "q": [
+              [
+                "彼：",
+                "もう弾切れ？"
+              ],
+              [
+                "わたし：",
+                "疲れたって言ったでしょ。なでて。続きは明日ね。"
+              ]
+            ]
+          },
+          "彼は笑って、わたしの頭をなでた。わたしはごろごろと喉を鳴らした。深読みしないで、喉が震えることがあるだけ。それから彼は仕事に戻り、わたしは座る仕事に戻った。"
+        ]
+      },
+      {
+        "who": "Vinh Codon",
+        "parts": [
+          "それだけのことだった。そして、それがまさに自分に必要なものだと分かっていた。",
+          "Peakはオープンソースです。夜更かしで口数の少ない人は、ぜひ飼ってみて。"
+        ]
+      }
+    ],
     st_page_title: "Peakのステッカー：チャットで使える無料のネコステッカー",
     st_desc: "StreakboomのネコPeakの無料ステッカー。タップしてコピーし、Zalo、Telegram、Messengerなどのチャットに貼り付けるだけ。CC BY 4.0。",
     st_title: "Peakのステッカー",

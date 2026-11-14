@@ -11,7 +11,7 @@ import { cpSync, existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } fr
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { ROOT, context } from "./site/facts.mjs";
-import { PATHS, changelogPage, homePage, howPage, notFoundPage, privacyPage, stickersPage } from "./site/pages.mjs";
+import { PATHS, changelogPage, homePage, howPage, notFoundPage, privacyPage, stickersPage, storyPage } from "./site/pages.mjs";
 import { loadStickers } from "./site/stickers.mjs";
 import { LANGS } from "../site/strings.mjs";
 import { changelogFeed, llms, llmsFull, robots, sitemap } from "./site/files.mjs";
@@ -77,6 +77,7 @@ export function build({ out = OUT, downloads = null, stickerDir } = {}) {
     ...LANGS.map((l) => ({ path: PATHS[l].how, file: fileOf(PATHS[l].how), lang: l, html: howPage(l, ctx) })),
     ...LANGS.map((l) => ({ path: PATHS[l].stickers, file: fileOf(PATHS[l].stickers), lang: l, html: stickersPage(l, ctx) })),
     ...LANGS.map((l) => ({ path: PATHS[l].privacy, file: fileOf(PATHS[l].privacy), lang: l, html: privacyPage(l, ctx) })),
+    ...LANGS.map((l) => ({ path: PATHS[l].story, file: fileOf(PATHS[l].story), lang: l, html: storyPage(l, ctx) })),
     { path: PATHS.changelog, file: "changelog/index.html", lang: "en", html: changelogPage(ctx) },
     { path: "/404.html", file: "404.html", lang: "en", html: notFoundPage(ctx) },
   ];

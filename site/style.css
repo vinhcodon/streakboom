@@ -326,3 +326,12 @@ html[data-want="en"] a.lang[hreflang="en"], html[data-want="vi"] a.lang[hreflang
   .brandbox { flex: 1 1 8.5rem; }
   .langs { flex: none; }
 }
+
+/* The story of Peak (ADR-0110): the author's voice is plain text; Peak's is a soft block with a gold edge. No motion. */
+.story-scene { color: var(--muted); margin: 0 0 1.4em; }
+.story .voice-name { margin: 1.6em 0 .4em; font-size: .95rem; font-weight: 700; letter-spacing: .02em; color: var(--muted); display: flex; align-items: center; gap: 8px; }
+.story .voice-name img { border-radius: 50%; flex: none; }
+.story .voice-peak { background: var(--bg-alt); border-left: 3px solid var(--gold); border-radius: 0 12px 12px 0; padding: 4px 16px 10px; margin: 1.2em 0; }
+.story .voice-peak .voice-name { margin-top: .8em; }
+.story blockquote { margin: 1em 0; padding: 2px 0 2px 14px; border-left: 2px solid var(--line); }
+.story blockquote p { margin: 0; }

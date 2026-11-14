@@ -12,9 +12,9 @@ import { DEFAULT_TAGLINE, TAGLINE_KEYS, taglineScript } from "./taglines.mjs";
 import { CC_URL, fontNames, needsReviewNote, stickerUrl } from "./stickers.mjs";
 
 export const PATHS = {
-  en: { home: "/", privacy: "/privacy/", how: "/how-it-works/", stickers: "/stickers/" },
-  vi: { home: "/vi/", privacy: "/vi/privacy/", how: "/vi/how-it-works/", stickers: "/vi/stickers/" },
-  ja: { home: "/ja/", privacy: "/ja/privacy/", how: "/ja/how-it-works/", stickers: "/ja/stickers/" },
+  en: { home: "/", privacy: "/privacy/", how: "/how-it-works/", stickers: "/stickers/", story: "/story/" },
+  vi: { home: "/vi/", privacy: "/vi/privacy/", how: "/vi/how-it-works/", stickers: "/vi/stickers/", story: "/vi/story/" },
+  ja: { home: "/ja/", privacy: "/ja/privacy/", how: "/ja/how-it-works/", stickers: "/ja/stickers/", story: "/ja/story/" },
   changelog: "/changelog/",
   feed: "/changelog.xml",
 };
@@ -109,10 +109,10 @@ function header({ lang, ctx, switchTo }) {
       ${links}
     </span>
     <nav aria-label="Main">
-      <a href="${home}#install">${s("nav_install")}</a>
       <a href="${PATHS[lang].how}">${s("nav_how")}</a>
       <a href="${PATHS[lang].privacy}">${s("nav_privacy")}</a>
       <a href="${PATHS[lang].stickers}">${s("nav_stickers")}</a>
+      <a href="${PATHS[lang].story}">${s("nav_story")}</a>
     </nav>
   </header>`;
 }
@@ -121,7 +121,7 @@ function footer({ lang, ctx }) {
   const s = (k) => tx(lang, k, ctx);
   return `<footer class="footer">
     <p>${s("foot_a")}</p>
-    <p><a href="${REPO_URL}">GitHub</a> · <a href="${PATHS[lang].home}#faq">${s("nav_faq")}</a> · <a href="${PATHS.changelog}">${s("nav_changelog")}</a> · <a href="${REPO_URL}/issues">${s("foot_bug")}</a> · <a href="${PATHS.feed}">Atom</a></p>
+    <p><a href="${REPO_URL}">GitHub</a> · <a href="${PATHS[lang].home}#install">${s("nav_install")}</a> · <a href="${PATHS[lang].home}#faq">${s("nav_faq")}</a> · <a href="${PATHS.changelog}">${s("nav_changelog")}</a> · <a href="${REPO_URL}/issues">${s("foot_bug")}</a> · <a href="${PATHS.feed}">Atom</a></p>
   </footer>`;
 }
 
@@ -390,6 +390,33 @@ ${faqHtml(faqPairs(lang, ctx, HOW_FAQ))}
   return htmlDoc({
     lang, ctx, switchTo: Object.fromEntries(LANGS.map((l) => [l, PATHS[l].how])),
     headArgs: { path, title: raw(lang, "hw_page_title", ctx), description: raw(lang, "hw_desc", ctx), alternates: alternatesFor("how"), jsonld: howJsonLd(lang, ctx) },
+    main, script: false,
+  });
+}
+
+/** The story of Peak (ADR-0110): the author's text word for word, two voices (the author's plain, Peak's in a soft block), no script. */
+export function storyPage(lang, ctx) {
+  const t = (k) => esc(raw(lang, k, ctx));
+  const blocks = STRINGS[lang].sb_blocks.map((b) => {
+    const peak = b.who === "Peak";
+    const parts = b.parts.map((p) => typeof p === "string" ? `        <p>${esc(p)}</p>`
+      : `        <blockquote><p>${p.q.map(([who, say]) => `<strong>${esc(who)}</strong> ${esc(say)}`).join("<br>\n")}</p></blockquote>`).join("\n");
+    return `      <section class="voice ${peak ? "voice-peak" : "voice-author"}">
+        <h2 class="voice-name">${peak ? '<img src="/assets/peak-logo.png" width="22" height="22" alt="">' : ""}${esc(b.who)}</h2>
+${parts}
+      </section>`;
+  }).join("\n");
+  const main = `
+    <article class="section prose story">
+      <h1>${t("sb_title")}</h1>
+      <p class="story-scene"><em>${t("sb_scene")}</em></p>
+${blocks}
+      <p><a href="${PATHS[lang].home}">${tx(lang, "pv_back", ctx)}</a></p>
+    </article>
+`;
+  return htmlDoc({
+    lang, ctx, switchTo: Object.fromEntries(LANGS.map((l) => [l, PATHS[l].story])),
+    headArgs: { path: PATHS[lang].story, title: raw(lang, "sb_page_title", ctx), description: raw(lang, "sb_desc", ctx), alternates: alternatesFor("story") },
     main, script: false,
   });
 }

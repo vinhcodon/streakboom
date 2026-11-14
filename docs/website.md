@@ -10,6 +10,7 @@ Static pages with no framework, no bundler, no npm dependency and no third-party
 | Home (install, the promises, features, install steps, **Code signing policy**, FAQ, the newest update) | `/`, `/vi/`, `/ja/` |
 | How it works | `/how-it-works/`, `/vi/how-it-works/`, `/ja/how-it-works/` |
 | Privacy | `/privacy/`, `/vi/privacy/`, `/ja/privacy/` |
+| Story behind Peak (the author's text word for word, two voices; the Japanese is an AI translation; ADR-0110) | `/story/`, `/vi/story/`, `/ja/story/` |
 | Stickers (the set in the language of the page; tap to copy, a row of recent stickers) | `/stickers/`, `/vi/stickers/`, `/ja/stickers/` |
 | Changelog (English) and its Atom feed | `/changelog/`, `/changelog.xml` |
 | Crawler files | `404.html`, `sitemap.xml` (with the sticker images), `robots.txt`, `llms.txt`, `llms-full.txt`, `downloads.json` (the ledger of the download counter) |

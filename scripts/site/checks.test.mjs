@@ -408,3 +408,22 @@ test("the Code signing policy is on every home page, says nothing is signed, and
   fails((c2) => { const p = page(c2, "/ja/"); p.html = p.html.replace("<h2>Code signing policy</h2>", "<h2>署名ポリシー</h2>"); }, /exact term/);
   fails((c2) => { const p = page(c2, "/"); p.html = p.html.replace("Windows SmartScreen warns", "The installer is verified and Windows SmartScreen warns"); }, /claims more than is true/);
 });
+
+test("the story of Peak (ADR-0110): three pages, five voices each, the dialogue as a blockquote with its labels, the menu has four items with Story last, Install is in the footer", () => {
+  const c = clone();
+  for (const [path, title, labels] of [["/story/", "The story behind Peak", ["Him:", "Me:"]], ["/vi/story/", "Story behind Peak", ["Anh ấy:", "Tôi:"]], ["/ja/story/", "Peak誕生の物語", ["彼：", "わたし："]]]) {
+    const h = page(c, path).html;
+    assert.ok(h.includes(`<h1>${title}</h1>`), path + ": title");
+    assert.equal((h.match(/<section class="voice /g) || []).length, 5, path + ": five voices");
+    assert.equal((h.match(/class="voice voice-peak"/g) || []).length, 2, path + ": Peak speaks twice");
+    assert.match(h, /<blockquote>/, path + ": the dialogue");
+    for (const l of labels) assert.ok(h.includes(`<strong>${l}</strong>`), path + ": label " + l);
+    assert.equal((h.match(/<nav aria-label="Main">[\s\S]*?<\/nav>/)[0].match(/<a /g) || []).length, 4, path + ": four menu items");
+    assert.match(h, /<nav aria-label="Main">[\s\S]*href="\/(vi\/|ja\/)?story\/"[^>]*>[^<]*<\/a>\s*<\/nav>/, path + ": Story is the last item");
+    assert.ok(!/<nav aria-label="Main">[\s\S]*#install[\s\S]*<\/nav>/.test(h), path + ": Install is not in the menu");
+    assert.ok(/<footer[\s\S]*#install[\s\S]*<\/footer>/.test(h), path + ": Install is in the footer");
+    assert.ok(!h.includes("/app.js"), path + ": no page script of the site");
+  }
+  assert.ok(c.files["sitemap.xml"].includes("/story/") && c.files["sitemap.xml"].includes("/vi/story/") && c.files["sitemap.xml"].includes("/ja/story/"));
+  assert.ok(c.files["llms.txt"].includes("/story/"));
+});

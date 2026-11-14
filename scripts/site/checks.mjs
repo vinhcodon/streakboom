@@ -260,7 +260,7 @@ export function check({ ctx, pages, files, out }) {
   // the language suggestion (ADR-0067): an inline script on the pages that have a same-page translation, none on the English-only
   // pages; no strip in the static HTML; it reads only the browser's languages and the local storage; it never redirects or asks a server
   {
-    const withTranslation = ["home", "how", "privacy", "stickers"];
+    const withTranslation = ["home", "how", "privacy", "stickers", "story"];
     for (const lang of LANGS) {
       for (const kind of withTranslation) {
         const p = byPath.get(PATHS[lang][kind]);
