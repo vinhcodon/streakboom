@@ -45,3 +45,6 @@ The build turns `app/src/lib/rig/*.ts` into browser JavaScript in `site/peak/` (
 [`../spec/13-sticker-page.md`](../spec/13-sticker-page.md) and [`plans/sticker-page-plan.md`](plans/sticker-page-plan.md) (the sticker page as a picker); [`plans/website-seo-geo.md`](plans/website-seo-geo.md) (search engines and AI answer engines); the unchecked items are the W- rows of [`plans/verification-debt.md`](plans/verification-debt.md).
 
 - **The slogan and the taglines** (ADR-0104): the fixed slogan is under the name in the header of every page; the home page has a small line above the title with one of twelve taglines (the default is in the HTML, a tiny script picks one at random at each load; no timer, nothing stored). The words are in `site/strings.mjs` (`brand_slogan`, `hero_sub`, `tg1` to `tg12`) and the list in `scripts/site/taglines.mjs`.
+
+## The project dashboard (ADR-0120)
+A private Claude page, "Streakboom Metrics", reads four CSV files made by `node scripts/site/metrics.mjs --out <folder>` from the public download ledger, the GitHub API and the hand-typed `docs/metrics/weekly.csv` (the five numbers the author reads weekly from Cloudflare, Clarity and Search Console). `docs/metrics/README.md` says how to type them and how to refresh. No token is involved.
