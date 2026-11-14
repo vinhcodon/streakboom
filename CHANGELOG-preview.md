@@ -2,6 +2,12 @@
 
 Release notes of the **Preview** builds (an odd middle number: 0.5.x, 0.7.x), newest first. A Preview is a build the author hands to a few adults (ADR-0089, ADR-0090). It is published on GitHub as a pre-release, **never** as the download of the website, and its notes are **not** in [`CHANGELOG.md`](CHANGELOG.md), which the website reads. The format is the same as there: `## x.y.z (YYYY-MM-DD)`, then lines starting with `- `, the first a short bold sentence. When a Preview line is promoted, the Stable version takes its entry in `CHANGELOG.md`.
 
+## 0.11.3 (2026-11-15)
+- **Peak no longer asks the same question about a day again and again.** The small answers people really type (uh, vâng, dạ, ko, nah and more) are understood. With a brain connected, Peak lets the chat model read an answer it does not know, even a corrected day (không phải, ngày mai mới đúng); without one it says how to answer. A day it already keeps, or one you said no to, is not offered again.
+- **The question about a day stays open when the chat box closes by itself** (half an hour), and is shown again when you open the box. If you tell several days in one message Peak takes them one at a time. A day Peak could not make out is said plainly, not as if it were kept.
+- After you keep a day, Peak looks at once at what you said around it (for example that the child is your second daughter) and may add it to the list of noted facts in Settings, Memory.
+- Not yet tried: any of it with a real chat model, and the question shown again after the box closed.
+
 ## 0.11.2 (2026-11-15)
 - **Peak now knows today's date, and notices a special day you mention.** The chat model is told your computer's date (written in words, with the weekday), so it can answer what day it is and turn today or tomorrow into the day to keep. Tell Peak, for example, hôm nay là sinh nhật con gái mình: it now offers to keep that day even if you did not say remember, and asks "shall I keep that day?" (answer giữ đi, yes, はい, or đừng giữ, no, いいえ).
 - Not yet tried: whether the model writes the right date and keeps to real special days in all three languages.
