@@ -2,6 +2,10 @@
 
 Release notes of the **Preview** builds (an odd middle number: 0.5.x, 0.7.x), newest first. A Preview is a build the author hands to a few adults (ADR-0089, ADR-0090). It is published on GitHub as a pre-release, **never** as the download of the website, and its notes are **not** in [`CHANGELOG.md`](CHANGELOG.md), which the website reads. The format is the same as there: `## x.y.z (YYYY-MM-DD)`, then lines starting with `- `, the first a short bold sentence. When a Preview line is promoted, the Stable version takes its entry in `CHANGELOG.md`.
 
+## 0.11.7 (2026-11-15)
+- **The picture experiment now finds areas, not only lines.** With Terrain overlay and Screen picture both on, the layer tints what the borders enclose: calm open ground in blue (plains), bordered blocks with a calm inside, such as a card or a pane, in purple (panels, outlined), and busy ground, such as text, icons or a detailed wallpaper, in red (rough, outlined). A third line at the top counts them. The numbers are a first guess, to be tuned from your screenshots. It is still only a view: Peak does nothing with it.
+- Not yet tried: any of it on a real screen.
+
 ## 0.11.6 (2026-11-15)
 - **An experiment: what Peak could see in a picture of the screen.** The tray has a new item, Screen picture on/off (experiment). With it and Terrain overlay both on, about once a second Peak takes a very small grey picture of the screen (too small to read a letter, Peak itself is not in it), finds where the brightness changes sharply and draws it on the layer: green lines are edges with room above for Peak, grey ones without room, orange ones are walls, faint blue is empty space. Off at every start. The picture is dropped at once, never saved or sent, and Peak does nothing with it yet: it is only to look at, so that we can tune it together. The plan is in docs/plans/screen-picture-plan.md.
 - Not yet tried: any of it on a real screen.
