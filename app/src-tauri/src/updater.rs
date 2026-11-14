@@ -163,9 +163,71 @@ async fn check_one(app: &AppHandle, urls: Vec<Url>) -> Result<Option<Update>, St
         Ok(f) => Ok(f),
         Err(_) => {
             let _ = tauri::async_runtime::spawn_blocking(|| std::thread::sleep(RETRY_PAUSE)).await;
-            build()?.check().await.map_err(|e| e.to_string())
+            let again = build()?.check().await;
+            if let Err(e) = &again {
+                crate::append_trace(app, TRACE_FILE, &failure_line("check_failed", status_in(&e.to_string()), None));
+            }
+            again.map_err(|e| e.to_string())
         }
     }
+}
+
+/// The small log of a failed update (names and numbers only, like leave-trace.log), in the app data folder.
+const TRACE_FILE: &str = "update-trace.log";
+
+/// Digits and dots of a version, nothing else.
+fn numbers_only(v: &str) -> String {
+    v.chars().filter(|c| c.is_ascii_digit() || *c == '.').take(20).collect()
+}
+
+/// The HTTP status code named in an error text ("... with status: 403 Forbidden"): the first three digits after the word
+/// "status", 100 to 599. Only the number is kept, never the text.
+fn status_in(err: &str) -> Option<u16> {
+    let lower = err.to_ascii_lowercase();
+    let at = lower.find("status")?;
+    let digits: String = lower[at + 6..].chars().skip_while(|c| !c.is_ascii_digit()).take_while(|c| c.is_ascii_digit()).collect();
+    let n: u16 = digits.parse().ok()?;
+    (100..=599).contains(&n).then_some(n)
+}
+
+/// What GitHub's rate-limit page said: (limit, remaining, seconds until the reset).
+#[derive(Debug, PartialEq, Eq, Clone, Copy)]
+struct RateLimit {
+    limit: u64,
+    remaining: u64,
+    reset_in: u64,
+}
+
+/// Read the "core" quota from the answer of `api.github.com/rate_limit`, with the time now in seconds.
+fn parse_rate_limit(json: &str, now_secs: u64) -> Option<RateLimit> {
+    let v: serde_json::Value = serde_json::from_str(json).ok()?;
+    let core = v.get("resources")?.get("core")?;
+    Some(RateLimit {
+        limit: core.get("limit")?.as_u64()?,
+        remaining: core.get("remaining")?.as_u64()?,
+        reset_in: core.get("reset")?.as_u64()?.saturating_sub(now_secs),
+    })
+}
+
+/// One line for `update-trace.log`: the kind, the status if one was named, and the quota if it could be read.
+fn failure_line(kind: &str, status: Option<u16>, limit: Option<RateLimit>) -> String {
+    let mut s = format!("{kind} v={}", env!("CARGO_PKG_VERSION"));
+    if let Some(c) = status {
+        s += &format!(" status={c}");
+    }
+    if let Some(l) = limit {
+        s += &format!(" limit={} remaining={} reset_in={}", l.limit, l.remaining, l.reset_in);
+    }
+    s
+}
+
+/// Ask GitHub how many unsigned API calls this address has left. The page itself does not use up the quota, and nothing
+/// about the person is sent (a fixed program name, no account). Only called after a failed install.
+fn rate_limit_now() -> Option<RateLimit> {
+    let agent = ureq::AgentBuilder::new().timeout(Duration::from_secs(8)).build();
+    let body = agent.get("https://api.github.com/rate_limit").set("User-Agent", "Streakboom-updater").call().ok()?.into_string().ok()?;
+    let now = std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).ok()?.as_secs();
+    parse_rate_limit(&body, now)
 }
 
 /// Ask whether a newer version exists, by the rule of ADR-0095 (spec 16 section 11): one candidate, the newer Stable, else (when
@@ -211,7 +273,8 @@ pub async fn update_install(app: AppHandle, pending: State<'_, PendingUpdate>) -
     let update = pending.0.lock().unwrap().take().ok_or("no update to install")?;
     let mut downloaded: u64 = 0;
     let progress = app.clone();
-    update
+    crate::append_trace(&app, TRACE_FILE, &format!("install_start from={} to={}", env!("CARGO_PKG_VERSION"), numbers_only(&update.version)));
+    let result = update
         .download_and_install(
             move |chunk, total| {
                 downloaded += chunk as u64;
@@ -219,8 +282,14 @@ pub async fn update_install(app: AppHandle, pending: State<'_, PendingUpdate>) -
             },
             || {},
         )
-        .await
-        .map_err(|e| e.to_string())?;
+        .await;
+    if let Err(e) = &result {
+        // Why did it fail? The status and, from GitHub's free rate-limit page, how many unsigned calls are left (V-142).
+        let status = status_in(&e.to_string());
+        let limit = tauri::async_runtime::spawn_blocking(rate_limit_now).await.ok().flatten();
+        crate::append_trace(&app, TRACE_FILE, &failure_line("install_failed", status, limit));
+    }
+    result.map_err(|e| e.to_string())?;
     // On Windows the installer ends this process itself; elsewhere restart into the new version.
     app.restart()
 }
@@ -228,6 +297,38 @@ pub async fn update_install(app: AppHandle, pending: State<'_, PendingUpdate>) -
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn the_status_is_read_from_the_error_text_and_only_the_number_is_kept() {
+        assert_eq!(status_in("Download request failed with status: 403 Forbidden"), Some(403));
+        assert_eq!(status_in("request failed with status 429"), Some(429));
+        assert_eq!(status_in("Status: 504"), Some(504));
+        assert_eq!(status_in("could not fetch a valid release JSON"), None);
+        assert_eq!(status_in("status: none"), None);
+        assert_eq!(status_in("status 99999"), None);
+        assert_eq!(status_in("status: 42"), None);
+    }
+
+    #[test]
+    fn the_quota_is_read_from_the_rate_limit_page() {
+        let j = r#"{"resources":{"core":{"limit":60,"remaining":0,"reset":1000,"used":60},"search":{"limit":10}}}"#;
+        assert_eq!(parse_rate_limit(j, 160), Some(RateLimit { limit: 60, remaining: 0, reset_in: 840 }));
+        assert_eq!(parse_rate_limit(j, 5000).map(|r| r.reset_in), Some(0)); // a reset in the past is 0, not a wrap
+        assert_eq!(parse_rate_limit("nope", 0), None);
+        assert_eq!(parse_rate_limit(r#"{"resources":{}}"#, 0), None);
+    }
+
+    #[test]
+    fn a_failure_line_has_names_and_numbers_only() {
+        let l = failure_line("install_failed", Some(403), Some(RateLimit { limit: 60, remaining: 0, reset_in: 840 }));
+        assert!(l.starts_with("install_failed v="));
+        assert!(l.ends_with("status=403 limit=60 remaining=0 reset_in=840"));
+        assert!(failure_line("check_failed", None, None).starts_with("check_failed v="));
+        assert!(!failure_line("check_failed", None, None).contains("status"));
+        // it survives the filter of the trace file unchanged
+        assert!(crate::trace_line(&l, 1).unwrap().contains(&l));
+        assert_eq!(numbers_only("0.9.7-evil\n/x"), "0.9.7");
+    }
 
     #[test]
     fn updates_are_off_until_an_address_is_configured() {

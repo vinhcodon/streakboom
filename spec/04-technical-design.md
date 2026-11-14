@@ -49,7 +49,7 @@ All of it follows the sensory contract of ADR-0031: Peak perceives shapes and ac
 ### 2c. Skills as files, the interpreter and the trace (0.8.x to 0.9.x; ADR-0103, 0102, 0108)
 - **A skill is a file** (`src/lib/skills/*.skill.json`, validated by `validateSkill`); the page runs its steps through `skill-run.ts` with six verbs; Rust reads the same files for the persona layer. Details: spec 14 sections 7.4 to 7.7.
 - **Leaving** (`+page.svelte`, `farewell.ts`, `dismissal.ts`, `lib.rs` `pet_leave`, `pet_return`, `arm_return`): a trot to the nearer edge with a distance-based deadline, a wall-clock return timer (20 s slices), return without taking the keyboard (`SW_SHOWNOACTIVATE`), the guards that keep the typing-lane reflex out while it leaves. The conversation rule of spec 14 section 7.4 decides whether a typed "go away" acts.
-- **The trace** (`leave_trace` in `lib.rs`): one line per step in `leave-trace.log` of the data folder; names and numbers only, capped at 64 KB. It found the "notice" beat that cancelled a leaving.
+- **The trace** (`leave_trace` in `lib.rs`): one line per step in `leave-trace.log` of the data folder; names and numbers only, capped at 64 KB. It found the "notice" beat that cancelled a leaving. The same file mechanism (`append_trace`) writes `update-trace.log` when an update fails: the kind, the version, the status number and the GitHub quota (UD-5, V-143).
 - **What the model is told:** the clock line and the banter rule (`brain::with_clock`, `brain::with_banter`), the skills layer (`persona_with_skills`). The persona fingerprint test is unchanged by any of them.
 - **Input names:** proposed in spec 17; the page's handlers are unchanged until it is decided.
 

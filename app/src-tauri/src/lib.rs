@@ -1485,7 +1485,7 @@ fn end_away(app: &AppHandle) {
 /// One step of the "Luợn đi" flow as a line of `leave-trace.log` in the data folder (V-132): only a fixed step name and numbers the page
 /// chose, never chat text, so that a failure the author sees can be read afterwards. Anything outside letters, digits and
 /// `_ - : . , = space` is dropped, a line is at most 120 characters, and the file is cut to its newest half past 64 KB.
-fn trace_line(step: &str, now_ms: u128) -> Option<String> {
+pub(crate) fn trace_line(step: &str, now_ms: u128) -> Option<String> {
     let clean: String = step
         .chars()
         .filter(|c| c.is_ascii_alphanumeric() || matches!(c, '_' | '-' | ':' | '.' | ',' | '=' | ' '))
@@ -1501,7 +1501,7 @@ fn trace_line(step: &str, now_ms: u128) -> Option<String> {
 
 const TRACE_MAX_BYTES: usize = 64 * 1024;
 
-fn trim_trace(text: &str) -> String {
+pub(crate) fn trim_trace(text: &str) -> String {
     if text.len() <= TRACE_MAX_BYTES {
         return text.to_string();
     }
@@ -1515,15 +1515,20 @@ fn trim_trace(text: &str) -> String {
     }
 }
 
-#[tauri::command]
-fn leave_trace(app: AppHandle, step: String) {
+/// Append one line (names and numbers only) to a small log in the app data folder, cut to its newest half past 64 KB.
+pub(crate) fn append_trace(app: &AppHandle, file: &str, step: &str) {
     let now = std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).map(|d| d.as_millis()).unwrap_or(0);
-    let Some(line) = trace_line(&step, now) else { return };
+    let Some(line) = trace_line(step, now) else { return };
     let Ok(dir) = app.path().app_data_dir() else { return };
     let _ = fs::create_dir_all(&dir);
-    let path = dir.join("leave-trace.log");
+    let path = dir.join(file);
     let old = fs::read_to_string(&path).unwrap_or_default();
     let _ = fs::write(&path, trim_trace(&(old + &line)));
+}
+
+#[tauri::command]
+fn leave_trace(app: AppHandle, step: String) {
+    append_trace(&app, "leave-trace.log", &step);
 }
 
 /// Peak walks off (S2): hide the pet window and its bubble and start the return timer. The page decides whether it may leave.
