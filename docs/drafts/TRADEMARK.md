@@ -1,6 +1,6 @@
 # Trademark policy (draft, not in force)
 
-*Draft of 2026-11-15 for ADR-0124 option B2. Not legal advice; to be checked by a lawyer. It would apply from the day it is published; what was published before is as it was.*
+*Draft of 2026-11-15 for ADR-0124 (accepted: B2, every sticker CC BY 4.0). Not legal advice; to be checked by a lawyer. It would apply from the day it is published; what was published before is as it was.*
 
 ## English
 **What is protected.** The names **Streakboom** and **Peak** (as the cat of Streakboom) and the Streakboom logo (the Peak logo image). The code is under the MIT licence and stays so; this policy is about the names and the logo only.
@@ -8,14 +8,14 @@
 **You may, without asking:**
 - name Streakboom or Peak to describe, review, write about, teach or link to the project ("Peak, the cat of Streakboom");
 - say that your work works with or is based on Streakboom, if it is true;
-- fork and change the code under the MIT licence, and publish your fork **under another name**, with a note that it is a fork and not official.
+- fork and change the code under the MIT licence; use it yourself under any name; if you **distribute** a changed copy, publish it **under another name**, with a note that it is a fork and not official.
 
 **You may not:**
 - use the names or the logo for another product, a service, a company or a shop, or for goods (clothing, accessories, prints);
 - call a changed copy Streakboom or Peak, or use the logo on it;
 - say or suggest that something is official, endorsed or made by the author when it is not.
 
-**Stickers and the like** are covered by their own terms (`ASSETS.md`); the stickers published before this policy stay under CC BY 4.0.
+**Stickers** are under CC BY 4.0 (all of them): you may use, share and adapt them, also commercially, with credit. That licence gives no right in the names or the logo: do not present a sticker or anything made from it as official, and do not use the names or the logo as the brand of your own product.
 
 **Questions or permission:** write to the author at the address on the project page. Permission is given in writing.
 
@@ -25,13 +25,13 @@
 **Bạn được làm mà không cần hỏi:**
 - nhắc tên Streakboom hay Peak để mô tả, đánh giá, viết bài, hướng dẫn hay dẫn liên kết ("Peak, chú mèo của Streakboom");
 - nói rằng sản phẩm của bạn chạy cùng hay dựa trên Streakboom, nếu đúng như vậy;
-- sao chép (fork) và sửa mã theo giấy phép MIT, rồi công bố bản của bạn **dưới tên khác**, kèm ghi chú đó là bản fork, không phải bản chính thức.
+- sao chép (fork) và sửa mã theo giấy phép MIT; tự dùng dưới tên nào cũng được; nếu **phân phối** bản đã sửa thì công bố **dưới tên khác**, kèm ghi chú đó là bản fork, không phải bản chính thức.
 
 **Bạn không được:**
 - dùng tên hoặc logo cho sản phẩm, dịch vụ, công ty hay cửa hàng khác, hoặc cho hàng hóa (áo, phụ kiện, bản in);
 - gọi một bản đã sửa là Streakboom hay Peak, hoặc đặt logo lên đó;
 - nói hay gợi ý rằng điều gì đó là chính thức, được tác giả tán thành hay do tác giả làm, khi không đúng.
 
-**Sticker và các thứ tương tự** theo điều khoản riêng (`ASSETS.md`); các sticker đã công bố trước chính sách này vẫn theo CC BY 4.0.
+**Sticker** đều theo CC BY 4.0: bạn được dùng, chia sẻ và chỉnh sửa, kể cả thương mại, có ghi nguồn. Giấy phép đó không cho quyền gì với tên và logo: đừng giới thiệu sticker hay sản phẩm làm từ nó là chính thức, và đừng dùng tên hay logo làm thương hiệu cho sản phẩm của bạn.
 
 **Câu hỏi hoặc xin phép:** viết cho tác giả theo địa chỉ ở trang dự án. Sự cho phép được đưa bằng văn bản.

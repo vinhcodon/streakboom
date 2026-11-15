@@ -454,8 +454,8 @@ The cap is 60 a day and nobody has measured whether that is right. A dev build l
 | ID | Story | Size | State |
 |---|---|---|---|
 | BL-1 | The inventory of the identity of Peak and the SignPath conditions (`docs/plans/brand-inventory.md`) | S | done (2026-11-15) |
-| BL-2 | Spec 18, ADR-0124 and the drafts (`TRADEMARK.md`, `ASSETS.md`, the text changes) in `docs/drafts/` | M | done as drafts; waits for the author's choice |
-| BL-3 | The author answers Q1 to Q5 (the direction, the sticker terms, where new stickers live, fan art, forks) | S | waiting for the author |
+| BL-2 | Spec 18, ADR-0124 and the drafts (`TRADEMARK.md`, `STICKERS-LICENSE.md`, the text changes) in `docs/drafts/` | M | done as drafts |
+| BL-3 | The author answers Q1 to Q5 | S | done 2026-11-15 (B2, every sticker CC BY 4.0, forks rename when distributing; ADR-0124); one point open: designs for goods that are not stickers |
 | BL-4 | Ask SignPath in writing whether B2 fits (the questions are in the inventory); at the time of the application (ADR-0088) | S | proposed |
-| BL-5 | Apply the approved texts one by one: `TRADEMARK.md`, `ASSETS.md`, the licence file of the stickers, README, CONTRIBUTING, `Cargo.toml`; the site through the website session | M | proposed (each text approved first) |
+| BL-5 | Apply the approved texts one by one: `TRADEMARK.md`, the licence file of the stickers, README, CONTRIBUTING, `Cargo.toml`; the site through the website session | M | proposed (each text approved first) |
 | BL-6 | The lawyer's meeting after the alpha (ADR-0071) with `peak-origin-and-lawyer-questions.md` | S | proposed |
