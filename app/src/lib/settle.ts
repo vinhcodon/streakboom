@@ -12,6 +12,8 @@ export const SETTLE = {
   /** When no place is clear, the least covering place is taken if it covers at least this much less than here, and no more than `fallbackMax` (H31). */
   fallbackGain: 0.25,
   fallbackMax: 0.5,
+  /** Before it dozes off the bar is lower: a cat that is about to sleep should not cover even a little (H29). */
+  coverBeforeSleep: 0.15,
 };
 
 /** The share of cells that are not empty in the cat's box: `w` cells wide centred on `col`, `h` rows up from the feet row `row`. Off-screen cells count as empty. */
@@ -44,9 +46,9 @@ export interface SettleMove {
  * `cat`: the cell of the feet; `catCells`: the cat's size in cells; `spots`: the stand spots (`headroom` rows of empty space above each);
  * `hopCells`: the longest hop in cells. Null when the cat covers little where it is, or there is no better place within reach.
  */
-export function chooseSettle(seen: Seen, cat: { col: number; row: number }, catCells: number, spots: readonly StandSpot[], hopCells: number): SettleMove | null {
+export function chooseSettle(seen: Seen, cat: { col: number; row: number }, catCells: number, spots: readonly StandSpot[], hopCells: number, coverHigh: number = SETTLE.coverHigh): SettleMove | null {
   const here = boxCoverage(seen, cat.col, cat.row, catCells, catCells);
-  if (here < SETTLE.coverHigh) return null;
+  if (here < coverHigh) return null;
   const half = Math.ceil(catCells / 2);
   let best: SettleMove | null = null;
   let bestCost = Infinity;

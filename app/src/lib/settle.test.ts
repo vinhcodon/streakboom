@@ -80,3 +80,16 @@ test("when no place is clear, the least covering one is taken if it covers much 
   for (let y = 14; y <= 19; y++) for (let x = 50; x <= 70; x++) if ((x + y) % 10 === 0) t.empty[y * gw + x] = 1;
   assert.equal(chooseSettle(t, { col: 20, row: 19 }, 6, [], 12), null);
 });
+
+test("before dozing the bar is lower: a cat that covers 20% moves, one that covers 5% does not", () => {
+  const s = pic(60, 20, [[27, 16, 29, 19]]); // 12 busy cells of the 6 by 6 box of a cat at col 30 (cells 27 to 32): 33%
+  const t = pic(60, 20, [[27, 19, 27, 19]]); // 1 busy cell: 3%
+  assert.equal(chooseSettle(s, { col: 30, row: 19 }, 6, [], 12) !== null, true);
+  const u = pic(60, 20, [[27, 18, 28, 19], [60, 0, 60, 0]]); // 4 cells: 11%
+  assert.equal(chooseSettle(u, { col: 30, row: 19 }, 6, [], 12), null); // under 30%: nothing
+  assert.equal(chooseSettle(u, { col: 30, row: 19 }, 6, [], 12, SETTLE.coverBeforeSleep), null); // 11% is under 15% too
+  const v = pic(60, 20, [[27, 17, 28, 19]]); // 6 cells: 17%
+  assert.equal(chooseSettle(v, { col: 30, row: 19 }, 6, [], 12), null);
+  assert.ok(chooseSettle(v, { col: 30, row: 19 }, 6, [], 12, SETTLE.coverBeforeSleep) !== null);
+  assert.equal(chooseSettle(t, { col: 30, row: 19 }, 6, [], 12, SETTLE.coverBeforeSleep), null);
+});

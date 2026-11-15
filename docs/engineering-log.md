@@ -592,3 +592,9 @@ Every scene now runs over a test page (LE-4b): the small window over `scene_desk
 - **Restlessness:** three walks in five minutes at most: one a minute and a half. Within the manners, but H27 asks for the author's own look.
 - The desktop run has no baseline (rule off) yet: cover 21% on average, 5% of the views at 30% or more.
 **Reading:** with a stable background the rule makes a difference of the size that was hoped for (10% to 1% covered views, small window). One run each: an indication, not a proof. The fallback is still not committed (the author has to look).
+
+### 2026-11-15, loop round 11 (E29): a clear place before dozing (H29), two sessions of five minutes
+`dozeOff()`: when the cat is about to doze and covers 15% or more of its box (30% for the ordinary rule), it first goes to a clear place; the author looked at the rule earlier and asked for this change. Same scene as round 10 (the small window over a controlled desktop), the rule on.
+- **The new path ran once in ten minutes** (one look before sleep, at cover under 15%: nothing to do). Sleeping or drowsy views: 0 and 23 (average cover 2.2%, one view at 30% or more). The baseline of round 10: rule off 34 views, average 21%, 6 at 30% or more; the ordinary rule alone 30 views, average 1.1%, none at 30% or more.
+- **Reading:** the ordinary rule already leaves the cat in clear places most of the time, so it falls asleep in one; the new path had almost nothing to do and **no effect can be shown or denied**. It is kept (small, within the charter, behind the picture switch, passes through the back-off) but H29 stays **not shown**: the case it would help (content that appears under a sleeping cat, or a cat that dozes on content because the screen changed) is not made by these scenes.
+- Other moves in the two sessions: two hops (dx 176 dy -104 at 67% cover; dx 16 dy -104 at 36%) and one walk (150 px at 78%): the hops all went up about 104 px, onto the same ledge height of the test page.

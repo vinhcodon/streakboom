@@ -118,7 +118,7 @@
   import { desktopShare, ledges, summary, type GroundKind, type GroundMap } from "$lib/groundmap";
   import { surfacesBelow, surfaces, wallFor, type Wall } from "$lib/terrain";
   import { analyse, edgeSpots, fuseSpots, hasRoom, reachability, standSpots, type StandSpot } from "$lib/picture";
-  import { boxCoverage, chooseSettle, settleAllowed } from "$lib/settle";
+  import { SETTLE, boxCoverage, chooseSettle, settleAllowed } from "$lib/settle";
   import { believe, responseFor, startBelief, type Belief } from "$lib/perception";
   import { choosePerch, PERCH_LIMITS } from "$lib/perch";
   import { bodyPoints, escapePlaces } from "$lib/escape";
@@ -842,7 +842,7 @@
     if (data.settings.groundMap && r > 0.97) return void perchNow();
     if (r < 0.5) enter("look");
     else if (r < 0.85) void tryWalk();
-    else enter(bubbleOn ? "look" : "drowsy"); // yawns first, then falls asleep (never while it is speaking)
+    else dozeOff(); // yawns first, then falls asleep (never while it is speaking)
   }
 
   // ------------------------------------------------------------------ perches (TE-10c, TE-10d, ADR-0043)
@@ -948,7 +948,7 @@
    * to the nearest clear place with room above it (settle.ts). Only while the picture experiment is on. It moves away from content, so
    * it is allowed while the person works, but never while a panel, a hold or a flight is going on. Numbers only in the trace.
    */
-  async function settleNow(): Promise<boolean> {
+  async function settleNow(beforeSleep = false): Promise<boolean> {
     try {
       if (flying || quiet || panel !== null || leaving || away) return false;
       const grid = await invoke<PictureGrid | null>("screen_grid");
@@ -964,8 +964,8 @@
       const col = Math.floor((at.feet.x - grid.x) / cell);
       const row = Math.floor((at.feet.y - grid.y) / cellY) - 1;
       const hopCells = Math.round((HOP_MAX_PX * at.scale) / cell);
-      const move = chooseSettle(seen, { col, row }, catCells, spots, hopCells);
-      lp(`settle col=${col} row=${row} move=${move ? move.kind : "none"} cover=${Math.round(100 * boxCoverage(seen, col, row, catCells, catCells))}`);
+      const move = chooseSettle(seen, { col, row }, catCells, spots, hopCells, beforeSleep ? SETTLE.coverBeforeSleep : SETTLE.coverHigh);
+      lp(`settle${beforeSleep ? "_presleep" : ""} col=${col} row=${row} move=${move ? move.kind : "none"} cover=${Math.round(100 * boxCoverage(seen, col, row, catCells, catCells))}`);
       if (!move) return false;
       const dxPhys = (move.col - col) * cell;
       if (move.kind === "walk") {
@@ -999,6 +999,17 @@
     } catch {
       return false;
     }
+  }
+
+  /** Falls asleep where it is, or, with the picture experiment on, first goes to a clear place if it covers even a little (H29; manners 1, yield first). */
+  function dozeOff() {
+    if (pictureOn && !settleOff && !perchSeat && !perchWall && (pose === "idle" || pose === "look") && !bubbleOn && settleAllowed(settleMoves, Date.now())) {
+      void settleNow(true).finally(() => {
+        if (!flying && !quiet && !leaving && (pose === "idle" || pose === "look")) enter("drowsy");
+      });
+      return;
+    }
+    enter(bubbleOn ? "look" : "drowsy");
   }
 
   let viewTick = 0;
