@@ -46,7 +46,7 @@ const write = (out, rel, text) => {
 };
 
 /** `downloads` is the ledger of the download counter (ADR-0052) or null: no number on the pages, no downloads.json. */
-export function build({ out = OUT, downloads = null, stickerDir } = {}) {
+export function build({ out = OUT, downloads = null, stickerDir, extraStickerDirs } = {}) {
   buildRig();
   rmSync(out, { recursive: true, force: true });
   mkdirSync(out, { recursive: true });
@@ -61,7 +61,7 @@ export function build({ out = OUT, downloads = null, stickerDir } = {}) {
   ctx.indexnow = loadIndexNow(); // IndexNow (ADR-0124): the key file served at the root, and the ping of the workflow
   ctx.counting = loadCounting(); // the anonymous counting of sticker copies: off while its endpoint is empty (ADR-0092)
   // the Peak stickers: one folder of the repository, read at build time (ADR-0053); the manifest decides the count and the order
-  ctx.stickers = loadStickers(stickerDir);
+  ctx.stickers = loadStickers(stickerDir, extraStickerDirs);
   ctx.catalog = buildCatalog(ctx.stickers); // the tags of each sticker, given by the rules (ADR-0077)
   // the search index of the sticker pages: one file per language, read when the search box is first used (plan v0.2)
   const searchIndex = buildSearchIndex(ctx.stickers, ctx.catalog, loadVocabulary());
@@ -71,7 +71,7 @@ export function build({ out = OUT, downloads = null, stickerDir } = {}) {
   versionScripts(out, ctx.assetVersion);
   for (const lang of LANGS) {
     mkdirSync(join(out, "assets", "stickers", lang), { recursive: true });
-    for (const st of ctx.stickers.stickers) cpSync(join(ctx.stickers.dir, lang, `${st.id}.png`), join(out, "assets", "stickers", lang, `${st.id}.png`));
+    for (const st of ctx.stickers.stickers) cpSync(join(st.srcDir || ctx.stickers.dir, lang, st.srcFile || `${st.id}.png`), join(out, "assets", "stickers", lang, `${st.id}.png`));
   }
   const fileOf = (path) => `${path.replace(/^\//, "")}index.html`;
   const pages = [

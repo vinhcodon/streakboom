@@ -511,6 +511,7 @@ ${items}
         <li>${s("st_how1")}</li>
         <li>${s("st_how2")}</li>
       </ol>
+      <p class="note">${s("st_paws")}</p>
       <p class="licence">${s("st_license")}</p>
       <p class="note">${fonts}</p>${aiNote}
       <p class="note">${esc(stickerNote(lang, ctx))}</p>

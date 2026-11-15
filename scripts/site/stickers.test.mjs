@@ -1,7 +1,7 @@
 // Tests of the sticker pages and the short menu (ADR-0051, ADR-0053). Run: node --test scripts/site/
 import test from "node:test";
 import assert from "node:assert/strict";
-import { cpSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
+import { cpSync, existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { build } from "../build-site.mjs";
@@ -52,7 +52,7 @@ test("the picture is a real <img> inside a real <button>, labelled, with width a
   assert.match(page(clone(), "/vi/stickers/").html, /aria-label="Chép sticker /);
 });
 
-test("the AI note shows on the pages whose words nobody has read, and goes when the manifest says reviewed", () => {
+test("the AI note shows on the pages whose words nobody has read, and goes when the manifest says reviewed", async () => {
   const c = clone();
   assert.equal(needsReviewNote(real, "vi"), page(c, "/vi/stickers/").html.includes("do AI viết"));
   for (const [lang, path] of [["en", "/stickers/"], ["ja", "/ja/stickers/"]]) {
@@ -63,7 +63,14 @@ test("the AI note shows on the pages whose words nobody has read, and goes when 
   const m = JSON.parse(readFileSync(join(dir, "manifest.json"), "utf8"));
   for (const st of m.stickers) st.reviewed = { vi: true, en: true, ja: true };
   writeFileSync(join(dir, "manifest.json"), JSON.stringify(m));
-  const reviewed = build({ out: join(tmp(), "_site"), stickerDir: dir });
+  // the duo set too, with every flag true (a copy of its folder)
+  const { EXTRA_SETS } = await import("./stickers.mjs");
+  const duo = tmp();
+  cpSync(EXTRA_SETS[0], duo, { recursive: true });
+  const dm = JSON.parse(readFileSync(join(duo, "manifest.json"), "utf8"));
+  for (const st of dm.stickers) st.reviewed = { vi: true, en: true, ja: true };
+  writeFileSync(join(duo, "manifest.json"), JSON.stringify(dm));
+  const reviewed = build({ out: join(tmp(), "_site"), stickerDir: dir, extraStickerDirs: [duo] });
   for (const p of reviewed.pages.filter((p) => p.path.includes("stickers"))) assert.ok(!p.html.includes('class="note">The words on these') && !p.html.includes("do AI viết"), p.path);
 });
 
@@ -176,3 +183,55 @@ test("the sitemap lists every picture of each sticker page, and the sticker page
 test("a sitemap that forgets a sticker picture", () => fails((c) => {
   c.files["sitemap.xml"] = c.files["sitemap.xml"].replace(/<image:image><image:loc>[^<]*\/assets\/stickers\/vi\/[^<]*<\/image:loc><\/image:image>\n/, "");
 }, /the pictures of \/vi\/stickers\//));
+
+test("the duo stickers (ADR-0129) follow set-v2 as normal stickers: the next numbers in the order of their manifest, the pictures of their own folder, the address from the English title", async () => {
+  const { EXTRA_SETS } = await import("./stickers.mjs");
+  const { slugOf } = await import("./catalog.mjs");
+  assert.equal(EXTRA_SETS.length, 1);
+  const set = loadStickers();
+  const main = JSON.parse(readFileSync(join(STICKER_DIR, "manifest.json"), "utf8")).stickers.length;
+  const duo = JSON.parse(readFileSync(join(EXTRA_SETS[0], "manifest.json"), "utf8")).stickers;
+  assert.equal(duo.length, 4);
+  assert.equal(set.stickers.length, main + 4);
+  const added = set.stickers.slice(main);
+  assert.deepEqual(added.map((st) => slugOf(st)), ["one-is-off", "stamped", "one-pebble", "our-secret"], "the English title makes the address the author's file names promise");
+  assert.deepEqual(added.map((st) => st.id), ["35", "36", "37", "38"], "numbers continue and never change once published");
+  for (const st of added) {
+    assert.equal(st.srcDir, EXTRA_SETS[0]);
+    assert.equal(st.srcFile, st.slug + ".png");
+    for (const lang of ["vi", "en", "ja"]) assert.ok(existsSync(join(st.srcDir, lang, st.srcFile)), lang + "/" + st.srcFile);
+  }
+  assert.equal(set.stickers.slice(0, main).some((st) => st.srcDir), false, "the stickers of set-v2 are untouched");
+  // the tags are never taken from the manifest
+  assert.equal(added.some((st) => st.emotions || st.situations || st.edge !== undefined), false);
+});
+
+test("a duo set that is not right stops the build with the reason: a slug that is not an address, a file that is not the slug, a missing picture, a text missing in a language, another licence", async () => {
+  const { EXTRA_SETS } = await import("./stickers.mjs");
+  const dir = mkdtempSync(join(tmpdir(), "sb-duo-"));
+  cpSync(EXTRA_SETS[0], dir, { recursive: true });
+  const file = join(dir, "manifest.json");
+  const orig = readFileSync(file, "utf8");
+  const mutated = (fn) => { const x = JSON.parse(orig); fn(x); writeFileSync(file, JSON.stringify(x)); return () => loadStickers(STICKER_DIR, [dir]); };
+  writeFileSync(file, orig);
+  assert.doesNotThrow(() => loadStickers(STICKER_DIR, [dir]));
+  assert.throws(mutated((x) => { x.stickers[0].slug_en = "One Is Off"; }), /not an address/);
+  assert.throws(mutated((x) => { x.stickers[0].file = "other.png"; }), /not the slug/);
+  assert.throws(mutated((x) => { delete x.stickers[1].title.ja; }), /no title in ja/);
+  assert.throws(mutated((x) => { delete x.stickers[2].reviewed.en; }), /no reviewed flag for en/);
+  assert.throws(mutated((x) => { x.license = "CC BY-NC 4.0"; }), /licence/);
+  assert.throws(mutated((x) => { x.credits = x.credits.filter((c) => !c.langs.includes("ja")); }), /no font credit for ja/);
+  writeFileSync(file, orig);
+  rmSync(join(dir, "ja", "stamped.png"));
+  assert.throws(() => loadStickers(STICKER_DIR, [dir]), /ja\/stamped.png does not exist/);
+});
+
+test("the build serves the four duo pictures in the three languages under their numbers, lists them on every sticker page and in the sitemap, and says the English and Japanese lines are unread", () => {
+  const b = build({ out: join(mkdtempSync(join(tmpdir(), "sb-duo-b-")), "_site") });
+  for (const lang of ["vi", "en", "ja"]) for (const n of ["35", "36", "37", "38"]) assert.ok(existsSync(join(b.out, "assets", "stickers", lang, n + ".png")), lang + " " + n);
+  for (const path of ["/stickers/", "/vi/stickers/", "/ja/stickers/"]) {
+    const h = b.pages.find((p) => p.path === path).html;
+    for (const slug of ["one-is-off", "stamped", "one-pebble", "our-secret"]) assert.ok(h.includes('data-slug="' + slug + '"'), path + " " + slug);
+  }
+  assert.ok(b.files["sitemap.xml"].includes("/assets/stickers/en/38.png"));
+});

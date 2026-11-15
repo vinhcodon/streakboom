@@ -69,6 +69,11 @@ const GOLDEN = {
   "oh": "shocked||0",
   "huh": "confused||0",
   "let-me-think": "thinking||0",
+  // the four duo stickers (ADR-0129), tagged by overrides.json because no rule matches their words
+  "one-is-off": "thinking|work-day|0",
+  "stamped": "firm|work-day,agreement|1",
+  "one-pebble": "determined|work-day|0",
+  "our-secret": "happy,playful|news|0",
   "no-idea": "confused||0",
   "nyah-nyah": "teasing|refusal|1",
   "ugh-really": "annoyed||1",
