@@ -160,7 +160,7 @@ def p1():
     look = dict(LOOK["rest"], lid=0.06, roll=7, cheek=0.85, lidR=1)
     def spark(x, y, r):
         return f'<path d="M{x} {y - r} Q{x} {y} {x + r} {y} Q{x} {y} {x} {y + r} Q{x} {y} {x - r} {y} Q{x} {y} {x} {y - r}Z" fill="#fff" stroke="#e8a420" stroke-width="1.5" stroke-linejoin="round"/>'
-    wink = spark(14, 60, 9) + spark(27, 42, 5.5)   # a wink: sparkles by the shut eye
+    wink = spark(108, 58, 9) + spark(95, 40, 5.5)   # a wink: sparkles on the side of the open eye
     return wrap(curled(look) + wink, 0, 20, 1.0) + wrap(paws("open", "smile"), 118, 20, 1.0)
 
 

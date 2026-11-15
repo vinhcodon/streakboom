@@ -9,7 +9,7 @@ All in [`assets/paws/stickers-draft/`](assets/paws/stickers-draft/), built by `a
 | D1 | Paws alone | looks at a straight row of chestnuts; one is bigger, worried brows | Lệch một hạt. / One is off. / ひとつ大きい |
 | D2 | Paws alone | calm, a stamp beside a paper with a red tick, nobody will read it | Đã đóng dấu. / Stamped. / 押印しました |
 | D3 | Paws alone | happy and proud beside a small pile of pebbles, sparkles | Xong một viên. / One pebble. / ひとつ運んだ |
-| P1 | the pair | Peak winks (one eye shut, two sparkles by it, no z); Paws sits beside (no beads) | Xin phép nhé. / Excuse me. / 失礼します |
+| P1 | the pair | Peak winks (one eye shut, two sparkles on the open-eye side, no z); Paws sits beside (no beads) | Xin phép nhé. / Excuse me. / 失礼します |
 | P2 | the pair | Paws holds a tiny paper (a meeting) in the mouth; Peak looks at the ceiling | Họp nhé? / Meeting? / 会議しよう？ |
 | S1 | four panels | Paws creeps in from far (small), nearer, just past Peak (Peak opens one eye, no z), well past and bigger | Có xin phép. / Asks first. / ちゃんと許可 |
 | C1 | control, Peak | Peak eyes a cup at the edge of a table (two legs) | Rơi thử? / Just testing. / ためしただけ |
