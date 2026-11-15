@@ -1553,9 +1553,11 @@ async fn screen_grid(app: AppHandle) -> Option<ScreenGrid> {
     let (w, h) = (a.r - a.x, a.b - a.y);
     let (gw, gh) = picture::grid_dims(w, h)?;
     // Peak's own windows (the pet, the bubble, the overlay) are taken out of the capture for the moment of taking it (they were found to be in it)
-    let hwnds: Vec<isize> = ["main", "bubble", "overlay"].iter().filter_map(|l| app.get_webview_window(l)).filter_map(|w| w.hwnd().ok()).map(|h| h.0 as isize).collect();
+    // (only the ones that are on the screen: a hidden window is not in the picture, and Windows may refuse the change for it)
+    let hwnds: Vec<isize> = ["main", "bubble", "overlay"].iter().filter_map(|l| app.get_webview_window(l)).filter(|w| w.is_visible().unwrap_or(false)).filter_map(|w| w.hwnd().ok()).map(|h| h.0 as isize).collect();
     // the diagnostic picture with our windows in it (the count of `own_cells` on the overlay) is taken only while the overlay is open
     let diagnostic = app.get_webview_window("overlay").is_some();
+    let hwnds_n = hwnds.len();
     let (with, data, excluded) = tauri::async_runtime::spawn_blocking(move || {
         let with = if diagnostic { picture::capture_gray(a.x, a.y, w, h, gw, gh) } else { None };
         let excluded = picture::set_capture_exclusion(&hwnds, true);
@@ -1566,14 +1568,20 @@ async fn screen_grid(app: AppHandle) -> Option<ScreenGrid> {
     })
     .await
     .ok()?;
-    if !excluded {
+    if let Some(code) = excluded {
         // Windows before 10 version 2004: Peak's windows cannot be left out, so the picture would show Peak itself; none is given (after three refusals in a row, none is tried again)
-        app.state::<AppState>().picture_refused.fetch_add(1, Ordering::SeqCst);
+        let n = app.state::<AppState>().picture_refused.fetch_add(1, Ordering::SeqCst) + 1;
+        if overlay_allowed() {
+            append_trace(&app, "loop-trace.log", &format!("picture_refused n={n} windows={} error={code}", hwnds_n)); // a test build only (ADR-0122)
+        }
         return None;
     }
     app.state::<AppState>().picture_refused.store(0, Ordering::SeqCst);
     let data = data?;
     if picture::looks_failed(&data) {
+        if overlay_allowed() {
+            append_trace(&app, "loop-trace.log", "picture_failed black_or_empty=1");
+        }
         return None; // a locked screen, a secure desktop or a capture that is blocked: it says nothing about the screen
     }
     let own_cells = with.map(|v| v.iter().zip(&data).filter(|(p, q)| (**p as i32 - **q as i32).abs() >= 6).count() as u32).unwrap_or(0);

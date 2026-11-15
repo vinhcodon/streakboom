@@ -84,24 +84,25 @@ pub fn capture_gray_with(x: i32, y: i32, w: i32, h: i32, gw: u32, gh: u32, inclu
 /// Take Peak's own windows out of any capture (`WDA_EXCLUDEFROMCAPTURE`) or put them back (`WDA_NONE`). Found on 2026-11-15: a transparent
 /// window of ours is **in** the usual picture (the terrain overlay saw its own tints and lines), so the windows are left out for the moment
 /// of the capture only; they stay visible on the monitor all the time. Windows 10 version 2004 or later; a failure changes nothing.
-/// Returns whether **every** window accepted the change. Before Windows 10 version 2004 the call is refused for 0x11: the windows then stay in
+/// Returns `None` when **every** window accepted the change, else the system error code of the first one that did not. Before Windows 10 version 2004 the call is refused for 0x11: the windows then stay in
 /// the picture, and the caller must not use it (a cat that sees its own body would find itself covering the screen everywhere, PS-10).
 #[cfg(windows)]
-pub fn set_capture_exclusion(hwnds: &[isize], exclude: bool) -> bool {
+pub fn set_capture_exclusion(hwnds: &[isize], exclude: bool) -> Option<u32> {
+    use windows_sys::Win32::Foundation::GetLastError;
     use windows_sys::Win32::UI::WindowsAndMessaging::SetWindowDisplayAffinity;
-    let mut all = true;
+    let mut first_error = None;
     for &h in hwnds {
         let ok = unsafe { SetWindowDisplayAffinity(h as _, if exclude { 0x11 } else { 0 }) };
-        if ok == 0 {
-            all = false;
+        if ok == 0 && first_error.is_none() {
+            first_error = Some(unsafe { GetLastError() });
         }
     }
-    all
+    first_error
 }
 
 #[cfg(not(windows))]
-pub fn set_capture_exclusion(_hwnds: &[isize], _exclude: bool) -> bool {
-    false
+pub fn set_capture_exclusion(_hwnds: &[isize], _exclude: bool) -> Option<u32> {
+    Some(0)
 }
 
 /// A capture that is black everywhere (a locked screen, the secure desktop of an elevation prompt, a remote session without a display, a
