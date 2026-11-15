@@ -9,7 +9,7 @@ All in [`assets/paws/stickers-draft/`](assets/paws/stickers-draft/), built by `a
 | D1 | Paws alone | looks at a straight row of chestnuts; one is bigger, worried brows | Lệch một hạt. / One is off. / ひとつ大きい |
 | D2 | Paws alone | calm, a stamp beside a paper with a red tick, nobody will read it | Đã đóng dấu. / Stamped. / 押印しました |
 | D3 | Paws alone | happy and proud beside a small pile of pebbles, sparkles | Xong một viên. / One pebble. / ひとつ運んだ |
-| P1 | the pair | Peak winks (one eye shut, two sparkles on the open-eye side, no z); Paws sits beside (no beads) | Xin phép nhé. / Excuse me. / 失礼します |
+| P1 | the pair | Peak winks (one eye shut, two sparkles on the open-eye side, no z); Paws sits beside (no beads) | Bí mật nha. / Our secret. / ないしょだよ。 |
 | P2 | the pair | Paws holds a tiny paper (a meeting) in the mouth; Peak looks at the ceiling | Họp nhé? / Meeting? / 会議しよう？ |
 | S1 | four panels | Paws creeps in from far (small), nearer, just past Peak (Peak opens one eye, no z), well past and bigger | Có xin phép. / Asks first. / ちゃんと許可 |
 | C1 | control, Peak | Peak eyes a cup at the edge of a table (two legs) | Rơi thử? / Just testing. / ためしただけ |
@@ -19,6 +19,9 @@ Voice kept: the dog's work is small, useless and sometimes ruined (D1, D2); the 
 
 ## Decision of the author (2026-11-15): four for now
 **Only D1, D2, D3 and P1 are kept for now.** P1 is the first drawing (Peak with one eye open and no z, Paws sitting beside) **without the string of beads**. P2, S1, C1 and C2 are **parked** in `assets/paws/stickers-draft/parked/` (drawn, not in the manifest, not for the site). Note for the test: the spec 19 plan needs eight (and the two Peak controls C1, C2); with four the control is missing, so the author decides later whether to run the test as planned.
+
+## Decisions (ADR-0129)
+The four go up now as normal stickers; the duo test is not run; P1's caption was changed to "Bí mật nha." (the beads are gone, so "Excuse me" no longer fitted).
 
 ## Changes after the author's first look (2026-11-15)
 - **The string of beads is gone** from P1 and S1 (it did not show the idea, and Paws had not passed Peak). Spec 19's P1/S1 scene (a string of beads laid across the cat's back) is replaced by **Paws creeping past sleeping Peak**; the app session may update spec 19 section 3 (a note, not an edit here).

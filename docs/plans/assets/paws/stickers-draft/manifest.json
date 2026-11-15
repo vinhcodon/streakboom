@@ -140,41 +140,41 @@
     },
     {
       "id": "P1",
-      "slug_en": "excuse-me",
+      "slug_en": "our-secret",
       "kind": "pair",
       "text": {
-        "vi": "Xin phép nhé.",
-        "en": "Excuse me.",
-        "ja": "失礼します"
+        "vi": "Bí mật nha.",
+        "en": "Our secret.",
+        "ja": "ないしょだよ。"
       },
       "title": {
-        "vi": "Xin phép nhé",
-        "en": "Excuse me",
-        "ja": "失礼します"
+        "vi": "Bí mật nha",
+        "en": "Our secret",
+        "ja": "ないしょだよ"
       },
       "alt": {
-        "vi": "Paws rón rén đi ngang qua Peak đang ngủ; Peak hé một mắt nhìn theo. Chữ trên ảnh: “Xin phép nhé.”",
-        "en": "Tiptoes past sleeping Peak; Peak opens one eye and watches. Text on the image: \"Excuse me.\"",
-        "ja": "ねているPeakのそばをそろそろと通りぬける。Peakは片目をあけて見ている。画像の文字：「失礼します」"
+        "vi": "Peak nháy mắt như chia sẻ một bí mật, Paws ngồi cạnh mỉm cười. Chữ trên ảnh: “Bí mật nha.”",
+        "en": "Winks as if sharing a secret, with Paws sitting beside, smiling. Text on the image: \"Our secret.\"",
+        "ja": "ないしょだよ、とウインクしている。となりでPawsがほほえんでいる。画像の文字：「ないしょだよ。」"
       },
       "synonyms": {
         "vi": [
-          "xin phép",
-          "rón rén",
-          "lịch sự",
-          "ngủ"
+          "bí mật",
+          "nháy mắt",
+          "hai đứa",
+          "lầy"
         ],
         "en": [
-          "polite",
-          "excuse me",
-          "tiptoe",
-          "nap"
+          "secret",
+          "wink",
+          "friends",
+          "cheeky"
         ],
         "ja": [
-          "失礼",
-          "ていねい",
-          "ねている",
-          "そろそろ"
+          "ないしょ",
+          "ウインク",
+          "ふたり",
+          "ひみつ"
         ]
       },
       "reviewed": {
