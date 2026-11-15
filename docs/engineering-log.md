@@ -559,3 +559,13 @@ Dev build, overlay and picture on. New `view` line every 2.4 s (surfaces, spots,
 - **The rule decided 76 times with the picture on:** 47 times the cat covered less than 30% (nothing to do), **6 moves (3 walks and 3 hops: dx -216 dy -104, dx -184 dy -64, dx 200 dy -40)**, and **23 times the cat covered 30% or more and no clear place was found within one hop or along the floor** (`move=none`). So the strict test (at most 8% not empty, room above, one hop) left most of the cases without an answer.
 - The existing perch again acted once (`go climb dx=32 dy=-640 wall=1`, `climb_done ok=1`), in the run with the rule on. Height changes by itself: small window 12 (off) and 5 (on), the bare desktop 13 (off), 0 (on); the rule's hops are in the "on" counts.
 - **Reading:** an effect in the right direction on the awake share (43 to 30%) but one run each, a different amount of sleep, and 6 moves: **not proven**. The 23 cases without an answer are the first thing to improve (a looser clear test, a second hop, a walk along a ledge).
+
+### 2026-11-15, loop round 6 (E29): the looser test, four sessions of five minutes, no drags, a look every 10 s
+The clear test is now at most 15% not empty (was 8%), and the cat may walk along the ledge it stands on. Four sessions, one scene each, with a look after each.
+- **Light page full screen:** the cat covered 30% or more in 3 of 148 awake views; 23 decisions, none needed a move (22 under 30%). Travel 123 px. Nothing to do on this page.
+- **Dark page full screen:** average cover 2%; one walk (cover over 30%). Travel 486 px.
+- **Small window over the desktop:** average cover 26%, 30 of 139 views at 30% or more; **6 walks of 8 cases, 2 without an answer** (round 5: 23 without an answer of 29 in all). Travel 2662 px. The walks came about one a minute: this is the restlessness H27 asks about.
+- **Bare desktop:** average cover 8%, 12 of 125 awake views at 30% or more; one hop, 5 cases without an answer.
+- **Seen in the trace:** twice a walk of 130 px ended (`ok=1`) with the cat still at 80% cover: the target was probably past where the cat can stand near the screen edge (H28); one walk was 1310 px across the screen.
+- **Reading:** the looser test answers far more cases (2 of 8 open, was 23 of 29). On the test pages most of the time there was nothing to do (cover 2 to 8%), so these pages do not test the rule; only the small window did. The next round needs a busy scene (a page with a dense text area and a full-width toolbar) and the back-off of the ideas file.
+- Decisions and ideas are written down: H27 to H30 in `docs/hypotheses/README.md`, ADR-0123 (proposed, waiting for the author), and the ideas with the charter check in `docs/plans/loop-engineering.md`.

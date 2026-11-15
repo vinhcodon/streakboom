@@ -20,3 +20,15 @@ The round changes no behaviour code. Chat is not tested (it uses the author's ke
 
 ## Not measured by this loop
 Likeable, natural, annoying. Only the author scores those, with the test build in his hands.
+
+## Ideas from the rounds, with the charter check (for the author to weigh; nothing here is built)
+Within the charter (article 8: alive inside 1 to 7):
+1. **A clear place before dozing** (H29): it covers content while it sleeps. A small change, no new sense.
+2. **A back-off for the rule of the clear place:** after a move, rest at least a minute; after three moves in ten minutes, stop chasing and stay put (manners 3 and 6). Needed whatever ADR-0123 becomes.
+3. **A home in the clear:** over days, the clear places it has used most become its places (like the usual place, ADR-0117, but chosen by the picture). It remembers a place, never a meaning.
+4. **Watching with you:** when a large part of the picture changes at once (a video, a slide), it sits still and watches the same area from a clear place. It senses only that cells changed (activity, article 4 allows it).
+
+Pressing on the charter (feel free to decide whether the charter should change):
+5. **Colour as a sense** (a new sense, so a decision by the privacy contract): a screen with a lot of red for a long time (a failing build, an error page) makes Peak sit quietly near, and not play. It would be warm and useful, but it is meaning by proxy: it comes close to article 4 ("shapes, not meaning") and to the rule "no sense without a decision". If the author wants it, it needs an ADR and a rewording of article 4 (colour counts, text never does).
+6. **Standing on content on purpose, when invited:** after petting, Peak may sit on the window you are in for ten seconds as play, then yields. It breaks article 2 for ten seconds, only when the person started it; the mode `play` already exists. A charter note would be needed to say that an invited cover is allowed.
+7. **Leaving marks:** a paw print left on a clear place on the screen for a minute. It is a drawing on top of the person's screen (article 1: no surprise cost); only with an explicit switch, never in work mode. It would need an exception for drawing outside its own window.

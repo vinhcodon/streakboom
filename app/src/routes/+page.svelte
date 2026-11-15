@@ -118,6 +118,7 @@
   import { desktopShare, ledges, summary, type GroundKind, type GroundMap } from "$lib/groundmap";
   import { surfacesBelow, surfaces, wallFor, type Wall } from "$lib/terrain";
   import { analyse, edgeSpots, fuseSpots, hasRoom, reachability, standSpots, type StandSpot } from "$lib/picture";
+  import { boxCoverage, chooseSettle } from "$lib/settle";
   import { believe, responseFor, startBelief, type Belief } from "$lib/perception";
   import { choosePerch, PERCH_LIMITS } from "$lib/perch";
   import { bodyPoints, escapePlaces } from "$lib/escape";
@@ -825,6 +826,11 @@
     if (pose === "peek" || pose === "ledge") return scheduleNext(); // a rest at the edge is not cut short
     if (quiet) return pose === "sleep" || pose === "drowsy" ? undefined : enter("drowsy");
     if (panel) return scheduleNext();
+    // E29 round 4 (the screen picture experiment, Preview only): when the cat covers content, it goes to the nearest clear place
+    if (pictureOn && !settleOff && !perchSeat && !perchWall && (pose === "idle" || pose === "look") && Date.now() - lastSettle > SETTLE_EVERY_MS) {
+      lastSettle = Date.now();
+      return void settleNow().finally(scheduleNext);
+    }
     if (perchWall && Date.now() >= perchedUntil && (pose === "idle" || pose === "look")) return void descend();
     if (perchSeat && !perchWall && Date.now() >= perchedUntil && (pose === "idle" || pose === "look")) return void hopDown();
     if (Date.now() < perchedUntil) {
@@ -915,6 +921,72 @@
   // the surfaces, the cat's feet and the ledge it would choose, to the overlay window.
   let overlayTimer: ReturnType<typeof setInterval> | undefined;
   let pictureOn = false; // the screen picture experiment (ADR-0119): turned on from the tray of a Preview build, off at every start
+  /** The picture of the screen read once: the analysis, the size of the cat in cells and the stand spots (the windows and the picture, fused). */
+  type PictureGrid = { x: number; y: number; w: number; h: number; gw: number; gh: number; data: number[]; ownCells: number };
+  function readPicture(grid: PictureGrid, ss: ReturnType<typeof surfaces>) {
+  const seen = analyse({ gw: grid.gw, gh: grid.gh, data: grid.data });
+  const cell = grid.w / grid.gw; // physical px of a cell
+  const cellY = grid.h / grid.gh;
+  const catCells = Math.round((PET_SIZE * (window.devicePixelRatio || 1)) / cell);
+  // the surfaces of the map of windows (exact edges), in grid cells: the feet row is the one above the edge (round 7: one list of places)
+  const winSpots: StandSpot[] = ss
+    .filter((u) => u.roomy)
+    .map((u) => ({ x0: Math.max(0, Math.floor((u.x0 - grid.x) / cell)), x1: Math.min(grid.gw - 1, Math.floor((u.x1 - grid.x) / cell)), y: Math.floor((u.y - grid.y) / cellY) - 1, headroom: catCells }))
+    .filter((u) => u.x1 - u.x0 + 1 >= Math.max(6, Math.ceil(catCells * 0.6)) && u.y >= 0 && u.y < grid.gh - 2);
+  const meanGrey = grid.data.reduce((a, b) => a + b, 0) / Math.max(1, grid.data.length);
+    const spots = reachability(fuseSpots(winSpots, fuseSpots(edgeSpots(seen, catCells), standSpots(seen, catCells), 2, "edge")), seen, Math.round((HOP_MAX_PX * (window.devicePixelRatio || 1)) / cell));
+    return { seen, cell, cellY, catCells, meanGrey, spots };
+  }
+
+  const SETTLE_EVERY_MS = 10_000;
+  let settleOff = false; // STREAKBOOM_NO_SETTLE=1 (a test aid): the rule is not used, so the share of cover can be measured without it
+  void invoke<boolean>("dev_flag", { name: "STREAKBOOM_NO_SETTLE" }).then((v) => (settleOff = v)).catch(() => {});
+  let lastSettle = 0;
+  /**
+   * Look at the picture of the screen; if more than a third of the cells under the cat's body are not empty, walk along the floor or hop up
+   * to the nearest clear place with room above it (settle.ts). Only while the picture experiment is on. It moves away from content, so
+   * it is allowed while the person works, but never while a panel, a hold or a flight is going on. Numbers only in the trace.
+   */
+  async function settleNow(): Promise<boolean> {
+    try {
+      if (flying || quiet || panel !== null || leaving || away) return false;
+      const grid = await invoke<PictureGrid | null>("screen_grid");
+      const at = await catFeet();
+      if (!grid || !at) return false;
+      let ss: ReturnType<typeof surfaces> = [];
+      try {
+        ss = surfaces(await invoke<GroundMap>("ground_map"));
+      } catch {
+        /* no map of windows: the picture alone */
+      }
+      const { seen, cell, cellY, catCells, spots } = readPicture(grid, ss);
+      const col = Math.floor((at.feet.x - grid.x) / cell);
+      const row = Math.floor((at.feet.y - grid.y) / cellY) - 1;
+      const hopCells = Math.round((HOP_MAX_PX * at.scale) / cell);
+      const move = chooseSettle(seen, { col, row }, catCells, spots, hopCells);
+      lp(`settle col=${col} row=${row} move=${move ? move.kind : "none"} cover=${Math.round(100 * boxCoverage(seen, col, row, catCells, catCells))}`);
+      if (!move) return false;
+      const dxPhys = (move.col - col) * cell;
+      if (move.kind === "walk") {
+        const px = Math.abs(dxPhys);
+        if (px < 2 * cell) return false;
+        dir = dxPhys < 0 ? -1 : 1;
+        const ok = await new Promise<boolean>((resolve) => {
+          homeGoal = { px, ms: seatWalkMs(px / at.scale, LEAVE_PACE_PX_S), done: resolve };
+          enter("walk");
+        });
+        lp(`settle_walk ok=${ok ? 1 : 0} px=${Math.round(px)}`);
+        return ok;
+      }
+      const footY = grid.y + (move.row + 1) * cellY;
+      await fly(splitHop(Math.round(dxPhys / at.scale), Math.round((footY - at.feet.y) / at.scale)), "walk");
+      lp(`settle_hop dx=${Math.round(dxPhys / at.scale)} dy=${Math.round((footY - at.feet.y) / at.scale)}`);
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
   let viewTick = 0;
   let lastGrid: { x: number; y: number; w: number; h: number; gw: number; gh: number } | null = null;
   async function feedOverlay() {
@@ -927,21 +999,14 @@
       const note = `${summary(map)} | ${ss.length} surfaces (${ss.filter((s) => s.roomy).length} with room) | ${target ? "target at " + target.x + "," + target.y : "no target"} | mode ${mode} | last: ${lastPerchWhy}`;
       // the screen picture (ADR-0119): a small grey grid, read for edges at once and dropped; only lines and a mask go to the overlay
       let picture: unknown = null;
+      let coverNow = -1; // the share of the cat's box that is not empty, percent (E29)
       if (pictureOn) {
         const grid = await invoke<{ x: number; y: number; w: number; h: number; gw: number; gh: number; data: number[]; ownCells: number } | null>("screen_grid");
         if (grid) {
           lastGrid = { x: grid.x, y: grid.y, w: grid.w, h: grid.h, gw: grid.gw, gh: grid.gh };
-          const seen = analyse({ gw: grid.gw, gh: grid.gh, data: grid.data });
-          const cell = grid.w / grid.gw; // physical px of a cell
-          const cellY = grid.h / grid.gh;
-          const catCells = Math.round((PET_SIZE * (window.devicePixelRatio || 1)) / cell);
-          // the surfaces of the map of windows (exact edges), in grid cells: the feet row is the one above the edge (round 7: one list of places)
-          const winSpots: StandSpot[] = ss
-            .filter((u) => u.roomy)
-            .map((u) => ({ x0: Math.max(0, Math.floor((u.x0 - grid.x) / cell)), x1: Math.min(grid.gw - 1, Math.floor((u.x1 - grid.x) / cell)), y: Math.floor((u.y - grid.y) / cellY) - 1, headroom: catCells }))
-            .filter((u) => u.x1 - u.x0 + 1 >= Math.max(6, Math.ceil(catCells * 0.6)) && u.y >= 0 && u.y < grid.gh - 2);
-          const meanGrey = grid.data.reduce((a, b) => a + b, 0) / Math.max(1, grid.data.length);
-          picture = { gw: seen.gw, gh: seen.gh, threshold: seen.threshold, catCells, hsegs: seen.hsegs.map((h) => ({ ...h, room: hasRoom(h, catCells) })), vsegs: seen.vsegs, empty: Array.from(seen.empty), kinds: Array.from(seen.kinds), regions: seen.regions, bands: seen.bands, own: grid.ownCells, dark: meanGrey < 110, spots: reachability(fuseSpots(winSpots, fuseSpots(edgeSpots(seen, catCells), standSpots(seen, catCells), 2, "edge")), seen, Math.round((HOP_MAX_PX * (window.devicePixelRatio || 1)) / cell)) };
+          const { seen, catCells, meanGrey, spots } = readPicture(grid, ss);
+          if (at) coverNow = Math.round(100 * boxCoverage(seen, Math.floor((at.feet.x - grid.x) / (grid.w / grid.gw)), Math.floor((at.feet.y - grid.y) / (grid.h / grid.gh)) - 1, catCells, catCells));
+          picture = { gw: seen.gw, gh: seen.gh, threshold: seen.threshold, catCells, hsegs: seen.hsegs.map((h) => ({ ...h, room: hasRoom(h, catCells) })), vsegs: seen.vsegs, empty: Array.from(seen.empty), kinds: Array.from(seen.kinds), regions: seen.regions, bands: seen.bands, own: grid.ownCells, dark: meanGrey < 110, spots };
         }
       }
       // E29: every third map (about 2.4 s) one line of what the cat stands on, numbers only (no pixels, no words)
@@ -960,7 +1025,7 @@
             onSpot = pic.spots.some((u) => col >= u.x0 && col <= u.x1 && Math.abs(u.y - row) <= 1) ? 1 : 0;
           }
         }
-        lp(`view pose=${pose} surfaces=${ss.length} roomy=${ss.filter((u) => u.roomy).length} spots=${spotsN} on_spot=${onSpot} own_cells=${ownCells} fx=${at ? Math.round(at.feet.x) : -1} fy=${at ? Math.round(at.feet.y) : -1}`);
+        lp(`view pose=${pose} surfaces=${ss.length} roomy=${ss.filter((u) => u.roomy).length} spots=${spotsN} on_spot=${onSpot} cover=${coverNow} fx=${at ? Math.round(at.feet.x) : -1} fy=${at ? Math.round(at.feet.y) : -1}`);
       }
       await emitTo("overlay", "overlay-data", { map, surfaces: ss, target, feet: at ? at.feet : null, note, picture });
     } catch {

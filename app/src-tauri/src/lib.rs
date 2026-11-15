@@ -1626,6 +1626,13 @@ fn perch_trace(app: AppHandle, step: String) {
     append_trace(&app, "perch-trace.log", &step);
 }
 
+/// A test aid (E29): whether a named switch is set in the environment. Only the names listed here can be asked; they change a behaviour
+/// being measured and are never set for a person.
+#[tauri::command]
+fn dev_flag(name: String) -> bool {
+    matches!(name.as_str(), "STREAKBOOM_NO_SETTLE") && std::env::var(&name).as_deref() == Ok("1")
+}
+
 /// The chat gate and the chat count (`chat-trace.log`, E28): a number of characters and the count of the day, never the words.
 #[tauri::command]
 fn chat_trace(app: AppHandle, step: String) {
@@ -1899,6 +1906,7 @@ pub fn run() {
             leave_trace,
             perch_trace,
             chat_trace,
+            dev_flag,
             loop_trace,
             pet_return,
             pet_away_retry,

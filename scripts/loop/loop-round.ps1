@@ -8,7 +8,7 @@
 
   It takes the mouse for the whole time. Peak (a dev build) must already be running. Chrome test windows use their own profile.
 #>
-param([int]$Minutes = 10, [string]$Out = "round.csv", [int]$Every = 9)
+param([int]$Minutes = 10, [string]$Out = "round.csv", [int]$Every = 9, [switch]$NoDrag, [string]$Only = "")
 $ErrorActionPreference = "Stop"
 Add-Type @"
 using System; using System.Runtime.InteropServices; using System.Collections.Generic; using System.Text;
@@ -67,6 +67,7 @@ function Show-Scene($file, $mode) {
   Start-Process $chrome -ArgumentList $a; Start-Sleep -Seconds 3
 }
 $gestures = @("click","sweep_head","sweep_belly","drag","right_click","right_double","double_click","idle")
+if ($NoDrag) { $gestures = $gestures | Where-Object { $_ -ne "drag" } }
 function Gesture($g, $scene) {
   $r = Peak-Rect; if (-not $r) { Sample $scene "no_window:$g"; return }
   $cx = $r[0] + $r[2]/2; $cy = $r[1] + $r[3]/2
@@ -92,6 +93,7 @@ $phases = @(
   @{ name="small_window"; file="scene_light.html"; mode="app" },
   @{ name="desktop_only"; file=$null; mode="" }
 )
+if ($Only) { $phases = @($phases | Where-Object { $_.name -eq $Only }) }
 $per = [int](($Minutes * 60) / $phases.Count)
 foreach ($ph in $phases) {
   Show-Scene $ph.file $ph.mode
