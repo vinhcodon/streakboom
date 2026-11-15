@@ -1,6 +1,6 @@
 # Trademark policy (draft, not in force)
 
-*Draft of 2026-11-15 for ADR-0124 (accepted: B2, every sticker CC BY 4.0). Not legal advice; to be checked by a lawyer. It would apply from the day it is published; what was published before is as it was.*
+*Draft of 2026-11-15 for ADR-0125 (accepted: B2, every sticker CC BY 4.0). Not legal advice; to be checked by a lawyer. It would apply from the day it is published; what was published before is as it was.*
 
 ## English
 **What is protected.** The names **Streakboom** and **Peak** (as the cat of Streakboom) and the Streakboom logo (the Peak logo image). The code is under the MIT licence and stays so; this policy is about the names and the logo only.

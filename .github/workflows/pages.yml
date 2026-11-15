@@ -88,3 +88,10 @@ jobs:
       # cookies after the build checked its own files. Last, after the deploy and the ledger copy, so a failure is an alert and undoes nothing
       - name: Check the live site against the privacy page
         run: sleep 20 && node scripts/site/livecheck.mjs
+
+      # IndexNow (ADR-0124): tell Bing and the other engines that take part which addresses to read again. After a push or a manual run only (not the
+      # daily schedule, which changes only the download number). It sends public addresses and a public key; a failure is a warning, never a failed deploy
+      - name: Tell the search engines (IndexNow)
+        if: github.event_name != 'schedule'
+        continue-on-error: true
+        run: node scripts/site/indexnow.mjs

@@ -1,6 +1,6 @@
 # Proposed changes to the licence texts (before and after; none applied)
 
-**Status:** proposals of 2026-11-15 for ADR-0124 (accepted: B2, every sticker CC BY 4.0). Each change needs the author's approval before it is made; the website texts are made by the website session (see [`../handoff/website-brand-terms.md`](../handoff/website-brand-terms.md)). Not legal advice.
+**Status:** proposals of 2026-11-15 for ADR-0125 (accepted: B2, every sticker CC BY 4.0). Each change needs the author's approval before it is made; the website texts are made by the website session (see [`../handoff/website-brand-terms.md`](../handoff/website-brand-terms.md)). Not legal advice.
 
 ## README.md
 - **Line 67 (feature list).** Before: `Free and open source. MIT licensed. Updates are signed; ...` After: `Free and open source: the code is MIT licensed. The names Streakboom and Peak and the logo are kept (see TRADEMARK.md). Updates are signed; ...`

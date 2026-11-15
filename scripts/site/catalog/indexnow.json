@@ -1,0 +1,5 @@
+{
+  "note": "IndexNow (ADR-0124). enabled: the build serves <key>.txt at the root of the site and the Pages workflow sends the list of addresses to api.indexnow.org after a deploy (not on the daily schedule). The key is PUBLIC by the protocol's design (the engines read it at https://streakboom.com/<key>.txt); it is not a secret and gives no access to anything. A new key: replace it here (32 lower-case hexadecimal characters).",
+  "enabled": true,
+  "key": "feeeb6812e07e1e3cb17ba817cd02c53"
+}

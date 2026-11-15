@@ -1,11 +1,11 @@
 # 18. Brand and licensing (direction chosen, texts are drafts)
 
-**Status:** written 2026-11-15 from the handoff `docs/handoff/licensing-and-brand-assets.md`; the direction was chosen on 2026-11-15 in ADR-0124 (B2, with every sticker CC BY 4.0); the texts are drafts and each needs the author's approval. Nothing here changes `LICENSE`, the README, CONTRIBUTING or the website until the author approves each text. **Not legal advice; a lawyer has to confirm** (ADR-0071: the lawyer comes after the alpha).
+**Status:** written 2026-11-15 from the handoff `docs/handoff/licensing-and-brand-assets.md`; the direction was chosen on 2026-11-15 in ADR-0125 (B2, with every sticker CC BY 4.0); the texts are drafts and each needs the author's approval. Nothing here changes `LICENSE`, the README, CONTRIBUTING or the website until the author approves each text. **Not legal advice; a lawyer has to confirm** (ADR-0071: the lawyer comes after the alpha).
 
 ## 1. What this spec is for
 To say, in one place, what is free to take and what is kept, so that the people who use, fork or write about Streakboom know the rules and the author keeps the right to make stickers and goods of Peak. The facts are in [`docs/plans/brand-inventory.md`](../docs/plans/brand-inventory.md).
 
-## 2. The rules (direction B2 with the author's change, ADR-0124)
+## 2. The rules (direction B2 with the author's change, ADR-0125)
 | ID | Rule |
 |---|---|
 | BL-1 | **The code stays MIT**, the whole repository as today, and so does the art of Peak that is part of the app (the rig, the app icons, the images the website uses). The licence of past releases is not changed. |
@@ -22,7 +22,7 @@ To say, in one place, what is free to take and what is kept, so that the people 
 The conditions of SignPath Foundation (read 2026-11-15): an OSI-approved licence without commercial dual licensing for all components, and no proprietary component. A trademark policy is not a licence on a component, so B2 (with CC BY stickers) should fit; carving the cat's art out of MIT inside the installer (B1) probably would not. **To be confirmed with SignPath in writing** before the application (ADR-0088 puts it late in the plan).
 
 ## 4. Open choice
-Only BL-9 (designs for goods that are not stickers) is open; the other four questions of the handoff are answered in ADR-0124.
+Only BL-9 (designs for goods that are not stickers) is open; the other four questions of the handoff are answered in ADR-0125.
 
 ## 5. Not decided and not checked
 Trademark registrations and their availability, the copyright position of art made with an AI's help, and the wording of the terms: for a lawyer (`docs/plans/peak-origin-and-lawyer-questions.md`).

@@ -48,3 +48,6 @@ The build turns `app/src/lib/rig/*.ts` into browser JavaScript in `site/peak/` (
 
 ## The project dashboard (ADR-0120)
 A private Claude page, "Streakboom Metrics", reads four CSV files made by `node scripts/site/metrics.mjs --out <folder>` from the public download ledger, the GitHub API and the hand-typed `docs/metrics/weekly.csv` (the five numbers the author reads weekly from Cloudflare, Clarity and Search Console). `docs/metrics/README.md` says how to type them and how to refresh. No token is involved.
+
+## IndexNow (ADR-0124)
+`scripts/site/catalog/indexnow.json` holds a public key and a switch. The build serves `<key>.txt` at the root of the site; after a push (not the daily run) the Pages workflow runs `scripts/site/indexnow.mjs`, which posts the sitemap's addresses to `api.indexnow.org`. A failure is a warning in the log, never a failed deploy. Only public addresses and the public key are sent.
