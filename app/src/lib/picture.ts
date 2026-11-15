@@ -446,7 +446,7 @@ export interface StandSpot {
   y: number; // the row of cells the feet are in (the median of the run); the floor is the top of the row below
   headroom: number; // the least number of empty rows above it along the run
   /** Where it was found: the picture, or the map of windows (round 7: the two are fused). */
-  src?: "picture" | "window";
+  src?: "picture" | "window" | "edge";
 }
 
 /**
@@ -468,7 +468,8 @@ export function standSpots(seen: Seen, catCells: number, minWidth = Math.max(6, 
     const runs: { y: number; len: number }[] = [];
     let len = 0;
     for (let y = 0; y <= gh; y++) {
-      if (y < gh && kinds[y * gw + x] === KIND.plain) len++;
+      // calm ground is a plain or the inside of a panel (a card is empty inside too): both can have a floor under them (round 8)
+      if (y < gh && (kinds[y * gw + x] === KIND.plain || kinds[y * gw + x] === KIND.panel)) len++;
       else {
         if (len >= catCells && y - 1 < gh - 2) runs.push({ y: y - 1, len });
         len = 0;
@@ -557,12 +558,22 @@ export function reachability(spots: StandSpot[], seen: Seen, hopCells: number, m
  * One list of places to stand from the two senses (round 7): the surfaces the map of windows found (exact edges of windows) first, then the
  * spots the picture found that are not the same place (within `dy` rows and overlapping by at least half of the narrower one).
  */
-export function fuseSpots(windowSpots: StandSpot[], pictureSpots: StandSpot[], dy = 2): StandSpot[] {
+export function fuseSpots(windowSpots: StandSpot[], pictureSpots: StandSpot[], dy = 2, firstSrc: StandSpot["src"] = "window"): StandSpot[] {
   const same = (a: StandSpot, b: StandSpot) => {
     if (Math.abs(a.y - b.y) > dy) return false;
     const lap = Math.min(a.x1, b.x1) - Math.max(a.x0, b.x0) + 1;
     return lap >= 0.5 * Math.min(a.x1 - a.x0 + 1, b.x1 - b.x0 + 1);
   };
-  const w = windowSpots.map((s) => ({ ...s, src: "window" as const }));
+  const w = windowSpots.map((s) => ({ ...s, src: firstSrc }));
   return [...w, ...pictureSpots.filter((p) => !w.some((q) => same(p, q)))];
+}
+
+/**
+ * The ledges with a sharp edge under them that have room above for the cat (the top of a bar of a chart, of a button, of a card) as
+ * stand spots (round 8): the feet row is the one above the edge. They were only drawn before; Peak could not be told to go to them.
+ */
+export function edgeSpots(seen: Seen, catCells: number, minWidth = Math.max(6, Math.ceil(catCells * 0.6))): StandSpot[] {
+  return seen.hsegs
+    .filter((h) => hasRoom(h, catCells) && h.x1 - h.x0 + 1 >= minWidth && h.y - 1 >= 0 && h.y < seen.gh - 3)
+    .map((h) => ({ x0: h.x0, x1: h.x1, y: h.y - 1, headroom: h.roomAbove, src: "edge" as const }));
 }

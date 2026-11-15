@@ -31,7 +31,7 @@
       /** The picture is mostly dark: the tints are stronger and the outlines lighter, so that the layer can be read (round 7). */
       dark: boolean;
       /** Places to stand over empty space (round 2 of stage 2b): the floor of a pocket at least as tall and wide as the cat. */
-      spots: { x0: number; x1: number; y: number; headroom: number; rise: number; reach: "hop" | "climb" | null; src?: "picture" | "window" }[];
+      spots: { x0: number; x1: number; y: number; headroom: number; rise: number; reach: "hop" | "climb" | null; src?: "picture" | "window" | "edge" }[];
       regions: { kind: "plain" | "panel" | "rough"; x0: number; y0: number; x1: number; y1: number; area: number; grey: number; borderShare: number; fill: number }[];
     } | null;
   }
@@ -143,14 +143,14 @@
       for (const p of pic.spots) {
         g.lineWidth = p.reach ? 6 : 3;
         // green when the picture found it, cyan when the map of windows did (the exact edge of a window)
-        g.strokeStyle = p.src === "window" ? (p.reach ? "rgb(0,220,255)" : "rgba(0,220,255,0.4)") : p.reach ? "rgb(0,255,120)" : "rgba(0,255,120,0.35)";
+        g.strokeStyle = p.src === "window" ? (p.reach ? "rgb(0,220,255)" : "rgba(0,220,255,0.4)") : p.src === "edge" ? (p.reach ? "rgb(225,255,0)" : "rgba(225,255,0,0.4)") : p.reach ? "rgb(0,255,120)" : "rgba(0,255,120,0.35)";
         g.beginPath();
         g.moveTo(p.x0 * sx, (p.y + 1) * sy);
         g.lineTo((p.x1 + 1) * sx, (p.y + 1) * sy);
         g.stroke();
         if (p.reach) {
           g.fillStyle = pic.dark ? "rgb(230,255,235)" : "rgb(0,120,60)";
-          g.fillText((p.src === "window" ? "win " : "") + (p.reach === "hop" ? "hop" : "climb"), p.x0 * sx + 2, (p.y + 1) * sy - 8);
+          g.fillText((p.src === "window" ? "win " : p.src === "edge" ? "edge " : "") + (p.reach === "hop" ? "hop" : "climb"), p.x0 * sx + 2, (p.y + 1) * sy - 8);
         }
       }
       g.lineWidth = 3;

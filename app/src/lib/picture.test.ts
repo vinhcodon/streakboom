@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { KIND, PICTURE, analyse, fuseSpots, hasRoom, reachability, scaled, standSpots, type Grid, type Seen } from "./picture.ts";
+import { KIND, PICTURE, analyse, edgeSpots, fuseSpots, hasRoom, reachability, scaled, standSpots, type Grid, type Seen } from "./picture.ts";
 
 /** A grid with a rectangle of one grey on a background of another. */
 function box(gw: number, gh: number, bg: number, fg: number, x0: number, y0: number, x1: number, y1: number): Grid {
@@ -295,4 +295,20 @@ test("window surfaces and picture spots become one list, a picture spot on the s
   const f = fuseSpots(win, pic);
   assert.equal(f.length, 3);
   assert.deepEqual(f.map((s) => s.src), ["window", "picture", "picture"]);
+});
+
+test("the empty inside of a panel has a floor too, and the top of a block with room above is a stand spot (round 8)", () => {
+  // a bordered box (a panel): its inside is empty and its bottom border is a floor
+  const s = analyse(box(80, 60, 30, 200, 15, 10, 64, 49));
+  const inside = standSpots(s, 8);
+  assert.ok(inside.some((p) => p.y >= 40 && p.y <= 49 && p.x1 - p.x0 + 1 >= 20), JSON.stringify(inside));
+  // a bright block on a dark ground: its top edge has the empty ground above it
+  const bar = analyse(box(80, 60, 30, 200, 20, 30, 59, 54));
+  const edges = edgeSpots(bar, 8);
+  assert.ok(edges.some((p) => Math.abs(p.y - 29) <= 1 && p.x1 - p.x0 + 1 >= 20 && p.src === "edge"), JSON.stringify(edges));
+  assert.equal(edgeSpots(bar, 40).length, 0, "a block with less room above than the cat is no place to stand");
+  // fusing: the edge spot and the plain spot on the same place are one
+  const fused = fuseSpots(edges, standSpots(bar, 8), 2, "edge");
+  assert.ok(fused.length <= edges.length + standSpots(bar, 8).length);
+  assert.equal(fused[0].src, "edge");
 });
