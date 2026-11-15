@@ -8,7 +8,7 @@
 
   It takes the mouse for the whole time. Peak (a dev build) must already be running. Chrome test windows use their own profile.
 #>
-param([int]$Minutes = 10, [string]$Out = "round.csv", [int]$Every = 9, [switch]$NoDrag, [string]$Only = "", [switch]$Place)
+param([int]$Minutes = 10, [string]$Out = "round.csv", [int]$Every = 9, [switch]$NoDrag, [string]$Only = "", [switch]$Place, [switch]$Typing)
 $ErrorActionPreference = "Stop"
 Add-Type @"
 using System; using System.Runtime.InteropServices; using System.Collections.Generic; using System.Text;
@@ -77,6 +77,7 @@ function Show-Scene($file, $mode, $back = "") {
 $script:placeIdx = 0
 $gestures = @("click","sweep_head","sweep_belly","drag","right_click","right_double","double_click","idle")
 if ($NoDrag) { $gestures = $gestures | Where-Object { $_ -ne "drag" } }
+if ($Typing) { $gestures = @("type") + $gestures }
 if ($Place) { $gestures = @("place") + @($gestures | Where-Object { $_ -ne "drag" }) }
 function Gesture($g, $scene) {
   $r = Peak-Rect; if (-not $r) { Sample $scene "no_window:$g"; return }
@@ -94,6 +95,7 @@ function Gesture($g, $scene) {
     "right_double" { MouseTo $cx $cy; Click "R"; Start-Sleep -Milliseconds 90; Click "R" }
     "double_click" { MouseTo $cx $cy; Click "L"; Start-Sleep -Milliseconds 80; Click "L"; Start-Sleep -Milliseconds 1500; MouseTo $cx ($cy-200); Click "L" }
     "idle" { }
+    "type" { Add-Type -AssemblyName System.Windows.Forms; for ($k = 0; $k -lt 12; $k++) { [System.Windows.Forms.SendKeys]::SendWait("peak typing test "); Start-Sleep -Milliseconds 300 } }
     "place" {
       # drop the cat at a set place along the floor (LE-4): the left, the middle, the right end of the screen in turn, so that runs meet the same starts
       $fr = @(0.12, 0.5, 0.93)[$script:placeIdx % 3]; $script:placeIdx++
@@ -110,7 +112,8 @@ $phases = @(
   @{ name="dark_kiosk"; file="scene_dark.html"; mode="kiosk" },
   @{ name="small_window"; file="scene_light.html"; mode="app"; back="scene_desktop.html" },
   @{ name="desktop_only"; file="scene_desktop.html"; mode="kiosk" },
-  @{ name="dense_kiosk"; file="scene_dense.html"; mode="kiosk" }
+  @{ name="dense_kiosk"; file="scene_dense.html"; mode="kiosk" },
+  @{ name="typing_kiosk"; file="scene_typing.html"; mode="kiosk" }
 )
 if ($Only) { $phases = @($phases | Where-Object { $_.name -eq $Only }) }
 $per = [int](($Minutes * 60) / $phases.Count)

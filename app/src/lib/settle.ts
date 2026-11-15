@@ -58,10 +58,12 @@ export interface AsideOpts {
   maxCols: number;
 }
 
-export function chooseSettle(seen: Seen, cat: { col: number; row: number }, catCells: number, spots: readonly StandSpot[], hopCells: number, coverHigh: number = SETTLE.coverHigh, avoid?: AsideOpts): SettleMove | null {
+export function chooseSettle(seen: Seen, cat: { col: number; row: number }, catCells: number, spots: readonly StandSpot[], hopCells: number, coverHigh: number = SETTLE.coverHigh, avoid?: AsideOpts, band?: { y0: number; y1: number }): SettleMove | null {
   const here = boxCoverage(seen, cat.col, cat.row, catCells, catCells);
   if (here < coverHigh) return null;
   const half = Math.ceil(catCells / 2);
+  // the typing lane (a band of rows): the cat's box must lie outside it
+  const outsideBand = (row: number) => !band || row < band.y0 || row - catCells + 1 > band.y1;
   const allowed = (col: number) => !avoid || (avoid.side * (col - avoid.col) >= avoid.gap && Math.abs(col - cat.col) <= avoid.maxCols);
   let best: SettleMove | null = null;
   let bestCost = Infinity;
@@ -83,7 +85,7 @@ export function chooseSettle(seen: Seen, cat: { col: number; row: number }, catC
   if (cat.row >= seen.gh - 4) {
     for (let col = half; col < seen.gw - half; col++) {
       if (col === cat.col || !allowed(col)) continue;
-      consider({ kind: "walk", col, row: cat.row }, Math.abs(col - cat.col), boxCoverage(seen, col, cat.row, catCells, catCells));
+      if (outsideBand(cat.row)) consider({ kind: "walk", col, row: cat.row }, Math.abs(col - cat.col), boxCoverage(seen, col, cat.row, catCells, catCells));
     }
   }
   // along the ledge it stands on: a clear stretch of the same run (round 6)
@@ -91,14 +93,14 @@ export function chooseSettle(seen: Seen, cat: { col: number; row: number }, catC
   if (own) {
     for (let col = own.x0 + half; col <= own.x1 - half; col++) {
       if (col === cat.col || !allowed(col)) continue;
-      consider({ kind: "walk", col, row: cat.row }, Math.abs(col - cat.col), boxCoverage(seen, col, cat.row, catCells, catCells));
+      if (outsideBand(cat.row)) consider({ kind: "walk", col, row: cat.row }, Math.abs(col - cat.col), boxCoverage(seen, col, cat.row, catCells, catCells));
     }
   }
   // one hop to a spot with room above it, at the same level or higher
   for (const s of spots) {
     if (s.headroom < catCells) continue;
     const rise = cat.row - s.y;
-    if (rise < 0 || rise > hopCells) continue;
+    if (rise < 0 || rise > hopCells || !outsideBand(s.y)) continue;
     const col = Math.min(Math.max(cat.col, s.x0 + half), s.x1 - half);
     if (col < s.x0 + half - 1 || col > s.x1 - half + 1) continue; // the spot is narrower than the cat
     if (Math.max(0, Math.max(cat.col, col) - Math.min(cat.col, col)) > hopCells || !allowed(col)) continue;

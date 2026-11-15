@@ -104,3 +104,14 @@ test("stepping aside: the place lies beyond the pointer on the chosen side, near
   assert.equal(chooseSettle(s, cat, 6, [], 12, 0, { col: 34, gap: 8, side: -1, maxCols: 40 }), null); // nothing clear to the left
   assert.equal(chooseSettle(s, cat, 6, [], 12, 0, { col: 34, gap: 8, side: 1, maxCols: 20 }), null); // too far for a step
 });
+
+test("out of the typing lane: only places whose box lies outside the band are taken", () => {
+  const s = pic(80, 40, []); // all clear
+  const cat = { col: 30, row: 30 };
+  const spotIn: StandSpot = { x0: 20, x1: 50, y: 24, headroom: 10 }; // its box (rows 19 to 24) is inside the band 15 to 28
+  const spotOut: StandSpot = { x0: 20, x1: 50, y: 12, headroom: 10 }; // box rows 7 to 12: outside the band
+  const band = { y0: 15, y1: 28 };
+  const m = chooseSettle(s, cat, 6, [spotIn, spotOut], 20, 0, undefined, band)!;
+  assert.equal(m.row, 12);
+  assert.equal(chooseSettle(s, cat, 6, [spotIn], 20, 0, undefined, band), null); // the band covers the cat's own row too
+});

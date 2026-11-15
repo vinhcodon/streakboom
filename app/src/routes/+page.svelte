@@ -697,6 +697,7 @@
     } catch {
       /* unknown: no room */
     }
+    if (await clearOutOfLane(lane)) return; // with the picture on: to a clear place outside the typing band
     const esc = escapeRow(lane, laneCat.y, room.up, room.down);
     note(`lane hop: ${esc ? `${esc.dir < 0 ? "up" : "down"} ${Math.round(esc.dist)}` : "no room"}, room ${room.up}/${room.down}, caret ${Math.round(laneOut.caretX ?? 0)}`);
     if (pose !== "idle" && pose !== "look" && pose !== "walk" && pose !== "notice") return; // something else happened while asking
@@ -1018,6 +1019,27 @@
     await fly(splitHop(Math.round(dxPhys / at.scale), Math.round((footY - at.feet.y) / at.scale)), "walk");
     lp(`settle_hop dx=${Math.round(dxPhys / at.scale)} dy=${Math.round((footY - at.feet.y) / at.scale)}`);
     return true;
+  }
+
+  /**
+   * The typing lane with the picture on: instead of a hop of 160 px or more up or down, go to the nearest clear place (up to one hop, or
+   * along the floor) whose box lies outside the band of the typing row (`lane.y0`..`lane.y1`, logical px). False when none, then the old hop.
+   */
+  async function clearOutOfLane(lane: { y0: number; y1: number }): Promise<boolean> {
+    if (!pictureOn || settleOff || flying) return false;
+    try {
+      const sc = await readScene();
+      if (!sc) return false;
+      const k = sc.at.scale;
+      const band = { y0: Math.floor((lane.y0 * k - sc.grid.y) / sc.cellY) - 1, y1: Math.ceil((lane.y1 * k - sc.grid.y) / sc.cellY) + 1 };
+      const move = chooseSettle(sc.seen, { col: sc.col, row: sc.row }, sc.catCells, sc.spots, sc.hopCells, 0, undefined, band);
+      lp(`lane_place col=${sc.col} row=${sc.row} band=${band.y0}-${band.y1} move=${move ? move.kind : "none"}`);
+      if (!move || (perchSeat && move.kind !== "walk")) return false;
+      leavePerch();
+      return await runMove(move, sc);
+    } catch {
+      return false;
+    }
   }
 
   /**
