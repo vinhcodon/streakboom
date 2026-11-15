@@ -525,3 +525,11 @@ A dev build, five scenes of two minutes each, a gesture every 9 seconds, Peak's 
 - **Counted actions:** 13 poke, 10 scratch, 10 rub against 10, 10 and 10 gestures sent (3 pokes more than clicks: the double click and the right clicks probably count as pokes).
 - Chat was not touched (`chat-trace.log` empty, as planned).
 **Lessons for the loop:** the log is blind to shove, step aside, carry and chat (no counted action), so the next round needs a trace line at each of them; the driver needs a check that the pointer really lands on Peak before it counts a miss; the full screen case is the main reason Peak looks idle on the author's desktop.
+
+### 2026-11-15, loop round 2 (E29): the same ten minutes with the gates traced and the terrain overlay on
+Dev build with `--features terrain-overlay` and the picture on (the overlay does not open on a build with an even middle number without the feature). New trace lines: `shove`, `right_double act=`, `carry_start`, `chat_open`, `pointer_down`.
+- **The gestures reach Peak.** Drag picked it up 9 of 10 times (round 1: 3 of 10, so that was the driver aiming at a moving window; it now aims first). Double click opened the chat 5 of 5. Step aside was chosen 4 of 5 and started 3 times (the other two fell back or were cut by the pose); right click gave a shove 5 times (single clicks and refused doubles).
+- **The check that the pointer is on Peak (`hit=`) said 0 every time and is wrong**: the window under the point belongs to the webview process, not to `streakboom.exe`. The `pointer_down` lines (40) are the real proof. To fix in round 3.
+- **Alone, Peak hardly moves in a full screen scene**: 53 and 59 px of sideways travel in about 26 s of calm per scene, 0 in the last one, 269 px on the bare desktop, and **not one change of height by itself in the whole round** (no climb, no hop, no perch). The perch trace has two new lines, both `not_free` / `no_ledge`.
+- On the author's real screen the overlay did find 28 ledges and 3 walls (a maximised app window with its panels), so the ledges exist in the picture; Peak does not use them yet (PS-6, PS-7).
+**Lesson:** the sense is there, the use is not. The first behaviour step to look at on a test build is walking and perching on ledges of the picture when a window covers the screen.

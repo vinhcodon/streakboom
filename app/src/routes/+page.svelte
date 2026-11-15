@@ -1157,6 +1157,7 @@
   let hintAsideWaiting = false;
   async function shove(pointerDx: number) {
     const now = Date.now();
+    lp(`shove pose=${pose} quiet=${quiet ? 1 : 0} flying=${flying ? 1 : 0} panel=${panel === null ? 0 : 1} cool=${now - lastShove < 2500 ? 1 : 0}`);
     if (quiet || flying || panel !== null || pose === "held" || now - lastShove < 2500) return;
     if (isDozing(pose)) return pokeNormal();
     if (!(pose === "idle" || pose === "look" || pose === "peek" || pose === "ledge")) return;
@@ -1788,6 +1789,7 @@
   }
 
   function openChat() {
+    lp("chat_open");
     playTouched();
     chatUser = "";
     chatSlow = false;
@@ -1814,12 +1816,14 @@
   let movePending = false;
 
   function onPetDown(e: PointerEvent) {
+    lp(`pointer_down button=${e.button} pose=${pose}`);
     if (e.button !== 0) return;
     press = { x: e.screenX, y: e.screenY };
     (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
   }
 
   async function beginDrag() {
+    lp(`carry_start pose=${pose}`);
     playTouched();
     dragging = true;
     clearTimeout(clickTimer);
@@ -1972,6 +1976,7 @@
         leaving,
         cooldownOk: Date.now() - lastShove >= 2500,
       });
+      lp(`right_double act=${act ?? "refused"} pose=${pose} panel=${panel === null ? 0 : 1}`);
       if (act === "step_aside" && panel === null) void startAside(dx);
       else void shove(dx); // a gate is closed (it refuses itself), or a panel is open
     },
@@ -2087,6 +2092,10 @@
   /** One step of the leaving into leave-trace.log (V-132): a fixed name and numbers, never the person's words. */
   /** One step of the perch attempts into perch-trace.log (ADR-0116): a fixed gate name and numbers. `lastPerchWhy` is shown on the terrain overlay. */
   let lastPerchWhy = "no attempt yet";
+  /** One line of what the pointer reached and which gate answered, into loop-trace.log (E29): names and numbers only. */
+  function lp(step: string) {
+    void invoke("loop_trace", { step }).catch(() => {});
+  }
   function pt(step: string) {
     lastPerchWhy = step.slice(0, 80);
     void invoke("perch_trace", { step }).catch(() => {});

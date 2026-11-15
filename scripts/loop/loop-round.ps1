@@ -20,6 +20,9 @@ public static class W {
   [DllImport("user32.dll")] public static extern bool SetCursorPos(int x, int y);
   [DllImport("user32.dll")] public static extern void mouse_event(uint f, int dx, int dy, uint d, UIntPtr e);
   [DllImport("user32.dll")] public static extern int GetSystemMetrics(int i);
+  [StructLayout(LayoutKind.Sequential)] public struct PT { public int X, Y; }
+  [DllImport("user32.dll")] public static extern IntPtr WindowFromPoint(PT p);
+  public static uint PidAt(int x, int y) { PT p; p.X = x; p.Y = y; IntPtr h = WindowFromPoint(p); uint pid; GetWindowThreadProcessId(h, out pid); return pid; }
   delegate bool EnumProc(IntPtr h, IntPtr l);
   [DllImport("user32.dll")] static extern bool EnumWindows(EnumProc p, IntPtr l);
   public static List<IntPtr> Of(uint pid) {
@@ -50,7 +53,7 @@ function Sample($scene, $event) {
   if ($r) { $log.Add("$sec,$scene,$event,$($r[0]),$($r[1]),$($r[2]),$($r[3])") } else { $log.Add("$sec,$scene,$event,,,,") }
 }
 function Pause($ms, $scene) { $n = [int]($ms / 500); for ($i=0; $i -lt $n; $i++) { Start-Sleep -Milliseconds 500; Sample $scene "" } }
-function Mv($x,$y) { [void][W]::SetCursorPos([int]$x,[int]$y); Start-Sleep -Milliseconds 40 }
+function MouseTo($x,$y) { [void][W]::SetCursorPos([int]$x,[int]$y); Start-Sleep -Milliseconds 40 }
 function Click($b) { if ($b -eq "L") { [W]::mouse_event($LD,0,0,0,[UIntPtr]::Zero); [W]::mouse_event($LU,0,0,0,[UIntPtr]::Zero) } else { [W]::mouse_event($RD,0,0,0,[UIntPtr]::Zero); [W]::mouse_event($RU,0,0,0,[UIntPtr]::Zero) } }
 $prof = Join-Path $env:TEMP "kioskprofile"
 $chrome = "C:\Program Files\Google\Chrome\Application\chrome.exe"
@@ -66,18 +69,21 @@ $gestures = @("click","sweep_head","sweep_belly","drag","right_click","right_dou
 function Gesture($g, $scene) {
   $r = Peak-Rect; if (-not $r) { Sample $scene "no_window:$g"; return }
   $cx = $r[0] + $r[2]/2; $cy = $r[1] + $r[3]/2
-  Sample $scene "do:$g"
+  $hit = 0; $pk = Get-Process -Name "streakboom*" -ErrorAction SilentlyContinue | Select-Object -First 1
+  MouseTo $cx $cy
+  if ($pk -and [W]::PidAt([int]$cx, [int]$cy) -eq [uint32]$pk.Id) { $hit = 1 }
+  Sample $scene "do:$g hit=$hit"
   switch ($g) {
-    "click" { Mv $cx $cy; Click "L" }
-    "sweep_head" { for ($i=0;$i -lt 6;$i++) { Mv ($cx-25+($i%2)*50) ($cy-$r[3]*0.25); Start-Sleep -Milliseconds 60 } }
-    "sweep_belly" { for ($i=0;$i -lt 6;$i++) { Mv ($cx-25+($i%2)*50) ($cy+$r[3]*0.15); Start-Sleep -Milliseconds 60 } }
-    "drag" { Mv $cx $cy; [W]::mouse_event($LD,0,0,0,[UIntPtr]::Zero); for ($i=1;$i -le 12;$i++) { Mv ($cx+$i*25) ($cy-$i*8); Start-Sleep -Milliseconds 30 }; [W]::mouse_event($LU,0,0,0,[UIntPtr]::Zero) }
-    "right_click" { Mv $cx $cy; Click "R" }
-    "right_double" { Mv $cx $cy; Click "R"; Start-Sleep -Milliseconds 90; Click "R" }
-    "double_click" { Mv $cx $cy; Click "L"; Start-Sleep -Milliseconds 80; Click "L"; Start-Sleep -Milliseconds 1500; Mv $cx ($cy-200); Click "L" }
+    "click" { MouseTo $cx $cy; Click "L" }
+    "sweep_head" { for ($i=0;$i -lt 6;$i++) { MouseTo ($cx-25+($i%2)*50) ($cy-$r[3]*0.25); Start-Sleep -Milliseconds 60 } }
+    "sweep_belly" { for ($i=0;$i -lt 6;$i++) { MouseTo ($cx-25+($i%2)*50) ($cy+$r[3]*0.15); Start-Sleep -Milliseconds 60 } }
+    "drag" { MouseTo $cx $cy; [W]::mouse_event($LD,0,0,0,[UIntPtr]::Zero); for ($i=1;$i -le 12;$i++) { MouseTo ($cx+$i*25) ($cy-$i*8); Start-Sleep -Milliseconds 30 }; [W]::mouse_event($LU,0,0,0,[UIntPtr]::Zero) }
+    "right_click" { MouseTo $cx $cy; Click "R" }
+    "right_double" { MouseTo $cx $cy; Click "R"; Start-Sleep -Milliseconds 90; Click "R" }
+    "double_click" { MouseTo $cx $cy; Click "L"; Start-Sleep -Milliseconds 80; Click "L"; Start-Sleep -Milliseconds 1500; MouseTo $cx ($cy-200); Click "L" }
     "idle" { }
   }
-  Mv 5 5   # the pointer leaves, so the next stretch shows what Peak does on its own
+  MouseTo 5 5   # the pointer leaves, so the next stretch shows what Peak does on its own
 }
 $phases = @(
   @{ name="light_kiosk"; file="scene_light.html"; mode="kiosk" },
