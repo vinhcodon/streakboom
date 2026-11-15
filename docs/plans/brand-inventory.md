@@ -23,7 +23,7 @@ Other licence statements found: `app/package.json` has `"license": "MIT"`; **`ap
 
 ## 2. What was found that changes the question
 1. **The stickers are already published under CC BY 4.0** (ADR-0051, 2026-11-11), which allows anyone to use, adapt and sell them with credit. It cannot be taken back for what was published. Terms that forbid sale or printing can apply only to **new** stickers and merch designs, and the text must say from which date.
-2. **The same sticker files carry two licences** (MIT through the repository, CC BY 4.0 on the website). A licence file for that folder that says CC BY 4.0 would remove the double statement; it is a text change, to be approved.
+2. **(Fixed on 2026-11-15: a licence file in the folder, ADR-0126.) The same sticker files carry two licences** (MIT through the repository, CC BY 4.0 on the website). A licence file for that folder that says CC BY 4.0 would remove the double statement; it is a text change, to be approved.
 3. **The project is not unpublished**: Stable 0.10.0 and older versions are public under MIT. New terms start from their date; what was published stays as it was.
 4. **The timing is already decided elsewhere**: ADR-0071 (the lawyer after the alpha) and ADR-0088 (the SignPath application is among the last items; features freeze while the alpha runs).
 

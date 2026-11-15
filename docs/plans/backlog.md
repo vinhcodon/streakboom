@@ -457,6 +457,6 @@ The author decided on 2026-11-15 to keep the licences as they were (MIT, CC BY 4
 |---|---|---|---|
 | BL-1 | The inventory of the identity of Peak and the SignPath conditions (`docs/plans/brand-inventory.md`) | S | done (2026-11-15) |
 | BL-2 | Spec 18, the drafts, ADR-0125 (superseded) and ADR-0126 | M | done; the trademark drafts withdrawn |
-| BL-3 | A licence file in the stickers folder that says CC BY 4.0 (ends the double statement) | S | optional, waits for the author (`docs/drafts/STICKERS-LICENSE.md`) |
-| BL-4 | `license = "MIT"` in `app/src-tauri/Cargo.toml` | S | optional, waits for the author |
+| BL-3 | A licence file in the stickers folder that says CC BY 4.0 (ends the double statement) | S | done 2026-11-15 (`docs/plans/assets/stickers/set-v2/LICENSE`) |
+| BL-4 | `license = "MIT"` in `app/src-tauri/Cargo.toml` | S | done 2026-11-15 |
 

@@ -3,6 +3,7 @@ name = "streakboom"
 version = "0.10.0"
 description = "Streakboom desktop pet"
 authors = ["streakboom"]
+license = "MIT"
 edition = "2024"
 
 [lib]

@@ -11,9 +11,9 @@
 | BL-4 | **Forks** follow the MIT licence and nothing more. |
 | BL-5 | **Nothing in the privacy promises or the charter changes.** |
 
-## Optional consistency fixes (each only with the author's approval)
-1. The stickers folder `docs/plans/assets/stickers/set-v2/` is inside the MIT repository and declared CC BY 4.0 on the website: a licence file there that says CC BY 4.0 (draft: `docs/drafts/STICKERS-LICENSE.md`) ends the double statement.
-2. `app/src-tauri/Cargo.toml` has no `license` field: `license = "MIT"`.
+## Consistency fixes (made on 2026-11-15, approved by the author)
+1. A licence file in `docs/plans/assets/stickers/set-v2/` says CC BY 4.0 (English and Vietnamese), which ends the double statement (MIT through the repository, CC BY 4.0 on the website). The fonts keep their own SIL OFL notices.
+2. `app/src-tauri/Cargo.toml` has `license = "MIT"`.
 
 ## The facts
 The inventory of what carries which licence is in [`docs/plans/brand-inventory.md`](../docs/plans/brand-inventory.md); the conditions of SignPath Foundation (an OSI licence for every component, no proprietary component) fit this arrangement. The history of the discussion (direction B2, the drafts) is in ADR-0125 and in the git history (commit `3728a95`).

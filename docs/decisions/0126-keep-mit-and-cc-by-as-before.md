@@ -12,7 +12,7 @@ ADR-0125 chose direction B2 (a trademark policy for the names and the logo, ever
 2. **The stickers stay CC BY 4.0** (ADR-0051), as published: free to use, share and adapt, also commercially, with credit to Streakboom.
 3. **No trademark policy, no separate terms for goods, no rule about forks beyond the MIT licence.** The drafts `TRADEMARK.md` and the text changes are withdrawn (they stay in the git history, commit `3728a95`).
 4. **Nothing is applied in the repository or on the site because of this ADR.** The text of the READMEs, CONTRIBUTING and the site stay as they are.
-5. **Two small consistency fixes remain optional**, each only with the author's approval, not new terms: (a) the stickers carry two statements (MIT through the repository, CC BY 4.0 on the website): a licence file in their folder that says CC BY 4.0 (draft: `docs/drafts/STICKERS-LICENSE.md`); (b) `app/src-tauri/Cargo.toml` has no `license` field: `license = "MIT"`.
+5. **Two small consistency fixes, approved and made on 2026-11-15** (not new terms): (a) the stickers carry two statements (MIT through the repository, CC BY 4.0 on the website): a licence file in their folder that says CC BY 4.0 (`docs/plans/assets/stickers/set-v2/LICENSE`, English and Vietnamese); (b) `app/src-tauri/Cargo.toml` has no `license` field: `license = "MIT"` (added).
 6. **The SignPath question is lighter:** MIT for everything in the app is the case their conditions describe, so nothing about the licence needs to be asked before the application (ADR-0088).
 
 ## What the author gives up by this (stated so that it was a choice)
