@@ -1,5 +1,7 @@
 # Brand and licence inventory (R1) and the SignPath check (R2)
 
+**Update (2026-11-15, later the same day): the author decided to keep MIT and CC BY as before, with no trademark policy (ADR-0126), so the options B1 and B2 of section 3 and the questions for SignPath are no longer needed; the inventory (section 1) and the findings (section 2) stay true and are what spec 18 rests on.**
+
 **Status:** written 2026-11-15 for the handoff [`licensing-and-brand-assets.md`](../handoff/licensing-and-brand-assets.md); **not legal advice, every legal statement here needs a lawyer to confirm**. Facts about the repository were read on 2026-11-15; facts about SignPath were read on the same day from its public page.
 
 ## 1. What makes up the identity of Peak, and under which licence it stands today

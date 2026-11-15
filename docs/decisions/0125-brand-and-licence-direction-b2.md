@@ -1,6 +1,6 @@
 # ADR-0125: The brand and the licence: the code stays MIT, the names and the logo are kept, every sticker is free under CC BY 4.0
 
-- **Status:** accepted on 2026-11-15 (the author chose direction B2 and changed it in one point: **all stickers, the published ones and the future ones, stay free under CC BY 4.0**; forks rename only when they distribute). The texts are **drafts, none in force**: each is approved by the author before it is committed. Not legal advice; a lawyer has to confirm (ADR-0071).
+- **Status:** accepted on 2026-11-15, **superseded the same day by ADR-0126** (the author went back to MIT and CC BY as before; no trademark policy). Kept as the record of what was considered.
 - **Date:** 2026-11-15
 - **Decided by:** Vinh (author), recorded by Claude (the app session) from the handoff `docs/handoff/licensing-and-brand-assets.md`
 

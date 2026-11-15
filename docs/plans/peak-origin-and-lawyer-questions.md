@@ -1,5 +1,7 @@
 # How Peak was made (R6) and the questions for a lawyer
 
+**Update (2026-11-15): the author decided to keep MIT and CC BY as before (ADR-0126); the lawyer questions about a trademark policy are not needed now, the document stays as a statement of facts for any later meeting.**
+
 **Status:** a statement of facts as the repository and the author tell them, written 2026-11-15, with **no legal conclusion**. It is meant to be shown to a lawyer.
 
 ## 1. The creative process, as recorded

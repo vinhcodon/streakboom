@@ -449,13 +449,14 @@ The cap is 60 a day and nobody has measured whether that is right. A dev build l
 | LE-5 | Later rounds, one change each, compared with the numbers of the last; every motion change is seen by the author first | M | proposed |
 | LE-4b | A controlled background: every scene runs over a full-screen test page, so that runs of one scene are comparable (rounds 8 and 9 gave 55% and 9% cover in the same scene) | S | built (round 10) |
 
-## E30: Brand and licence (spec/18, ADR-0125 proposed; handoff `licensing-and-brand-assets.md`)
+## E30: Brand and licence (spec/18, ADR-0126 supersedes ADR-0125; handoff `licensing-and-brand-assets.md`)
+
+The author decided on 2026-11-15 to keep the licences as they were (MIT, CC BY 4.0 for the stickers, no trademark policy).
 
 | ID | Story | Size | State |
 |---|---|---|---|
 | BL-1 | The inventory of the identity of Peak and the SignPath conditions (`docs/plans/brand-inventory.md`) | S | done (2026-11-15) |
-| BL-2 | Spec 18, ADR-0125 and the drafts (`TRADEMARK.md`, `STICKERS-LICENSE.md`, the text changes) in `docs/drafts/` | M | done as drafts |
-| BL-3 | The author answers Q1 to Q5 | S | done 2026-11-15 (B2, every sticker CC BY 4.0, forks rename when distributing; ADR-0125); one point open: designs for goods that are not stickers |
-| BL-4 | Ask SignPath in writing whether B2 fits (the questions are in the inventory); at the time of the application (ADR-0088) | S | proposed |
-| BL-5 | Apply the approved texts one by one: `TRADEMARK.md`, the licence file of the stickers, README, CONTRIBUTING, `Cargo.toml`; the site through the website session | M | proposed (each text approved first) |
-| BL-6 | The lawyer's meeting after the alpha (ADR-0071) with `peak-origin-and-lawyer-questions.md` | S | proposed |
+| BL-2 | Spec 18, the drafts, ADR-0125 (superseded) and ADR-0126 | M | done; the trademark drafts withdrawn |
+| BL-3 | A licence file in the stickers folder that says CC BY 4.0 (ends the double statement) | S | optional, waits for the author (`docs/drafts/STICKERS-LICENSE.md`) |
+| BL-4 | `license = "MIT"` in `app/src-tauri/Cargo.toml` | S | optional, waits for the author |
+
