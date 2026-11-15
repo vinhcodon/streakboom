@@ -46,10 +46,23 @@ export interface SettleMove {
  * `cat`: the cell of the feet; `catCells`: the cat's size in cells; `spots`: the stand spots (`headroom` rows of empty space above each);
  * `hopCells`: the longest hop in cells. Null when the cat covers little where it is, or there is no better place within reach.
  */
-export function chooseSettle(seen: Seen, cat: { col: number; row: number }, catCells: number, spots: readonly StandSpot[], hopCells: number, coverHigh: number = SETTLE.coverHigh): SettleMove | null {
+/**
+ * For "step aside" (the double right click, or making way for the typing): the place must lie beyond the pointer, on `side` (1 right,
+ * -1 left), at least `gap` columns from the pointer's column `col`, and no farther than `maxCols` from the cat. With this the cat looks for a
+ * clear place instead of a fixed step, and `coverHigh` 0 makes it move even if it covers nothing where it is (the pointer is the reason).
+ */
+export interface AsideOpts {
+  col: number;
+  gap: number;
+  side: 1 | -1;
+  maxCols: number;
+}
+
+export function chooseSettle(seen: Seen, cat: { col: number; row: number }, catCells: number, spots: readonly StandSpot[], hopCells: number, coverHigh: number = SETTLE.coverHigh, avoid?: AsideOpts): SettleMove | null {
   const here = boxCoverage(seen, cat.col, cat.row, catCells, catCells);
   if (here < coverHigh) return null;
   const half = Math.ceil(catCells / 2);
+  const allowed = (col: number) => !avoid || (avoid.side * (col - avoid.col) >= avoid.gap && Math.abs(col - cat.col) <= avoid.maxCols);
   let best: SettleMove | null = null;
   let bestCost = Infinity;
   let least: SettleMove | null = null; // the least covering place seen, the fallback when none is clear (H31)
@@ -69,7 +82,7 @@ export function chooseSettle(seen: Seen, cat: { col: number; row: number }, catC
   // along the floor: the same row, the nearest clear stretch
   if (cat.row >= seen.gh - 4) {
     for (let col = half; col < seen.gw - half; col++) {
-      if (col === cat.col) continue;
+      if (col === cat.col || !allowed(col)) continue;
       consider({ kind: "walk", col, row: cat.row }, Math.abs(col - cat.col), boxCoverage(seen, col, cat.row, catCells, catCells));
     }
   }
@@ -77,7 +90,7 @@ export function chooseSettle(seen: Seen, cat: { col: number; row: number }, catC
   const own = spots.find((u) => Math.abs(u.y - cat.row) <= 1 && cat.col >= u.x0 && cat.col <= u.x1);
   if (own) {
     for (let col = own.x0 + half; col <= own.x1 - half; col++) {
-      if (col === cat.col) continue;
+      if (col === cat.col || !allowed(col)) continue;
       consider({ kind: "walk", col, row: cat.row }, Math.abs(col - cat.col), boxCoverage(seen, col, cat.row, catCells, catCells));
     }
   }
@@ -88,7 +101,7 @@ export function chooseSettle(seen: Seen, cat: { col: number; row: number }, catC
     if (rise < 0 || rise > hopCells) continue;
     const col = Math.min(Math.max(cat.col, s.x0 + half), s.x1 - half);
     if (col < s.x0 + half - 1 || col > s.x1 - half + 1) continue; // the spot is narrower than the cat
-    if (Math.max(0, Math.max(cat.col, col) - Math.min(cat.col, col)) > hopCells) continue;
+    if (Math.max(0, Math.max(cat.col, col) - Math.min(cat.col, col)) > hopCells || !allowed(col)) continue;
     consider({ kind: "hop", col, row: s.y }, Math.abs(col - cat.col) + 2 * rise + 10, boxCoverage(seen, col, s.y, catCells, catCells));
   }
   if (best) return best;

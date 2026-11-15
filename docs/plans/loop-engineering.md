@@ -46,3 +46,9 @@ Pressing on the charter (feel free to decide whether the charter should change):
 7. **The speed of the cat's decisions is slow where it matters:** after a change of the screen the rule looks at most every 10 s, and the first look waits for a calm pose. A cover that appears (a window opens under the cat) can last half a minute. Acceptable by the manners (slow when nobody asked for fast); worth checking against the author's feeling.
 
 **Next changes, in this order (each with its number):** (a) a clear place before dozing (H29; cover asleep); (b) the least covering place as the fallback (H31; cover on the dense page); (c) one chooser for the perch and the clear place (fewer rules; the number of different kinds of moves per hour).
+
+## The rule review: where "go to a clear place" can apply (2026-11-15)
+Built: the rule of the clear place (when it covers content), before dozing, step aside (double right click and the typed command) and making way for typing, and the walk along its own ledge for a perched cat. Considered and left: the push of a single right click (a short reactive nudge on purpose), the hop out of the typing lane (it hops 160 px or more up or down; a clear place could be its target: a next round), the usual place (a memory of the cat, ADR-0117: a clear place near it would need the author's choice), the place after a drop by the person (the person put it there: only after a minute and only through the back-off), the first place at the start and after an absence (a clear place instead of the edge it left by), and leaving (it goes to the edge by design).
+
+## A day of use
+`scripts/loop/day-run.ps1` starts the dev build with the picture on (`STREAKBOOM_DEV_PICTURE=1`) and copies the new lines of `loop-trace.log` and `perch-trace.log` every two minutes into a folder; `score_day.py` writes `summary.txt`. Names and numbers only. The author runs it on a working day and sends the folder (V-153, V-157).

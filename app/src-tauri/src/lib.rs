@@ -1875,6 +1875,16 @@ pub fn run() {
                 });
             }
 
+            // A test aid for a whole working day (scripts/loop/day-run.ps1): with STREAKBOOM_DEV_PICTURE=1 the screen picture is turned on a few
+            // seconds after the start, without the overlay, so that the rules that use it can be lived with and their numbers read afterwards.
+            if overlay_allowed() && std::env::var("STREAKBOOM_DEV_PICTURE").as_deref() == Ok("1") {
+                let app = app.handle().clone();
+                std::thread::spawn(move || {
+                    std::thread::sleep(Duration::from_secs(8));
+                    toggle_picture(&app);
+                });
+            }
+
             // The speech bubble window is created on demand (see `bubble_ensure`), not here: a
             // webview costs about 35 MB and the bubble is hidden most of the time.
             let _ = win.show();

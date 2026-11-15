@@ -675,6 +675,8 @@
     note(`make way ${away > 0 ? "right" : "left"}: room ${room}, pose ${pose}`);
     if (pose !== "idle" && pose !== "look") return; // something else happened while asking
     if (lastPointer && !(await noticeBeat(lastPointer.dx, lastPointer.dy))) return; // it notices first, then acts
+    if (await clearAside(away, lastPointer ? lastPointer.dx : null)) return; // with the picture on: the nearest clear place beyond the pointer
+    if (pose !== "idle" && pose !== "look") return;
     if (room >= LEAVE_MIN_ROOM_PX) {
       walkPlan = { dir: away };
       enter("walk");
@@ -827,7 +829,7 @@
     if (quiet) return pose === "sleep" || pose === "drowsy" ? undefined : enter("drowsy");
     if (panel) return scheduleNext();
     // E29 round 4 (the screen picture experiment, Preview only): when the cat covers content, it goes to the nearest clear place
-    if (pictureOn && !settleOff && !perchSeat && !perchWall && (pose === "idle" || pose === "look") && Date.now() - lastSettle > SETTLE_EVERY_MS && settleAllowed(settleMoves, Date.now())) {
+    if (pictureOn && !settleOff && !perchWall && (pose === "idle" || pose === "look") && Date.now() - lastSettle > SETTLE_EVERY_MS && settleAllowed(settleMoves, Date.now())) {
       lastSettle = Date.now();
       return void settleNow().finally(scheduleNext);
     }
@@ -951,51 +953,88 @@
   async function settleNow(beforeSleep = false): Promise<boolean> {
     try {
       if (flying || quiet || panel !== null || leaving || away) return false;
-      const grid = await invoke<PictureGrid | null>("screen_grid");
-      const at = await catFeet();
-      if (!grid || !at) return false;
-      let ss: ReturnType<typeof surfaces> = [];
-      try {
-        ss = surfaces(await invoke<GroundMap>("ground_map"));
-      } catch {
-        /* no map of windows: the picture alone */
-      }
-      const { seen, cell, cellY, catCells, spots } = readPicture(grid, ss);
-      const col = Math.floor((at.feet.x - grid.x) / cell);
-      const row = Math.floor((at.feet.y - grid.y) / cellY) - 1;
-      const hopCells = Math.round((HOP_MAX_PX * at.scale) / cell);
-      const move = chooseSettle(seen, { col, row }, catCells, spots, hopCells, beforeSleep ? SETTLE.coverBeforeSleep : SETTLE.coverHigh);
+      const sc = await readScene();
+      if (!sc) return false;
+      const { seen, col, row, catCells, spots, hopCells } = sc;
+      let move = chooseSettle(seen, { col, row }, catCells, spots, hopCells, beforeSleep ? SETTLE.coverBeforeSleep : SETTLE.coverHigh);
       lp(`settle${beforeSleep ? "_presleep" : ""} col=${col} row=${row} move=${move ? move.kind : "none"} cover=${Math.round(100 * boxCoverage(seen, col, row, catCells, catCells))}`);
+      // one chooser of places (E29, ADR-0123): on a ledge it keeps as its seat the cat only walks along it, never leaves it
+      if (move && perchSeat && move.kind !== "walk") move = null;
       if (!move) return false;
-      const dxPhys = (move.col - col) * cell;
-      if (move.kind === "walk") {
-        const px = Math.abs(dxPhys);
-        dir = dxPhys < 0 ? -1 : 1;
-        // the room the cat has toward that edge: it does not aim past where it can stand (H28)
-        let room = Infinity;
-        try {
-          room = (await invoke<number>("edge_room", { dir })) * at.scale;
-        } catch {
-          /* unknown: no cut */
-        }
-        const go = Math.min(px, Math.max(0, room - 20 * at.scale));
-        if (go < 2 * cell) {
-          lp(`settle_walk skipped room=${Math.round(room)} px=${Math.round(px)}`);
-          return false;
-        }
-        settleMoves = [...settleMoves.filter((t) => Date.now() - t < 10 * 60_000), Date.now()];
-        const ok = await new Promise<boolean>((resolve) => {
-          homeGoal = { px: go, ms: seatWalkMs(go / at.scale, LEAVE_PACE_PX_S), done: resolve };
-          enter("walk");
-        });
-        lp(`settle_walk ok=${ok ? 1 : 0} px=${Math.round(go)} asked=${Math.round(px)}`);
-        return ok;
+      return await runMove(move, sc);
+    } catch {
+      return false;
+    }
+  }
+
+  type Scene = NonNullable<Awaited<ReturnType<typeof readScene>>>;
+  /** The picture of the screen, the cat's cell and the places (one look). Null when the picture or the cat's place is not there. */
+  async function readScene() {
+    const grid = await invoke<PictureGrid | null>("screen_grid");
+    const at = await catFeet();
+    if (!grid || !at) return null;
+    let ss: ReturnType<typeof surfaces> = [];
+    try {
+      ss = surfaces(await invoke<GroundMap>("ground_map"));
+    } catch {
+      /* no map of windows: the picture alone */
+    }
+    const { seen, cell, cellY, catCells, spots } = readPicture(grid, ss);
+    const col = Math.floor((at.feet.x - grid.x) / cell);
+    const row = Math.floor((at.feet.y - grid.y) / cellY) - 1;
+    const hopCells = Math.round((HOP_MAX_PX * at.scale) / cell);
+    return { grid, at, seen, cell, cellY, catCells, spots, col, row, hopCells };
+  }
+
+  /** Walk or hop to the place the chooser gave. True when the cat went. */
+  async function runMove(move: NonNullable<ReturnType<typeof chooseSettle>>, sc: Scene): Promise<boolean> {
+    const { grid, at, cell, cellY, col } = sc;
+    const dxPhys = (move.col - col) * cell;
+    if (move.kind === "walk") {
+      const px = Math.abs(dxPhys);
+      dir = dxPhys < 0 ? -1 : 1;
+      // the room the cat has toward that edge: it does not aim past where it can stand (H28)
+      let room = Infinity;
+      try {
+        room = (await invoke<number>("edge_room", { dir })) * at.scale;
+      } catch {
+        /* unknown: no cut */
+      }
+      const go = Math.min(px, Math.max(0, room - 20 * at.scale));
+      if (go < 2 * cell) {
+        lp(`settle_walk skipped room=${Math.round(room)} px=${Math.round(px)}`);
+        return false;
       }
       settleMoves = [...settleMoves.filter((t) => Date.now() - t < 10 * 60_000), Date.now()];
-      const footY = grid.y + (move.row + 1) * cellY;
-      await fly(splitHop(Math.round(dxPhys / at.scale), Math.round((footY - at.feet.y) / at.scale)), "walk");
-      lp(`settle_hop dx=${Math.round(dxPhys / at.scale)} dy=${Math.round((footY - at.feet.y) / at.scale)}`);
-      return true;
+      const ok = await new Promise<boolean>((resolve) => {
+        homeGoal = { px: go, ms: seatWalkMs(go / at.scale, LEAVE_PACE_PX_S), done: resolve };
+        enter("walk");
+      });
+      lp(`settle_walk ok=${ok ? 1 : 0} px=${Math.round(go)} asked=${Math.round(px)}`);
+      return ok;
+    }
+    settleMoves = [...settleMoves.filter((t) => Date.now() - t < 10 * 60_000), Date.now()];
+    const footY = grid.y + (move.row + 1) * cellY;
+    await fly(splitHop(Math.round(dxPhys / at.scale), Math.round((footY - at.feet.y) / at.scale)), "walk");
+    lp(`settle_hop dx=${Math.round(dxPhys / at.scale)} dy=${Math.round((footY - at.feet.y) / at.scale)}`);
+    return true;
+  }
+
+  /**
+   * "Step aside" and "make way" with the picture on (the author's idea): instead of a fixed short walk, go to the nearest clear place
+   * beyond the pointer, on the side away from it, no farther than 45 cells (about 450 px). False when the picture is off, there is no such
+   * place, or something else is going on; the caller then does what it always did.
+   */
+  async function clearAside(way: 1 | -1, pointerDx: number | null): Promise<boolean> {
+    if (!pictureOn || settleOff || flying) return false;
+    try {
+      const sc = await readScene();
+      if (!sc) return false;
+      const ptrCol = sc.col + Math.round(((pointerDx ?? 0) * sc.at.scale) / sc.cell);
+      const move = chooseSettle(sc.seen, { col: sc.col, row: sc.row }, sc.catCells, sc.spots, sc.hopCells, 0, { col: ptrCol, gap: sc.catCells + 2, side: way, maxCols: 45 });
+      lp(`aside_place col=${sc.col} way=${way} ptr=${ptrCol} move=${move ? move.kind : "none"}`);
+      if (!move || (perchSeat && move.kind !== "walk")) return false;
+      return await runMove(move, sc);
     } catch {
       return false;
     }
@@ -1003,7 +1042,7 @@
 
   /** Falls asleep where it is, or, with the picture experiment on, first goes to a clear place if it covers even a little (H29; manners 1, yield first). */
   function dozeOff() {
-    if (pictureOn && !settleOff && !perchSeat && !perchWall && (pose === "idle" || pose === "look") && !bubbleOn && settleAllowed(settleMoves, Date.now())) {
+    if (pictureOn && !settleOff && !perchWall && (pose === "idle" || pose === "look") && !bubbleOn && settleAllowed(settleMoves, Date.now())) {
       void settleNow(true).finally(() => {
         if (!flying && !quiet && !leaving && (pose === "idle" || pose === "look")) enter("drowsy");
       });
@@ -2327,6 +2366,7 @@
       lt(`aside way=${way} room=${Math.round(room)} pose=${pose}`);
       if (pose !== "idle" && pose !== "look") return false; // something else happened while asking
       lastShove = now; // the cooldown is shared with the push
+      if (await clearAside(way, from)) return true; // with the picture on: to the nearest clear place beyond the pointer
       if (room < LEAVE_MIN_ROOM_PX) {
         enter("nod");
         return false;

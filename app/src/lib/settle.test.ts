@@ -93,3 +93,14 @@ test("before dozing the bar is lower: a cat that covers 20% moves, one that cove
   assert.ok(chooseSettle(v, { col: 30, row: 19 }, 6, [], 12, SETTLE.coverBeforeSleep) !== null);
   assert.equal(chooseSettle(t, { col: 30, row: 19 }, 6, [], 12, SETTLE.coverBeforeSleep), null);
 });
+
+test("stepping aside: the place lies beyond the pointer on the chosen side, near, and clear; none when there is none", () => {
+  const s = pic(80, 20, [[0, 12, 79, 19]]); // a busy floor...
+  for (let y = 12; y <= 19; y++) for (let x = 56; x <= 70; x++) s.empty[y * 80 + x] = 1; // ...with a clear stretch at cols 56 to 70
+  const cat = { col: 30, row: 19 };
+  const m = chooseSettle(s, cat, 6, [], 12, 0, { col: 34, gap: 8, side: 1, maxCols: 40 })!;
+  assert.equal(m.kind, "walk");
+  assert.ok(m.col >= 56 && m.col <= 70);
+  assert.equal(chooseSettle(s, cat, 6, [], 12, 0, { col: 34, gap: 8, side: -1, maxCols: 40 }), null); // nothing clear to the left
+  assert.equal(chooseSettle(s, cat, 6, [], 12, 0, { col: 34, gap: 8, side: 1, maxCols: 20 }), null); // too far for a step
+});
