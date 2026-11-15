@@ -9,6 +9,9 @@ export const SETTLE = {
   coverHigh: 0.3,
   /** A place is clear when at most this share is not empty. */
   coverLow: 0.15,
+  /** When no place is clear, the least covering place is taken if it covers at least this much less than here, and no more than `fallbackMax` (H31). */
+  fallbackGain: 0.25,
+  fallbackMax: 0.5,
 };
 
 /** The share of cells that are not empty in the cat's box: `w` cells wide centred on `col`, `h` rows up from the feet row `row`. Off-screen cells count as empty. */
@@ -47,17 +50,25 @@ export function chooseSettle(seen: Seen, cat: { col: number; row: number }, catC
   const half = Math.ceil(catCells / 2);
   let best: SettleMove | null = null;
   let bestCost = Infinity;
-  const consider = (m: Omit<SettleMove, "hereCover">, cost: number) => {
-    if (cost < bestCost) {
+  let least: SettleMove | null = null; // the least covering place seen, the fallback when none is clear (H31)
+  let leastCover = Infinity;
+  let leastCost = Infinity;
+  const consider = (m: Omit<SettleMove, "hereCover">, cost: number, cover: number) => {
+    if (cover <= SETTLE.coverLow && cost < bestCost) {
       bestCost = cost;
       best = { ...m, hereCover: here };
+    }
+    if (cover < leastCover - 1e-9 || (Math.abs(cover - leastCover) < 1e-9 && cost < leastCost)) {
+      leastCover = cover;
+      leastCost = cost;
+      least = { ...m, hereCover: here };
     }
   };
   // along the floor: the same row, the nearest clear stretch
   if (cat.row >= seen.gh - 4) {
     for (let col = half; col < seen.gw - half; col++) {
       if (col === cat.col) continue;
-      if (boxCoverage(seen, col, cat.row, catCells, catCells) <= SETTLE.coverLow) consider({ kind: "walk", col, row: cat.row }, Math.abs(col - cat.col));
+      consider({ kind: "walk", col, row: cat.row }, Math.abs(col - cat.col), boxCoverage(seen, col, cat.row, catCells, catCells));
     }
   }
   // along the ledge it stands on: a clear stretch of the same run (round 6)
@@ -65,7 +76,7 @@ export function chooseSettle(seen: Seen, cat: { col: number; row: number }, catC
   if (own) {
     for (let col = own.x0 + half; col <= own.x1 - half; col++) {
       if (col === cat.col) continue;
-      if (boxCoverage(seen, col, cat.row, catCells, catCells) <= SETTLE.coverLow) consider({ kind: "walk", col, row: cat.row }, Math.abs(col - cat.col));
+      consider({ kind: "walk", col, row: cat.row }, Math.abs(col - cat.col), boxCoverage(seen, col, cat.row, catCells, catCells));
     }
   }
   // one hop to a spot with room above it, at the same level or higher
@@ -76,10 +87,11 @@ export function chooseSettle(seen: Seen, cat: { col: number; row: number }, catC
     const col = Math.min(Math.max(cat.col, s.x0 + half), s.x1 - half);
     if (col < s.x0 + half - 1 || col > s.x1 - half + 1) continue; // the spot is narrower than the cat
     if (Math.max(0, Math.max(cat.col, col) - Math.min(cat.col, col)) > hopCells) continue;
-    if (boxCoverage(seen, col, s.y, catCells, catCells) > SETTLE.coverLow) continue;
-    consider({ kind: "hop", col, row: s.y }, Math.abs(col - cat.col) + 2 * rise + 10);
+    consider({ kind: "hop", col, row: s.y }, Math.abs(col - cat.col) + 2 * rise + 10, boxCoverage(seen, col, s.y, catCells, catCells));
   }
-  return best;
+  if (best) return best;
+  const l = least as SettleMove | null;
+  return l && here - leastCover >= SETTLE.fallbackGain && leastCover <= SETTLE.fallbackMax ? l : null;
 }
 
 /** The back-off (ADR-0123, manners 3 and 6): at least `restMs` after a move, and after `burst` moves within `windowMs` no more for `pauseMs`. `moves`: the times of the moves so far. */

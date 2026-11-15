@@ -66,3 +66,17 @@ test("the back-off: a minute of rest after a move, and ten minutes of calm after
   assert.equal(settleAllowed(three, T), false);
   assert.equal(settleAllowed(three, T + BACKOFF.pauseMs), true); // ten minutes after the last
 });
+
+test("when no place is clear, the least covering one is taken if it covers much less, and nothing is taken for a small gain", () => {
+  // the floor is busy at the cat (100%) and 40% busy over a stretch to the right: no clear place, a better one
+  const gw = 80, gh = 20;
+  const s = pic(gw, gh, [[0, 8, 79, 19]]);
+  for (let y = 14; y <= 19; y++) for (let x = 50; x <= 70; x++) if ((x + y) % 5 < 3) s.empty[y * gw + x] = 1; // thin the busy cells to about 40%
+  const m = chooseSettle(s, { col: 20, row: 19 }, 6, [], 12)!;
+  assert.equal(m.kind, "walk");
+  assert.ok(m.col >= 50 && m.col <= 70);
+  // a gain smaller than 25 points is not worth a move
+  const t = pic(gw, gh, [[0, 8, 79, 19]]);
+  for (let y = 14; y <= 19; y++) for (let x = 50; x <= 70; x++) if ((x + y) % 10 === 0) t.empty[y * gw + x] = 1;
+  assert.equal(chooseSettle(t, { col: 20, row: 19 }, 6, [], 12), null);
+});
