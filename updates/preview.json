@@ -1,11 +1,11 @@
 {
-    "version":  "0.11.7",
-    "notes":  "The picture experiment now finds areas, not only lines. With Terrain overlay and Screen picture both on, the layer tints what the borders enclose: calm open ground in blue (plains), bordered blocks with a calm inside, such as a card or a pane, in purple (panels, outlined), and busy ground, such a...",
-    "pub_date":  "2026-11-14T21:56:27Z",
+    "version":  "0.11.8",
+    "notes":  "The picture experiment no longer sees itself. We found that Peak\u0027s own windows, the layer included, were in the picture it takes, so the layer was feeding on its own drawing. For the instant of each capture they are now left out (they stay visible on the monitor; a screenshot made at that very mo...",
+    "pub_date":  "2026-11-15T02:12:31Z",
     "platforms":  {
                       "windows-x86_64":  {
-                                             "signature":  "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVUcHBlQXhYUlVURmk4NElVcmVsVi8yK2lGZXNyZVZpaXhSS2tNTEFtQlNSeXc0K3diYktaVExHNjdiMnBXSmxVaGNMbFdyQnhiUURiVVcwV01Sd3E2NlhXSTZjNEFWMUF3PQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzk0NjkzMzg0CWZpbGU6U3RyZWFrYm9vbV8wLjExLjdfeDY0LXNldHVwLmV4ZQl2ZXJzaW9uOjAuMTEuNwpoeWhEVktKZFRWdUNJam40NXltY3daL3d2QXhDQmxJOUp0NmphOVdSb29nZWx3dnZ5aFFQdzhXbE5rNkg0Q2xRSGxnR0hzeTVXQkFJSjEzYzRFb3RDdz09Cg==",
-                                             "url":  "https://api.github.com/repos/vinhcodon/streakboom/releases/assets/748895237"
+                                             "signature":  "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVUcHBlQXhYUlVURm9oU2liN01mQUpodlhMajU1ck4rYUswK0pFTWZGNHk4LzdXcE10VHZHWnpRV1NWSW5IUWlYY3Vkc1FiVnR0ZUVSRjlJaU8vVGFqWHFzaUtUVmF2K3c4PQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzk0NzA4NzQ4CWZpbGU6U3RyZWFrYm9vbV8wLjExLjhfeDY0LXNldHVwLmV4ZQl2ZXJzaW9uOjAuMTEuOApLZnBSK2dGRUhwb0tVK3M1c2Jka3NHTkhhNVdJaVBqT0JLcmJib05QVC9tN3drTklqVllCcnZob2JkSDF0d25WKzJybE9EcHFsV01ROVU0RDZFaEtEQT09Cg==",
+                                             "url":  "https://api.github.com/repos/vinhcodon/streakboom/releases/assets/749512264"
                                          }
                   }
 }
