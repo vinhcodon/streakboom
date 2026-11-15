@@ -1,0 +1,29 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>test scene dark</title>
+<style>
+  body{margin:0;font:15px Consolas,monospace;background:#1b1e2b;color:#c8cbe0}
+  .side{position:absolute;left:0;top:0;bottom:0;width:300px;background:#232738;padding:14px}
+  .side div{padding:8px 6px;color:#9aa0c0}
+  .side .on{background:#303650;color:#fff;border-radius:4px}
+  .tabs{margin-left:300px;height:40px;background:#161926;display:flex;gap:2px}
+  .tabs span{padding:10px 18px;background:#232738}
+  .code{margin-left:300px;padding:20px 30px;line-height:1.7}
+  .k{color:#c586c0}.s{color:#ce9178}.c{color:#6a9955}
+  .panel{margin:24px 30px 0 330px;border:1px solid #383e5a;border-radius:6px;height:160px;background:#20243a;padding:12px}
+  .status{position:absolute;left:0;right:0;bottom:0;height:28px;background:#0b6ac0;color:#fff;padding:4px 14px}
+</style></head><body>
+<div class="side"><div>EXPLORER</div><div class="on">app.ts</div><div>picture.ts</div><div>overlay.svelte</div><div>README.md</div><div>package.json</div></div>
+<div class="tabs"><span>app.ts</span><span>picture.ts</span><span>README.md</span></div>
+<div class="code">
+<div><span class="k">import</span> { analyse } <span class="k">from</span> <span class="s">"./picture"</span>;</div>
+<div><span class="c">// the terrain sense looks at a very small grey picture of the screen</span></div>
+<div><span class="k">export function</span> look(grid: Grid) {</div>
+<div>&nbsp;&nbsp;<span class="k">const</span> seen = analyse(grid);</div>
+<div>&nbsp;&nbsp;<span class="k">return</span> seen.hsegs.filter((h) =&gt; h.roomAbove &gt;= 15);</div>
+<div>}</div>
+<div><span class="c">// edges, segments, plains, panels, rough ground</span></div>
+<div><span class="k">const</span> T = Math.min(30, Math.max(16, p95 * 0.35));</div>
+</div>
+<div class="panel">Problems  Output  Terminal<br><br>No problems have been detected in the workspace.</div>
+<div class="status">main  0 errors  0 warnings</div>
+</body></html>

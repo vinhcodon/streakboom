@@ -1515,11 +1515,11 @@ struct ScreenGrid {
     own_cells: u32,
 }
 
-/// A very small grey picture of the monitor Peak is on (ADR-0119, `picture.rs`), only while the person has the experiment on and the
-/// overlay open; `None` otherwise. The picture is not kept here: it is built, returned and dropped.
+/// A very small grey picture of the monitor Peak is on (ADR-0119, `picture.rs`), only while the person has the experiment on (the overlay
+/// need not be open: the rules of the clear place use it too, ADR-0123); `None` otherwise. The picture is not kept here: it is built, returned and dropped.
 #[tauri::command]
 async fn screen_grid(app: AppHandle) -> Option<ScreenGrid> {
-    if !overlay_allowed() || !app.state::<AppState>().picture_on.load(Ordering::SeqCst) || app.get_webview_window("overlay").is_none() {
+    if !overlay_allowed() || !app.state::<AppState>().picture_on.load(Ordering::SeqCst) {
         return None;
     }
     let main = app.get_webview_window("main")?;
@@ -1624,6 +1624,31 @@ fn leave_trace(app: AppHandle, step: String) {
 #[tauri::command]
 fn perch_trace(app: AppHandle, step: String) {
     append_trace(&app, "perch-trace.log", &step);
+}
+
+/// A test aid (E29): whether a named switch is set in the environment. Only the names listed here can be asked; they change a behaviour
+/// being measured and are never set for a person.
+#[tauri::command]
+fn dev_flag(name: String) -> bool {
+    matches!(name.as_str(), "STREAKBOOM_NO_SETTLE") && std::env::var(&name).as_deref() == Ok("1")
+}
+
+/// The chat gate and the chat count (`chat-trace.log`, E28): a number of characters and the count of the day, never the words.
+#[tauri::command]
+fn chat_trace(app: AppHandle, step: String) {
+    if !overlay_allowed() {
+        return; // a Preview or dev build only (ADR-0122): a Stable build writes none of the loop logs
+    }
+    append_trace(&app, "chat-trace.log", &step);
+}
+
+/// The loop engineering log (`loop-trace.log`, E29): which action ran and when, fixed names and numbers only.
+#[tauri::command]
+fn loop_trace(app: AppHandle, step: String) {
+    if !overlay_allowed() {
+        return; // a Preview or dev build only (ADR-0122)
+    }
+    append_trace(&app, "loop-trace.log", &step);
 }
 
 /// Peak walks off (S2): hide the pet window and its bubble and start the return timer. The page decides whether it may leave.
@@ -1856,6 +1881,16 @@ pub fn run() {
                 });
             }
 
+            // A test aid for a whole working day (scripts/loop/day-run.ps1): with STREAKBOOM_DEV_PICTURE=1 the screen picture is turned on a few
+            // seconds after the start, without the overlay, so that the rules that use it can be lived with and their numbers read afterwards.
+            if overlay_allowed() && std::env::var("STREAKBOOM_DEV_PICTURE").as_deref() == Ok("1") {
+                let app = app.handle().clone();
+                std::thread::spawn(move || {
+                    std::thread::sleep(Duration::from_secs(8));
+                    toggle_picture(&app);
+                });
+            }
+
             // The speech bubble window is created on demand (see `bubble_ensure`), not here: a
             // webview costs about 35 MB and the bubble is hidden most of the time.
             let _ = win.show();
@@ -1886,6 +1921,9 @@ pub fn run() {
             pet_leave,
             leave_trace,
             perch_trace,
+            chat_trace,
+            dev_flag,
+            loop_trace,
             pet_return,
             pet_away_retry,
             drag_start,

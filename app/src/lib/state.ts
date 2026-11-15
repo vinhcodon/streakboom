@@ -40,7 +40,9 @@ export const defaultAi = (): AiUsage => ({ day: "", chat: 0, proactive: 0, note:
 const freshAi = (a: AiUsage, now: number): AiUsage =>
   a.day === dayKey(now) ? { ...a, note: a.note ?? 0 } : { ...a, day: dayKey(now), chat: 0, proactive: 0, note: 0 };
 
-const CAPS: Record<AiKind, number> = { chat: AI_CHAT_DAILY_CAP, proactive: AI_PROACTIVE_DAILY_CAP, note: AI_NOTE_DAILY_CAP };
+/** A dev build (npm run tauri dev) lifts the chat cap so a long test is not stopped by it (ADR-0122); a release build never does. */
+const DEV_BUILD = (import.meta as unknown as { env?: { DEV?: boolean } }).env?.DEV === true;
+const CAPS: Record<AiKind, number> = { chat: DEV_BUILD ? 100_000 : AI_CHAT_DAILY_CAP, proactive: AI_PROACTIVE_DAILY_CAP, note: AI_NOTE_DAILY_CAP };
 
 /** "ok", or why not: "cooldown" (recent rate limit) / "cap" (daily limit reached). */
 export function aiGate(d: PetData, kind: AiKind, now: number): "ok" | "cooldown" | "cap" {
