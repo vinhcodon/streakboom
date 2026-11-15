@@ -21,105 +21,19 @@ pub fn gray_from_bgra(buf: &[u8]) -> Vec<u8> {
     buf.chunks_exact(4).map(|p| ((299 * p[2] as u32 + 587 * p[1] as u32 + 114 * p[0] as u32) / 1000) as u8).collect()
 }
 
-/// Take the picture: the screen rectangle (`x`, `y`, `w`, `h`, physical px) reduced by Windows itself (`StretchBlt`, halftone) into
-/// a `gw` by `gh` bitmap and read as grey. Windows layered windows are left out (no `CAPTUREBLT`), and Peak's own windows are
-/// layered, so Peak is not in its own picture. `None` on any failure; elsewhere than Windows always `None`.
-#[cfg(windows)]
+/// Take the picture: the screen rectangle (`x`, `y`, `w`, `h`, physical px) reduced by the system to a `gw` by `gh` bitmap and read as grey; Peak's own
+/// windows are left out of it (`set_capture_exclusion`). `None` on any failure. The calls to the system are in `platform` (ADR-0132).
 pub fn capture_gray(x: i32, y: i32, w: i32, h: i32, gw: u32, gh: u32) -> Option<Vec<u8>> {
     capture_gray_with(x, y, w, h, gw, gh, false)
 }
 
-/// `include_layered`: also take the layered windows (`CAPTUREBLT`). Only the diagnostic test below uses it, to find out whether Peak's own
-/// transparent windows are in the picture or not.
-#[cfg(windows)]
-pub fn capture_gray_with(x: i32, y: i32, w: i32, h: i32, gw: u32, gh: u32, include_layered: bool) -> Option<Vec<u8>> {
-    use std::ptr::{null, null_mut};
-    use windows_sys::Win32::Graphics::Gdi::{
-        CreateCompatibleBitmap, CreateCompatibleDC, DeleteDC, DeleteObject, GetDC, GetDIBits, ReleaseDC, SelectObject, SetBrushOrgEx,
-        SetStretchBltMode, StretchBlt, CAPTUREBLT, BITMAPINFO, BITMAPINFOHEADER, BI_RGB, DIB_RGB_COLORS, HALFTONE, SRCCOPY,
-    };
-    if w < 16 || h < 16 || gw == 0 || gh == 0 {
-        return None;
-    }
-    unsafe {
-        let screen = GetDC(null_mut());
-        if screen.is_null() {
-            return None;
-        }
-        let mem = CreateCompatibleDC(screen);
-        let bmp = CreateCompatibleBitmap(screen, gw as i32, gh as i32);
-        let mut out = None;
-        if !mem.is_null() && !bmp.is_null() {
-            let old = SelectObject(mem, bmp as _);
-            SetStretchBltMode(mem, HALFTONE as _);
-            SetBrushOrgEx(mem, 0, 0, null_mut());
-            let rop = if include_layered { SRCCOPY | CAPTUREBLT } else { SRCCOPY };
-            let ok = StretchBlt(mem, 0, 0, gw as i32, gh as i32, screen, x, y, w, h, rop);
-            let mut info: BITMAPINFO = std::mem::zeroed();
-            info.bmiHeader.biSize = std::mem::size_of::<BITMAPINFOHEADER>() as u32;
-            info.bmiHeader.biWidth = gw as i32;
-            info.bmiHeader.biHeight = -(gh as i32); // top-down
-            info.bmiHeader.biPlanes = 1;
-            info.bmiHeader.biBitCount = 32;
-            info.bmiHeader.biCompression = BI_RGB;
-            let mut buf = vec![0u8; (gw * gh * 4) as usize];
-            let lines = GetDIBits(mem, bmp, 0, gh, buf.as_mut_ptr() as _, &mut info, DIB_RGB_COLORS);
-            if ok != 0 && lines != 0 {
-                out = Some(gray_from_bgra(&buf));
-            }
-            SelectObject(mem, old);
-        }
-        if !bmp.is_null() {
-            DeleteObject(bmp as _);
-        }
-        if !mem.is_null() {
-            DeleteDC(mem);
-        }
-        ReleaseDC(null_mut(), screen);
-        let _ = null::<u8>();
-        out
-    }
-}
-
-/// Take Peak's own windows out of any capture (`WDA_EXCLUDEFROMCAPTURE`) or put them back (`WDA_NONE`). Found on 2026-11-15: a transparent
-/// window of ours is **in** the usual picture (the terrain overlay saw its own tints and lines), so the windows are left out for the moment
-/// of the capture only; they stay visible on the monitor all the time. Windows 10 version 2004 or later; a failure changes nothing.
-/// Returns `None` when **every** window accepted the change, else the system error code of the first one that did not. Before Windows 10 version 2004 the call is refused for 0x11: the windows then stay in
-/// the picture, and the caller must not use it (a cat that sees its own body would find itself covering the screen everywhere, PS-10).
-#[cfg(windows)]
-pub fn set_capture_exclusion(hwnds: &[isize], exclude: bool) -> Option<u32> {
-    use windows_sys::Win32::Foundation::GetLastError;
-    use windows_sys::Win32::UI::WindowsAndMessaging::SetWindowDisplayAffinity;
-    let mut first_error = None;
-    for &h in hwnds {
-        let ok = unsafe { SetWindowDisplayAffinity(h as _, if exclude { 0x11 } else { 0 }) };
-        if ok == 0 && first_error.is_none() {
-            first_error = Some(unsafe { GetLastError() });
-        }
-    }
-    first_error
-}
-
-#[cfg(not(windows))]
-pub fn set_capture_exclusion(_hwnds: &[isize], _exclude: bool) -> Option<u32> {
-    Some(0)
-}
+pub use crate::platform::{capture_gray_with, set_capture_exclusion};
 
 /// A capture that is black everywhere (a locked screen, the secure desktop of an elevation prompt, a remote session without a display, a
 /// program that blocks capture) says nothing about the screen: it must not be taken for an empty screen (PS-10). A real screen, even a dark
 /// one, has at least a little change; an all-zero or near-zero picture is a failed capture.
 pub fn looks_failed(grey: &[u8]) -> bool {
     grey.is_empty() || grey.iter().all(|&v| v <= 2)
-}
-
-#[cfg(not(windows))]
-pub fn capture_gray_with(_x: i32, _y: i32, _w: i32, _h: i32, _gw: u32, _gh: u32, _include_layered: bool) -> Option<Vec<u8>> {
-    None
-}
-
-#[cfg(not(windows))]
-pub fn capture_gray(_x: i32, _y: i32, _w: i32, _h: i32, _gw: u32, _gh: u32) -> Option<Vec<u8>> {
-    None
 }
 
 #[cfg(test)]
@@ -209,11 +123,14 @@ mod tests {
 
     #[test]
     fn the_picture_module_writes_logs_and_sends_nothing() {
-        let src = before_tests(include_str!("picture.rs"));
-        for bad in FORBIDDEN {
-            assert!(!src.contains(bad), "picture.rs must not use {bad}: the picture is never saved, logged or sent");
+        // the picture is built in picture.rs and taken in the platform files (ADR-0132): all of them are checked
+        for (name, text) in [("picture.rs", include_str!("picture.rs")), ("platform/windows.rs", include_str!("platform/windows.rs")), ("platform/macos.rs", include_str!("platform/macos.rs"))] {
+            let src = before_tests(text);
+            for bad in FORBIDDEN {
+                assert!(!src.contains(bad), "{name} must not use {bad}: the picture is never saved, logged or sent");
+            }
+            assert!(!src.contains(".emit"), "{name} must not emit the picture to any window");
         }
-        assert!(!src.contains(".emit"), "picture.rs must not emit the picture to any window");
     }
 
     #[test]

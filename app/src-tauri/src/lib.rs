@@ -1,6 +1,7 @@
 mod brain;
 mod claude;
 mod ground;
+mod platform;
 mod groq;
 mod openai;
 mod picture;
@@ -9,6 +10,7 @@ mod updater;
 
 use brain::{AiError, Kind, Turn};
 use layout::Area;
+use platform::{busy_now, last_input_idle_ms, primary_button_raw, show_without_activating, timer_period};
 use serde::{Deserialize, Serialize};
 use std::{
     fs,
@@ -114,8 +116,10 @@ struct AppState {
     picture_on: AtomicBool,
     /** The person's own switch in Settings (PS-8): the picture may be taken, in any build. Off at every start until the page says so. */
     picture_user: AtomicBool,
-    /** How many times in a row Windows refused to take Peak's windows out of the capture (before 10 version 2004): from 3 the picture would show Peak itself, so none is given (PS-10). */
+    /** How many times in a row Windows refused to take Peak's windows out of the capture (a window just created, or before 10 version 2004): the picture would show Peak itself, so none is given, and a new try waits longer each time (PS-10). */
     picture_refused: AtomicU32,
+    /** When (ms since the epoch) the next try may be made after a refusal. */
+    picture_retry_at: AtomicU64,
     /// Latest focus-safety readings (spec/06 section 3.2, ADR-0029), written by the hit-test thread (which
     /// already wakes every 30 to 150 ms and already reads the pointer) and read by `focus_probe`.
     /// `u32::MAX` = the idle time is unknown; the offsets are `f64` bits.
@@ -220,23 +224,6 @@ fn is_busy() -> bool {
     busy_now()
 }
 
-/// The system's answer to "is the person in something full-screen, presenting, or away?" (a shell call, about once a second
-/// from the hit-test thread, never from `focus_probe`).
-fn busy_now() -> bool {
-    #[cfg(windows)]
-    {
-        use windows_sys::Win32::UI::Shell::SHQueryUserNotificationState;
-        let mut st: i32 = 0;
-        let hr = unsafe { SHQueryUserNotificationState(&mut st) };
-        // 1 not present, 2 busy (fullscreen), 3 D3D fullscreen, 4 presentation mode
-        hr >= 0 && (1..=4).contains(&st)
-    }
-    #[cfg(not(windows))]
-    {
-        false
-    }
-}
-
 // ------------------------------------------------------------ focus-safety probe
 
 /// What the focus-safety logic needs (`src/lib/focus.ts`): how long ago the user last did anything, and where
@@ -269,41 +256,6 @@ struct ClickInfo {
     x: f64,
     y: f64,
     age_ms: u64,
-}
-
-/// The raw state of the primary mouse button, the one the user clicks with (`GetAsyncKeyState`), 0 where it cannot be
-/// read. The physical right button when Windows has the buttons swapped (see `layout::primary_button_vk`).
-fn primary_button_raw() -> i16 {
-    #[cfg(windows)]
-    {
-        use windows_sys::Win32::UI::Input::KeyboardAndMouse::GetAsyncKeyState;
-        use windows_sys::Win32::UI::WindowsAndMessaging::{GetSystemMetrics, SM_SWAPBUTTON};
-        // SAFETY: plain queries of one system metric and one virtual-key code; no pointers.
-        unsafe { GetAsyncKeyState(layout::primary_button_vk(GetSystemMetrics(SM_SWAPBUTTON) != 0)) }
-    }
-    #[cfg(not(windows))]
-    {
-        0
-    }
-}
-
-/// Milliseconds since the last user input (Windows: `GetLastInputInfo`). None elsewhere or on failure.
-fn last_input_idle_ms() -> Option<u32> {
-    #[cfg(windows)]
-    {
-        use windows_sys::Win32::System::SystemInformation::GetTickCount;
-        use windows_sys::Win32::UI::Input::KeyboardAndMouse::{GetLastInputInfo, LASTINPUTINFO};
-        let mut li = LASTINPUTINFO { cbSize: std::mem::size_of::<LASTINPUTINFO>() as u32, dwTime: 0 };
-        // SAFETY: `li` is a valid LASTINPUTINFO with its size set, as the call requires.
-        if unsafe { GetLastInputInfo(&mut li) } == 0 {
-            return None;
-        }
-        Some(layout::idle_since(unsafe { GetTickCount() }, li.dwTime))
-    }
-    #[cfg(not(windows))]
-    {
-        None
-    }
 }
 
 /// The latest readings of the hit-test thread (no system call here: a few atomic loads).
@@ -442,24 +394,6 @@ async fn fly_path(app: AppHandle, window: WebviewWindow, points: Vec<(i32, i32)>
 #[tauri::command]
 fn fly_cancel(state: State<AppState>) {
     state.fly_cancel.store(true, Ordering::Relaxed);
-}
-
-/// Ask Windows for a 1 ms system timer while a flight runs (`begin`), and give it back after.
-fn timer_period(begin: bool) {
-    #[cfg(windows)]
-    {
-        use windows_sys::Win32::Media::{timeBeginPeriod, timeEndPeriod};
-        // SAFETY: plain calls with a period in ms; every begin is paired with an end.
-        unsafe {
-            if begin {
-                timeBeginPeriod(1);
-            } else {
-                timeEndPeriod(1);
-            }
-        }
-    }
-    #[cfg(not(windows))]
-    let _ = begin;
 }
 
 #[derive(Serialize)]
@@ -1543,7 +1477,8 @@ fn picture_user(state: State<AppState>, on: bool) {
 #[tauri::command]
 async fn screen_grid(app: AppHandle) -> Option<ScreenGrid> {
     // none while the person is in a full-screen program, presenting, or away (the session locked): no capture of a game or a shared screen (PS-10)
-    if !picture_allowed(&app) || app.state::<AppState>().picture_refused.load(Ordering::SeqCst) >= 3 || busy_now() {
+    let now_ms = std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).map(|d| d.as_millis() as u64).unwrap_or(0);
+    if !picture_allowed(&app) || now_ms < app.state::<AppState>().picture_retry_at.load(Ordering::SeqCst) || busy_now() {
         return None;
     }
     let main = app.get_webview_window("main")?;
@@ -1569,8 +1504,11 @@ async fn screen_grid(app: AppHandle) -> Option<ScreenGrid> {
     .await
     .ok()?;
     if let Some(code) = excluded {
-        // Windows before 10 version 2004: Peak's windows cannot be left out, so the picture would show Peak itself; none is given (after three refusals in a row, none is tried again)
+        // Peak's windows could not be left out, so the picture would show Peak itself: none is given now, and a new try waits longer each time
         let n = app.state::<AppState>().picture_refused.fetch_add(1, Ordering::SeqCst) + 1;
+        // wait 5 s after the first refusal, then twice as long each time, at most 5 minutes: a window that was just created is ready soon; a Windows that cannot do it is asked rarely
+        let wait_ms = (5_000u64 << (n - 1).min(6)).min(300_000);
+        app.state::<AppState>().picture_retry_at.store(now_ms + wait_ms, Ordering::SeqCst);
         if overlay_allowed() {
             append_trace(&app, "loop-trace.log", &format!("picture_refused n={n} windows={} error={code}", hwnds_n)); // a test build only (ADR-0122)
         }
@@ -1722,21 +1660,6 @@ fn pet_return(app: AppHandle, state: State<AppState>) -> bool {
     }
     overlay_follow(&app, true);
     true
-}
-
-/// Show a window without making it the active one (Windows: `SW_SHOWNOACTIVATE`), so that Peak reappearing by itself never takes
-/// the keyboard focus. Elsewhere, and if the call fails, it is an ordinary `show`.
-fn show_without_activating(win: &WebviewWindow) {
-    #[cfg(windows)]
-    {
-        use windows_sys::Win32::UI::WindowsAndMessaging::{ShowWindow, SW_SHOWNOACTIVATE};
-        if let Ok(hwnd) = win.hwnd() {
-            // SAFETY: a plain call with the window handle of our own window; no pointers are passed.
-            unsafe { ShowWindow(hwnd.0 as _, SW_SHOWNOACTIVATE) };
-            return;
-        }
-    }
-    let _ = win.show();
 }
 
 /// The page found the moment of the return not right (a full-screen program, for example): ask again later.
@@ -1909,6 +1832,7 @@ pub fn run() {
                 picture_on: AtomicBool::new(false),
                 picture_user: AtomicBool::new(false),
                 picture_refused: AtomicU32::new(0),
+                picture_retry_at: AtomicU64::new(0),
             });
 
             let win = app.get_webview_window("main").expect("main window");

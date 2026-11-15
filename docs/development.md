@@ -16,7 +16,9 @@ app/                    the application (Tauri 2 + SvelteKit + Svelte 5)
   src-tauri/            the Rust core: window control, drag and bubble placement, monitor geometry
                         (layout.rs), the focus probe (idle time, pointer, primary mouse button), flights of the
                         window (lib.rs), the brains and credential store (brain.rs, claude.rs, openai.rs),
-                        updater (updater.rs), the ground map of windows (ground.rs), the picture of the screen (picture.rs)
+                        updater (updater.rs), the ground map of windows (ground.rs), the picture of the screen (picture.rs);
+                        platform/ is the boundary with the operating system (windows.rs holds every Win32 call, macos.rs the
+                        stubs of the other platforms; the contract is in platform/mod.rs, ADR-0132)
 scripts/                release.ps1 (signed build and update manifest), test-update/ (configs
                         for trying the update flow against a local server); build-site.mjs,
                         site-dev.mjs, gen-assets.html and site/ (the website builder, see website.md); audit-docs.mjs
