@@ -101,6 +101,28 @@ def option_c():
     return o
 
 
+def option_a_side():
+    """Option A from the side, facing right: the same round bean, one floppy ear, short legs, the nub tail."""
+    bean = "M58 14 C92 12 112 40 110 70 C108 98 88 108 58 108 C30 108 12 98 12 74 C12 40 28 16 58 14Z"
+    o = shadow(38)
+    o += f'<circle cx="14" cy="88" r="8" {sh(BODY)}/><circle cx="9" cy="84" r="4.6" fill="{WHITE}"/>'
+    for x in (34, 76):                                                                                            # far legs: feet only
+        o += f'<ellipse cx="{x + 7}" cy="109" rx="9" ry="5.4" {wh()}/>{toes(x + 7, 110, 0.9)}'
+    o += f'<path d="{bean}" {sh(BODY)}/>'
+    o += f'<path d="M97.5 30 C106.5 40.5 111 55 110 70 C109 84 103.5 93.5 94.5 99.5 C86 84 86 50 97.5 30Z" fill="{WHITE}"/>'   # the white face, inside the bean
+    o += f'<ellipse cx="58" cy="102" rx="24" ry="6" fill="{WHITE}"/>'
+    o += f'<path d="{bean}" fill="none" stroke="{RIM}" stroke-width="2.2" stroke-linejoin="round"/>'
+    for x in (20, 62):                                                                                            # near legs: feet only
+        o += f'<ellipse cx="{x + 7.5}" cy="109.5" rx="10" ry="5.8" {wh()}/>{toes(x + 7.5, 110.5, 1)}'
+    o += f'<path d="M78 18 Q62 22 60 44 Q60 58 72 58 Q84 52 88 34Z" {sh(BODY_D)}/>'                               # near ear, floppy
+    o += f'<ellipse cx="96" cy="34" rx="4.6" ry="3" fill="{TAN}"/>'
+    o += eye(94, 54, 7.6, 9.6)
+    o += f'<ellipse cx="86" cy="72" rx="6.5" ry="4" fill="{BLUSH}" fill-opacity="0.85"/>'
+    o += nose(112, 62, 0.9)
+    o += f'<path d="M110 70 Q105 77 98 74" fill="none" stroke="{MOUTH}" stroke-width="1.9" stroke-linecap="round"/>'
+    return o
+
+
 OPTIONS = [("A", "Mochi", option_a, "One round bean, floppy ears"),
            ("B", "Big head", option_b, "Big head, folded upright ears, open smile"),
            ("C", "Sitting", option_c, "Sits, long drooping ears, white mask")]
@@ -134,6 +156,7 @@ def write(name, text):
 for k, name, fn, note in OPTIONS:
     write(f"paws-option-{k.lower()}.svg", svg(fn()))
 write("paws-options.svg", sheet())
+write("paws-option-a-side.svg", svg(option_a_side()))
 
 try:
     import fitz
@@ -155,6 +178,20 @@ try:
                 pg.insert_image(fitz.Rect(cx + dx, cy + dy, cx + dx + px, cy + dy + px) if px != 256 else fitz.Rect(cx + 6, cy + 4, cx + 198, cy + 196), filename=os.path.join(HERE, "_tmp.png"))
             pg.insert_text(fitz.Point(cx + 210, cy + 190), f"{k} {name}", fontsize=9, color=(0.4, 0.4, 0.4) if gi == 0 else (0.8, 0.8, 0.8))
     pg.get_pixmap(dpi=72).save(os.path.join(HERE, "paws-options-check.png"))
+    os.remove(os.path.join(HERE, "_tmp.png"))
+    out2 = fitz.open()
+    pg2 = out2.new_page(width=740, height=420)
+    pg2.draw_rect(pg2.rect, color=None, fill=(0.9, 0.9, 0.9))
+    for gi, color in enumerate(("#ffffff", "#1e1f22", "#2b2d31")):
+        rgb = tuple(int(color[i:i + 2], 16) / 255 for i in (1, 3, 5))
+        cy = 10 + gi * 136
+        pg2.draw_rect(fitz.Rect(10, cy, 730, cy + 130), color=None, fill=rgb)
+        for vi, fn in enumerate((option_a, option_a_side)):
+            d = fitz.open(stream=svg(fn(), bg=color).encode("utf-8"), filetype="svg")
+            for px, dx in ((120, 10), (64, 140), (32, 215)):
+                d[0].get_pixmap(matrix=fitz.Matrix(px / 120, px / 120), alpha=False).save(os.path.join(HERE, "_tmp.png"))
+                pg2.insert_image(fitz.Rect(vi * 360 + dx, cy + 5, vi * 360 + dx + px, cy + 5 + px), filename=os.path.join(HERE, "_tmp.png"))
+    pg2.get_pixmap(dpi=144).save(os.path.join(HERE, "paws-option-a-check.png"))
     os.remove(os.path.join(HERE, "_tmp.png"))
     print("rendered")
 except Exception as e:
