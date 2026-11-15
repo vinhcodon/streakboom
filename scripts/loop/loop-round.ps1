@@ -59,8 +59,16 @@ function Click($b) { if ($b -eq "L") { [W]::mouse_event($LD,0,0,0,[UIntPtr]::Zer
 $prof = Join-Path $env:TEMP "kioskprofile"
 $chrome = "C:\Program Files\Google\Chrome\Application\chrome.exe"
 function Stop-Scene { Get-CimInstance Win32_Process | Where-Object { $_.Name -eq "chrome.exe" -and $_.CommandLine -like "*kioskprofile*" } | ForEach-Object { Stop-Process -Id $_.ProcessId -Force -ErrorAction SilentlyContinue }; Start-Sleep -Seconds 1 }
-function Show-Scene($file, $mode) {
+function Open-Page($file, $mode) {
+  $url = "file:///" + ((Join-Path $PSScriptRoot $file) -replace "\\", "/")
+  if ($mode -eq "kiosk") { $a = @("--user-data-dir=$prof","--kiosk","--no-first-run",$url) } else { $a = @("--user-data-dir=$prof","--no-first-run","--app=$url","--window-size=1000,640","--window-position=420,180") }
+  Start-Process $chrome -ArgumentList $a; Start-Sleep -Seconds 3
+}
+function Show-Scene($file, $mode, $back = "") {
   Stop-Scene
+  if ($back) { Open-Page $back "kiosk" }   # a controlled background behind the window (LE-4b)
+  if ($file) { Open-Page $file $mode }
+  return
   if (-not $file) { return }
   $url = "file:///" + ((Join-Path $PSScriptRoot $file) -replace "\\", "/")
   if ($mode -eq "kiosk") { $a = @("--user-data-dir=$prof","--kiosk","--no-first-run",$url) } else { $a = @("--user-data-dir=$prof","--no-first-run","--app=$url","--window-size=1000,640","--window-position=420,180") }
@@ -100,14 +108,14 @@ function Gesture($g, $scene) {
 $phases = @(
   @{ name="light_kiosk"; file="scene_light.html"; mode="kiosk" },
   @{ name="dark_kiosk"; file="scene_dark.html"; mode="kiosk" },
-  @{ name="small_window"; file="scene_light.html"; mode="app" },
-  @{ name="desktop_only"; file=$null; mode="" },
+  @{ name="small_window"; file="scene_light.html"; mode="app"; back="scene_desktop.html" },
+  @{ name="desktop_only"; file="scene_desktop.html"; mode="kiosk" },
   @{ name="dense_kiosk"; file="scene_dense.html"; mode="kiosk" }
 )
 if ($Only) { $phases = @($phases | Where-Object { $_.name -eq $Only }) }
 $per = [int](($Minutes * 60) / $phases.Count)
 foreach ($ph in $phases) {
-  Show-Scene $ph.file $ph.mode
+  Show-Scene $ph.file $ph.mode $ph.back
   Sample $ph.name "scene_start"
   $end = (Get-Date).AddSeconds($per - 3); $gi = 0
   while ((Get-Date) -lt $end) {
