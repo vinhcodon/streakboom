@@ -2,6 +2,12 @@
 
 Release notes of the **Preview** builds (an odd middle number: 0.5.x, 0.7.x), newest first. A Preview is a build the author hands to a few adults (ADR-0089, ADR-0090). It is published on GitHub as a pre-release, **never** as the download of the website, and its notes are **not** in [`CHANGELOG.md`](CHANGELOG.md), which the website reads. The format is the same as there: `## x.y.z (YYYY-MM-DD)`, then lines starting with `- `, the first a short bold sentence. When a Preview line is promoted, the Stable version takes its entry in `CHANGELOG.md`.
 
+## 0.11.8 (2026-11-15)
+- **The picture experiment no longer sees itself.** We found that Peak's own windows, the layer included, were in the picture it takes, so the layer was feeding on its own drawing. For the instant of each capture they are now left out (they stay visible on the monitor; a screenshot made at that very moment may miss them). The layer shows how many cells were affected.
+- **Better places to stand:** the ledges with a sharp edge and room above them (the top of a button or of a bar of a chart) and the empty inside of a card or pane are now places Peak could stand, joined with the exact window edges and checked for whether Peak could get there by hops; the edge of a window is in cyan, a place found from the picture in green or yellow-green. The threshold has a ceiling so that a strong block of colour does not hide faint borders, and the colours are stronger on a dark screen.
+- Still only a view: Peak does nothing with it. A finer grid to see desktop icons was tried and refused: at that size words could be read.
+- Not yet tried: the new places on your own screens, on a dark screen, with a small window over the desktop, and on a Windows 10 older than version 2004 (where the windows cannot be left out).
+
 ## 0.11.7 (2026-11-15)
 - **The picture experiment now finds areas, not only lines.** With Terrain overlay and Screen picture both on, the layer tints what the borders enclose: calm open ground in blue (plains), bordered blocks with a calm inside, such as a card or a pane, in purple (panels, outlined), and busy ground, such as text, icons or a detailed wallpaper, in red (rough, outlined). A third line at the top counts them. The numbers are a first guess, to be tuned from your screenshots. It is still only a view: Peak does nothing with it.
 - Not yet tried: any of it on a real screen.
