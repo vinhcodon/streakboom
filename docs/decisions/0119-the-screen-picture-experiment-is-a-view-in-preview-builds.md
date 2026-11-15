@@ -17,3 +17,6 @@ The author saw that with all windows minimised the map shows only "bare desktop"
 ## Consequences
 - The Preview's changelog says there is a new tray item and what it does; the Stable and the website do not mention it (ADR-0101).
 - If the author finds the result useless, the work ends at stage 1 and nothing has been given up: the view is removed and the plan marked ended.
+
+## Addendum (2026-11-15): Peak's own windows were in the picture
+Point 3 said Peak's own windows are not in the picture. **That was false**: a diagnostic (the screen taken without and with the layered windows: 3 cells of 20,736 differ) showed that the overlay is in the usual picture, so it saw its own tints and lines and fed them back; the first four tuning rounds were measured on contaminated pictures. The experiment now takes Peak's own windows (the pet, the bubble, the overlay) out of the capture for the moment it is taken (`SetWindowDisplayAffinity` with `WDA_EXCLUDEFROMCAPTURE`, restored at once; they stay visible on the monitor), and the overlay shows "own windows in the picture: N cells" as a check (N was 19,629 of 20,736 before the exclusion). Cost: for about 70 ms a second the windows are missing from screenshots and recordings while the experiment is on. Windows 10 version 2004 or later.

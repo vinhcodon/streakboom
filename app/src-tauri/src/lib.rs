@@ -1510,6 +1510,9 @@ struct ScreenGrid {
     gw: u32,
     gh: u32,
     data: Vec<u8>,
+    /// How many cells differ between a picture with Peak's own windows in it and the one given (which leaves them out): a check that
+    /// the windows of ours are really out of the picture (a diagnostic of the experiment only).
+    own_cells: u32,
 }
 
 /// A very small grey picture of the monitor Peak is on (ADR-0119, `picture.rs`), only while the person has the experiment on and the
@@ -1525,8 +1528,21 @@ async fn screen_grid(app: AppHandle) -> Option<ScreenGrid> {
     let a = area_at(&main, (pos.x + l + s / 2) as f64, (pos.y + t + s / 2) as f64)?;
     let (w, h) = (a.r - a.x, a.b - a.y);
     let (gw, gh) = picture::grid_dims(w, h)?;
-    let data = tauri::async_runtime::spawn_blocking(move || picture::capture_gray(a.x, a.y, w, h, gw, gh)).await.ok()??;
-    Some(ScreenGrid { x: a.x, y: a.y, w, h, gw, gh, data })
+    // Peak's own windows (the pet, the bubble, the overlay) are taken out of the capture for the moment of taking it (they were found to be in it)
+    let hwnds: Vec<isize> = ["main", "bubble", "overlay"].iter().filter_map(|l| app.get_webview_window(l)).filter_map(|w| w.hwnd().ok()).map(|h| h.0 as isize).collect();
+    let (with, data) = tauri::async_runtime::spawn_blocking(move || {
+        let with = picture::capture_gray(a.x, a.y, w, h, gw, gh); // the diagnostic: the picture with our windows in it
+        picture::set_capture_exclusion(&hwnds, true);
+        std::thread::sleep(Duration::from_millis(60)); // the desktop composition takes a frame to follow
+        let without = picture::capture_gray(a.x, a.y, w, h, gw, gh);
+        picture::set_capture_exclusion(&hwnds, false);
+        (with, without)
+    })
+    .await
+    .ok()?;
+    let data = data?;
+    let own_cells = with.map(|v| v.iter().zip(&data).filter(|(p, q)| (**p as i32 - **q as i32).abs() >= 6).count() as u32).unwrap_or(0);
+    Some(ScreenGrid { x: a.x, y: a.y, w, h, gw, gh, data, own_cells })
 }
 
 fn toggle_visibility(app: &AppHandle) {
@@ -1829,6 +1845,16 @@ pub fn run() {
             let _ = win.set_size(LogicalSize::new(WIN_W, WIN_H));
             place_window(&win, &prefs);
             build_tray(app.handle(), prefs.quiet)?;
+            // A test aid, like STREAKBOOM_AWAY_SECS: with STREAKBOOM_DEV_OVERLAY=1 a build that may have the terrain overlay opens it, and
+            // the screen picture, a few seconds after the start, so that the view can be looked at without the tray (ADR-0119).
+            if overlay_allowed() && std::env::var("STREAKBOOM_DEV_OVERLAY").as_deref() == Ok("1") {
+                let app = app.handle().clone();
+                std::thread::spawn(move || {
+                    std::thread::sleep(Duration::from_secs(8));
+                    toggle_overlay(&app);
+                    toggle_picture(&app);
+                });
+            }
 
             // The speech bubble window is created on demand (see `bubble_ensure`), not here: a
             // webview costs about 35 MB and the bubble is hidden most of the time.

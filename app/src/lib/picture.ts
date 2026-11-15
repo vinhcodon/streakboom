@@ -10,11 +10,15 @@ export interface Grid {
   data: ArrayLike<number>;
 }
 
+// Every length below is in cells of a grid 192 wide (about 10 px on a 1920 px screen); on a grid k times as wide they are k times as long
+// and the areas k times k (see `scaled`), so the same screen is read the same at 192 and at 384.
 export const PICTURE = {
   /** The weakest change of grey (of 255) that counts as an edge, however flat the picture is. */
   minThreshold: 16,
   /** The threshold is this share of the 95th percentile of the strengths, so a dark theme and a light one are read alike. */
   relative: 0.35,
+  /** ...but never above this: a strong block of colour (a header bar, a chart) must not make the light borders of a card vanish (round 7). */
+  maxThreshold: 30,
   /** A horizontal segment is at least this many cells long (about 60 px on a 1920 px screen). */
   minRunH: 6,
   /** A vertical segment is at least this many cells long. */
@@ -29,7 +33,7 @@ export const PICTURE = {
   weakShare: 0.25,
   weakMin: 6,
   /** Texture is looked at in a window of 2 * roughRadius + 1 cells; a cell is rough when this share of the window is texture. */
-  roughRadius: 4,
+  roughRadius: 2,
   roughDensity: 0.3,
   /** A rough or calm area smaller than this many cells is noise and is dropped. */
   minRough: 16,
@@ -37,6 +41,17 @@ export const PICTURE = {
   /** A calm area with at least this share of its outline made of borders (edges or rough ground) and at least minPanel cells is a panel. */
   panelShare: 0.6,
   minPanel: 20,
+  /** A panel is a rectangle: its area is at least this share of its bounding box (a pocket of empty space between lines of text is not). */
+  panelFill: 0.8,
+  /** Text bands (round 1 of stage 2b): horizontal segments within bandRows rows of each other that overlap form a chain; a chain of
+   * bandSize or more is lines of text, not ledges (a button has two edges, text has many). */
+  bandSize: 3,
+  bandRows: 5,
+  /** Hole closing (round 3): a piece of border or noise at most this many cells big, with only plain around it, is part of the plain. */
+  holeMax: 18,
+  /** Stand spots (round 3): neighbouring columns whose pocket bottoms differ by at most slope, and by at most drift from where the run began. */
+  slope: 2,
+  drift: 3,
   /** At most this many regions are listed (the largest first). */
   maxRegions: 80,
 };
@@ -54,6 +69,7 @@ export interface Region {
   area: number; // cells
   grey: number; // mean grey 0..255
   borderShare: number; // 0..1, how much of the outline is a border
+  fill: number; // 0..1, the area over the area of its bounding box: 1 is a rectangle
 }
 
 export interface HSeg {
@@ -78,6 +94,8 @@ export interface Seen {
   threshold: number;
   edgeCells: number;
   hsegs: HSeg[];
+  /** How many horizontal segments were taken for lines of text and left out. */
+  bands: number;
   vsegs: VSeg[];
   /** 1 where the cell and its eight neighbours have no real change, gw * gh. */
   empty: Uint8Array;
@@ -100,11 +118,20 @@ function percentile95(strength: Uint8Array): number {
   return 255;
 }
 
+/** The parameters for a grid `k` times as wide as 192: lengths times k, areas times k squared. */
+export function scaled(P: typeof PICTURE, k: number): typeof PICTURE {
+  if (k === 1) return P;
+  const q = { ...P };
+  for (const key of ["minRunH", "minRunV", "gap", "roomMax", "roughRadius", "bandRows", "slope", "drift"] as const) q[key] = P[key] * k;
+  for (const key of ["minRough", "minArea", "minPanel", "holeMax"] as const) q[key] = P[key] * k * k;
+  return q;
+}
+
 export function analyse(g: Grid, opt: Partial<typeof PICTURE> = {}): Seen {
-  const P = { ...PICTURE, ...opt };
   const { gw, gh, data } = g;
+  const P = scaled({ ...PICTURE, ...opt }, Math.max(1, Math.round(gw / 192)));
   const empty = new Uint8Array(gw * gh);
-  const none: Seen = { gw, gh, threshold: P.minThreshold, edgeCells: 0, hsegs: [], vsegs: [], empty, kinds: new Uint8Array(gw * gh), regions: [] };
+  const none: Seen = { gw, gh, threshold: P.minThreshold, edgeCells: 0, hsegs: [], bands: 0, vsegs: [], empty, kinds: new Uint8Array(gw * gh), regions: [] };
   if (gw < 5 || gh < 5 || data.length < gw * gh) return none;
   const at = (x: number, y: number) => data[y * gw + x] as number;
   // central differences on the inside; strength = the larger, and which way the change goes
@@ -118,7 +145,7 @@ export function analyse(g: Grid, opt: Partial<typeof PICTURE> = {}): Seen {
       gy[i] = at(x, y + 1) - at(x, y - 1);
       str[i] = Math.min(255, Math.max(Math.abs(gx[i]), Math.abs(gy[i])));
     }
-  const T = Math.max(P.minThreshold, Math.round(P.relative * percentile95(str)));
+  const T = Math.min(P.maxThreshold, Math.max(P.minThreshold, Math.round(P.relative * percentile95(str))));
   // thin the edges: a horizontal edge cell is the strongest of its column neighbours (and a vertical one of its row neighbours)
   const hEdge = new Uint8Array(gw * gh);
   const vEdge = new Uint8Array(gw * gh);
@@ -206,7 +233,71 @@ export function analyse(g: Grid, opt: Partial<typeof PICTURE> = {}): Seen {
     }
   }
   const { kinds, regions } = findRegions(str, data, gw, gh, T, P);
-  return { gw, gh, threshold: T, edgeCells, hsegs, vsegs, empty, kinds, regions };
+  const kept = withoutBands(hsegs, P);
+  return { gw, gh, threshold: T, edgeCells, hsegs: kept, bands: hsegs.length - kept.length, vsegs, empty, kinds, regions };
+}
+
+/**
+ * Round 3 of stage 2b: a small object in empty space (an icon, a dropped speck: a piece of border and noise) is part of the plain
+ * around it when it is at most `holeMax` cells and has nothing but plain around it (not the edge of the picture, not another kind).
+ * A rule between two pockets is longer than that, or has other kinds beside it, and stays a line.
+ */
+function closeHoles(kinds: Uint8Array, gw: number, gh: number, P: typeof PICTURE): void {
+  const n = gw * gh;
+  const seen = new Uint8Array(n);
+  const stack: number[] = [];
+  for (let i0 = 0; i0 < n; i0++) {
+    if (seen[i0] || kinds[i0] !== KIND.none) continue;
+    const piece: number[] = [];
+    let enclosed = true;
+    stack.length = 0;
+    stack.push(i0);
+    seen[i0] = 1;
+    while (stack.length) {
+      const i = stack.pop()!;
+      piece.push(i);
+      const x = i % gw;
+      const y = (i / gw) | 0;
+      for (let dy = -1; dy <= 1; dy++)
+        for (let dx = -1; dx <= 1; dx++) {
+          if (!dx && !dy) continue;
+          const nx = x + dx;
+          const ny = y + dy;
+          if (nx < 0 || ny < 0 || nx >= gw || ny >= gh) {
+            enclosed = false;
+            continue;
+          }
+          const j = ny * gw + nx;
+          if (kinds[j] === KIND.none) {
+            if (!seen[j]) {
+              seen[j] = 1;
+              stack.push(j);
+            }
+          } else if (kinds[j] !== KIND.plain) enclosed = false;
+        }
+    }
+    if (enclosed && piece.length <= P.holeMax) for (const i of piece) kinds[i] = KIND.plain;
+  }
+}
+
+/**
+ * Lines of text come out of the picture as a stack of short horizontal segments, one under the other every few rows, and none of them is
+ * a ledge: segments that chain up within `bandRows` rows of each other, `bandSize` or more, are dropped.
+ */
+function withoutBands(segs: HSeg[], P: typeof PICTURE): HSeg[] {
+  const parent = segs.map((_, i) => i);
+  const find = (i: number): number => (parent[i] === i ? i : (parent[i] = find(parent[i])));
+  for (let i = 0; i < segs.length; i++)
+    for (let j = i + 1; j < segs.length; j++) {
+      const a = segs[i];
+      const b = segs[j];
+      if (a.y === b.y || Math.abs(a.y - b.y) > P.bandRows) continue;
+      const lap = Math.min(a.x1, b.x1) - Math.max(a.x0, b.x0) + 1;
+      if (lap >= 0.4 * Math.min(a.x1 - a.x0 + 1, b.x1 - b.x0 + 1)) parent[find(i)] = find(j);
+    }
+  const size = new Map<number, number>();
+  for (let i = 0; i < segs.length; i++) size.set(find(i), (size.get(find(i)) ?? 0) + 1);
+  return segs.filter((_, i) => (size.get(find(i)) ?? 0) < P.bandSize);
 }
 
 /**
@@ -283,11 +374,11 @@ function findRegions(str: Uint8Array, data: ArrayLike<number>, gw: number, gh: n
     const id = next++;
     const r = grow(i, isRough, id);
     if (r.area < P.minRough) drop();
-    else roughIds.set(id, { kind: "rough", x0: r.x0, y0: r.y0, x1: r.x1, y1: r.y1, area: r.area, grey: r.grey, borderShare: 1 });
+    else roughIds.set(id, { kind: "rough", x0: r.x0, y0: r.y0, x1: r.x1, y1: r.y1, area: r.area, grey: r.grey, borderShare: 1, fill: Math.round((r.area / ((r.x1 - r.x0 + 1) * (r.y1 - r.y0 + 1))) * 100) / 100 });
   }
   // calm pieces: not a strong change and not rough
   const isCalm = (i: number) => str[i] < T && !roughCell[i] && !label[i];
-  const calmIds = new Map<number, Omit<Region, "kind" | "borderShare">>();
+  const calmIds = new Map<number, Omit<Region, "kind" | "borderShare" | "fill">>();
   for (let i = 0; i < n; i++) {
     if (label[i] || !isCalm(i)) continue;
     const id = next++;
@@ -321,11 +412,13 @@ function findRegions(str: Uint8Array, data: ArrayLike<number>, gw: number, gh: n
   }
   for (const [id, r] of calmIds) {
     const share = (bordered.get(id) ?? 0) / Math.max(1, total.get(id) ?? 1);
-    const kind: Kind = share >= P.panelShare && r.area >= P.minPanel ? "panel" : "plain";
-    regions.push({ kind, ...r, borderShare: Math.round(share * 100) / 100 });
+    const fill = r.area / ((r.x1 - r.x0 + 1) * (r.y1 - r.y0 + 1));
+    const kind: Kind = share >= P.panelShare && r.area >= P.minPanel && fill >= P.panelFill ? "panel" : "plain";
+    regions.push({ kind, ...r, borderShare: Math.round(share * 100) / 100, fill: Math.round(fill * 100) / 100 });
     kindOf.set(id, kind === "panel" ? KIND.panel : KIND.plain);
   }
   for (let i = 0; i < n; i++) if (label[i] > 0) kinds[i] = kindOf.get(label[i]) ?? 0;
+  closeHoles(kinds, gw, gh, P);
   regions.sort((a, b) => b.area - a.area);
   return { kinds, regions: regions.slice(0, P.maxRegions) };
 }
@@ -345,3 +438,142 @@ function roomAbove(str: Uint8Array, gw: number, y: number, x0: number, x1: numbe
 
 /** A ledge has room for the cat when the empty rows above it are at least the cat's height in cells. */
 export const hasRoom = (s: HSeg, catCells: number): boolean => s.roomAbove >= catCells;
+
+/** A place Peak could stand that has no sharp edge under it (rounds 2 and 3 of stage 2b): the floor of a pocket of empty space. */
+export interface StandSpot {
+  x0: number;
+  x1: number;
+  y: number; // the row of cells the feet are in (the median of the run); the floor is the top of the row below
+  headroom: number; // the least number of empty rows above it along the run
+  /** Where it was found: the picture, or the map of windows (round 7: the two are fused). */
+  src?: "picture" | "window" | "edge";
+}
+
+/**
+ * The floors of the pockets of empty space where the empty rows above are at least `catCells` tall and the run is at least
+ * `minWidth` cells wide: the cat can stand there without covering anything, on whatever lies under the pocket (a line of text, a
+ * toolbar, the edge of a block). A floor is a run of neighbouring columns whose pocket bottoms are nearly level (`slope` between
+ * neighbours, `drift` from where the run began), so a ragged bottom counts. The floor of the screen itself is left out (Peak already
+ * walks there). Pure; `seen` is not changed.
+ */
+export function standSpots(seen: Seen, catCells: number, minWidth = Math.max(6, Math.ceil(catCells * 0.6)), max = 60, opt: Partial<typeof PICTURE> = {}): StandSpot[] {
+  const { gw, gh, kinds } = seen;
+  const P = scaled({ ...PICTURE, ...opt }, Math.max(1, Math.round(gw / 192)));
+  if (catCells < 1) return [];
+  type Plateau = { x0: number; x1: number; first: number; last: number; ys: number[]; head: number };
+  let active: Plateau[] = [];
+  const done: Plateau[] = [];
+  for (let x = 0; x < gw; x++) {
+    // the vertical runs of plain in this column that are tall enough: (bottom row, length)
+    const runs: { y: number; len: number }[] = [];
+    let len = 0;
+    for (let y = 0; y <= gh; y++) {
+      // calm ground is a plain or the inside of a panel (a card is empty inside too): both can have a floor under them (round 8)
+      if (y < gh && (kinds[y * gw + x] === KIND.plain || kinds[y * gw + x] === KIND.panel)) len++;
+      else {
+        if (len >= catCells && y - 1 < gh - 2) runs.push({ y: y - 1, len });
+        len = 0;
+      }
+    }
+    const next: Plateau[] = [];
+    const taken = new Set<Plateau>();
+    for (const r of runs) {
+      const p = active.find((q) => !taken.has(q) && Math.abs(r.y - q.last) <= P.slope && Math.abs(r.y - q.first) <= P.drift);
+      if (p) {
+        taken.add(p);
+        p.x1 = x;
+        p.last = r.y;
+        p.ys.push(r.y);
+        p.head = Math.min(p.head, r.len);
+        next.push(p);
+      } else next.push({ x0: x, x1: x, first: r.y, last: r.y, ys: [r.y], head: r.len });
+    }
+    for (const q of active) if (!taken.has(q)) done.push(q);
+    active = next;
+  }
+  done.push(...active);
+  const spots: StandSpot[] = [];
+  for (const p of done) {
+    if (p.x1 - p.x0 + 1 < minWidth) continue;
+    const ys = [...p.ys].sort((a, b) => a - b);
+    spots.push({ x0: p.x0, x1: p.x1, y: ys[ys.length >> 1], headroom: p.head, src: "picture" });
+  }
+  spots.sort((a, b) => (b.x1 - b.x0) * b.headroom - (a.x1 - a.x0) * a.headroom);
+  return spots.slice(0, max);
+}
+
+/** A stand spot with what it takes to get there (round 4 of stage 2b). */
+export interface ReachSpot extends StandSpot {
+  /** Cells above the floor of the screen (the work area). */
+  rise: number;
+  /** How Peak gets there from the floor: by hops (also through other spots) or by climbing a wall beside it; null when it cannot. */
+  reach: "hop" | "climb" | null;
+}
+
+/**
+ * Which stand spots Peak can get to from the floor of the screen (round 4). Hops go up at most `hopCells` and across at most `hopCells`
+ * (from the floor or from a spot already reached, so a chain of hops counts); a climb is a wall (a vertical segment) beside the spot
+ * (within 3 cells) that reaches up to it and whose foot is within a hop of a place already reached. Spots within `minRise` cells of the
+ * floor are left out (Peak is there already). Pure.
+ */
+export function reachability(spots: StandSpot[], seen: Seen, hopCells: number, minRise = 7): ReachSpot[] {
+  const { gh } = seen;
+  const all: ReachSpot[] = spots
+    .map((p) => ({ ...p, rise: gh - 1 - p.y, reach: null as ReachSpot["reach"] }))
+    .filter((p) => p.rise >= minRise);
+  // the floor is a place that spans the whole width at rise 0
+  const gap = (a0: number, a1: number, b0: number, b1: number) => Math.max(0, Math.max(a0, b0) - Math.min(a1, b1));
+  let grew = true;
+  while (grew) {
+    grew = false;
+    for (const s of all) {
+      if (s.reach) continue;
+      const here: { x0: number; x1: number; rise: number }[] = [{ x0: 0, x1: seen.gw - 1, rise: 0 }, ...all.filter((o) => o.reach)];
+      let how: ReachSpot["reach"] = null;
+      for (const n of here) {
+        if (s.rise - n.rise <= hopCells && gap(n.x0, n.x1, s.x0, s.x1) <= hopCells) {
+          how = "hop";
+          break;
+        }
+      }
+      if (!how)
+        for (const w of seen.vsegs) {
+          if (w.x < s.x0 - 3 || w.x > s.x1 + 3 || w.y0 > s.y + 2) continue; // beside the spot and reaching up to it
+          const foot = gh - 1 - w.y1; // cells above the floor where the wall begins
+          if (here.some((n) => foot - n.rise <= hopCells && gap(n.x0, n.x1, w.x, w.x) <= hopCells)) {
+            how = "climb";
+            break;
+          }
+        }
+      if (how) {
+        s.reach = how;
+        grew = true;
+      }
+    }
+  }
+  return all;
+}
+
+/**
+ * One list of places to stand from the two senses (round 7): the surfaces the map of windows found (exact edges of windows) first, then the
+ * spots the picture found that are not the same place (within `dy` rows and overlapping by at least half of the narrower one).
+ */
+export function fuseSpots(windowSpots: StandSpot[], pictureSpots: StandSpot[], dy = 2, firstSrc: StandSpot["src"] = "window"): StandSpot[] {
+  const same = (a: StandSpot, b: StandSpot) => {
+    if (Math.abs(a.y - b.y) > dy) return false;
+    const lap = Math.min(a.x1, b.x1) - Math.max(a.x0, b.x0) + 1;
+    return lap >= 0.5 * Math.min(a.x1 - a.x0 + 1, b.x1 - b.x0 + 1);
+  };
+  const w = windowSpots.map((s) => ({ ...s, src: firstSrc }));
+  return [...w, ...pictureSpots.filter((p) => !w.some((q) => same(p, q)))];
+}
+
+/**
+ * The ledges with a sharp edge under them that have room above for the cat (the top of a bar of a chart, of a button, of a card) as
+ * stand spots (round 8): the feet row is the one above the edge. They were only drawn before; Peak could not be told to go to them.
+ */
+export function edgeSpots(seen: Seen, catCells: number, minWidth = Math.max(6, Math.ceil(catCells * 0.6))): StandSpot[] {
+  return seen.hsegs
+    .filter((h) => hasRoom(h, catCells) && h.x1 - h.x0 + 1 >= minWidth && h.y - 1 >= 0 && h.y < seen.gh - 3)
+    .map((h) => ({ x0: h.x0, x1: h.x1, y: h.y - 1, headroom: h.roomAbove, src: "edge" as const }));
+}
