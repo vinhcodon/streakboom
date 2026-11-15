@@ -25,7 +25,8 @@
       empty: number[];
       /** The kind of each cell: 0 none, 1 plain, 2 panel, 3 rough (stage 2a, plan section 8). */
       kinds: number[];
-      regions: { kind: "plain" | "panel" | "rough"; x0: number; y0: number; x1: number; y1: number; area: number; grey: number; borderShare: number }[];
+      bands: number;
+      regions: { kind: "plain" | "panel" | "rough"; x0: number; y0: number; x1: number; y1: number; area: number; grey: number; borderShare: number; fill: number }[];
     } | null;
   }
   let canvas: HTMLCanvasElement;
@@ -54,6 +55,12 @@
         const id = m.ids?.[r * m.cols + c] ?? 0;
         const x = c * cw;
         const y = r * ch;
+        if (data.picture) {
+          // the picture layer is on: the map of windows is only a faint grid, so that the picture can be read (round 1 of stage 2b)
+          g.strokeStyle = "rgba(255,255,255,0.10)";
+          g.strokeRect(x + 0.5, y + 0.5, cw - 1, ch - 1);
+          continue;
+        }
         if (k === "desktop") g.fillStyle = "rgba(255,255,255,0.10)";
         else if (k === "taskbar") g.fillStyle = "rgba(0,120,255,0.25)";
         else g.fillStyle = `hsla(${hue(id)}, 70%, 55%, ${k === "foreground" ? 0.28 : 0.18})`;
@@ -140,7 +147,7 @@
       const n = (k: string) => pic.regions.filter((r) => r.kind === k).length;
       g.fillText(`areas: ${n("plain")} plains (blue), ${n("panel")} panels (purple), ${n("rough")} rough (red)`, 14, 63);
     }
-    if (pic) g.fillText(`picture: ${pic.hsegs.length} ledges (${pic.hsegs.filter((h) => h.room).length} with room), ${pic.vsegs.length} walls, threshold ${pic.threshold}, cat = ${pic.catCells} cells`, 14, 44);
+    if (pic) g.fillText(`picture: ${pic.hsegs.length} ledges (${pic.hsegs.filter((h) => h.room).length} with room), ${pic.vsegs.length} walls, ${pic.bands} text bands left out, threshold ${pic.threshold}, cat = ${pic.catCells} cells`, 14, 44);
   }
 
   onMount(() => {

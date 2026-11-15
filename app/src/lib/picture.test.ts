@@ -70,7 +70,7 @@ test("the result holds numbers and its own mask, never the grid", () => {
   const g = box(48, 32, 20, 220, 12, 10, 35, 22);
   const s = analyse(g);
   assert.notEqual(s.empty.buffer, (g.data as Uint8Array).buffer);
-  assert.deepEqual(Object.keys(s).sort(), ["edgeCells", "empty", "gh", "gw", "hsegs", "kinds", "regions", "threshold", "vsegs"]);
+  assert.deepEqual(Object.keys(s).sort(), ["bands", "edgeCells", "empty", "gh", "gw", "hsegs", "kinds", "regions", "threshold", "vsegs"]);
   assert.notEqual(s.kinds.buffer, (g.data as Uint8Array).buffer);
   for (const h of s.hsegs) assert.deepEqual(Object.keys(h).sort(), ["brighterBelow", "roomAbove", "strength", "x0", "x1", "y"]);
 });
@@ -131,4 +131,30 @@ test("the regions are listed largest first and a screen of noise is read quickly
   const big = analyse({ gw: 192, gh: 108, data });
   assert.ok(Date.now() - t0 < 500, "slow: " + (Date.now() - t0) + " ms");
   assert.ok(big.regions.length <= PICTURE.maxRegions);
+});
+
+test("an L-shaped pocket of empty space is a plain, not a panel (a panel is a rectangle)", () => {
+  const g = box(60, 40, 30, 30, 0, 0, 0, 0);
+  const d = g.data as Uint8Array;
+  for (let y = 6; y <= 17; y++) for (let x = 6; x <= 50; x++) d[y * 60 + x] = 200;
+  for (let y = 6; y <= 34; y++) for (let x = 6; x <= 17; x++) d[y * 60 + x] = 200;
+  const s = analyse(g);
+  const pocket = s.regions.find((r) => r.area > 150 && r.x0 >= 6 && r.x1 <= 50);
+  assert.ok(pocket, JSON.stringify(s.regions));
+  assert.ok(pocket!.fill < 0.8, String(pocket!.fill));
+  assert.equal(pocket!.kind, "plain");
+  const rect = analyse(box(60, 40, 30, 200, 15, 10, 44, 29)).regions.find((r) => r.kind === "panel")!;
+  assert.ok(rect.fill >= 0.8, String(rect.fill));
+});
+
+test("lines of text (a stack of short bands) are not ledges, a lone box top still is", () => {
+  const g = box(80, 60, 235, 235, 0, 0, 0, 0);
+  const d = g.data as Uint8Array;
+  for (let line = 0; line < 6; line++) for (let y = 6 + line * 6; y < 9 + line * 6; y++) for (let x = 8; x < 34; x++) d[y * 80 + x] = 120; // six text-like bands
+  const s = analyse(g);
+  assert.ok(s.bands > 0, "the bands were noticed");
+  assert.equal(s.hsegs.filter((h) => h.x0 >= 6 && h.x1 <= 36).length, 0, JSON.stringify(s.hsegs));
+  const lone = analyse(box(80, 60, 235, 120, 40, 20, 70, 50));
+  assert.ok(lone.hsegs.some((h) => Math.abs(h.y - 20) <= 1), "a lone box top is kept");
+  assert.equal(lone.bands, 0);
 });

@@ -37,6 +37,12 @@ export const PICTURE = {
   /** A calm area with at least this share of its outline made of borders (edges or rough ground) and at least minPanel cells is a panel. */
   panelShare: 0.6,
   minPanel: 20,
+  /** A panel is a rectangle: its area is at least this share of its bounding box (a pocket of empty space between lines of text is not). */
+  panelFill: 0.8,
+  /** Text bands (round 1 of stage 2b): horizontal segments within bandRows rows of each other that overlap form a chain; a chain of
+   * bandSize or more is lines of text, not ledges (a button has two edges, text has many). */
+  bandSize: 3,
+  bandRows: 5,
   /** At most this many regions are listed (the largest first). */
   maxRegions: 80,
 };
@@ -54,6 +60,7 @@ export interface Region {
   area: number; // cells
   grey: number; // mean grey 0..255
   borderShare: number; // 0..1, how much of the outline is a border
+  fill: number; // 0..1, the area over the area of its bounding box: 1 is a rectangle
 }
 
 export interface HSeg {
@@ -78,6 +85,8 @@ export interface Seen {
   threshold: number;
   edgeCells: number;
   hsegs: HSeg[];
+  /** How many horizontal segments were taken for lines of text and left out. */
+  bands: number;
   vsegs: VSeg[];
   /** 1 where the cell and its eight neighbours have no real change, gw * gh. */
   empty: Uint8Array;
@@ -104,7 +113,7 @@ export function analyse(g: Grid, opt: Partial<typeof PICTURE> = {}): Seen {
   const P = { ...PICTURE, ...opt };
   const { gw, gh, data } = g;
   const empty = new Uint8Array(gw * gh);
-  const none: Seen = { gw, gh, threshold: P.minThreshold, edgeCells: 0, hsegs: [], vsegs: [], empty, kinds: new Uint8Array(gw * gh), regions: [] };
+  const none: Seen = { gw, gh, threshold: P.minThreshold, edgeCells: 0, hsegs: [], bands: 0, vsegs: [], empty, kinds: new Uint8Array(gw * gh), regions: [] };
   if (gw < 5 || gh < 5 || data.length < gw * gh) return none;
   const at = (x: number, y: number) => data[y * gw + x] as number;
   // central differences on the inside; strength = the larger, and which way the change goes
@@ -206,7 +215,28 @@ export function analyse(g: Grid, opt: Partial<typeof PICTURE> = {}): Seen {
     }
   }
   const { kinds, regions } = findRegions(str, data, gw, gh, T, P);
-  return { gw, gh, threshold: T, edgeCells, hsegs, vsegs, empty, kinds, regions };
+  const kept = withoutBands(hsegs, P);
+  return { gw, gh, threshold: T, edgeCells, hsegs: kept, bands: hsegs.length - kept.length, vsegs, empty, kinds, regions };
+}
+
+/**
+ * Lines of text come out of the picture as a stack of short horizontal segments, one under the other every few rows, and none of them is
+ * a ledge: segments that chain up within `bandRows` rows of each other, `bandSize` or more, are dropped.
+ */
+function withoutBands(segs: HSeg[], P: typeof PICTURE): HSeg[] {
+  const parent = segs.map((_, i) => i);
+  const find = (i: number): number => (parent[i] === i ? i : (parent[i] = find(parent[i])));
+  for (let i = 0; i < segs.length; i++)
+    for (let j = i + 1; j < segs.length; j++) {
+      const a = segs[i];
+      const b = segs[j];
+      if (a.y === b.y || Math.abs(a.y - b.y) > P.bandRows) continue;
+      const lap = Math.min(a.x1, b.x1) - Math.max(a.x0, b.x0) + 1;
+      if (lap >= 0.4 * Math.min(a.x1 - a.x0 + 1, b.x1 - b.x0 + 1)) parent[find(i)] = find(j);
+    }
+  const size = new Map<number, number>();
+  for (let i = 0; i < segs.length; i++) size.set(find(i), (size.get(find(i)) ?? 0) + 1);
+  return segs.filter((_, i) => (size.get(find(i)) ?? 0) < P.bandSize);
 }
 
 /**
@@ -283,11 +313,11 @@ function findRegions(str: Uint8Array, data: ArrayLike<number>, gw: number, gh: n
     const id = next++;
     const r = grow(i, isRough, id);
     if (r.area < P.minRough) drop();
-    else roughIds.set(id, { kind: "rough", x0: r.x0, y0: r.y0, x1: r.x1, y1: r.y1, area: r.area, grey: r.grey, borderShare: 1 });
+    else roughIds.set(id, { kind: "rough", x0: r.x0, y0: r.y0, x1: r.x1, y1: r.y1, area: r.area, grey: r.grey, borderShare: 1, fill: Math.round((r.area / ((r.x1 - r.x0 + 1) * (r.y1 - r.y0 + 1))) * 100) / 100 });
   }
   // calm pieces: not a strong change and not rough
   const isCalm = (i: number) => str[i] < T && !roughCell[i] && !label[i];
-  const calmIds = new Map<number, Omit<Region, "kind" | "borderShare">>();
+  const calmIds = new Map<number, Omit<Region, "kind" | "borderShare" | "fill">>();
   for (let i = 0; i < n; i++) {
     if (label[i] || !isCalm(i)) continue;
     const id = next++;
@@ -321,8 +351,9 @@ function findRegions(str: Uint8Array, data: ArrayLike<number>, gw: number, gh: n
   }
   for (const [id, r] of calmIds) {
     const share = (bordered.get(id) ?? 0) / Math.max(1, total.get(id) ?? 1);
-    const kind: Kind = share >= P.panelShare && r.area >= P.minPanel ? "panel" : "plain";
-    regions.push({ kind, ...r, borderShare: Math.round(share * 100) / 100 });
+    const fill = r.area / ((r.x1 - r.x0 + 1) * (r.y1 - r.y0 + 1));
+    const kind: Kind = share >= P.panelShare && r.area >= P.minPanel && fill >= P.panelFill ? "panel" : "plain";
+    regions.push({ kind, ...r, borderShare: Math.round(share * 100) / 100, fill: Math.round(fill * 100) / 100 });
     kindOf.set(id, kind === "panel" ? KIND.panel : KIND.plain);
   }
   for (let i = 0; i < n; i++) if (label[i] > 0) kinds[i] = kindOf.get(label[i]) ?? 0;

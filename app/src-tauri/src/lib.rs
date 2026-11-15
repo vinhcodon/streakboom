@@ -1829,6 +1829,16 @@ pub fn run() {
             let _ = win.set_size(LogicalSize::new(WIN_W, WIN_H));
             place_window(&win, &prefs);
             build_tray(app.handle(), prefs.quiet)?;
+            // A test aid, like STREAKBOOM_AWAY_SECS: with STREAKBOOM_DEV_OVERLAY=1 a build that may have the terrain overlay opens it, and
+            // the screen picture, a few seconds after the start, so that the view can be looked at without the tray (ADR-0119).
+            if overlay_allowed() && std::env::var("STREAKBOOM_DEV_OVERLAY").as_deref() == Ok("1") {
+                let app = app.handle().clone();
+                std::thread::spawn(move || {
+                    std::thread::sleep(Duration::from_secs(8));
+                    toggle_overlay(&app);
+                    toggle_picture(&app);
+                });
+            }
 
             // The speech bubble window is created on demand (see `bubble_ensure`), not here: a
             // webview costs about 35 MB and the bubble is hidden most of the time.

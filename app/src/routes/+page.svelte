@@ -930,7 +930,7 @@
           const seen = analyse({ gw: grid.gw, gh: grid.gh, data: grid.data });
           const cell = grid.w / grid.gw; // physical px of a cell
           const catCells = Math.round((PET_SIZE * (window.devicePixelRatio || 1)) / cell);
-          picture = { gw: seen.gw, gh: seen.gh, threshold: seen.threshold, catCells, hsegs: seen.hsegs.map((h) => ({ ...h, room: hasRoom(h, catCells) })), vsegs: seen.vsegs, empty: Array.from(seen.empty), kinds: Array.from(seen.kinds), regions: seen.regions };
+          picture = { gw: seen.gw, gh: seen.gh, threshold: seen.threshold, catCells, hsegs: seen.hsegs.map((h) => ({ ...h, room: hasRoom(h, catCells) })), vsegs: seen.vsegs, empty: Array.from(seen.empty), kinds: Array.from(seen.kinds), regions: seen.regions, bands: seen.bands };
         }
       }
       await emitTo("overlay", "overlay-data", { map, surfaces: ss, target, feet: at ? at.feet : null, note, picture });
