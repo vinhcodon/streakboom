@@ -1515,11 +1515,11 @@ struct ScreenGrid {
     own_cells: u32,
 }
 
-/// A very small grey picture of the monitor Peak is on (ADR-0119, `picture.rs`), only while the person has the experiment on and the
-/// overlay open; `None` otherwise. The picture is not kept here: it is built, returned and dropped.
+/// A very small grey picture of the monitor Peak is on (ADR-0119, `picture.rs`), only while the person has the experiment on (the overlay
+/// need not be open: the rules of the clear place use it too, ADR-0123); `None` otherwise. The picture is not kept here: it is built, returned and dropped.
 #[tauri::command]
 async fn screen_grid(app: AppHandle) -> Option<ScreenGrid> {
-    if !overlay_allowed() || !app.state::<AppState>().picture_on.load(Ordering::SeqCst) || app.get_webview_window("overlay").is_none() {
+    if !overlay_allowed() || !app.state::<AppState>().picture_on.load(Ordering::SeqCst) {
         return None;
     }
     let main = app.get_webview_window("main")?;
@@ -1636,12 +1636,18 @@ fn dev_flag(name: String) -> bool {
 /// The chat gate and the chat count (`chat-trace.log`, E28): a number of characters and the count of the day, never the words.
 #[tauri::command]
 fn chat_trace(app: AppHandle, step: String) {
+    if !overlay_allowed() {
+        return; // a Preview or dev build only (ADR-0122): a Stable build writes none of the loop logs
+    }
     append_trace(&app, "chat-trace.log", &step);
 }
 
 /// The loop engineering log (`loop-trace.log`, E29): which action ran and when, fixed names and numbers only.
 #[tauri::command]
 fn loop_trace(app: AppHandle, step: String) {
+    if !overlay_allowed() {
+        return; // a Preview or dev build only (ADR-0122)
+    }
     append_trace(&app, "loop-trace.log", &step);
 }
 
