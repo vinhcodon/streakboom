@@ -923,7 +923,14 @@
   // it. While it is open the page takes a map every 800 ms (whatever the switch says: it is for looking) and sends it, with
   // the surfaces, the cat's feet and the ledge it would choose, to the overlay window.
   let overlayTimer: ReturnType<typeof setInterval> | undefined;
-  let pictureOn = false; // the screen picture experiment (ADR-0119): turned on from the tray of a Preview build, off at every start
+  /** The picture of the screen is in use: the person's switch in Settings (any build), or the tray switch of a Preview or developer build (ADR-0119, PS-8). */
+  let pictureOn = false;
+  let pictureTray = false; // the tray switch of the test builds, off at every start
+  function syncPicture() {
+    const user = data.settings.screenPicture === true;
+    pictureOn = pictureTray || user;
+    void invoke("picture_user", { on: user }).catch(() => {});
+  }
   /** The picture of the screen read once: the analysis, the size of the cat in cells and the stand spots (the windows and the picture, fused). */
   type PictureGrid = { x: number; y: number; w: number; h: number; gw: number; gh: number; data: number[]; ownCells: number };
   function readPicture(grid: PictureGrid, ss: ReturnType<typeof surfaces>) {
@@ -2919,6 +2926,7 @@
   // -------------------------------------------------------------- settings
   function setSetting<K extends keyof Settings>(key: K, value: Settings[K]) {
     data = { ...data, settings: { ...data.settings, [key]: value } };
+    if (key === "screenPicture") syncPicture();
     scheduleSave();
   }
 
@@ -3261,7 +3269,7 @@
           if (e.payload) setTimeout(feedOverlay, 600);
         }),
       );
-      cleanups.push(await win.listen<boolean>("picture-toggle", (e) => (pictureOn = e.payload)));
+      cleanups.push(await win.listen<boolean>("picture-toggle", (e) => { pictureTray = e.payload; syncPicture(); }));
       cleanups.push(await win.listen<{ kind: string; on?: boolean }>("percept", (e) => onPercept(e.payload)));
       cleanups.push(await win.listen("bubble-ready", resendView));
       cleanups.push(await win.listen("settings-ready", pushSettings));
@@ -3284,6 +3292,7 @@
       const isNew = stored === null;
       const s = startSession(parse(stored, now), now);
       data = s.data;
+      syncPicture(); // the person's saved choice (off unless they turned it on)
       try {
         mem = parseMemory(await invoke<string | null>("load_memory"));
       } catch {

@@ -682,6 +682,8 @@
       <p class="muted">{ui.consentNote}</p>
       <label class="chk"><input type="checkbox" checked={s?.groundMap ?? false} onchange={(e) => patch("groundMap", e.currentTarget.checked)} /> {ui.groundMapLabel}</label>
       <p class="muted">{ui.groundMapNote}</p>
+      <label class="chk"><input type="checkbox" checked={s?.screenPicture ?? false} onchange={(e) => patch("screenPicture", e.currentTarget.checked)} /> {ui.screenPictureLabel}</label>
+      <p class="muted">{ui.screenPictureNote}</p>
       {#if snap.consent === "on"}
         <div class="row">
           <span class="lbl">{ui.dailyLabel}</span>

@@ -172,4 +172,46 @@ mod tests {
         println!("grid {gw}x{gh}: min {min}, max {max}, mean {mean}");
         assert!(max > min, "a screen is not one flat grey");
     }
+
+    // PS-9: the privacy checks of the picture. The picture is built in memory, returned to the page and dropped; these tests read the
+    // source so that a later change that writes, logs or sends it fails here.
+    const FORBIDDEN: [&str; 12] = ["std::fs", "File::", "OpenOptions", "TcpStream", "UdpSocket", "reqwest", "ureq", "hyper", "println!", "eprintln!", "dbg!", "append_trace"];
+
+    fn before_tests(src: &str) -> &str {
+        src.split("#[cfg(test)]").next().unwrap_or(src)
+    }
+
+    #[test]
+    fn the_picture_module_writes_logs_and_sends_nothing() {
+        let src = before_tests(include_str!("picture.rs"));
+        for bad in FORBIDDEN {
+            assert!(!src.contains(bad), "picture.rs must not use {bad}: the picture is never saved, logged or sent");
+        }
+        assert!(!src.contains(".emit"), "picture.rs must not emit the picture to any window");
+    }
+
+    #[test]
+    fn the_screen_grid_command_only_returns_the_grid() {
+        let lib = include_str!("lib.rs");
+        let start = lib.find("async fn screen_grid").expect("screen_grid exists");
+        let rest = &lib[start..];
+        let end = rest.find("
+}").unwrap_or(rest.len()); // the function ends at its closing brace in column 0
+        let body = &rest[..end];
+        for bad in FORBIDDEN.iter().chain(["emit", "emit_to"].iter()) {
+            assert!(!body.contains(bad), "screen_grid must not use {bad}");
+        }
+        assert!(body.contains("picture_allowed"), "screen_grid asks the gate first");
+    }
+
+    #[test]
+    fn the_picture_is_taken_only_on_the_persons_switch_or_the_test_switch_of_a_test_build() {
+        use crate::picture_gate;
+        assert!(!picture_gate(false, false, false), "nothing on: no picture");
+        assert!(!picture_gate(false, true, false), "the tray switch alone does nothing in a Stable build");
+        assert!(picture_gate(true, false, false), "the person's switch works in a Stable build");
+        assert!(picture_gate(false, true, true), "the tray switch works in a test build");
+        assert!(!picture_gate(false, false, true), "a test build is off until a switch is on");
+        assert!(picture_gate(true, false, true));
+    }
 }

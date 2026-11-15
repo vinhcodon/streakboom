@@ -112,6 +112,8 @@ struct AppState {
     /// The screen picture experiment (ADR-0119): turned on by the person from the tray of a Preview build, off at every start. The
     /// command `screen_grid` gives nothing while it is off.
     picture_on: AtomicBool,
+    /** The person's own switch in Settings (PS-8): the picture may be taken, in any build. Off at every start until the page says so. */
+    picture_user: AtomicBool,
     /// Latest focus-safety readings (spec/06 section 3.2, ADR-0029), written by the hit-test thread (which
     /// already wakes every 30 to 150 ms and already reads the pointer) and read by `focus_probe`.
     /// `u32::MAX` = the idle time is unknown; the offsets are `f64` bits.
@@ -1515,11 +1517,30 @@ struct ScreenGrid {
     own_cells: u32,
 }
 
+/// May the picture be taken now? Two separate gates (PS-8): the person's own switch in Settings (any build, off by default), or the test
+/// switch of the tray in a build that may have the overlay (Preview and developer builds). The overlay is only a drawing for the people who
+/// test; the picture itself, and what Peak does with it, do not need it.
+fn picture_allowed(app: &AppHandle) -> bool {
+    let st = app.state::<AppState>();
+    picture_gate(st.picture_user.load(Ordering::SeqCst), st.picture_on.load(Ordering::SeqCst), overlay_allowed())
+}
+
+/// The rule of the two gates, pure so that it can be tested: the person's switch, or the test switch of a build that may have the overlay.
+pub(crate) fn picture_gate(user: bool, tray: bool, test_build: bool) -> bool {
+    user || (test_build && tray)
+}
+
+/// The page tells Rust that the person's switch changed (and at the start, with the saved value).
+#[tauri::command]
+fn picture_user(state: State<AppState>, on: bool) {
+    state.picture_user.store(on, Ordering::SeqCst);
+}
+
 /// A very small grey picture of the monitor Peak is on (ADR-0119, `picture.rs`), only while the person has the experiment on (the overlay
 /// need not be open: the rules of the clear place use it too, ADR-0123); `None` otherwise. The picture is not kept here: it is built, returned and dropped.
 #[tauri::command]
 async fn screen_grid(app: AppHandle) -> Option<ScreenGrid> {
-    if !overlay_allowed() || !app.state::<AppState>().picture_on.load(Ordering::SeqCst) {
+    if !picture_allowed(&app) {
         return None;
     }
     let main = app.get_webview_window("main")?;
@@ -1864,6 +1885,7 @@ pub fn run() {
                 away: AtomicBool::new(false),
                 away_gen: AtomicU64::new(0),
                 picture_on: AtomicBool::new(false),
+                picture_user: AtomicBool::new(false),
             });
 
             let win = app.get_webview_window("main").expect("main window");
@@ -1921,6 +1943,7 @@ pub fn run() {
             pet_leave,
             leave_trace,
             perch_trace,
+            picture_user,
             chat_trace,
             dev_flag,
             loop_trace,

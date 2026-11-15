@@ -6,6 +6,8 @@ export interface Settings {
   gentle: boolean;
   updates: "auto" | "ask" | "off"; // install by itself when idle / offer through the pet / do not check
   remarks: boolean; // a connected brain may add a short remark after a reflex (RX-7, ADR-0043)
+  /** The tiny grey picture of the screen (ADR-0119, ADR-0123, PS-8): off by default, only on the person's own choice, in memory only. Added after 0.10.0; read with a default. */
+  screenPicture: boolean;
   groundMap: boolean; // Peak may take a coarse picture of where windows are, in memory, when about to move (PC-6, ADR-0043); on by default (ADR-0044)
 }
 
@@ -291,6 +293,7 @@ export const DEFAULT_SETTINGS: Settings = {
   updates: "ask",
   remarks: true,
   groundMap: true,
+  screenPicture: false,
 };
 
 export function defaultData(now: number): PetData {
@@ -356,6 +359,7 @@ export function parse(json: string | null | undefined, now: number): PetData {
         updates: s.updates === "auto" || s.updates === "off" ? s.updates : "ask",
         remarks: s.remarks !== false,
         groundMap: s.groundMap !== false,
+        screenPicture: s.screenPicture === true,
       },
       brain: {
         asks: clamp(Math.floor(num(o.brain?.asks, 0)), 0, 99),
