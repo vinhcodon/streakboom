@@ -158,7 +158,10 @@ def pair_scene(peak_look, step=0, z=True):
 def p1():
     """The first P1 (the author kept it), without the string of beads: Peak asleep with one eye open, Paws sitting beside."""
     look = dict(LOOK["rest"], lid=0.06, roll=7, cheek=0.85, lidR=1)
-    return wrap(curled(look), 0, 20, 1.0) + wrap(paws("open", "smile"), 118, 20, 1.0)
+    def spark(x, y, r):
+        return f'<path d="M{x} {y - r} Q{x} {y} {x + r} {y} Q{x} {y} {x} {y + r} Q{x} {y} {x - r} {y} Q{x} {y} {x} {y - r}Z" fill="#fff" stroke="#e8a420" stroke-width="1.5" stroke-linejoin="round"/>'
+    wink = spark(14, 60, 9) + spark(27, 42, 5.5)   # a wink: sparkles by the shut eye
+    return wrap(curled(look) + wink, 0, 20, 1.0) + wrap(paws("open", "smile"), 118, 20, 1.0)
 
 
 # ---------------------------------------------------------------- P2 the meeting
