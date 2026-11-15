@@ -30,6 +30,7 @@ def load(path, stop):
 C = load(os.path.join(STK, "build_stickers.py"), "STICKERS = [")   # Peak: cat(), STAND_F, SIT_F, LOOK, curled_up pieces, png_from ...
 P = load(os.path.join(HERE, "build_paws_options.py"), "OPTIONS = [")   # Paws helpers: sh, wh, toes, eye, nose, blush, shadow
 cat, SIT_F, STAND_F, LOOK, cat_head_only = C["cat"], C["SIT_F"], C["STAND_F"], C["LOOK"], C["cat_head_only"]
+shift_down = lambda k, dy: C["shift"](k, 0, dy)
 ell, stroke_path, wrap, png_from, star = C["ell"], C["stroke_path"], C["wrap"], C["png_from"], C["star"]
 FUR, DARK, BELLY, INK_C = C["FUR"], C["DARK"], C["BELLY"], C["INK"]
 sh, wh, toes, eye, nose, shadow = P["sh"], P["wh"], P["toes"], P["eye"], P["nose"], P["shadow"]
@@ -139,19 +140,23 @@ def beads(x0, y0, x1, y1, n=13):
     return o
 
 
-def pair_scene(peak_look, bow=0, with_beads=False, paws_present=True, z=True):
-    """A 240 x 140 scene: Peak asleep on the left, Paws on the right. Peak's rump at about (92, 84)."""
-    o = wrap(curled(peak_look) + (zzz() if z else ""), 0, 20, 1.0)
-    if paws_present:
-        p = paws("calm" if bow else "open", "none" if with_beads else "smile", roll=bow, brows=None)
-        o += wrap(p, 118, 20, 1.0)
-        if with_beads:
-            o += beads(176, 106, 100, 78, 10)
+PASS = {  # the four steps of Paws creeping past Peak: (scale, x0, feet y): small and far, nearer, just past Peak, well past and bigger
+    1: (0.45, -4, 122), 2: (0.66, -4, 128), 3: (0.88, 116, 134), 4: (1.05, 166, 140)}
+
+
+def pair_scene(peak_look, step=0, z=True):
+    """A 290 x 146 scene: Peak asleep in the middle (rump at about x 150), Paws creeping past from the left (small, far) to the right (big, near).
+    step 0 = Paws not there yet."""
+    o = wrap(curled(peak_look) + (zzz() if z else ""), 34, 26, 1.0)
+    if step:
+        k, x0, feet = PASS[step]
+        creep = dict(eyes="wide", mouth="flat", gaze=(-3 if step < 3 else 3, 0), brows="worry") if step < 4 else dict(eyes="calm", mouth="smile", gaze=(0, 0))
+        o += wrap(paws(roll=-4 if step < 4 else 0, **creep), x0, feet - 115 * k, k)
     return o
 
 
 def p1():
-    return pair_scene(dict(LOOK["rest"], lid=0.06, roll=7, cheek=0.85, lidR=1), 0, True)
+    return pair_scene(dict(LOOK["rest"], lid=0.06, roll=7, cheek=0.85, lidR=1), 3, z=False)
 
 
 # ---------------------------------------------------------------- P2 the meeting
@@ -167,33 +172,36 @@ def p2():
 def c1():
     peak = cat(SIT_F, dict(LOOK["rest"], lid=0.6, gx=5, gy=2, roll=4, mouth="smile", cheek=0.6))
     table = ('<rect x="160" y="108" width="80" height="9" rx="2" fill="#b98a5a"/><rect x="160" y="108" width="80" height="3" fill="#d9a870"/>'
-             '<rect x="226" y="117" width="8" height="40" fill="#a37548"/>')
+             '<rect x="226" y="117" width="8" height="40" fill="#a37548"/><rect x="166" y="117" width="8" height="40" fill="#a37548"/>')
     cup = ('<g transform="translate(166,92)"><path d="M-9 0 L-8 16 Q0 19 8 16 L9 0Z" fill="#fff" stroke="#c9d0da" stroke-width="1.3"/>'
            '<path d="M9 4 q8 0 6 7 q-2 4 -7 3" fill="none" stroke="#c9d0da" stroke-width="2"/><path d="M-6 6 h12" stroke="#7fb2e5" stroke-width="2"/></g>')
     return peak, table + cup
 
 
 def c2():
-    peak = cat(SIT_F, dict(LOOK["rest"], wide=0.4, cheek=0.9, roll=-3, mouth="smile"))
-    box = ('<path d="M30 98 L90 98 L86 120 L34 120Z" fill="#c9985e" stroke="#9c7040" stroke-width="1.6" stroke-linejoin="round"/>'
-           '<path d="M30 98 L20 90 M90 98 L100 90" stroke="#9c7040" stroke-width="3" stroke-linecap="round"/><path d="M52 104 h16" stroke="#9c7040" stroke-width="2" stroke-linecap="round"/>')
-    return peak + box
+    peak = cat(shift_down(SIT_F, 6), dict(LOOK["rest"], wide=0.4, cheek=0.9, roll=-3, mouth="smile"))
+    back = ('<path d="M24 82 L96 82 L100 100 L20 100Z" fill="#8a6238"/><path d="M24 82 L12 72 M96 82 L108 72" stroke="#9c7040" stroke-width="4" stroke-linecap="round"/>'
+            '<path d="M24 82 L96 82" stroke="#6f4d2b" stroke-width="2"/>')
+    front = ('<path d="M20 100 L100 100 L94 122 L26 122Z" fill="#c9985e" stroke="#9c7040" stroke-width="1.8" stroke-linejoin="round"/>'
+             '<path d="M20 100 L100 100" stroke="#e0b57e" stroke-width="3"/><path d="M50 108 h20" stroke="#9c7040" stroke-width="2" stroke-linecap="round"/>')
+    tail = stroke_path("M98 108 Q112 104 108 90", DARK, 8)
+    return back + peak + front + tail
 
 
 # ---------------------------------------------------------------- S1 the four panels
 def panel(x, y, w, h, inner, scale):
     o = f'<rect x="{x}" y="{y}" width="{w}" height="{h}" rx="10" fill="#fbf7f1" stroke="#d6cfc4" stroke-width="2"/>'
-    return o + wrap(inner, x + (w - 240 * scale) / 2, y + (h - 140 * scale) / 2 + 4, scale)
+    return o + wrap(inner, x + (w - 290 * scale) / 2, y + (h - 146 * scale) / 2 + 4, scale)
 
 
 def s1():
     sleep = dict(LOOK["rest"], lid=0.06, roll=7, cheek=0.85)
     awake = dict(sleep, lidR=1)
-    k = 0.62
-    return (panel(10, 70, 166, 136, pair_scene(sleep, paws_present=False), k)
-            + panel(184, 70, 166, 136, pair_scene(sleep, bow=26), k)
-            + panel(10, 214, 166, 136, pair_scene(sleep, 0, True), k)
-            + panel(184, 214, 166, 136, pair_scene(awake, 0, True), k))
+    k = 0.55
+    return (panel(10, 70, 166, 136, pair_scene(sleep, 1), k)
+            + panel(184, 70, 166, 136, pair_scene(sleep, 2), k)
+            + panel(10, 214, 166, 136, pair_scene(awake, 3, z=False), k)
+            + panel(184, 214, 166, 136, pair_scene(awake, 4, z=False), k))
 
 
 STK_LIST = [
@@ -208,13 +216,13 @@ STK_LIST = [
      ("Paws vừa mang một viên sỏi đến đống sỏi, đặt xuống và tự hào", "carried one pebble to the pile, put it down and looks proud", "小石をひとつ山まで運んで置き、とくいげにしている"),
      {"vi": ["tự hào", "xong", "việc nhỏ", "sỏi"], "en": ["proud", "small win", "done", "pebble"], "ja": ["ほこらしい", "ひとつ", "小石"]}, "d3"),
     ("P1", "excuse-me", ("Xin phép nhé.", "Excuse me.", "失礼します"), ("Xin phép nhé", "Excuse me", "失礼します"),
-     ("Paws xin phép rồi vắt một chuỗi hạt thẳng tắp qua lưng Peak đang ngủ; Peak mở một mắt", "asks leave and lays a dead-straight string of beads across sleeping Peak's back; Peak opens one eye", "ことわってから、ねているPeakの背中にビーズをまっすぐかける。Peakは片目をあける"),
-     {"vi": ["xin phép", "lịch sự", "ngủ", "chuỗi hạt"], "en": ["polite", "excuse me", "nap", "beads"], "ja": ["失礼", "ていねい", "ねている", "ビーズ"]}, "p1"),
+     ("Paws rón rén đi ngang qua Peak đang ngủ; Peak hé một mắt nhìn theo", "tiptoes past sleeping Peak; Peak opens one eye and watches", "ねているPeakのそばをそろそろと通りぬける。Peakは片目をあけて見ている"),
+     {"vi": ["xin phép", "rón rén", "lịch sự", "ngủ"], "en": ["polite", "excuse me", "tiptoe", "nap"], "ja": ["失礼", "ていねい", "ねている", "そろそろ"]}, "p1"),
     ("P2", "meeting", ("Họp nhé?", "Meeting?", "会議しよう？"), ("Họp nhé?", "Meeting?", "会議しよう？"),
      ("Paws ngậm một tờ giấy nhỏ ghi cuộc họp đưa ra; Peak nhìn lên trần nhà", "holds out a tiny paper marked as a meeting; Peak looks at the ceiling", "小さな会議のお知らせをくわえて差し出す。Peakは天井を見ている"),
      {"vi": ["họp", "cuộc họp", "né", "công sở"], "en": ["meeting", "office", "avoid", "invite"], "ja": ["会議", "ミーティング", "会社", "さける"]}, "p2"),
     ("S1", "asks-first", ("Có xin phép.", "Asks first.", "ちゃんと許可"), ("Có xin phép", "Asks first", "ちゃんと許可"),
-     ("bốn khung: Peak ngủ, Paws cúi chào, chuỗi hạt vắt ngang, Peak mở một mắt rồi lại ngủ", "four panels: Peak sleeps, Paws bows, the beads cross, Peak opens one eye and sleeps again", "4コマ：Peakがねる、Pawsがおじぎ、ビーズがかかる、Peakが片目をあけてまたねる"),
+     ("bốn khung: Paws từ xa nhỏ dần tiến lại, rón rén qua Peak đang ngủ, Peak hé một mắt, Paws đi hẳn qua", "four panels: Paws creeps closer from far away, tiptoes past sleeping Peak, Peak opens one eye, Paws is well past", "4コマ：Pawsが遠くから近づき、ねているPeakのそばを通り、Peakが片目をあけ、Pawsは通りすぎる"),
      {"vi": ["truyện", "bốn khung", "xin phép", "ngủ"], "en": ["story", "four panels", "polite", "nap"], "ja": ["4コマ", "ストーリー", "許可", "ねる"]}, "s1"),
     ("C1", "just-testing", ("Rơi thử?", "Just testing.", "ためしただけ"), ("Rơi thử?", "Just testing", "ためしただけ"),
      ("Peak ngồi nhìn chiếc cốc ở mép bàn bằng đôi mắt lim dim", "sits and eyes a cup at the edge of the table with half-closed eyes", "テーブルのふちのコップを半目でじっと見ている"),
@@ -231,7 +239,7 @@ def build_inner(kind):
     if kind in ("d1", "d2", "d3"):
         return wrap(globals()[kind](), x0, y0 - 4 * (kind == "d1"), S)
     if kind == "p1":
-        return wrap(p1(), 2, 96, 1.5)
+        return wrap(p1(), 6, 104, 1.2)
     if kind == "p2":
         peak, dog = p2()
         return wrap(peak, 2, 158, 1.5) + wrap(dog, 188, 168, 1.4)
