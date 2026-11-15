@@ -10,11 +10,15 @@ export interface Grid {
   data: ArrayLike<number>;
 }
 
+// Every length below is in cells of a grid 192 wide (about 10 px on a 1920 px screen); on a grid k times as wide they are k times as long
+// and the areas k times k (see `scaled`), so the same screen is read the same at 192 and at 384.
 export const PICTURE = {
   /** The weakest change of grey (of 255) that counts as an edge, however flat the picture is. */
   minThreshold: 16,
   /** The threshold is this share of the 95th percentile of the strengths, so a dark theme and a light one are read alike. */
   relative: 0.35,
+  /** ...but never above this: a strong block of colour (a header bar, a chart) must not make the light borders of a card vanish (round 7). */
+  maxThreshold: 30,
   /** A horizontal segment is at least this many cells long (about 60 px on a 1920 px screen). */
   minRunH: 6,
   /** A vertical segment is at least this many cells long. */
@@ -114,9 +118,18 @@ function percentile95(strength: Uint8Array): number {
   return 255;
 }
 
+/** The parameters for a grid `k` times as wide as 192: lengths times k, areas times k squared. */
+export function scaled(P: typeof PICTURE, k: number): typeof PICTURE {
+  if (k === 1) return P;
+  const q = { ...P };
+  for (const key of ["minRunH", "minRunV", "gap", "roomMax", "roughRadius", "bandRows", "slope", "drift"] as const) q[key] = P[key] * k;
+  for (const key of ["minRough", "minArea", "minPanel", "holeMax"] as const) q[key] = P[key] * k * k;
+  return q;
+}
+
 export function analyse(g: Grid, opt: Partial<typeof PICTURE> = {}): Seen {
-  const P = { ...PICTURE, ...opt };
   const { gw, gh, data } = g;
+  const P = scaled({ ...PICTURE, ...opt }, Math.max(1, Math.round(gw / 192)));
   const empty = new Uint8Array(gw * gh);
   const none: Seen = { gw, gh, threshold: P.minThreshold, edgeCells: 0, hsegs: [], bands: 0, vsegs: [], empty, kinds: new Uint8Array(gw * gh), regions: [] };
   if (gw < 5 || gh < 5 || data.length < gw * gh) return none;
@@ -132,7 +145,7 @@ export function analyse(g: Grid, opt: Partial<typeof PICTURE> = {}): Seen {
       gy[i] = at(x, y + 1) - at(x, y - 1);
       str[i] = Math.min(255, Math.max(Math.abs(gx[i]), Math.abs(gy[i])));
     }
-  const T = Math.max(P.minThreshold, Math.round(P.relative * percentile95(str)));
+  const T = Math.min(P.maxThreshold, Math.max(P.minThreshold, Math.round(P.relative * percentile95(str))));
   // thin the edges: a horizontal edge cell is the strongest of its column neighbours (and a vertical one of its row neighbours)
   const hEdge = new Uint8Array(gw * gh);
   const vEdge = new Uint8Array(gw * gh);
@@ -432,6 +445,8 @@ export interface StandSpot {
   x1: number;
   y: number; // the row of cells the feet are in (the median of the run); the floor is the top of the row below
   headroom: number; // the least number of empty rows above it along the run
+  /** Where it was found: the picture, or the map of windows (round 7: the two are fused). */
+  src?: "picture" | "window";
 }
 
 /**
@@ -442,8 +457,8 @@ export interface StandSpot {
  * walks there). Pure; `seen` is not changed.
  */
 export function standSpots(seen: Seen, catCells: number, minWidth = Math.max(6, Math.ceil(catCells * 0.6)), max = 60, opt: Partial<typeof PICTURE> = {}): StandSpot[] {
-  const P = { ...PICTURE, ...opt };
   const { gw, gh, kinds } = seen;
+  const P = scaled({ ...PICTURE, ...opt }, Math.max(1, Math.round(gw / 192)));
   if (catCells < 1) return [];
   type Plateau = { x0: number; x1: number; first: number; last: number; ys: number[]; head: number };
   let active: Plateau[] = [];
@@ -480,7 +495,7 @@ export function standSpots(seen: Seen, catCells: number, minWidth = Math.max(6, 
   for (const p of done) {
     if (p.x1 - p.x0 + 1 < minWidth) continue;
     const ys = [...p.ys].sort((a, b) => a - b);
-    spots.push({ x0: p.x0, x1: p.x1, y: ys[ys.length >> 1], headroom: p.head });
+    spots.push({ x0: p.x0, x1: p.x1, y: ys[ys.length >> 1], headroom: p.head, src: "picture" });
   }
   spots.sort((a, b) => (b.x1 - b.x0) * b.headroom - (a.x1 - a.x0) * a.headroom);
   return spots.slice(0, max);
@@ -536,4 +551,18 @@ export function reachability(spots: StandSpot[], seen: Seen, hopCells: number, m
     }
   }
   return all;
+}
+
+/**
+ * One list of places to stand from the two senses (round 7): the surfaces the map of windows found (exact edges of windows) first, then the
+ * spots the picture found that are not the same place (within `dy` rows and overlapping by at least half of the narrower one).
+ */
+export function fuseSpots(windowSpots: StandSpot[], pictureSpots: StandSpot[], dy = 2): StandSpot[] {
+  const same = (a: StandSpot, b: StandSpot) => {
+    if (Math.abs(a.y - b.y) > dy) return false;
+    const lap = Math.min(a.x1, b.x1) - Math.max(a.x0, b.x0) + 1;
+    return lap >= 0.5 * Math.min(a.x1 - a.x0 + 1, b.x1 - b.x0 + 1);
+  };
+  const w = windowSpots.map((s) => ({ ...s, src: "window" as const }));
+  return [...w, ...pictureSpots.filter((p) => !w.some((q) => same(p, q)))];
 }

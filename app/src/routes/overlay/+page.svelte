@@ -28,8 +28,10 @@
       bands: number;
       /** Cells where Peak's own windows would have been in the picture, now left out (a check of the experiment). */
       own: number;
+      /** The picture is mostly dark: the tints are stronger and the outlines lighter, so that the layer can be read (round 7). */
+      dark: boolean;
       /** Places to stand over empty space (round 2 of stage 2b): the floor of a pocket at least as tall and wide as the cat. */
-      spots: { x0: number; x1: number; y: number; headroom: number; rise: number; reach: "hop" | "climb" | null }[];
+      spots: { x0: number; x1: number; y: number; headroom: number; rise: number; reach: "hop" | "climb" | null; src?: "picture" | "window" }[];
       regions: { kind: "plain" | "panel" | "rough"; x0: number; y0: number; x1: number; y1: number; area: number; grey: number; borderShare: number; fill: number }[];
     } | null;
   }
@@ -111,7 +113,7 @@
       const sx = canvas.width / pic.gw;
       const sy = canvas.height / pic.gh;
       // the kinds of ground in three faint tints: plains blue, panels purple, rough ground red; each area outlined
-      const tint = ["", "rgba(80,160,255,0.12)", "rgba(170,90,255,0.22)", "rgba(255,70,70,0.22)"];
+      const tint = pic.dark ? ["", "rgba(120,200,255,0.16)", "rgba(215,150,255,0.34)", "rgba(255,120,120,0.34)"] : ["", "rgba(80,160,255,0.12)", "rgba(170,90,255,0.22)", "rgba(255,70,70,0.22)"];
       for (let y = 0; y < pic.gh; y++)
         for (let x = 0; x < pic.gw; x++) {
           const k = pic.kinds[y * pic.gw + x];
@@ -123,7 +125,7 @@
       g.lineWidth = 1;
       for (const r of pic.regions) {
         if (r.kind === "plain") continue;
-        g.strokeStyle = r.kind === "panel" ? "rgba(170,90,255,0.9)" : "rgba(255,70,70,0.9)";
+        g.strokeStyle = pic.dark ? (r.kind === "panel" ? "rgba(225,175,255,1)" : "rgba(255,150,150,1)") : r.kind === "panel" ? "rgba(170,90,255,0.9)" : "rgba(255,70,70,0.9)";
         g.strokeRect(r.x0 * sx + 0.5, r.y0 * sy + 0.5, (r.x1 - r.x0 + 1) * sx - 1, (r.y1 - r.y0 + 1) * sy - 1);
       }
       g.lineWidth = 3;
@@ -140,14 +142,15 @@
       g.font = "12px sans-serif";
       for (const p of pic.spots) {
         g.lineWidth = p.reach ? 6 : 3;
-        g.strokeStyle = p.reach ? "rgb(0,255,120)" : "rgba(0,255,120,0.35)";
+        // green when the picture found it, cyan when the map of windows did (the exact edge of a window)
+        g.strokeStyle = p.src === "window" ? (p.reach ? "rgb(0,220,255)" : "rgba(0,220,255,0.4)") : p.reach ? "rgb(0,255,120)" : "rgba(0,255,120,0.35)";
         g.beginPath();
         g.moveTo(p.x0 * sx, (p.y + 1) * sy);
         g.lineTo((p.x1 + 1) * sx, (p.y + 1) * sy);
         g.stroke();
         if (p.reach) {
-          g.fillStyle = "rgb(0,120,60)";
-          g.fillText(p.reach === "hop" ? "hop" : "climb", p.x0 * sx + 2, (p.y + 1) * sy - 8);
+          g.fillStyle = pic.dark ? "rgb(230,255,235)" : "rgb(0,120,60)";
+          g.fillText((p.src === "window" ? "win " : "") + (p.reach === "hop" ? "hop" : "climb"), p.x0 * sx + 2, (p.y + 1) * sy - 8);
         }
       }
       g.lineWidth = 3;

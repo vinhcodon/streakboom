@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { KIND, PICTURE, analyse, hasRoom, reachability, standSpots, type Grid, type Seen } from "./picture.ts";
+import { KIND, PICTURE, analyse, fuseSpots, hasRoom, reachability, scaled, standSpots, type Grid, type Seen } from "./picture.ts";
 
 /** A grid with a rectangle of one grey on a background of another. */
 function box(gw: number, gh: number, bg: number, fg: number, x0: number, y0: number, x1: number, y1: number): Grid {
@@ -255,4 +255,44 @@ test("a spot right on the floor of the screen is left out", () => {
   const r = reachability([{ x0: 10, x1: 40, y: 96, headroom: 20 }, { x0: 10, x1: 40, y: 60, headroom: 20 }], fakeSeen(100, 100), 30);
   assert.equal(r.length, 1);
   assert.equal(r[0].y, 60);
+});
+
+test("a strong block of colour does not make the faint border of a card vanish (the threshold has a ceiling)", () => {
+  // a solid black bar on white (a contrast of 255) and, elsewhere, a card whose border is a faint 40 levels
+  const g = box(80, 60, 235, 235, 0, 0, 0, 0);
+  const d = g.data as Uint8Array;
+  for (let y = 4; y < 14; y++) for (let x = 5; x < 75; x++) d[y * 80 + x] = 0;
+  for (let y = 30; y < 50; y++) for (let x = 20; x < 60; x++) d[y * 80 + x] = 195; // the faint card
+  const s = analyse(g);
+  assert.ok(s.threshold <= PICTURE.maxThreshold, String(s.threshold));
+  assert.ok(s.hsegs.some((h) => Math.abs(h.y - 30) <= 1), "the faint card is seen: " + JSON.stringify(s.hsegs.map((h) => h.y)));
+  assert.ok(analyse(g, { maxThreshold: 255 }).threshold > 60, "without the ceiling the bar sets a high threshold");
+});
+
+test("the same screen at twice the grid is read the same: parameters scale with the grid", () => {
+  const p2 = scaled(PICTURE, 2);
+  assert.equal(p2.minRunH, PICTURE.minRunH * 2);
+  assert.equal(p2.minArea, PICTURE.minArea * 4);
+  assert.equal(scaled(PICTURE, 1), PICTURE);
+  const twice = (g: Grid): Grid => {
+    const data = new Uint8Array(g.gw * 2 * g.gh * 2);
+    for (let y = 0; y < g.gh * 2; y++) for (let x = 0; x < g.gw * 2; x++) data[y * g.gw * 2 + x] = g.data[((y >> 1) * g.gw + (x >> 1))] as number;
+    return { gw: g.gw * 2, gh: g.gh * 2, data };
+  };
+  const small = analyse(box(192, 108, 30, 200, 40, 20, 150, 80));
+  const big = analyse(twice(box(192, 108, 30, 200, 40, 20, 150, 80)));
+  assert.equal(big.regions.filter((r) => r.kind === "panel").length, small.regions.filter((r) => r.kind === "panel").length);
+  assert.ok(big.vsegs.length >= 2 && big.hsegs.length >= 2);
+});
+
+test("window surfaces and picture spots become one list, a picture spot on the same place as a window surface is dropped", () => {
+  const win = [{ x0: 10, x1: 60, y: 40, headroom: 20 }];
+  const pic = [
+    { x0: 12, x1: 58, y: 41, headroom: 20, src: "picture" as const }, // the same place
+    { x0: 100, x1: 140, y: 40, headroom: 20, src: "picture" as const }, // elsewhere
+    { x0: 10, x1: 60, y: 70, headroom: 20, src: "picture" as const }, // same x, another height
+  ];
+  const f = fuseSpots(win, pic);
+  assert.equal(f.length, 3);
+  assert.deepEqual(f.map((s) => s.src), ["window", "picture", "picture"]);
 });

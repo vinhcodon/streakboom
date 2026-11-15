@@ -2,7 +2,7 @@
 //! area, taken only when the person has turned the experiment on in a Preview build, handed to the pet window once and dropped.
 //! Never written, logged or sent. At most `GRID_W` by `GRID_H_MAX` cells, so small that no letter can be read from it.
 
-/// The width of the grid in cells (a cell is about 10 by 10 physical px on a 1920 px screen).
+/// The width of the grid in cells (a cell is about 10 by 10 physical px on a 1920 px screen; 384 was tried and refused, ADR-0121).
 pub const GRID_W: u32 = 192;
 /// The tallest the grid may be (a very tall work area is cut to this, not taken at more detail).
 pub const GRID_H_MAX: u32 = 216;
@@ -145,6 +145,19 @@ mod tests {
         let differing = usual.iter().zip(&layered).filter(|(a, b)| (**a as i32 - **b as i32).abs() >= 6).count();
         let mean_diff = usual.iter().zip(&layered).map(|(a, b)| (*a as i32 - *b as i32).unsigned_abs() as u64).sum::<u64>() as f64 / usual.len() as f64;
         println!("cells differing by 6 or more: {} of {}; mean difference {:.2}", differing, usual.len(), mean_diff);
+    }
+
+    /// The check of ADR-0121: writes the grid of the real screen to the file named in STREAKBOOM_GRID_OUT (raw grey bytes, row by row), once,
+    /// so that the author and the session can look at it and see whether any word can be made out. Never run by CI; the file is the
+    /// caller's to delete.
+    #[test]
+    #[ignore]
+    fn the_grid_can_be_written_once_to_look_at() {
+        let out = std::env::var("STREAKBOOM_GRID_OUT").expect("set STREAKBOOM_GRID_OUT");
+        let (gw, gh) = (384, 216); // the size that was tried in ADR-0121; the check is to look at it
+        let g = capture_gray(0, 0, 1920, 1080, gw, gh).expect("the screen could be read");
+        std::fs::write(&out, &g).unwrap();
+        println!("wrote {gw}x{gh} grey values");
     }
 
     /// Looks at the real screen once and prints only three numbers (never the picture): run by hand with `-- --ignored --nocapture`.
