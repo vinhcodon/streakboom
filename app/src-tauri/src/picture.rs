@@ -224,7 +224,13 @@ mod tests {
         let end = rest.find("
 }").unwrap_or(rest.len()); // the function ends at its closing brace in column 0
         let body = &rest[..end];
-        for bad in FORBIDDEN.iter().chain(["emit", "emit_to"].iter()) {
+        // the only notes it may write are the two numbers-and-fixed-words lines of the test traces (a Preview or developer build), never the picture
+        for line in body.lines().filter(|l| l.contains("append_trace")) {
+            for bad in ["data", "with", "grid", "own_cells"] {
+                assert!(!line.contains(bad), "a trace line of screen_grid must not hold {bad}: {line}");
+            }
+        }
+        for bad in FORBIDDEN.iter().filter(|b| **b != "append_trace").chain(["emit", "emit_to"].iter()) {
             assert!(!body.contains(bad), "screen_grid must not use {bad}");
         }
         assert!(body.contains("picture_allowed"), "screen_grid asks the gate first");
