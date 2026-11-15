@@ -12,10 +12,10 @@ What was **decided**, why, and what was rejected. One short file per decision (a
 |---|---|---|---|
 | [0107](0107-the-language-strip-shows-once-and-the-button-of-the-wanted-language-is-brighter.md) | The language strip shows once and is quieter; the header button of the wanted language is a little brighter; amends ADR-0067 (the website session) | accepted, built | 2026-11-14 |
 | [0104](0104-the-slogan-under-the-name-and-the-taglines-of-the-home-page.md) | The slogan under the name on every page and twelve taglines that rotate at random on the home page (the website session) | accepted, built | 2026-11-14 |
+| [0131](0131-paws-is-drawn-as-the-mochi-option.md) | Paws is drawn as option A, "Mochi" (one round bean, floppy ears) | accepted | the author, 2026-11-15 |
+| [0129](0129-four-duo-stickers-go-up-as-normal-stickers-no-test.md) | The four duo stickers (D1-D3, P1) go up now as normal stickers; the duo test of spec 19 is not run | accepted | the author, 2026-11-15 |
 | [0128](0128-the-screen-picture-switch-in-settings-off-by-default.md) | The screen picture gets a switch in Settings, off by default, and it only senses: nothing is drawn (built, not released) | accepted | the author, 2026-11-15 |
 | [0127](0127-the-dog-is-called-paws-and-the-duo-test-follows-the-reference-drawing.md) | The dog is called Paws (no registry search, risk accepted); the duo test starts only after the author has looked at the reference drawing | accepted | the author, 2026-11-15 |
-| [0128](0128-paws-is-drawn-as-the-mochi-option.md) | Paws is drawn as option A, "Mochi" (one round bean, floppy ears) | accepted | the author, 2026-11-15 |
-| [0129](0129-four-duo-stickers-go-up-as-normal-stickers-no-test.md) | The four duo stickers (D1-D3, P1) go up now as normal stickers; the duo test of spec 19 is not run | accepted | the author, 2026-11-15 |
 | [0126](0126-keep-mit-and-cc-by-as-before.md) | Keep the licences as they were: MIT for the code and the app's art, CC BY 4.0 for the stickers; no trademark policy (supersedes 0125) | accepted | the author, 2026-11-15 |
 | [0125](0125-brand-and-licence-direction-b2.md) | The brand and the licence: the code stays MIT, the names and the logo are kept, every sticker is free under CC BY 4.0 | superseded by 0126 | spec/18, handoff licensing |
 | [0124](0124-indexnow-after-a-deploy.md) | IndexNow: a public key file at the root and a ping of the sitemap's addresses after a deploy (a warning, never a failed deploy) (the website session) | accepted, built (not published) | 2026-11-15 |

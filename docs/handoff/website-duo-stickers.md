@@ -16,7 +16,7 @@ A set of **four stickers**, `docs/plans/assets/paws/set-duo-4/` (a folder like `
 | P1 | `our-secret` | Bí mật nha. | Our secret. | ないしょだよ。 | Peak winks (one eye shut, two sparkles on the open-eye side), Paws sits beside |
 
 ## Facts that matter for the pages
-- **A new character: Paws, a black-and-white dog, Peak's partner** (ADR-0127, ADR-0128). The name Paws is not printed on the stickers. Peak is unchanged. Licence **CC BY 4.0** like all the others (ADR-0126); the font credits are the same as set-v2.
+- **A new character: Paws, a black-and-white dog, Peak's partner** (ADR-0127, ADR-0131). The name Paws is not printed on the stickers. Peak is unchanged. Licence **CC BY 4.0** like all the others (ADR-0126); the font credits are the same as set-v2.
 - **The en and ja lines are AI-written and unreviewed** (`reviewed.en` and `reviewed.ja` are false), as for set-v2 (V-99, V-122); the vi lines are the author's to judge and are marked reviewed.
 - **Four, not eight:** spec 19 planned eight stickers with two Peak stickers as a control. The author keeps **four for now**; the other four (P2 a meeting paper, S1 a four-panel story, C1 and C2 for Peak) are drawn but **parked** (`stickers-draft/parked/`, not in the manifest, not for the site). So **there is no control among the four**; whether the test of spec 19 is run like this is the author's decision, not yours.
 - The counters stay as they are (ADR-0092, no new counter); `popular.json` is not changed.

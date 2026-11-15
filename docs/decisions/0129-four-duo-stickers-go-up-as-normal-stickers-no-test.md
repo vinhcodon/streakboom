@@ -5,7 +5,7 @@
 - **Decided by:** Vinh (author), recorded by the sticker session
 
 ## Context
-Spec 19 planned a test of eight stickers (H33) with two Peak stickers as a control. The author kept **four** (D1, D2, D3, P1; ADR-0128 for the look of Paws) and parked the other four. P1 lost its string of beads, so its caption no longer fitted the picture.
+Spec 19 planned a test of eight stickers (H33) with two Peak stickers as a control. The author kept **four** (D1, D2, D3, P1; ADR-0131 for the look of Paws) and parked the other four. P1 lost its string of beads, so its caption no longer fitted the picture.
 
 ## Decision
 1. **The four go up on the sticker pages now**, as normal stickers (the website session builds them from `docs/plans/assets/paws/set-duo-4/`, `docs/handoff/website-duo-stickers.md`).

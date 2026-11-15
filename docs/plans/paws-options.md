@@ -20,6 +20,6 @@ Files: [`paws-options.png`](assets/paws/paws-options.png) (the three side by sid
 - Option A and C drift furthest from a Border Collie (floppy ears); B keeps the breed cue. Only the author's eye can say if that matters.
 - Side views of the new options are not drawn; they come after one option is picked.
 
-## The side view of option A (added after ADR-0128)
+## The side view of option A (added after ADR-0131)
 [`paws-option-a-side.svg`](assets/paws/paws-option-a-side.svg) and the check [`paws-option-a-check.png`](assets/paws/paws-option-a-check.png) (front and side at 120, 64 and 32 px on #ffffff, #1e1f22, #2b2d31). The same round bean facing right, one floppy ear, a white face, a nub tail on the left, four white toed feet (only the feet show; the legs are hidden in the bean, like Peak's).
 Not verified: the author has not looked; rendered with PyMuPDF, not Chrome; at 32 px the side face is small (the eye and the nose still read, the blush and the tan spot do not).

@@ -1,6 +1,6 @@
 # The duo test: the eight stickers (drafts)
 
-**Status:** the four are **settled and handed to the website session** (`docs/handoff/website-duo-stickers.md`, folder `assets/paws/set-duo-4/`). Drawn 2026-11-15 by the sticker session after the author chose Paws option A (ADR-0128) and said "draw the eight". **Drafts for the author's look; nothing is published, nothing is added to the site or the app.** The spec is `spec/19-duo-test-plan.md` section 3.
+**Status:** the four are **settled and handed to the website session** (`docs/handoff/website-duo-stickers.md`, folder `assets/paws/set-duo-4/`). Drawn 2026-11-15 by the sticker session after the author chose Paws option A (ADR-0131) and said "draw the eight". **Drafts for the author's look; nothing is published, nothing is added to the site or the app.** The spec is `spec/19-duo-test-plan.md` section 3.
 
 All in [`assets/paws/stickers-draft/`](assets/paws/stickers-draft/), built by `assets/paws/build_duo_stickers.py` (it reuses Peak's rig port in `assets/stickers/build_stickers.py` and Paws from `build_paws_options.py`). Flat, 360 x 360, transparent, caption baked in, **vi / en / ja** (`vi/`, `en/`, `ja/`), no arm strokes, CC BY 4.0. `duo-stickers-vi.png` is the sheet to look at (256 px on light, 80 and 36 px on dark); `review_vi/en/ja.png` show all three languages on both grounds; `manifest.json` has the text, title, alt text and synonyms per language.
 
@@ -29,4 +29,4 @@ The four go up now as normal stickers; the duo test is not run; P1's caption was
 - C1: the table has two legs now. C2: a box with a back wall and a front wall, so Peak sits in it. P2 kept.
 
 ## Not verified
-See V-163: the author has not looked; en and ja are unreviewed AI lines; PyMuPDF renders, not Chrome; S1 does not read at 32 px; tags and synonyms are a first guess and the spec 13 tag build was not run; the counting Worker (V-159) is not checked.
+See V-168: the author has not looked; en and ja are unreviewed AI lines; PyMuPDF renders, not Chrome; S1 does not read at 32 px; tags and synonyms are a first guess and the spec 13 tag build was not run; the counting Worker (V-159) is not checked.

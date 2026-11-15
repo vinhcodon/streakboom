@@ -1,4 +1,4 @@
-# ADR-0128: Paws is drawn as option A, "Mochi"
+# ADR-0131: Paws is drawn as option A, "Mochi"
 
 - **Status:** accepted on 2026-11-15 (the author's answer)
 - **Date:** 2026-11-15
