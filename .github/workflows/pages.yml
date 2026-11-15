@@ -14,6 +14,7 @@ on:
       - "CHANGELOG.md"
       - "updates/latest.json"
       - "docs/plans/assets/stickers/set-v2/**"   # the sticker pages are built from this folder (ADR-0053)
+      - "docs/plans/assets/paws/set-duo-4/**"    # and from the four duo stickers that follow it (ADR-0129, ADR-0130)
       - ".github/workflows/pages.yml"
   # once a day, so the download counter (ADR-0052) follows the downloads without anyone doing anything
   schedule:

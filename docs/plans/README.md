@@ -68,6 +68,9 @@ The files are grouped here, not in folders (decided at gate 2 of the foundation 
 | [`peak-origin-and-lawyer-questions.md`](peak-origin-and-lawyer-questions.md) | How Peak was made (a statement of facts) and the questions for a lawyer (R6) |
 | [`duo-charter-impact.md`](duo-charter-impact.md) | What a second character (a dog) would touch in the charter and the documents; where "one Peak" is really written (E31) |
 | [`duo-name-candidates.md`](duo-name-candidates.md) | Five candidate names for the dog and what a web search found (not a trademark search) |
+| [`paws-reference-sheet.md`](paws-reference-sheet.md) | The reference sheet of Paws, the dog (front and side view, the check at 256, 64 and 32 px on light and dark grounds), drawn by the sticker session for ADR-0127; the author looks at it before any dog sticker | superseded by the look of ADR-0131 (option A) |
+| [`paws-options.md`](paws-options.md) | Three cuter options for Paws (A Mochi, B Big head, C Sitting), after the author said the first sheet was not as cute as Peak | drawn 2026-11-15; author picked A (ADR-0131) |
+| [`paws-duo-stickers.md`](paws-duo-stickers.md) | The eight duo-test stickers of spec 19 (D1-D3, P1-P2, S1, C1-C2), drafts in vi/en/ja | drawn 2026-11-15; waiting for the author's look |
 | [`duo-paws-svg-check.md`](duo-paws-svg-check.md) | The name Paws (a web search, the weak points) and a render check of the reference SVG at 256 and 32 px on light and dark grounds |
 | [`repo-structure-proposal.md`](repo-structure-proposal.md) | The proposed structure of the repository for Windows, macOS and the landing page: the zones, four options, the git and version model, the stages (a proposal, nothing moved) |
 | [`preview-channel-plan.md`](preview-channel-plan.md) | The steps for two release channels, Stable (even middle number) and Preview (odd), with in-app updates for both and shared data (PV-0 to PV-8) | proposed 2026-11-13 (ADR-0090); **waiting for Vinh**; nothing built |

@@ -71,7 +71,7 @@ const bullets = (list, ctx) => list.map((t) => `- ${fill(t, ctx, "en")}`).join("
 function stickerSection(ctx) {
   const set = ctx.stickers;
   const titles = set.stickers.map((st) => st.title.en).join(", ");
-  return `Peak stickers (${ORIGIN}/stickers/, also in Vietnamese and Japanese): ${set.stickers.length} free stickers of Peak as PNG pictures, with the text on the image in the language of the page. Licence ${set.license}: free to use and share, also commercially, as long as you credit ${set.creator}. On the page you tap a sticker to copy it and paste it into a chat box (on a phone that supports it, Share sends it to a chat app). They are sent as pictures, not as sticker packs, and the set is not offered as a pack in any store. Nothing is recorded when a sticker is copied or shared. The stickers: ${titles}.`;
+  return `Peak stickers (${ORIGIN}/stickers/, also in Vietnamese and Japanese): ${set.stickers.length} free stickers of Peak (a few with Paws, Peak's dog) as PNG pictures, with the text on the image in the language of the page. Licence ${set.license}: free to use and share, also commercially, as long as you credit ${set.creator}. On the page you tap a sticker to copy it and paste it into a chat box (on a phone that supports it, Share sends it to a chat app). They are sent as pictures, not as sticker packs, and the set is not offered as a pack in any store. Nothing is recorded when a sticker is copied or shared. The stickers: ${titles}.`;
 }
 
 export function llms(ctx) {
