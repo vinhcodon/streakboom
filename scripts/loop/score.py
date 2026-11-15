@@ -25,4 +25,8 @@ if len(sys.argv) > 2:
             if int(m[4]) >= 0: on[int(m[4])] += 1
     if surf: print('view lines', len(surf), 'surfaces max', max(surf), 'spots max', max(spots), 'own cells max', max(own), 'on a spot / not', on[1], on[0])
     c = collections.Counter(re.sub(r' (pose|button)=.*', '', l.split(' ', 1)[1].strip()) for l in open(sys.argv[2]) if ' view ' not in l)
+    cv = [int(m[1]) for l in open(sys.argv[2]) for m in [re.search(r' view .*cover=(-?\d+)', l)] if m and int(m[1]) >= 0]
+    if cv: print('cover (share of the cat box that is not empty): views', len(cv), 'average', round(sum(cv) / len(cv)), '% | views at 30% or more:', sum(1 for c in cv if c >= 30), f'({round(100 * sum(1 for c in cv if c >= 30) / len(cv))}%)')
+    st = collections.Counter((re.search(r' (settle_\w+|settle) (?:col=\S+ row=\S+ )?(move=\w+)?', l) or [0, '?', ''])[1] + ' ' + ((re.search(r' (settle_\w+|settle) (?:col=\S+ row=\S+ )?(move=\w+)?', l) or [0, 0, ''])[2] or '') for l in open(sys.argv[2]) if ' settle' in l)
+    if st: print('settle:', dict(st))
     print('actions:', dict(c))
