@@ -1,5 +1,6 @@
 # 19. The duo test: a hard-working dog beside Peak, tried with stickers first
 
+**Update (2026-11-15): ADR-0127: the name is Paws; the reference drawing goes to the sticker session first (`docs/handoff/sticker-paws-reference.md`) and the test starts only after the author has looked at it and the counting Worker has been checked.**
 **Status:** a plan, written 2026-11-15 from the handoff [`docs/handoff/duo-characters-hypothesis.md`](../docs/handoff/duo-characters-hypothesis.md). **Nothing is built, nothing is added to the app, and no dog is drawn yet.** It is a hypothesis (H33) and a test of it; the decision to put a dog in the app is not taken and is not asked for here. The sticker work belongs to the sticker session and the page to the website session; this spec says what to ask of them.
 **Numbering and sources (the handoff had them wrong).** The spec is 19 because 10 is the terrain model; the sticker page is [`spec/13`](13-sticker-page.md) (not 09); the specs are in `spec/`, not `docs/spec/`; the constraint "one Peak" is ADR-0068 (a guard against a second start of the program), not a line of the README; the customization spec is [`spec/15`](15-customization.md). The licences are those of ADR-0126 (MIT, stickers CC BY 4.0; no trademark policy).
 
@@ -16,7 +17,7 @@ A second character opposite Peak: a dog that works hard, is clever and has a job
 | A dog in the app (a second window, make way for two, Bond Days, load) | **No**, see the charter impact in [`docs/plans/duo-charter-impact.md`](../docs/plans/duo-charter-impact.md) |
 
 ## 3. The stickers (8, in the page's three languages)
-Voice rules: as the existing stickers (spec 13, `docs/plans/sticker-set-v1-direction.md`); **no arm strokes: paws on the body, on props or on the face** (the standing rule of the sticker drawings); no health claims; the dog is not Doge, Cheems or Kabosu and carries no meme text. The dog's name is **Paws** (chosen by the author on 2026-11-15; the search and its weak points are in [`docs/plans/duo-paws-svg-check.md`](../docs/plans/duo-paws-svg-check.md), the candidates in [`docs/plans/duo-name-candidates.md`](../docs/plans/duo-name-candidates.md)); a registry check is still open (V-161).
+Voice rules: as the existing stickers (spec 13, `docs/plans/sticker-set-v1-direction.md`); **no arm strokes: paws on the body, on props or on the face** (the standing rule of the sticker drawings); no health claims; the dog is not Doge, Cheems or Kabosu and carries no meme text. The dog's name is **Paws** (chosen by the author on 2026-11-15; the search and its weak points are in [`docs/plans/duo-paws-svg-check.md`](../docs/plans/duo-paws-svg-check.md), the candidates in [`docs/plans/duo-name-candidates.md`](../docs/plans/duo-name-candidates.md)); the author chose to use it **without a registry search and to accept the risk** (ADR-0127, V-161).
 
 | ID | Kind | Scene (a first idea, for the sticker session to draw and the author to judge) |
 |---|---|---|
