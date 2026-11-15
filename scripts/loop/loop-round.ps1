@@ -8,7 +8,7 @@
 
   It takes the mouse for the whole time. Peak (a dev build) must already be running. Chrome test windows use their own profile.
 #>
-param([int]$Minutes = 10, [string]$Out = "round.csv", [int]$Every = 9, [switch]$NoDrag, [string]$Only = "")
+param([int]$Minutes = 10, [string]$Out = "round.csv", [int]$Every = 9, [switch]$NoDrag, [string]$Only = "", [switch]$Place)
 $ErrorActionPreference = "Stop"
 Add-Type @"
 using System; using System.Runtime.InteropServices; using System.Collections.Generic; using System.Text;
@@ -66,8 +66,10 @@ function Show-Scene($file, $mode) {
   if ($mode -eq "kiosk") { $a = @("--user-data-dir=$prof","--kiosk","--no-first-run",$url) } else { $a = @("--user-data-dir=$prof","--no-first-run","--app=$url","--window-size=1000,640","--window-position=420,180") }
   Start-Process $chrome -ArgumentList $a; Start-Sleep -Seconds 3
 }
+$script:placeIdx = 0
 $gestures = @("click","sweep_head","sweep_belly","drag","right_click","right_double","double_click","idle")
 if ($NoDrag) { $gestures = $gestures | Where-Object { $_ -ne "drag" } }
+if ($Place) { $gestures = @("place") + @($gestures | Where-Object { $_ -ne "drag" }) }
 function Gesture($g, $scene) {
   $r = Peak-Rect; if (-not $r) { Sample $scene "no_window:$g"; return }
   $cx = $r[0] + $r[2]/2; $cy = $r[1] + $r[3]/2
@@ -84,6 +86,14 @@ function Gesture($g, $scene) {
     "right_double" { MouseTo $cx $cy; Click "R"; Start-Sleep -Milliseconds 90; Click "R" }
     "double_click" { MouseTo $cx $cy; Click "L"; Start-Sleep -Milliseconds 80; Click "L"; Start-Sleep -Milliseconds 1500; MouseTo $cx ($cy-200); Click "L" }
     "idle" { }
+    "place" {
+      # drop the cat at a set place along the floor (LE-4): the left, the middle, the right end of the screen in turn, so that runs meet the same starts
+      $fr = @(0.12, 0.5, 0.93)[$script:placeIdx % 3]; $script:placeIdx++
+      $tx = [int]([W]::GetSystemMetrics(0) * $fr)
+      MouseTo $cx $cy; [W]::mouse_event($LD,0,0,0,[UIntPtr]::Zero)
+      for ($i=1;$i -le 14;$i++) { MouseTo ($cx + ($tx - $cx) * $i / 14) ($cy - 40); Start-Sleep -Milliseconds 30 }
+      [W]::mouse_event($LU,0,0,0,[UIntPtr]::Zero)
+    }
   }
   MouseTo 5 5   # the pointer leaves, so the next stretch shows what Peak does on its own
 }

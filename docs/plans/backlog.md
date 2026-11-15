@@ -447,4 +447,4 @@ The cap is 60 a day and nobody has measured whether that is right. A dev build l
 | LE-3 | Round 1 (10 minutes) and its report; hypotheses go to the engineering log | S | see the log |
 | LE-4 | A fixed scene set and a scorer that reads the CSV and the traces and prints the numbers of a round | M | proposed |
 | LE-5 | Later rounds, one change each, compared with the numbers of the last; every motion change is seen by the author first | M | proposed |
-
+| LE-4b | A controlled background: every scene runs over a full-screen test page, so that runs of one scene are comparable (rounds 8 and 9 gave 55% and 9% cover in the same scene) | S | proposed |
