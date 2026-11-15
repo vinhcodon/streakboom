@@ -51,3 +51,4 @@ A private Claude page, "Streakboom Metrics", reads four CSV files made by `node 
 
 ## IndexNow (ADR-0124)
 `scripts/site/catalog/indexnow.json` holds a public key and a switch. The build serves `<key>.txt` at the root of the site; after a push (not the daily run) the Pages workflow runs `scripts/site/indexnow.mjs`, which posts the sitemap's addresses to `api.indexnow.org`. A failure is a warning in the log, never a failed deploy. Only public addresses and the public key are sent.
+Cloudflare Crawler Hints (Cache, Configuration; a Cloudflare setting turned on by the author on 2026-11-15) also signals changes to the engines that take part; the site's own ping stays.
