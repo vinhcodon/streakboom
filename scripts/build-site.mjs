@@ -15,6 +15,7 @@ import { PATHS, changelogPage, homePage, howPage, notFoundPage, privacyPage, sti
 import { loadStickers } from "./site/stickers.mjs";
 import { LANGS } from "../site/strings.mjs";
 import { changelogFeed, llms, llmsFull, robots, sitemap } from "./site/files.mjs";
+import { indexNowOn, loadIndexNow } from "./site/indexnow.mjs";
 import { check } from "./site/checks.mjs";
 import { versionOf, versionScripts } from "./site/assetversion.mjs";
 import { loadCounting, loadMeasurement } from "./site/counting.mjs";
@@ -57,6 +58,7 @@ export function build({ out = OUT, downloads = null, stickerDir } = {}) {
   const ctx = context();
   ctx.downloads = downloads;
   ctx.measurement = loadMeasurement(); // the visit count of Cloudflare Web Analytics: off while its token is empty (ADR-0096)
+  ctx.indexnow = loadIndexNow(); // IndexNow (ADR-0124): the key file served at the root, and the ping of the workflow
   ctx.counting = loadCounting(); // the anonymous counting of sticker copies: off while its endpoint is empty (ADR-0092)
   // the Peak stickers: one folder of the repository, read at build time (ADR-0053); the manifest decides the count and the order
   ctx.stickers = loadStickers(stickerDir);
@@ -83,6 +85,7 @@ export function build({ out = OUT, downloads = null, stickerDir } = {}) {
   ];
   const files = { "sitemap.xml": sitemap(ctx), "robots.txt": robots(), "llms.txt": llms(ctx), "llms-full.txt": llmsFull(ctx), "changelog.xml": changelogFeed(ctx) };
   for (const kind of KINDS) files[indexPath(kind)] = indexText[kind];
+  if (indexNowOn(ctx.indexnow)) files[`${ctx.indexnow.key}.txt`] = ctx.indexnow.key; // exactly the key, no newline
   if (downloads) files["downloads.json"] = JSON.stringify(downloads, null, 2) + "\n";
   for (const p of pages) write(out, p.file, p.html);
   for (const [name, text] of Object.entries(files)) write(out, name, text);

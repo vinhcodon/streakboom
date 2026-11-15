@@ -12,6 +12,7 @@ What was **decided**, why, and what was rejected. One short file per decision (a
 |---|---|---|---|
 | [0107](0107-the-language-strip-shows-once-and-the-button-of-the-wanted-language-is-brighter.md) | The language strip shows once and is quieter; the header button of the wanted language is a little brighter; amends ADR-0067 (the website session) | accepted, built | 2026-11-14 |
 | [0104](0104-the-slogan-under-the-name-and-the-taglines-of-the-home-page.md) | The slogan under the name on every page and twelve taglines that rotate at random on the home page (the website session) | accepted, built | 2026-11-14 |
+| [0124](0124-indexnow-after-a-deploy.md) | IndexNow: a public key file at the root and a ping of the sitemap's addresses after a deploy (a warning, never a failed deploy) (the website session) | accepted, built (not published) | 2026-11-15 |
 | [0123](0123-peak-prefers-clear-places.md) | Peak prefers clear places: where it stands, it does not cover content | accepted (Preview experiment) | E29, H27 |
 | [0122](0122-dev-builds-lift-the-chat-cap-and-the-loop-engineering-logs.md) | A dev build lifts the daily chat cap; three plain logs for loop engineering | accepted | E28, E29 |
 | [0121](0121-the-screen-picture-experiment-grid-is-doubled-to-384-by-216.md) | The screen picture experiment's grid was to be doubled to 384 by 216, but the check (a real screen's grid looked at once) showed words can be read, so it stays 192 by 108; the parameters scale with the grid | accepted, then refused by its own check | 2026-11-15 | 2026-11-15 |

@@ -8,6 +8,7 @@ import { HIDDEN_WORDS } from "./facts.mjs";
 import { DEFAULT_TAGLINE, FORBIDDEN_IN_SCRIPT, MAX_TAGLINE_LENGTH, TAGLINE_KEYS } from "./taglines.mjs";
 import { BEACON_SRC, clarityOn, clarityProblems, countingOn, countingProblems, measurementProblems, siteParagraph, stickerNote, webAnalyticsManual, webAnalyticsOn } from "./counting.mjs";
 import { CLARITY_SRC } from "./clarity.mjs";
+import { KEY_RE, indexNowOn, indexNowProblems } from "./indexnow.mjs";
 import { catalogProblems, loadOverrides, loadPopular, loadVocabulary, normalize, popularProblems, proposalMarkdown } from "./catalog.mjs";
 import { STICKER_DIR } from "./stickers.mjs";
 import { formatCount } from "./downloads.mjs";
@@ -629,6 +630,17 @@ export function check({ ctx, pages, files, out }) {
       if (!m[1].startsWith(m[2])) bad(`${home.path}: the language link "${m[2]}" has the accessible name "${m[1]}", which does not start with its visible text`);
     }
     if (home && !home.html.includes(STRINGS[lang].cap_idle)) bad(`${home.path}: the first caption is not in the static HTML`);
+  }
+
+  // IndexNow (ADR-0124): the switch is valid; when it is on, the key file is served and holds exactly the key; when it is off, no key file is
+  if (ctx.indexnow) {
+    for (const p of indexNowProblems(ctx.indexnow)) bad(p);
+    const keyFiles = Object.keys(files).filter((n) => /^[a-f0-9]{32}\.txt$/.test(n));
+    if (indexNowOn(ctx.indexnow)) {
+      if (files[`${ctx.indexnow.key}.txt`] !== ctx.indexnow.key) bad("IndexNow is on but the key file is missing or does not hold exactly the key");
+      if (keyFiles.length !== 1) bad(`IndexNow: ${keyFiles.length} key files in the site (one is needed)`);
+      if (files["sitemap.xml"].includes(ctx.indexnow.key)) bad("sitemap.xml names the IndexNow key file (it is not a page)");
+    } else if (keyFiles.length) bad("IndexNow is off in indexnow.json but a key file is in the site");
   }
 
   // 9. the files exist and are not empty
