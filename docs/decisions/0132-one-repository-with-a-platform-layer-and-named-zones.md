@@ -1,4 +1,4 @@
-# ADR-0129: One repository with a platform layer and named zones for Windows, macOS and the web
+# ADR-0132: One repository with a platform layer and named zones for Windows, macOS and the web
 
 - **Status:** accepted on 2026-11-15 (the author chose Option B of `docs/plans/repo-structure-proposal.md` and the answers below). **Nothing is moved yet**; the stages are done one by one, each on the author's order.
 - **Date:** 2026-11-15

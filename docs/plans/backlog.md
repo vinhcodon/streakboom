@@ -477,7 +477,7 @@ The dog is **not** to be put in the app; this is a sticker test, and the decisio
 
 | ID | Story | Size | State |
 |---|---|---|---|
-| RS-1 | The author chooses the option, the version and tag model, the owners (ADR) | S | done 2026-11-15: ADR-0129 (Option B, one product version, the macOS spike after RS-2, a Mac with Apple Silicon; the macOS version and the owners of the zones are still to be given) |
+| RS-1 | The author chooses the option, the version and tag model, the owners (ADR) | S | done 2026-11-15: ADR-0132 (Option B, one product version, the macOS spike after RS-2, a Mac with Apple Silicon; the macOS version and the owners of the zones are still to be given) |
 | RS-2 | The platform layer: the trait and `platform/windows.rs` (the Win32 code moved, behaviour unchanged) | L | proposed (after RS-1) |
 | RS-3 | Scripts and CI by zone (`scripts/windows/`, workflows split, path filters, the release routine) | M | proposed |
 | RS-4 | The documents by zone (`docs/platform/`, the platform tag, PROJECT.md, development.md, AGENTS.md, CODEOWNERS, the audit script) | M | proposed |
