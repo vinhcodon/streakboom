@@ -460,3 +460,16 @@ The author decided on 2026-11-15 to keep the licences as they were (MIT, CC BY 4
 | BL-3 | A licence file in the stickers folder that says CC BY 4.0 (ends the double statement) | S | done 2026-11-15 (`docs/plans/assets/stickers/set-v2/LICENSE`) |
 | BL-4 | `license = "MIT"` in `app/src-tauri/Cargo.toml` | S | done 2026-11-15 |
 
+## E31: The duo test, a dog beside Peak tried with stickers (spec 19, H33, handoff `duo-characters-hypothesis.md`)
+
+The dog is **not** to be put in the app; this is a sticker test, and the decision to go further is not taken.
+
+| ID | Story | Size | State |
+|---|---|---|---|
+| DU-1 | The plan (spec 19), the charter impact (`docs/plans/duo-charter-impact.md`), the name candidates (`docs/plans/duo-name-candidates.md`), the corrected paths and numbers | M | done (2026-11-15), as documents |
+| DU-2 | The author chooses the name (after a registry check) | S | waiting for the author |
+| DU-3 | The dog's reference sheet (the sticker session), looked at at 256 px and 32 px on a light and a dark ground; the SVG of the handoff re-pasted by the author, with the `xmlns` fixed | M | proposed |
+| DU-4 | The eight stickers in three languages, tags and aliases (the sticker session; the website session for the page) | L | proposed (only if the author orders the test) |
+| DU-5 | Check that the counting Worker answers and the author can read the daily counts (V-159) | S | proposed |
+| DU-6 | Run the test for 14 days (28 if the traffic is small), read it by the rule of section 5, record it in the engineering log | S | proposed |
+
