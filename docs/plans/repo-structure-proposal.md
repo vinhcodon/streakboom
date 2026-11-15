@@ -1,6 +1,6 @@
 # Proposal: the structure of the repository for Windows, macOS and the landing page
 
-**Status:** a proposal written 2026-11-15 for the author to approve; **nothing is moved or changed**. It answers the author's intention to build the next version for macOS and his wish to separate the shared zone from the zones of Windows, macOS and the web landing page. The decision is the author's; an ADR follows his choice. **I have not run or tested anything on macOS; every statement about macOS here comes from general knowledge and is marked "to verify".**
+**Update (2026-11-15): the author chose Option B, one product version and one release with both installers, the macOS spike after stage 2, and has a Mac with Apple Silicon: ADR-0129.** **Status:** a proposal written 2026-11-15 for the author to approve; **nothing is moved or changed**. It answers the author's intention to build the next version for macOS and his wish to separate the shared zone from the zones of Windows, macOS and the web landing page. The decision is the author's; an ADR follows his choice. **I have not run or tested anything on macOS; every statement about macOS here comes from general knowledge and is marked "to verify".**
 
 ## 1. What the repository is today (measured 2026-11-15)
 | Zone | Where | Size | Platform-specific? |
