@@ -18,6 +18,7 @@ Each kind of statement has one home. Before adding a sentence, decide which kind
 | Hypotheses and assumptions | [`hypotheses/`](hypotheses/README.md) | What do we believe but not know, and what would settle it? | evidence arrives |
 | Handoffs | [`handoff/`](handoff/README.md) | What did another session or conversation tell us? | never edited after receipt; the index records what became of it |
 | Plans | [`plans/`](plans/README.md) | What will we do next, in what order, tested how? | work starts or finishes |
+| Texts waiting for approval | [`drafts/`](drafts/README.md) | Which texts are written but not in force? | a draft is approved (it moves to its place) or withdrawn |
 | History | [`engineering-log.md`](engineering-log.md) | What was built, measured and learned, and what was not verified? | appended, never rewritten |
 | Open checks | [`plans/verification-debt.md`](plans/verification-debt.md) | What was built but not yet checked, and how to check it? | after every task; a row is ticked or removed when checked |
 | Release notes | [`../CHANGELOG.md`](../CHANGELOG.md) | What does each version change for the user? | at every release (the website reads it) |

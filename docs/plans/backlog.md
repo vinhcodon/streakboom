@@ -473,3 +473,14 @@ The dog is **not** to be put in the app; this is a sticker test, and the decisio
 | DU-5 | Check that the counting Worker answers and the author can read the daily counts (V-159) | S | proposed |
 | DU-6 | Run the test for 14 days (28 if the traffic is small), read it by the rule of section 5, record it in the engineering log | S | proposed |
 
+## E32: The repository for Windows, macOS and the web (`docs/plans/repo-structure-proposal.md`; a proposal)
+
+| ID | Story | Size | State |
+|---|---|---|---|
+| RS-1 | The author chooses the option, the version and tag model, the owners (ADR) | S | waiting for the author |
+| RS-2 | The platform layer: the trait and `platform/windows.rs` (the Win32 code moved, behaviour unchanged) | L | proposed (after RS-1) |
+| RS-3 | Scripts and CI by zone (`scripts/windows/`, workflows split, path filters, the release routine) | M | proposed |
+| RS-4 | The documents by zone (`docs/platform/`, the platform tag, PROJECT.md, development.md, AGENTS.md, CODEOWNERS, the audit script) | M | proposed |
+| RS-5 | The macOS spike on a Mac (window, tray, stubs, then the senses one by one with their permissions) | L | proposed; needs a Mac |
+| RS-6 | The website's download choice by platform (the website session) | S | proposed |
+

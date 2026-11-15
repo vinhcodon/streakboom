@@ -9,22 +9,25 @@ app/                    the application (Tauri 2 + SvelteKit + Svelte 5)
   src/lib/              pure logic and shared code: state model, line selection, gestures,
                         line pools, UI strings, memory (memory.ts, memlines.ts), the cat rig
                         (PetRig.svelte, rig/), window messages (bus.ts), focus-safety (focus.ts),
-                        walk easing (gait.ts), hops and falls (hop.ts), the typing lane (lane.ts)
+                        walk easing (gait.ts), hops and falls (hop.ts), the typing lane (lane.ts), the table of named
+                        actions (bindings.ts) and the skill files (skills/), the screen picture and the clear-place rule
+                        (picture.ts, settle.ts), the kept days (remind.ts)
   src/routes/           the three windows: + page (the pet), bubble/, settings/
   src-tauri/            the Rust core: window control, drag and bubble placement, monitor geometry
                         (layout.rs), the focus probe (idle time, pointer, primary mouse button), flights of the
                         window (lib.rs), the brains and credential store (brain.rs, claude.rs, openai.rs),
-                        updater (updater.rs)
+                        updater (updater.rs), the ground map of windows (ground.rs), the picture of the screen (picture.rs)
 scripts/                release.ps1 (signed build and update manifest), test-update/ (configs
                         for trying the update flow against a local server); build-site.mjs,
                         site-dev.mjs, gen-assets.html and site/ (the website builder, see website.md); audit-docs.mjs
-                        (checks that the documents agree) and line-report.mjs (how often each line is seen)
+                        (checks that the documents agree) and line-report.mjs (how often each line is seen);
+                        loop/ (the rounds of behaviour tests and the day-run script, `docs/plans/loop-engineering.md`)
 site/                   the website sources: text (strings.mjs), style, scripts, assets; the pages are built from them into _site/ (git-ignored) and served at streakboom.com
 assets/                 peak-icon-1024.png, the source of the app icon (npm run tauri icon); the README shows
                         its 256 px frame, app/src-tauri/icons/128x128@2x.png
-updates/                latest.json, the update manifest the app reads first
-spec/                   how the product works now (see below)
-docs/                   the record around it: PROJECT.md (start here), charter.md, decisions/, hypotheses/, foundation/, handoff/, plans/, engineering-log.md
+updates/                latest.json (Stable) and preview.json (Preview), the update manifests the app reads
+spec/                   how the product works now (01 to 19; see below)
+docs/                   the record around it: PROJECT.md (start here), charter.md, decisions/, hypotheses/, foundation/, handoff/, plans/, drafts/ (texts waiting for approval), engineering-log.md
 .github/                issue forms, the pull request template, CODEOWNERS and the workflows (pages.yml deploys the site, ci.yml checks pull requests)
 AGENTS.md, CONTRIBUTING.md, SECURITY.md, CODE_OF_CONDUCT.md   for AI assistants and contributors
 ```
