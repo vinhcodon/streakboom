@@ -1,0 +1,370 @@
+{
+  "version": "duo-draft",
+  "creator": "Streakboom",
+  "license": "CC BY 4.0",
+  "stickers": [
+    {
+      "id": "D1",
+      "slug_en": "one-is-off",
+      "kind": "paws-alone",
+      "text": {
+        "vi": "Lệch một hạt.",
+        "en": "One is off.",
+        "ja": "ひとつ大きい"
+      },
+      "title": {
+        "vi": "Lệch một hạt",
+        "en": "One is off",
+        "ja": "ひとつ大きい"
+      },
+      "alt": {
+        "vi": "Paws xếp hạt dẻ theo cỡ thành một hàng thẳng, nhưng một hạt to hơn một chút. Chữ trên ảnh: “Lệch một hạt.”",
+        "en": "Sorts chestnuts by size in a perfect row, but one is slightly too big. Text on the image: \"One is off.\"",
+        "ja": "くりを大きさ順にきれいに並べたが、ひとつだけ少し大きい。画像の文字：「ひとつ大きい」"
+      },
+      "synonyms": {
+        "vi": [
+          "xếp hàng",
+          "cẩn thận",
+          "tỉ mỉ",
+          "lệch"
+        ],
+        "en": [
+          "sorting",
+          "careful",
+          "tidy",
+          "perfectionist"
+        ],
+        "ja": [
+          "並べる",
+          "きちんと",
+          "くり"
+        ]
+      },
+      "reviewed": {
+        "vi": true,
+        "en": false,
+        "ja": false
+      },
+      "status": "draft"
+    },
+    {
+      "id": "D2",
+      "slug_en": "stamped",
+      "kind": "paws-alone",
+      "text": {
+        "vi": "Đã đóng dấu.",
+        "en": "Stamped.",
+        "ja": "押印しました"
+      },
+      "title": {
+        "vi": "Đã đóng dấu",
+        "en": "Stamped",
+        "ja": "押印しました"
+      },
+      "alt": {
+        "vi": "Paws đóng dấu thật cẩn thận lên một tờ giấy chẳng ai đọc. Chữ trên ảnh: “Đã đóng dấu.”",
+        "en": "Stamps a paper nobody will read, with great care. Text on the image: \"Stamped.\"",
+        "ja": "だれも読まない書類に、ていねいにはんこを押している。画像の文字：「押印しました」"
+      },
+      "synonyms": {
+        "vi": [
+          "đóng dấu",
+          "duyệt",
+          "giấy tờ",
+          "xong việc"
+        ],
+        "en": [
+          "approved",
+          "paperwork",
+          "done",
+          "stamp"
+        ],
+        "ja": [
+          "はんこ",
+          "書類",
+          "承認"
+        ]
+      },
+      "reviewed": {
+        "vi": true,
+        "en": false,
+        "ja": false
+      },
+      "status": "draft"
+    },
+    {
+      "id": "D3",
+      "slug_en": "one-pebble",
+      "kind": "paws-alone",
+      "text": {
+        "vi": "Xong một viên.",
+        "en": "One pebble.",
+        "ja": "ひとつ運んだ"
+      },
+      "title": {
+        "vi": "Xong một viên",
+        "en": "One pebble",
+        "ja": "ひとつ運んだ"
+      },
+      "alt": {
+        "vi": "Paws vừa mang một viên sỏi đến đống sỏi, đặt xuống và tự hào. Chữ trên ảnh: “Xong một viên.”",
+        "en": "Carried one pebble to the pile, put it down and looks proud. Text on the image: \"One pebble.\"",
+        "ja": "小石をひとつ山まで運んで置き、とくいげにしている。画像の文字：「ひとつ運んだ」"
+      },
+      "synonyms": {
+        "vi": [
+          "tự hào",
+          "xong",
+          "việc nhỏ",
+          "sỏi"
+        ],
+        "en": [
+          "proud",
+          "small win",
+          "done",
+          "pebble"
+        ],
+        "ja": [
+          "ほこらしい",
+          "ひとつ",
+          "小石"
+        ]
+      },
+      "reviewed": {
+        "vi": true,
+        "en": false,
+        "ja": false
+      },
+      "status": "draft"
+    },
+    {
+      "id": "P1",
+      "slug_en": "excuse-me",
+      "kind": "pair",
+      "text": {
+        "vi": "Xin phép nhé.",
+        "en": "Excuse me.",
+        "ja": "失礼します"
+      },
+      "title": {
+        "vi": "Xin phép nhé",
+        "en": "Excuse me",
+        "ja": "失礼します"
+      },
+      "alt": {
+        "vi": "Paws xin phép rồi vắt một chuỗi hạt thẳng tắp qua lưng Peak đang ngủ; Peak mở một mắt. Chữ trên ảnh: “Xin phép nhé.”",
+        "en": "Asks leave and lays a dead-straight string of beads across sleeping Peak's back; Peak opens one eye. Text on the image: \"Excuse me.\"",
+        "ja": "ことわってから、ねているPeakの背中にビーズをまっすぐかける。Peakは片目をあける。画像の文字：「失礼します」"
+      },
+      "synonyms": {
+        "vi": [
+          "xin phép",
+          "lịch sự",
+          "ngủ",
+          "chuỗi hạt"
+        ],
+        "en": [
+          "polite",
+          "excuse me",
+          "nap",
+          "beads"
+        ],
+        "ja": [
+          "失礼",
+          "ていねい",
+          "ねている",
+          "ビーズ"
+        ]
+      },
+      "reviewed": {
+        "vi": true,
+        "en": false,
+        "ja": false
+      },
+      "status": "draft"
+    },
+    {
+      "id": "P2",
+      "slug_en": "meeting",
+      "kind": "pair",
+      "text": {
+        "vi": "Họp nhé?",
+        "en": "Meeting?",
+        "ja": "会議しよう？"
+      },
+      "title": {
+        "vi": "Họp nhé?",
+        "en": "Meeting?",
+        "ja": "会議しよう？"
+      },
+      "alt": {
+        "vi": "Paws ngậm một tờ giấy nhỏ ghi cuộc họp đưa ra; Peak nhìn lên trần nhà. Chữ trên ảnh: “Họp nhé?”",
+        "en": "Holds out a tiny paper marked as a meeting; Peak looks at the ceiling. Text on the image: \"Meeting?\"",
+        "ja": "小さな会議のお知らせをくわえて差し出す。Peakは天井を見ている。画像の文字：「会議しよう？」"
+      },
+      "synonyms": {
+        "vi": [
+          "họp",
+          "cuộc họp",
+          "né",
+          "công sở"
+        ],
+        "en": [
+          "meeting",
+          "office",
+          "avoid",
+          "invite"
+        ],
+        "ja": [
+          "会議",
+          "ミーティング",
+          "会社",
+          "さける"
+        ]
+      },
+      "reviewed": {
+        "vi": true,
+        "en": false,
+        "ja": false
+      },
+      "status": "draft"
+    },
+    {
+      "id": "S1",
+      "slug_en": "asks-first",
+      "kind": "story",
+      "text": {
+        "vi": "Có xin phép.",
+        "en": "Asks first.",
+        "ja": "ちゃんと許可"
+      },
+      "title": {
+        "vi": "Có xin phép",
+        "en": "Asks first",
+        "ja": "ちゃんと許可"
+      },
+      "alt": {
+        "vi": "Bốn khung: Peak ngủ, Paws cúi chào, chuỗi hạt vắt ngang, Peak mở một mắt rồi lại ngủ. Chữ trên ảnh: “Có xin phép.”",
+        "en": "Four panels: Peak sleeps, Paws bows, the beads cross, Peak opens one eye and sleeps again. Text on the image: \"Asks first.\"",
+        "ja": "4コマ：Peakがねる、Pawsがおじぎ、ビーズがかかる、Peakが片目をあけてまたねる。画像の文字：「ちゃんと許可」"
+      },
+      "synonyms": {
+        "vi": [
+          "truyện",
+          "bốn khung",
+          "xin phép",
+          "ngủ"
+        ],
+        "en": [
+          "story",
+          "four panels",
+          "polite",
+          "nap"
+        ],
+        "ja": [
+          "4コマ",
+          "ストーリー",
+          "許可",
+          "ねる"
+        ]
+      },
+      "reviewed": {
+        "vi": true,
+        "en": false,
+        "ja": false
+      },
+      "status": "draft"
+    },
+    {
+      "id": "C1",
+      "slug_en": "just-testing",
+      "kind": "control-peak",
+      "text": {
+        "vi": "Rơi thử?",
+        "en": "Just testing.",
+        "ja": "ためしただけ"
+      },
+      "title": {
+        "vi": "Rơi thử?",
+        "en": "Just testing",
+        "ja": "ためしただけ"
+      },
+      "alt": {
+        "vi": "Peak ngồi nhìn chiếc cốc ở mép bàn bằng đôi mắt lim dim. Chữ trên ảnh: “Rơi thử?”",
+        "en": "Sits and eyes a cup at the edge of the table with half-closed eyes. Text on the image: \"Just testing.\"",
+        "ja": "テーブルのふちのコップを半目でじっと見ている。画像の文字：「ためしただけ」"
+      },
+      "synonyms": {
+        "vi": [
+          "nghịch",
+          "cốc",
+          "mép bàn",
+          "lầy"
+        ],
+        "en": [
+          "mischief",
+          "cup",
+          "table edge",
+          "cheeky"
+        ],
+        "ja": [
+          "いたずら",
+          "コップ",
+          "ためす"
+        ]
+      },
+      "reviewed": {
+        "vi": true,
+        "en": false,
+        "ja": false
+      },
+      "status": "draft"
+    },
+    {
+      "id": "C2",
+      "slug_en": "fits",
+      "kind": "control-peak",
+      "text": {
+        "vi": "Vừa khít.",
+        "en": "Fits.",
+        "ja": "ぴったり"
+      },
+      "title": {
+        "vi": "Vừa khít",
+        "en": "Fits",
+        "ja": "ぴったり"
+      },
+      "alt": {
+        "vi": "Peak ngồi chật cứng trong một chiếc hộp nhỏ xíu, vẫn cười. Chữ trên ảnh: “Vừa khít.”",
+        "en": "Squeezed into a much too small box, smiling anyway. Text on the image: \"Fits.\"",
+        "ja": "小さすぎる箱にぎゅうぎゅうに入って、それでも笑っている。画像の文字：「ぴったり」"
+      },
+      "synonyms": {
+        "vi": [
+          "hộp",
+          "chật",
+          "vừa",
+          "đáng yêu"
+        ],
+        "en": [
+          "box",
+          "snug",
+          "squeeze",
+          "cute"
+        ],
+        "ja": [
+          "箱",
+          "ぎゅうぎゅう",
+          "ぴったり"
+        ]
+      },
+      "reviewed": {
+        "vi": true,
+        "en": false,
+        "ja": false
+      },
+      "status": "draft"
+    }
+  ]
+}
