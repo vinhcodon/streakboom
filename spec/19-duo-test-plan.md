@@ -16,7 +16,7 @@ A second character opposite Peak: a dog that works hard, is clever and has a job
 | A dog in the app (a second window, make way for two, Bond Days, load) | **No**, see the charter impact in [`docs/plans/duo-charter-impact.md`](../docs/plans/duo-charter-impact.md) |
 
 ## 3. The stickers (8, in the page's three languages)
-Voice rules: as the existing stickers (spec 13, `docs/plans/sticker-set-v1-direction.md`); **no arm strokes: paws on the body, on props or on the face** (the standing rule of the sticker drawings); no health claims; the dog is not Doge, Cheems or Kabosu and carries no meme text. The dog's name is not chosen (see [`docs/plans/duo-name-candidates.md`](../docs/plans/duo-name-candidates.md)); the stickers can name it only after the author chooses.
+Voice rules: as the existing stickers (spec 13, `docs/plans/sticker-set-v1-direction.md`); **no arm strokes: paws on the body, on props or on the face** (the standing rule of the sticker drawings); no health claims; the dog is not Doge, Cheems or Kabosu and carries no meme text. The dog's name is **Paws** (chosen by the author on 2026-11-15; the search and its weak points are in [`docs/plans/duo-paws-svg-check.md`](../docs/plans/duo-paws-svg-check.md), the candidates in [`docs/plans/duo-name-candidates.md`](../docs/plans/duo-name-candidates.md)); a registry check is still open (V-161).
 
 | ID | Kind | Scene (a first idea, for the sticker session to draw and the author to judge) |
 |---|---|---|
@@ -45,9 +45,9 @@ Read on day 14 (or 28):
 The thresholds are suggestions of the handoff made concrete; they are not data.
 
 ## 6. What the test asks of other sessions
-- **The sticker session:** draw the dog (a reference sheet first, looked at by the author at 256 px and at 32 px, on a light and a dark ground) and the eight stickers; the Border Collie colours of the handoff (a near-black body that may not separate from a dark ground) need that check; the Gemini SVG is only a reference and **its `xmlns` is wrong** (`http://w3.org`, must be `http://www.w3.org/2000/svg`). The full SVG is **not in the handoff**; the author has to paste it again for the render check (V-160).
+- **The sticker session:** draw the dog (a reference sheet first, looked at by the author at 256 px and at 32 px, on a light and a dark ground) and the eight stickers; the render check of the Gemini SVG was done on 2026-11-15 (`docs/plans/duo-paws-svg-check.md`): **its `xmlns` is wrong**, the near-black body **disappears on a dark ground** and at 32 px reads as a small white bottle, the front paws look like empty rings, and the silhouette reads closer to a penguin or hamster than a dog; the reference sheet has to solve these first (V-160).
 - **The website session:** a handoff note from the app session (`docs/handoff/website-duo-test.md`) lists the slugs and the order rule; it changes nothing now.
-- **Licence:** the dog stickers are CC BY 4.0 like all the others (ADR-0126). The dog's name is not protected by any policy: another person may use it.
+- **Licence:** the dog stickers are CC BY 4.0 like all the others (ADR-0126). The name Paws is not protected by any policy: another person may use it.
 
 ## 7. Contradictions found with the other documents
 - The handoff's rule that the dog is "opposite" Peak ("brainless, silly, all play") is not the cat of the charter: Peak is quiet by default and lively only when invited (article 2). The duo texts must not describe Peak as a hyperactive character.

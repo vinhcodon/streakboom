@@ -1,5 +1,7 @@
 # Names for the dog: five candidates and what a web search found
 
+**Update (2026-11-15, later): the author chose Paws** (see [`duo-paws-svg-check.md`](duo-paws-svg-check.md)); the table below stays as the record of the candidates searched.
+
 **Status:** written 2026-11-15 for the handoff `docs/handoff/duo-characters-hypothesis.md`. The author has not chosen. **A web search is not a trademark search**: it shows what is easy to find, not what is registered; nothing here says a name is free. The rules of the handoff: short, easy to remember, nothing that suggests power ("master"), not a common word, and not Doge, Cheems or Kabosu. Searched on 2026-11-15 with plain web searches only (the name and a word such as dog, character, mascot, brand); nothing about the project was sent.
 
 | Name | What was found | Reading |

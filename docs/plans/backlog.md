@@ -467,8 +467,8 @@ The dog is **not** to be put in the app; this is a sticker test, and the decisio
 | ID | Story | Size | State |
 |---|---|---|---|
 | DU-1 | The plan (spec 19), the charter impact (`docs/plans/duo-charter-impact.md`), the name candidates (`docs/plans/duo-name-candidates.md`), the corrected paths and numbers | M | done (2026-11-15), as documents |
-| DU-2 | The author chooses the name (after a registry check) | S | waiting for the author |
-| DU-3 | The dog's reference sheet (the sticker session), looked at at 256 px and 32 px on a light and a dark ground; the SVG of the handoff re-pasted by the author, with the `xmlns` fixed | M | proposed |
+| DU-2 | The author chooses the name | S | done 2026-11-15: **Paws** (a registry check is still open, V-161) |
+| DU-3 | The dog's reference sheet (the sticker session), looked at at 256 px and 32 px on a light and a dark ground; the render check of the handoff SVG is done (`duo-paws-svg-check.md`: a dark ground hides the dog, the paws look like rings) | M | proposed |
 | DU-4 | The eight stickers in three languages, tags and aliases (the sticker session; the website session for the page) | L | proposed (only if the author orders the test) |
 | DU-5 | Check that the counting Worker answers and the author can read the daily counts (V-159) | S | proposed |
 | DU-6 | Run the test for 14 days (28 if the traffic is small), read it by the rule of section 5, record it in the engineering log | S | proposed |
