@@ -114,6 +114,8 @@ struct AppState {
     picture_on: AtomicBool,
     /** The person's own switch in Settings (PS-8): the picture may be taken, in any build. Off at every start until the page says so. */
     picture_user: AtomicBool,
+    /** How many times in a row Windows refused to take Peak's windows out of the capture (before 10 version 2004): from 3 the picture would show Peak itself, so none is given (PS-10). */
+    picture_refused: AtomicU32,
     /// Latest focus-safety readings (spec/06 section 3.2, ADR-0029), written by the hit-test thread (which
     /// already wakes every 30 to 150 ms and already reads the pointer) and read by `focus_probe`.
     /// `u32::MAX` = the idle time is unknown; the offsets are `f64` bits.
@@ -1540,7 +1542,8 @@ fn picture_user(state: State<AppState>, on: bool) {
 /// need not be open: the rules of the clear place use it too, ADR-0123); `None` otherwise. The picture is not kept here: it is built, returned and dropped.
 #[tauri::command]
 async fn screen_grid(app: AppHandle) -> Option<ScreenGrid> {
-    if !picture_allowed(&app) {
+    // none while the person is in a full-screen program, presenting, or away (the session locked): no capture of a game or a shared screen (PS-10)
+    if !picture_allowed(&app) || app.state::<AppState>().picture_refused.load(Ordering::SeqCst) >= 3 || busy_now() {
         return None;
     }
     let main = app.get_webview_window("main")?;
@@ -1551,17 +1554,28 @@ async fn screen_grid(app: AppHandle) -> Option<ScreenGrid> {
     let (gw, gh) = picture::grid_dims(w, h)?;
     // Peak's own windows (the pet, the bubble, the overlay) are taken out of the capture for the moment of taking it (they were found to be in it)
     let hwnds: Vec<isize> = ["main", "bubble", "overlay"].iter().filter_map(|l| app.get_webview_window(l)).filter_map(|w| w.hwnd().ok()).map(|h| h.0 as isize).collect();
-    let (with, data) = tauri::async_runtime::spawn_blocking(move || {
-        let with = picture::capture_gray(a.x, a.y, w, h, gw, gh); // the diagnostic: the picture with our windows in it
-        picture::set_capture_exclusion(&hwnds, true);
+    // the diagnostic picture with our windows in it (the count of `own_cells` on the overlay) is taken only while the overlay is open
+    let diagnostic = app.get_webview_window("overlay").is_some();
+    let (with, data, excluded) = tauri::async_runtime::spawn_blocking(move || {
+        let with = if diagnostic { picture::capture_gray(a.x, a.y, w, h, gw, gh) } else { None };
+        let excluded = picture::set_capture_exclusion(&hwnds, true);
         std::thread::sleep(Duration::from_millis(60)); // the desktop composition takes a frame to follow
         let without = picture::capture_gray(a.x, a.y, w, h, gw, gh);
         picture::set_capture_exclusion(&hwnds, false);
-        (with, without)
+        (with, without, excluded)
     })
     .await
     .ok()?;
+    if !excluded {
+        // Windows before 10 version 2004: Peak's windows cannot be left out, so the picture would show Peak itself; none is given (after three refusals in a row, none is tried again)
+        app.state::<AppState>().picture_refused.fetch_add(1, Ordering::SeqCst);
+        return None;
+    }
+    app.state::<AppState>().picture_refused.store(0, Ordering::SeqCst);
     let data = data?;
+    if picture::looks_failed(&data) {
+        return None; // a locked screen, a secure desktop or a capture that is blocked: it says nothing about the screen
+    }
     let own_cells = with.map(|v| v.iter().zip(&data).filter(|(p, q)| (**p as i32 - **q as i32).abs() >= 6).count() as u32).unwrap_or(0);
     Some(ScreenGrid { x: a.x, y: a.y, w, h, gw, gh, data, own_cells })
 }
@@ -1886,6 +1900,7 @@ pub fn run() {
                 away_gen: AtomicU64::new(0),
                 picture_on: AtomicBool::new(false),
                 picture_user: AtomicBool::new(false),
+                picture_refused: AtomicU32::new(0),
             });
 
             let win = app.get_webview_window("main").expect("main window");

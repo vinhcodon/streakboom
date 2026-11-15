@@ -84,18 +84,32 @@ pub fn capture_gray_with(x: i32, y: i32, w: i32, h: i32, gw: u32, gh: u32, inclu
 /// Take Peak's own windows out of any capture (`WDA_EXCLUDEFROMCAPTURE`) or put them back (`WDA_NONE`). Found on 2026-11-15: a transparent
 /// window of ours is **in** the usual picture (the terrain overlay saw its own tints and lines), so the windows are left out for the moment
 /// of the capture only; they stay visible on the monitor all the time. Windows 10 version 2004 or later; a failure changes nothing.
+/// Returns whether **every** window accepted the change. Before Windows 10 version 2004 the call is refused for 0x11: the windows then stay in
+/// the picture, and the caller must not use it (a cat that sees its own body would find itself covering the screen everywhere, PS-10).
 #[cfg(windows)]
-pub fn set_capture_exclusion(hwnds: &[isize], exclude: bool) {
+pub fn set_capture_exclusion(hwnds: &[isize], exclude: bool) -> bool {
     use windows_sys::Win32::UI::WindowsAndMessaging::SetWindowDisplayAffinity;
+    let mut all = true;
     for &h in hwnds {
-        unsafe {
-            SetWindowDisplayAffinity(h as _, if exclude { 0x11 } else { 0 });
+        let ok = unsafe { SetWindowDisplayAffinity(h as _, if exclude { 0x11 } else { 0 }) };
+        if ok == 0 {
+            all = false;
         }
     }
+    all
 }
 
 #[cfg(not(windows))]
-pub fn set_capture_exclusion(_hwnds: &[isize], _exclude: bool) {}
+pub fn set_capture_exclusion(_hwnds: &[isize], _exclude: bool) -> bool {
+    false
+}
+
+/// A capture that is black everywhere (a locked screen, the secure desktop of an elevation prompt, a remote session without a display, a
+/// program that blocks capture) says nothing about the screen: it must not be taken for an empty screen (PS-10). A real screen, even a dark
+/// one, has at least a little change; an all-zero or near-zero picture is a failed capture.
+pub fn looks_failed(grey: &[u8]) -> bool {
+    grey.is_empty() || grey.iter().all(|&v| v <= 2)
+}
 
 #[cfg(not(windows))]
 pub fn capture_gray_with(_x: i32, _y: i32, _w: i32, _h: i32, _gw: u32, _gh: u32, _include_layered: bool) -> Option<Vec<u8>> {
@@ -110,6 +124,17 @@ pub fn capture_gray(_x: i32, _y: i32, _w: i32, _h: i32, _gw: u32, _gh: u32) -> O
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn a_black_or_empty_capture_is_a_failed_capture() {
+        assert!(looks_failed(&[]));
+        assert!(looks_failed(&vec![0u8; 192 * 108]));
+        assert!(looks_failed(&vec![2u8; 100]));
+        let mut dark = vec![10u8; 192 * 108];
+        assert!(!looks_failed(&dark), "a dark screen with some light in it is a screen");
+        dark[5] = 0;
+        assert!(!looks_failed(&dark));
+    }
 
     #[test]
     fn the_grid_is_small_and_in_proportion() {
@@ -202,6 +227,7 @@ mod tests {
             assert!(!body.contains(bad), "screen_grid must not use {bad}");
         }
         assert!(body.contains("picture_allowed"), "screen_grid asks the gate first");
+        assert!(body.contains("busy_now"), "no capture while the person is in a full-screen program, presenting or away");
     }
 
     #[test]
@@ -213,5 +239,24 @@ mod tests {
         assert!(picture_gate(false, true, true), "the tray switch works in a test build");
         assert!(!picture_gate(false, false, true), "a test build is off until a switch is on");
         assert!(picture_gate(true, false, true));
+    }
+
+    /// PS-10: what one picture costs. `cargo test --release the_capture_costs -- --ignored --nocapture` takes the real screen 30 times and prints
+    /// the mean and the worst in milliseconds (the 60 ms wait for the composition in `screen_grid` is on top of it).
+    #[test]
+    #[ignore]
+    #[cfg(windows)]
+    fn the_capture_costs() {
+        let (w, h) = (1920, 1080);
+        let (gw, gh) = grid_dims(w, h).unwrap();
+        let mut worst = 0u128;
+        let t0 = std::time::Instant::now();
+        for _ in 0..30 {
+            let t = std::time::Instant::now();
+            let g = capture_gray(0, 0, w, h, gw, gh);
+            worst = worst.max(t.elapsed().as_micros());
+            assert!(g.is_some());
+        }
+        println!("capture: mean {:.2} ms, worst {:.2} ms over 30", t0.elapsed().as_micros() as f64 / 30000.0, worst as f64 / 1000.0);
     }
 }
