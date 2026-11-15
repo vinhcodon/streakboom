@@ -8,7 +8,7 @@
 
   It takes the mouse for the whole time. Peak (a dev build) must already be running. Chrome test windows use their own profile.
 #>
-param([int]$Minutes = 10, [string]$Out = "round.csv")
+param([int]$Minutes = 10, [string]$Out = "round.csv", [int]$Every = 9)
 $ErrorActionPreference = "Stop"
 Add-Type @"
 using System; using System.Runtime.InteropServices; using System.Collections.Generic; using System.Text;
@@ -22,7 +22,8 @@ public static class W {
   [DllImport("user32.dll")] public static extern int GetSystemMetrics(int i);
   [StructLayout(LayoutKind.Sequential)] public struct PT { public int X, Y; }
   [DllImport("user32.dll")] public static extern IntPtr WindowFromPoint(PT p);
-  public static uint PidAt(int x, int y) { PT p; p.X = x; p.Y = y; IntPtr h = WindowFromPoint(p); uint pid; GetWindowThreadProcessId(h, out pid); return pid; }
+  [DllImport("user32.dll")] public static extern IntPtr GetAncestor(IntPtr h, uint f);
+  public static uint PidAt(int x, int y) { PT p; p.X = x; p.Y = y; IntPtr h = WindowFromPoint(p); IntPtr r = GetAncestor(h, 2); if (r != IntPtr.Zero) h = r; uint pid; GetWindowThreadProcessId(h, out pid); return pid; }
   delegate bool EnumProc(IntPtr h, IntPtr l);
   [DllImport("user32.dll")] static extern bool EnumWindows(EnumProc p, IntPtr l);
   public static List<IntPtr> Of(uint pid) {
@@ -89,8 +90,7 @@ $phases = @(
   @{ name="light_kiosk"; file="scene_light.html"; mode="kiosk" },
   @{ name="dark_kiosk"; file="scene_dark.html"; mode="kiosk" },
   @{ name="small_window"; file="scene_light.html"; mode="app" },
-  @{ name="desktop_only"; file=$null; mode="" },
-  @{ name="light_kiosk2"; file="scene_light.html"; mode="kiosk" }
+  @{ name="desktop_only"; file=$null; mode="" }
 )
 $per = [int](($Minutes * 60) / $phases.Count)
 foreach ($ph in $phases) {
@@ -99,7 +99,7 @@ foreach ($ph in $phases) {
   $end = (Get-Date).AddSeconds($per - 3); $gi = 0
   while ((Get-Date) -lt $end) {
     Gesture $gestures[$gi % $gestures.Count] $ph.name; $gi++
-    Pause 9000 $ph.name
+    Pause ($Every * 1000) $ph.name
   }
 }
 Stop-Scene

@@ -915,6 +915,8 @@
   // the surfaces, the cat's feet and the ledge it would choose, to the overlay window.
   let overlayTimer: ReturnType<typeof setInterval> | undefined;
   let pictureOn = false; // the screen picture experiment (ADR-0119): turned on from the tray of a Preview build, off at every start
+  let viewTick = 0;
+  let lastGrid: { x: number; y: number; w: number; h: number; gw: number; gh: number } | null = null;
   async function feedOverlay() {
     try {
       const map = await invoke<GroundMap>("ground_map");
@@ -928,6 +930,7 @@
       if (pictureOn) {
         const grid = await invoke<{ x: number; y: number; w: number; h: number; gw: number; gh: number; data: number[]; ownCells: number } | null>("screen_grid");
         if (grid) {
+          lastGrid = { x: grid.x, y: grid.y, w: grid.w, h: grid.h, gw: grid.gw, gh: grid.gh };
           const seen = analyse({ gw: grid.gw, gh: grid.gh, data: grid.data });
           const cell = grid.w / grid.gw; // physical px of a cell
           const cellY = grid.h / grid.gh;
@@ -940,6 +943,24 @@
           const meanGrey = grid.data.reduce((a, b) => a + b, 0) / Math.max(1, grid.data.length);
           picture = { gw: seen.gw, gh: seen.gh, threshold: seen.threshold, catCells, hsegs: seen.hsegs.map((h) => ({ ...h, room: hasRoom(h, catCells) })), vsegs: seen.vsegs, empty: Array.from(seen.empty), kinds: Array.from(seen.kinds), regions: seen.regions, bands: seen.bands, own: grid.ownCells, dark: meanGrey < 110, spots: reachability(fuseSpots(winSpots, fuseSpots(edgeSpots(seen, catCells), standSpots(seen, catCells), 2, "edge")), seen, Math.round((HOP_MAX_PX * (window.devicePixelRatio || 1)) / cell)) };
         }
+      }
+      // E29: every third map (about 2.4 s) one line of what the cat stands on, numbers only (no pixels, no words)
+      if (++viewTick % 3 === 0) {
+        let onSpot = -1;
+        let spotsN = -1;
+        let ownCells = -1;
+        const pic = picture as { spots?: { x0: number; x1: number; y: number }[]; own?: number; gw?: number } | null;
+        if (pic && pic.spots) {
+          spotsN = pic.spots.length;
+          ownCells = pic.own ?? -1;
+          const gridNow = lastGrid;
+          if (at && gridNow) {
+            const col = Math.floor((at.feet.x - gridNow.x) / (gridNow.w / gridNow.gw));
+            const row = Math.floor((at.feet.y - gridNow.y) / (gridNow.h / gridNow.gh)) - 1;
+            onSpot = pic.spots.some((u) => col >= u.x0 && col <= u.x1 && Math.abs(u.y - row) <= 1) ? 1 : 0;
+          }
+        }
+        lp(`view pose=${pose} surfaces=${ss.length} roomy=${ss.filter((u) => u.roomy).length} spots=${spotsN} on_spot=${onSpot} own_cells=${ownCells} fx=${at ? Math.round(at.feet.x) : -1} fy=${at ? Math.round(at.feet.y) : -1}`);
       }
       await emitTo("overlay", "overlay-data", { map, surfaces: ss, target, feet: at ? at.feet : null, note, picture });
     } catch {

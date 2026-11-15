@@ -533,3 +533,14 @@ Dev build with `--features terrain-overlay` and the picture on (the overlay does
 - **Alone, Peak hardly moves in a full screen scene**: 53 and 59 px of sideways travel in about 26 s of calm per scene, 0 in the last one, 269 px on the bare desktop, and **not one change of height by itself in the whole round** (no climb, no hop, no perch). The perch trace has two new lines, both `not_free` / `no_ledge`.
 - On the author's real screen the overlay did find 28 ledges and 3 walls (a maximised app window with its panels), so the ledges exist in the picture; Peak does not use them yet (PS-6, PS-7).
 **Lesson:** the sense is there, the use is not. The first behaviour step to look at on a test build is walking and perching on ledges of the picture when a window covers the screen.
+
+### 2026-11-15, loop round 3 (E29): measuring only, 23 minutes, four scenes, one gesture every 45 s
+Dev build, overlay and picture on. New `view` line every 2.4 s (surfaces, spots, whether the feet are on a spot). `scripts/loop/score.py` prints the table.
+- **By itself, per scene (calm samples only):** the full-screen light page 0 px of sideways travel in 5 minutes; the dark page 287 px; the small window 931 px; the bare desktop 1519 px. **Height changes by itself: 0 again** (no climb, hop or perch in 23 minutes). Standing still 240 to 285 s of each 5 minutes.
+- **The cat is asleep in 138 of 598 views (23%).** Part of the stillness of rounds 1 to 3 is sleep, not a refusal; the next rounds must separate the two.
+- **On a stand spot of the picture: 26 of 594 views (4%).** The picture offers 5 to 8 spots; the cat is almost never on one.
+- **The bubble does not make a surface:** surfaces averaged 0.30 within 6 s after a touch (bubble up) and 0.34 at other times; spots 5.5 and 5.3. (Not proof for every bubble; the bubble was up for a part of the 40 views.)
+- **`hit=` is dropped as a measure:** the pet window is click-through where it is transparent, so the window under the point is often the one behind. The `pointer_down` lines are the measure.
+- **`own_cells` on the view line means nothing while the overlay is open** (the overlay covers the screen), so it is not used.
+- Gestures: 24 pointer downs, 3 carries, 4 step asides chosen, 3 shoves, 2 chats opened, no chat sent.
+**Lesson:** the way to the next step is clear: the spots exist (5 to 8 at a time), the cat is on one 4% of the time and never moves between them. Round 4 is the first behaviour change.
