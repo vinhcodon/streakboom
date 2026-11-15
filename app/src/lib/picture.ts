@@ -43,6 +43,11 @@ export const PICTURE = {
    * bandSize or more is lines of text, not ledges (a button has two edges, text has many). */
   bandSize: 3,
   bandRows: 5,
+  /** Hole closing (round 3): a piece of border or noise at most this many cells big, with only plain around it, is part of the plain. */
+  holeMax: 18,
+  /** Stand spots (round 3): neighbouring columns whose pocket bottoms differ by at most slope, and by at most drift from where the run began. */
+  slope: 2,
+  drift: 3,
   /** At most this many regions are listed (the largest first). */
   maxRegions: 80,
 };
@@ -220,6 +225,49 @@ export function analyse(g: Grid, opt: Partial<typeof PICTURE> = {}): Seen {
 }
 
 /**
+ * Round 3 of stage 2b: a small object in empty space (an icon, a dropped speck: a piece of border and noise) is part of the plain
+ * around it when it is at most `holeMax` cells and has nothing but plain around it (not the edge of the picture, not another kind).
+ * A rule between two pockets is longer than that, or has other kinds beside it, and stays a line.
+ */
+function closeHoles(kinds: Uint8Array, gw: number, gh: number, P: typeof PICTURE): void {
+  const n = gw * gh;
+  const seen = new Uint8Array(n);
+  const stack: number[] = [];
+  for (let i0 = 0; i0 < n; i0++) {
+    if (seen[i0] || kinds[i0] !== KIND.none) continue;
+    const piece: number[] = [];
+    let enclosed = true;
+    stack.length = 0;
+    stack.push(i0);
+    seen[i0] = 1;
+    while (stack.length) {
+      const i = stack.pop()!;
+      piece.push(i);
+      const x = i % gw;
+      const y = (i / gw) | 0;
+      for (let dy = -1; dy <= 1; dy++)
+        for (let dx = -1; dx <= 1; dx++) {
+          if (!dx && !dy) continue;
+          const nx = x + dx;
+          const ny = y + dy;
+          if (nx < 0 || ny < 0 || nx >= gw || ny >= gh) {
+            enclosed = false;
+            continue;
+          }
+          const j = ny * gw + nx;
+          if (kinds[j] === KIND.none) {
+            if (!seen[j]) {
+              seen[j] = 1;
+              stack.push(j);
+            }
+          } else if (kinds[j] !== KIND.plain) enclosed = false;
+        }
+    }
+    if (enclosed && piece.length <= P.holeMax) for (const i of piece) kinds[i] = KIND.plain;
+  }
+}
+
+/**
  * Lines of text come out of the picture as a stack of short horizontal segments, one under the other every few rows, and none of them is
  * a ledge: segments that chain up within `bandRows` rows of each other, `bandSize` or more, are dropped.
  */
@@ -357,6 +405,7 @@ function findRegions(str: Uint8Array, data: ArrayLike<number>, gw: number, gh: n
     kindOf.set(id, kind === "panel" ? KIND.panel : KIND.plain);
   }
   for (let i = 0; i < n; i++) if (label[i] > 0) kinds[i] = kindOf.get(label[i]) ?? 0;
+  closeHoles(kinds, gw, gh, P);
   regions.sort((a, b) => b.area - a.area);
   return { kinds, regions: regions.slice(0, P.maxRegions) };
 }
@@ -377,44 +426,61 @@ function roomAbove(str: Uint8Array, gw: number, y: number, x0: number, x1: numbe
 /** A ledge has room for the cat when the empty rows above it are at least the cat's height in cells. */
 export const hasRoom = (s: HSeg, catCells: number): boolean => s.roomAbove >= catCells;
 
-/** A place Peak could stand that has no sharp edge under it (round 2 of stage 2b): the floor of a pocket of empty space. */
+/** A place Peak could stand that has no sharp edge under it (rounds 2 and 3 of stage 2b): the floor of a pocket of empty space. */
 export interface StandSpot {
   x0: number;
   x1: number;
-  y: number; // the row of cells the feet are in; the floor is the top of the row below
+  y: number; // the row of cells the feet are in (the median of the run); the floor is the top of the row below
   headroom: number; // the least number of empty rows above it along the run
 }
 
 /**
- * The bottom boundary of every plain (empty space) where the empty space above is at least `catCells` tall and the run is at least
+ * The floors of the pockets of empty space where the empty rows above are at least `catCells` tall and the run is at least
  * `minWidth` cells wide: the cat can stand there without covering anything, on whatever lies under the pocket (a line of text, a
- * toolbar, the edge of a block). The floor of the screen itself is left out (Peak already walks there). Pure; `seen` is not changed.
+ * toolbar, the edge of a block). A floor is a run of neighbouring columns whose pocket bottoms are nearly level (`slope` between
+ * neighbours, `drift` from where the run began), so a ragged bottom counts. The floor of the screen itself is left out (Peak already
+ * walks there). Pure; `seen` is not changed.
  */
-export function standSpots(seen: Seen, catCells: number, minWidth = Math.max(6, Math.ceil(catCells * 0.6)), max = 60): StandSpot[] {
+export function standSpots(seen: Seen, catCells: number, minWidth = Math.max(6, Math.ceil(catCells * 0.6)), max = 60, opt: Partial<typeof PICTURE> = {}): StandSpot[] {
+  const P = { ...PICTURE, ...opt };
   const { gw, gh, kinds } = seen;
   if (catCells < 1) return [];
-  const plain = (x: number, y: number) => kinds[y * gw + x] === KIND.plain;
-  // how many empty rows end at (x, y), counted upward
-  const head = new Int16Array(gw * gh);
-  for (let y = 0; y < gh; y++) for (let x = 0; x < gw; x++) head[y * gw + x] = plain(x, y) ? (y > 0 ? head[(y - 1) * gw + x] : 0) + 1 : 0;
-  const spots: StandSpot[] = [];
-  for (let y = 0; y < gh - 2; y++) {
-    let x = 0;
-    while (x < gw) {
-      const foot = (k: number) => head[y * gw + k] >= catCells && !plain(k, y + 1);
-      if (!foot(x)) {
-        x++;
-        continue;
+  type Plateau = { x0: number; x1: number; first: number; last: number; ys: number[]; head: number };
+  let active: Plateau[] = [];
+  const done: Plateau[] = [];
+  for (let x = 0; x < gw; x++) {
+    // the vertical runs of plain in this column that are tall enough: (bottom row, length)
+    const runs: { y: number; len: number }[] = [];
+    let len = 0;
+    for (let y = 0; y <= gh; y++) {
+      if (y < gh && kinds[y * gw + x] === KIND.plain) len++;
+      else {
+        if (len >= catCells && y - 1 < gh - 2) runs.push({ y: y - 1, len });
+        len = 0;
       }
-      let x1 = x;
-      let least = head[y * gw + x];
-      while (x1 + 1 < gw && foot(x1 + 1)) {
-        x1++;
-        least = Math.min(least, head[y * gw + x1]);
-      }
-      if (x1 - x + 1 >= minWidth) spots.push({ x0: x, x1, y, headroom: least });
-      x = x1 + 1;
     }
+    const next: Plateau[] = [];
+    const taken = new Set<Plateau>();
+    for (const r of runs) {
+      const p = active.find((q) => !taken.has(q) && Math.abs(r.y - q.last) <= P.slope && Math.abs(r.y - q.first) <= P.drift);
+      if (p) {
+        taken.add(p);
+        p.x1 = x;
+        p.last = r.y;
+        p.ys.push(r.y);
+        p.head = Math.min(p.head, r.len);
+        next.push(p);
+      } else next.push({ x0: x, x1: x, first: r.y, last: r.y, ys: [r.y], head: r.len });
+    }
+    for (const q of active) if (!taken.has(q)) done.push(q);
+    active = next;
+  }
+  done.push(...active);
+  const spots: StandSpot[] = [];
+  for (const p of done) {
+    if (p.x1 - p.x0 + 1 < minWidth) continue;
+    const ys = [...p.ys].sort((a, b) => a - b);
+    spots.push({ x0: p.x0, x1: p.x1, y: ys[ys.length >> 1], headroom: p.head });
   }
   spots.sort((a, b) => (b.x1 - b.x0) * b.headroom - (a.x1 - a.x0) * a.headroom);
   return spots.slice(0, max);

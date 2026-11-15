@@ -113,11 +113,11 @@ test("a patch of fine stripes is rough ground", () => {
   assert.equal(kindAt(s, 3, 3), KIND.plain);
 });
 
-test("a speck is noise: no region of its own", () => {
+test("a speck is noise: no region of its own, and the plain around it closes over it (round 3)", () => {
   const g = box(60, 40, 40, 200, 30, 20, 31, 21); // 2 x 2 bright
   const s = analyse(g);
   assert.equal(s.regions.filter((r) => r.kind !== "plain").length, 0, JSON.stringify(s.regions));
-  assert.equal(kindAt(s, 30, 20), KIND.none);
+  assert.equal(kindAt(s, 30, 20), KIND.plain);
 });
 
 test("the regions are listed largest first and a screen of noise is read quickly", () => {
@@ -193,4 +193,36 @@ test("stand spots are listed largest first and standSpots leaves the picture as 
   const spots = standSpots(s, 12);
   assert.deepEqual(Array.from(s.kinds), before);
   for (let i = 1; i < spots.length; i++) assert.ok((spots[i - 1].x1 - spots[i - 1].x0) * spots[i - 1].headroom >= (spots[i].x1 - spots[i].x0) * spots[i].headroom);
+});
+
+test("a ragged floor still counts: pocket bottoms that wobble by a cell make one place to stand", () => {
+  const gw = 80;
+  const gh = 60;
+  const data = new Uint8Array(gw * gh).fill(235);
+  for (let x = 0; x < gw; x++) {
+    const bottom = 30 + (x % 3 === 0 ? 1 : 0) + (x % 7 === 0 ? 1 : 0); // a staircase of one or two cells
+    for (let y = bottom; y < gh; y++) data[y * gw + x] = x % 2 === 0 ? 235 : 120;
+  }
+  const s = analyse({ gw, gh, data });
+  const spots = standSpots(s, 15);
+  assert.ok(spots.length >= 1, JSON.stringify(s.regions.slice(0, 3)));
+  assert.ok(spots[0].x1 - spots[0].x0 + 1 >= 50, "one wide floor, not many short ones: " + JSON.stringify(spots));
+  assert.ok(spots[0].y >= 27 && spots[0].y <= 32);
+});
+
+test("a hole of a cell or two inside empty space does not break it, and a line between two pockets stays a line", () => {
+  const gw = 60;
+  const gh = 40;
+  const data = new Uint8Array(gw * gh).fill(220);
+  for (let y = 18; y < 20; y++) for (let x = 20; x < 22; x++) data[y * gw + x] = 60; // a 2 x 2 speck
+  const before = analyse({ gw, gh, data: new Uint8Array(gw * gh).fill(220) });
+  const s = analyse({ gw, gh, data });
+  assert.equal(s.kinds[19 * gw + 20], KIND.plain, "the speck is closed");
+  assert.ok(s.kinds.filter((k) => k === KIND.plain).length >= before.kinds.filter((k) => k === KIND.plain).length - 40);
+  // a vertical rule between two empty halves is kept as a wall
+  const two = new Uint8Array(gw * gh).fill(220);
+  for (let y = 0; y < gh; y++) for (let x = 30; x < 32; x++) two[y * gw + x] = 60;
+  const t = analyse({ gw, gh, data: two });
+  assert.ok(t.vsegs.length >= 1, "the rule is still a wall");
+  assert.notEqual(t.kinds[20 * gw + 30] + t.kinds[20 * gw + 31], 2 * KIND.plain, "the line itself is not filled");
 });
