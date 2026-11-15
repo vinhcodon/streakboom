@@ -1,0 +1,212 @@
+{
+  "version": "set-duo-4",
+  "creator": "Streakboom",
+  "license": "CC BY 4.0",
+  "credits": [
+    {
+      "font": "Be Vietnam Pro",
+      "license": "SIL OFL 1.1",
+      "langs": [
+        "vi",
+        "en"
+      ],
+      "licenseFile": "docs/plans/assets/stickers/fonts/OFL.txt"
+    },
+    {
+      "font": "M PLUS Rounded 1c",
+      "license": "SIL OFL 1.1",
+      "langs": [
+        "ja"
+      ],
+      "licenseFile": "docs/plans/assets/stickers/fonts/OFL-MPlusRounded1c.txt"
+    }
+  ],
+  "character_note": "Paws (the dog) and Peak (the cat). No arms. Captions are baked into the pictures.",
+  "stickers": [
+    {
+      "id": "D1",
+      "slug_en": "one-is-off",
+      "kind": "paws-alone",
+      "text": {
+        "vi": "Lệch một hạt.",
+        "en": "One is off.",
+        "ja": "ひとつ大きい"
+      },
+      "title": {
+        "vi": "Lệch một hạt",
+        "en": "One is off",
+        "ja": "ひとつ大きい"
+      },
+      "alt": {
+        "vi": "Paws xếp hạt dẻ theo cỡ thành một hàng thẳng, nhưng một hạt to hơn một chút. Chữ trên ảnh: “Lệch một hạt.”",
+        "en": "Sorts chestnuts by size in a perfect row, but one is slightly too big. Text on the image: \"One is off.\"",
+        "ja": "くりを大きさ順にきれいに並べたが、ひとつだけ少し大きい。画像の文字：「ひとつ大きい」"
+      },
+      "synonyms": {
+        "vi": [
+          "xếp hàng",
+          "cẩn thận",
+          "tỉ mỉ",
+          "lệch"
+        ],
+        "en": [
+          "sorting",
+          "careful",
+          "tidy",
+          "perfectionist"
+        ],
+        "ja": [
+          "並べる",
+          "きちんと",
+          "くり"
+        ]
+      },
+      "reviewed": {
+        "vi": true,
+        "en": false,
+        "ja": false
+      },
+      "status": "final-art",
+      "file": "one-is-off.png"
+    },
+    {
+      "id": "D2",
+      "slug_en": "stamped",
+      "kind": "paws-alone",
+      "text": {
+        "vi": "Đã đóng dấu.",
+        "en": "Stamped.",
+        "ja": "押印しました"
+      },
+      "title": {
+        "vi": "Đã đóng dấu",
+        "en": "Stamped",
+        "ja": "押印しました"
+      },
+      "alt": {
+        "vi": "Paws đóng dấu thật cẩn thận lên một tờ giấy chẳng ai đọc. Chữ trên ảnh: “Đã đóng dấu.”",
+        "en": "Stamps a paper nobody will read, with great care. Text on the image: \"Stamped.\"",
+        "ja": "だれも読まない書類に、ていねいにはんこを押している。画像の文字：「押印しました」"
+      },
+      "synonyms": {
+        "vi": [
+          "đóng dấu",
+          "duyệt",
+          "giấy tờ",
+          "xong việc"
+        ],
+        "en": [
+          "approved",
+          "paperwork",
+          "done",
+          "stamp"
+        ],
+        "ja": [
+          "はんこ",
+          "書類",
+          "承認"
+        ]
+      },
+      "reviewed": {
+        "vi": true,
+        "en": false,
+        "ja": false
+      },
+      "status": "final-art",
+      "file": "stamped.png"
+    },
+    {
+      "id": "D3",
+      "slug_en": "one-pebble",
+      "kind": "paws-alone",
+      "text": {
+        "vi": "Xong một viên.",
+        "en": "One pebble.",
+        "ja": "ひとつ運んだ"
+      },
+      "title": {
+        "vi": "Xong một viên",
+        "en": "One pebble",
+        "ja": "ひとつ運んだ"
+      },
+      "alt": {
+        "vi": "Paws vừa mang một viên sỏi đến đống sỏi, đặt xuống và tự hào. Chữ trên ảnh: “Xong một viên.”",
+        "en": "Carried one pebble to the pile, put it down and looks proud. Text on the image: \"One pebble.\"",
+        "ja": "小石をひとつ山まで運んで置き、とくいげにしている。画像の文字：「ひとつ運んだ」"
+      },
+      "synonyms": {
+        "vi": [
+          "tự hào",
+          "xong",
+          "việc nhỏ",
+          "sỏi"
+        ],
+        "en": [
+          "proud",
+          "small win",
+          "done",
+          "pebble"
+        ],
+        "ja": [
+          "ほこらしい",
+          "ひとつ",
+          "小石"
+        ]
+      },
+      "reviewed": {
+        "vi": true,
+        "en": false,
+        "ja": false
+      },
+      "status": "final-art",
+      "file": "one-pebble.png"
+    },
+    {
+      "id": "P1",
+      "slug_en": "excuse-me",
+      "kind": "pair",
+      "text": {
+        "vi": "Xin phép nhé.",
+        "en": "Excuse me.",
+        "ja": "失礼します"
+      },
+      "title": {
+        "vi": "Xin phép nhé",
+        "en": "Excuse me",
+        "ja": "失礼します"
+      },
+      "alt": {
+        "vi": "Paws rón rén đi ngang qua Peak đang ngủ; Peak hé một mắt nhìn theo. Chữ trên ảnh: “Xin phép nhé.”",
+        "en": "Tiptoes past sleeping Peak; Peak opens one eye and watches. Text on the image: \"Excuse me.\"",
+        "ja": "ねているPeakのそばをそろそろと通りぬける。Peakは片目をあけて見ている。画像の文字：「失礼します」"
+      },
+      "synonyms": {
+        "vi": [
+          "xin phép",
+          "rón rén",
+          "lịch sự",
+          "ngủ"
+        ],
+        "en": [
+          "polite",
+          "excuse me",
+          "tiptoe",
+          "nap"
+        ],
+        "ja": [
+          "失礼",
+          "ていねい",
+          "ねている",
+          "そろそろ"
+        ]
+      },
+      "reviewed": {
+        "vi": true,
+        "en": false,
+        "ja": false
+      },
+      "status": "final-art",
+      "file": "excuse-me.png"
+    }
+  ]
+}
