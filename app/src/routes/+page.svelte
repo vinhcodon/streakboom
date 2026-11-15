@@ -350,6 +350,7 @@
   // ---------------------------------------------------- per-day counts (Bond Days, spec/05)
   // Recorded only if the user agreed to them (bumpDay checks). Counts only, never content.
   function count(key: DayCounter, n = 1) {
+    void invoke("loop_trace", { step: `act ${key}` }).catch(() => {});
     const next = bumpDay(data, key, Date.now(), n);
     if (next !== data) {
       data = next;
@@ -2532,6 +2533,7 @@
     if (!busy && answerDay(text)) return;
     if (busy || !canChat) return;
     const gate = aiGate(data, "chat", Date.now());
+    void invoke("chat_trace", { step: `chat gate=${gate} chars=${text.length} day=${data.ai.chat}` }).catch(() => {});
     if (gate !== "ok") {
       chatUser = text;
       chatReply = gate === "cap" ? ui.capHit[Math.floor(Math.random() * ui.capHit.length)] : ui.err.rate_limit;

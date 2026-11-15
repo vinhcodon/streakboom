@@ -427,3 +427,24 @@ Why: the author keeps building features and lets a few adults try them (ADR-0089
 | PS-8 | The feature: the switch in Settings, Privacy (off by default), the texts in the README, Settings (three languages) and the website (through the website session), taken only when about to move or to check the seat | M | proposed; only by the author's order |
 | PS-9 | The privacy test that nothing is written, logged or sent (the grid never leaves memory), and the list of what the sense does and does not see | S | proposed (a first test comes with PS-2) |
 | PS-10 | Hardening: several monitors and scales, security software, full-screen programs and black captures, the cost on a weak computer | M | proposed |
+
+## E28: Measure the chat cap (ADR-0122; first part built)
+
+The cap is 60 a day and nobody has measured whether that is right. A dev build lifts it for tests. `chat-trace.log` records gate, characters and the day count (no words).
+
+| ID | Story | Size | State |
+|---|---|---|---|
+| CQ-1 | `chat-trace.log` and the dev lift | S | built, not seen |
+| CQ-2 | After 1 to 2 weeks of real use, read the log: the days that hit the cap, the typical day, the cost per provider; propose a number | S | proposed (waits for the data) |
+| CQ-3 | The ADR that sets the cap (the author chooses from options) | S | proposed |
+
+## E29: Loop engineering, Peak watched in rounds (plan `docs/plans/loop-engineering.md`, ADR-0122)
+
+| ID | Story | Size | State |
+|---|---|---|---|
+| LE-1 | The inventory of skills, actions and senses, and the scenario list | S | built (the plan) |
+| LE-2 | `loop-trace.log` and `scripts/loop/loop-round.ps1` (a driver that makes the gestures and samples Peak's window from outside) | M | built, round 1 |
+| LE-3 | Round 1 (10 minutes) and its report; hypotheses go to the engineering log | S | see the log |
+| LE-4 | A fixed scene set and a scorer that reads the CSV and the traces and prints the numbers of a round | M | proposed |
+| LE-5 | Later rounds, one change each, compared with the numbers of the last; every motion change is seen by the author first | M | proposed |
+

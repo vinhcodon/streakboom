@@ -1626,6 +1626,18 @@ fn perch_trace(app: AppHandle, step: String) {
     append_trace(&app, "perch-trace.log", &step);
 }
 
+/// The chat gate and the chat count (`chat-trace.log`, E28): a number of characters and the count of the day, never the words.
+#[tauri::command]
+fn chat_trace(app: AppHandle, step: String) {
+    append_trace(&app, "chat-trace.log", &step);
+}
+
+/// The loop engineering log (`loop-trace.log`, E29): which action ran and when, fixed names and numbers only.
+#[tauri::command]
+fn loop_trace(app: AppHandle, step: String) {
+    append_trace(&app, "loop-trace.log", &step);
+}
+
 /// Peak walks off (S2): hide the pet window and its bubble and start the return timer. The page decides whether it may leave.
 #[tauri::command]
 fn pet_leave(app: AppHandle, state: State<AppState>, minutes: u32) -> bool {
@@ -1886,6 +1898,8 @@ pub fn run() {
             pet_leave,
             leave_trace,
             perch_trace,
+            chat_trace,
+            loop_trace,
             pet_return,
             pet_away_retry,
             drag_start,
