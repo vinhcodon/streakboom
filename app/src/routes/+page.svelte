@@ -118,7 +118,7 @@
   import { desktopShare, ledges, summary, type GroundKind, type GroundMap } from "$lib/groundmap";
   import { surfacesBelow, surfaces, wallFor, type Wall } from "$lib/terrain";
   import { analyse, edgeSpots, fuseSpots, hasRoom, reachability, standSpots, type StandSpot } from "$lib/picture";
-  import { boxCoverage, chooseSettle } from "$lib/settle";
+  import { boxCoverage, chooseSettle, settleAllowed } from "$lib/settle";
   import { believe, responseFor, startBelief, type Belief } from "$lib/perception";
   import { choosePerch, PERCH_LIMITS } from "$lib/perch";
   import { bodyPoints, escapePlaces } from "$lib/escape";
@@ -827,7 +827,7 @@
     if (quiet) return pose === "sleep" || pose === "drowsy" ? undefined : enter("drowsy");
     if (panel) return scheduleNext();
     // E29 round 4 (the screen picture experiment, Preview only): when the cat covers content, it goes to the nearest clear place
-    if (pictureOn && !settleOff && !perchSeat && !perchWall && (pose === "idle" || pose === "look") && Date.now() - lastSettle > SETTLE_EVERY_MS) {
+    if (pictureOn && !settleOff && !perchSeat && !perchWall && (pose === "idle" || pose === "look") && Date.now() - lastSettle > SETTLE_EVERY_MS && settleAllowed(settleMoves, Date.now())) {
       lastSettle = Date.now();
       return void settleNow().finally(scheduleNext);
     }
@@ -942,6 +942,7 @@
   let settleOff = false; // STREAKBOOM_NO_SETTLE=1 (a test aid): the rule is not used, so the share of cover can be measured without it
   void invoke<boolean>("dev_flag", { name: "STREAKBOOM_NO_SETTLE" }).then((v) => (settleOff = v)).catch(() => {});
   let lastSettle = 0;
+  let settleMoves: number[] = []; // the times of the moves, for the back-off
   /**
    * Look at the picture of the screen; if more than a third of the cells under the cat's body are not empty, walk along the floor or hop up
    * to the nearest clear place with room above it (settle.ts). Only while the picture experiment is on. It moves away from content, so
@@ -969,15 +970,28 @@
       const dxPhys = (move.col - col) * cell;
       if (move.kind === "walk") {
         const px = Math.abs(dxPhys);
-        if (px < 2 * cell) return false;
         dir = dxPhys < 0 ? -1 : 1;
+        // the room the cat has toward that edge: it does not aim past where it can stand (H28)
+        let room = Infinity;
+        try {
+          room = (await invoke<number>("edge_room", { dir })) * at.scale;
+        } catch {
+          /* unknown: no cut */
+        }
+        const go = Math.min(px, Math.max(0, room - 20 * at.scale));
+        if (go < 2 * cell) {
+          lp(`settle_walk skipped room=${Math.round(room)} px=${Math.round(px)}`);
+          return false;
+        }
+        settleMoves = [...settleMoves.filter((t) => Date.now() - t < 10 * 60_000), Date.now()];
         const ok = await new Promise<boolean>((resolve) => {
-          homeGoal = { px, ms: seatWalkMs(px / at.scale, LEAVE_PACE_PX_S), done: resolve };
+          homeGoal = { px: go, ms: seatWalkMs(go / at.scale, LEAVE_PACE_PX_S), done: resolve };
           enter("walk");
         });
-        lp(`settle_walk ok=${ok ? 1 : 0} px=${Math.round(px)}`);
+        lp(`settle_walk ok=${ok ? 1 : 0} px=${Math.round(go)} asked=${Math.round(px)}`);
         return ok;
       }
+      settleMoves = [...settleMoves.filter((t) => Date.now() - t < 10 * 60_000), Date.now()];
       const footY = grid.y + (move.row + 1) * cellY;
       await fly(splitHop(Math.round(dxPhys / at.scale), Math.round((footY - at.feet.y) / at.scale)), "walk");
       lp(`settle_hop dx=${Math.round(dxPhys / at.scale)} dy=${Math.round((footY - at.feet.y) / at.scale)}`);

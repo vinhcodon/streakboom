@@ -91,7 +91,8 @@ $phases = @(
   @{ name="light_kiosk"; file="scene_light.html"; mode="kiosk" },
   @{ name="dark_kiosk"; file="scene_dark.html"; mode="kiosk" },
   @{ name="small_window"; file="scene_light.html"; mode="app" },
-  @{ name="desktop_only"; file=$null; mode="" }
+  @{ name="desktop_only"; file=$null; mode="" },
+  @{ name="dense_kiosk"; file="scene_dense.html"; mode="kiosk" }
 )
 if ($Only) { $phases = @($phases | Where-Object { $_.name -eq $Only }) }
 $per = [int](($Minutes * 60) / $phases.Count)

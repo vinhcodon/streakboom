@@ -81,3 +81,14 @@ export function chooseSettle(seen: Seen, cat: { col: number; row: number }, catC
   }
   return best;
 }
+
+/** The back-off (ADR-0123, manners 3 and 6): at least `restMs` after a move, and after `burst` moves within `windowMs` no more for `pauseMs`. `moves`: the times of the moves so far. */
+export const BACKOFF = { restMs: 60_000, burst: 3, windowMs: 10 * 60_000, pauseMs: 10 * 60_000 };
+export function settleAllowed(moves: readonly number[], now: number): boolean {
+  if (moves.length === 0) return true;
+  const last = Math.max(...moves);
+  if (now - last < BACKOFF.restMs) return false;
+  const recent = moves.filter((t) => now - t < BACKOFF.windowMs);
+  if (recent.length >= BACKOFF.burst && now - last < BACKOFF.pauseMs) return false;
+  return true;
+}

@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { SETTLE, boxCoverage, chooseSettle } from "./settle.ts";
+import { BACKOFF, SETTLE, boxCoverage, chooseSettle, settleAllowed } from "./settle.ts";
 import type { Seen, StandSpot } from "./picture.ts";
 
 /** A picture of gw by gh cells, all empty except the rectangles given (x0, y0, x1, y1), which are busy. */
@@ -55,4 +55,14 @@ test("on a ledge that covers something, the cat walks along the same ledge to a 
   assert.equal(m.row, 25);
   assert.ok(m.col >= 10 + 3 && m.col <= 60 - 3);
   assert.ok(m.col < 19 || m.col > 32); // one column of overlap is within the 15% allowed
+});
+
+test("the back-off: a minute of rest after a move, and ten minutes of calm after three moves in ten minutes", () => {
+  const T = 1_000_000;
+  assert.equal(settleAllowed([], T), true);
+  assert.equal(settleAllowed([T - 30_000], T), false); // 30 s after a move
+  assert.equal(settleAllowed([T - 90_000], T), true); // 90 s after one move
+  const three = [T - 400_000, T - 250_000, T - 90_000]; // three moves in ten minutes, the last 90 s ago
+  assert.equal(settleAllowed(three, T), false);
+  assert.equal(settleAllowed(three, T + BACKOFF.pauseMs), true); // ten minutes after the last
 });
