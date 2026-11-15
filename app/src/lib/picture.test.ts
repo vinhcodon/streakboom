@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { KIND, PICTURE, analyse, hasRoom, standSpots, type Grid } from "./picture.ts";
+import { KIND, PICTURE, analyse, hasRoom, reachability, standSpots, type Grid, type Seen } from "./picture.ts";
 
 /** A grid with a rectangle of one grey on a background of another. */
 function box(gw: number, gh: number, bg: number, fg: number, x0: number, y0: number, x1: number, y1: number): Grid {
@@ -225,4 +225,34 @@ test("a hole of a cell or two inside empty space does not break it, and a line b
   const t = analyse({ gw, gh, data: two });
   assert.ok(t.vsegs.length >= 1, "the rule is still a wall");
   assert.notEqual(t.kinds[20 * gw + 30] + t.kinds[20 * gw + 31], 2 * KIND.plain, "the line itself is not filled");
+});
+
+/** A Seen with only what reachability reads. */
+const fakeSeen = (gw: number, gh: number, vsegs: Seen["vsegs"] = []): Seen => ({ gw, gh, threshold: 20, edgeCells: 0, hsegs: [], bands: 0, vsegs, empty: new Uint8Array(gw * gh), kinds: new Uint8Array(gw * gh), regions: [] });
+
+test("a spot within one hop of the floor is reached by a hop, and a chain of spots takes Peak higher", () => {
+  const seen = fakeSeen(100, 100);
+  const spots = [
+    { x0: 10, x1: 30, y: 80, headroom: 20 }, // rise 19
+    { x0: 25, x1: 50, y: 55, headroom: 20 }, // rise 44: 25 above the first
+    { x0: 60, x1: 90, y: 5, headroom: 20 }, // rise 94: far above everything
+  ];
+  const r = reachability(spots, seen, 30);
+  assert.deepEqual(r.map((s) => s.reach), ["hop", "hop", null]);
+});
+
+test("a wall beside a high spot lets Peak climb to it, and a wall that stops short does not", () => {
+  const spot = { x0: 40, x1: 70, y: 20, headroom: 20 }; // rise 79
+  const climbable = reachability([spot], fakeSeen(100, 100, [{ x: 38, y0: 18, y1: 95, strength: 50 }]), 30);
+  assert.equal(climbable[0].reach, "climb");
+  const short = reachability([spot], fakeSeen(100, 100, [{ x: 38, y0: 18, y1: 40, strength: 50 }]), 30); // its foot is 59 cells above the floor
+  assert.equal(short[0].reach, null);
+  const far = reachability([spot], fakeSeen(100, 100, [{ x: 5, y0: 18, y1: 95, strength: 50 }]), 30); // not beside the spot
+  assert.equal(far[0].reach, null);
+});
+
+test("a spot right on the floor of the screen is left out", () => {
+  const r = reachability([{ x0: 10, x1: 40, y: 96, headroom: 20 }, { x0: 10, x1: 40, y: 60, headroom: 20 }], fakeSeen(100, 100), 30);
+  assert.equal(r.length, 1);
+  assert.equal(r[0].y, 60);
 });

@@ -26,8 +26,10 @@
       /** The kind of each cell: 0 none, 1 plain, 2 panel, 3 rough (stage 2a, plan section 8). */
       kinds: number[];
       bands: number;
+      /** Cells where Peak's own windows would have been in the picture, now left out (a check of the experiment). */
+      own: number;
       /** Places to stand over empty space (round 2 of stage 2b): the floor of a pocket at least as tall and wide as the cat. */
-      spots: { x0: number; x1: number; y: number; headroom: number }[];
+      spots: { x0: number; x1: number; y: number; headroom: number; rise: number; reach: "hop" | "climb" | null }[];
       regions: { kind: "plain" | "panel" | "rough"; x0: number; y0: number; x1: number; y1: number; area: number; grey: number; borderShare: number; fill: number }[];
     } | null;
   }
@@ -134,14 +136,19 @@
         g.stroke();
       }
       // the places to stand over empty space: a thick bright line under the feet, with the height of the room above in a number
-      g.lineWidth = 6;
-      g.strokeStyle = "rgb(0,255,120)";
+      // bright and thick when Peak can get there from the floor (a hop, or a climb beside it), dim and thin when it cannot (round 4)
       g.font = "12px sans-serif";
       for (const p of pic.spots) {
+        g.lineWidth = p.reach ? 6 : 3;
+        g.strokeStyle = p.reach ? "rgb(0,255,120)" : "rgba(0,255,120,0.35)";
         g.beginPath();
         g.moveTo(p.x0 * sx, (p.y + 1) * sy);
         g.lineTo((p.x1 + 1) * sx, (p.y + 1) * sy);
         g.stroke();
+        if (p.reach) {
+          g.fillStyle = "rgb(0,120,60)";
+          g.fillText(p.reach === "hop" ? "hop" : "climb", p.x0 * sx + 2, (p.y + 1) * sy - 8);
+        }
       }
       g.lineWidth = 3;
       g.strokeStyle = "rgb(255,150,0)";
@@ -161,7 +168,7 @@
       const n = (k: string) => pic.regions.filter((r) => r.kind === k).length;
       g.fillText(`areas: ${n("plain")} plains (blue), ${n("panel")} panels (purple), ${n("rough")} rough (red)`, 14, 63);
     }
-    if (pic) g.fillText(`picture: ${pic.hsegs.length} ledges (${pic.hsegs.filter((h) => h.room).length} with room), ${pic.vsegs.length} walls, ${pic.spots.length} stand spots, ${pic.bands} text bands left out, threshold ${pic.threshold}, cat = ${pic.catCells} cells`, 14, 44);
+    if (pic) g.fillText(`picture: ${pic.hsegs.length} ledges (${pic.hsegs.filter((h) => h.room).length} with room), ${pic.vsegs.length} walls, ${pic.spots.filter((p) => p.reach).length} reachable of ${pic.spots.length} stand spots, ${pic.bands} text bands left out, own windows in the picture: ${pic.own} cells, threshold ${pic.threshold}, cat = ${pic.catCells} cells`, 14, 44);
   }
 
   onMount(() => {

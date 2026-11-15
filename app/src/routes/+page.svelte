@@ -117,7 +117,7 @@
   import { endReaction, mayReact, newGate, startReaction } from "$lib/reactions";
   import { desktopShare, ledges, summary, type GroundKind, type GroundMap } from "$lib/groundmap";
   import { surfacesBelow, surfaces, wallFor, type Wall } from "$lib/terrain";
-  import { analyse, hasRoom, standSpots } from "$lib/picture";
+  import { analyse, hasRoom, reachability, standSpots } from "$lib/picture";
   import { believe, responseFor, startBelief, type Belief } from "$lib/perception";
   import { choosePerch, PERCH_LIMITS } from "$lib/perch";
   import { bodyPoints, escapePlaces } from "$lib/escape";
@@ -925,12 +925,12 @@
       // the screen picture (ADR-0119): a small grey grid, read for edges at once and dropped; only lines and a mask go to the overlay
       let picture: unknown = null;
       if (pictureOn) {
-        const grid = await invoke<{ w: number; h: number; gw: number; gh: number; data: number[] } | null>("screen_grid");
+        const grid = await invoke<{ w: number; h: number; gw: number; gh: number; data: number[]; ownCells: number } | null>("screen_grid");
         if (grid) {
           const seen = analyse({ gw: grid.gw, gh: grid.gh, data: grid.data });
           const cell = grid.w / grid.gw; // physical px of a cell
           const catCells = Math.round((PET_SIZE * (window.devicePixelRatio || 1)) / cell);
-          picture = { gw: seen.gw, gh: seen.gh, threshold: seen.threshold, catCells, hsegs: seen.hsegs.map((h) => ({ ...h, room: hasRoom(h, catCells) })), vsegs: seen.vsegs, empty: Array.from(seen.empty), kinds: Array.from(seen.kinds), regions: seen.regions, bands: seen.bands, spots: standSpots(seen, catCells) };
+          picture = { gw: seen.gw, gh: seen.gh, threshold: seen.threshold, catCells, hsegs: seen.hsegs.map((h) => ({ ...h, room: hasRoom(h, catCells) })), vsegs: seen.vsegs, empty: Array.from(seen.empty), kinds: Array.from(seen.kinds), regions: seen.regions, bands: seen.bands, own: grid.ownCells, spots: reachability(standSpots(seen, catCells), seen, Math.round((HOP_MAX_PX * (window.devicePixelRatio || 1)) / cell)) };
         }
       }
       await emitTo("overlay", "overlay-data", { map, surfaces: ss, target, feet: at ? at.feet : null, note, picture });

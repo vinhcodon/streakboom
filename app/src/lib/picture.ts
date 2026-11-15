@@ -29,7 +29,7 @@ export const PICTURE = {
   weakShare: 0.25,
   weakMin: 6,
   /** Texture is looked at in a window of 2 * roughRadius + 1 cells; a cell is rough when this share of the window is texture. */
-  roughRadius: 4,
+  roughRadius: 2,
   roughDensity: 0.3,
   /** A rough or calm area smaller than this many cells is noise and is dropped. */
   minRough: 16,
@@ -484,4 +484,56 @@ export function standSpots(seen: Seen, catCells: number, minWidth = Math.max(6, 
   }
   spots.sort((a, b) => (b.x1 - b.x0) * b.headroom - (a.x1 - a.x0) * a.headroom);
   return spots.slice(0, max);
+}
+
+/** A stand spot with what it takes to get there (round 4 of stage 2b). */
+export interface ReachSpot extends StandSpot {
+  /** Cells above the floor of the screen (the work area). */
+  rise: number;
+  /** How Peak gets there from the floor: by hops (also through other spots) or by climbing a wall beside it; null when it cannot. */
+  reach: "hop" | "climb" | null;
+}
+
+/**
+ * Which stand spots Peak can get to from the floor of the screen (round 4). Hops go up at most `hopCells` and across at most `hopCells`
+ * (from the floor or from a spot already reached, so a chain of hops counts); a climb is a wall (a vertical segment) beside the spot
+ * (within 3 cells) that reaches up to it and whose foot is within a hop of a place already reached. Spots within `minRise` cells of the
+ * floor are left out (Peak is there already). Pure.
+ */
+export function reachability(spots: StandSpot[], seen: Seen, hopCells: number, minRise = 7): ReachSpot[] {
+  const { gh } = seen;
+  const all: ReachSpot[] = spots
+    .map((p) => ({ ...p, rise: gh - 1 - p.y, reach: null as ReachSpot["reach"] }))
+    .filter((p) => p.rise >= minRise);
+  // the floor is a place that spans the whole width at rise 0
+  const gap = (a0: number, a1: number, b0: number, b1: number) => Math.max(0, Math.max(a0, b0) - Math.min(a1, b1));
+  let grew = true;
+  while (grew) {
+    grew = false;
+    for (const s of all) {
+      if (s.reach) continue;
+      const here: { x0: number; x1: number; rise: number }[] = [{ x0: 0, x1: seen.gw - 1, rise: 0 }, ...all.filter((o) => o.reach)];
+      let how: ReachSpot["reach"] = null;
+      for (const n of here) {
+        if (s.rise - n.rise <= hopCells && gap(n.x0, n.x1, s.x0, s.x1) <= hopCells) {
+          how = "hop";
+          break;
+        }
+      }
+      if (!how)
+        for (const w of seen.vsegs) {
+          if (w.x < s.x0 - 3 || w.x > s.x1 + 3 || w.y0 > s.y + 2) continue; // beside the spot and reaching up to it
+          const foot = gh - 1 - w.y1; // cells above the floor where the wall begins
+          if (here.some((n) => foot - n.rise <= hopCells && gap(n.x0, n.x1, w.x, w.x) <= hopCells)) {
+            how = "climb";
+            break;
+          }
+        }
+      if (how) {
+        s.reach = how;
+        grew = true;
+      }
+    }
+  }
+  return all;
 }
