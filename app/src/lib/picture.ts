@@ -376,3 +376,46 @@ function roomAbove(str: Uint8Array, gw: number, y: number, x0: number, x1: numbe
 
 /** A ledge has room for the cat when the empty rows above it are at least the cat's height in cells. */
 export const hasRoom = (s: HSeg, catCells: number): boolean => s.roomAbove >= catCells;
+
+/** A place Peak could stand that has no sharp edge under it (round 2 of stage 2b): the floor of a pocket of empty space. */
+export interface StandSpot {
+  x0: number;
+  x1: number;
+  y: number; // the row of cells the feet are in; the floor is the top of the row below
+  headroom: number; // the least number of empty rows above it along the run
+}
+
+/**
+ * The bottom boundary of every plain (empty space) where the empty space above is at least `catCells` tall and the run is at least
+ * `minWidth` cells wide: the cat can stand there without covering anything, on whatever lies under the pocket (a line of text, a
+ * toolbar, the edge of a block). The floor of the screen itself is left out (Peak already walks there). Pure; `seen` is not changed.
+ */
+export function standSpots(seen: Seen, catCells: number, minWidth = Math.max(6, Math.ceil(catCells * 0.6)), max = 60): StandSpot[] {
+  const { gw, gh, kinds } = seen;
+  if (catCells < 1) return [];
+  const plain = (x: number, y: number) => kinds[y * gw + x] === KIND.plain;
+  // how many empty rows end at (x, y), counted upward
+  const head = new Int16Array(gw * gh);
+  for (let y = 0; y < gh; y++) for (let x = 0; x < gw; x++) head[y * gw + x] = plain(x, y) ? (y > 0 ? head[(y - 1) * gw + x] : 0) + 1 : 0;
+  const spots: StandSpot[] = [];
+  for (let y = 0; y < gh - 2; y++) {
+    let x = 0;
+    while (x < gw) {
+      const foot = (k: number) => head[y * gw + k] >= catCells && !plain(k, y + 1);
+      if (!foot(x)) {
+        x++;
+        continue;
+      }
+      let x1 = x;
+      let least = head[y * gw + x];
+      while (x1 + 1 < gw && foot(x1 + 1)) {
+        x1++;
+        least = Math.min(least, head[y * gw + x1]);
+      }
+      if (x1 - x + 1 >= minWidth) spots.push({ x0: x, x1, y, headroom: least });
+      x = x1 + 1;
+    }
+  }
+  spots.sort((a, b) => (b.x1 - b.x0) * b.headroom - (a.x1 - a.x0) * a.headroom);
+  return spots.slice(0, max);
+}

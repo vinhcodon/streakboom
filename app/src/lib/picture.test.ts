@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { KIND, PICTURE, analyse, hasRoom, type Grid } from "./picture.ts";
+import { KIND, PICTURE, analyse, hasRoom, standSpots, type Grid } from "./picture.ts";
 
 /** A grid with a rectangle of one grey on a background of another. */
 function box(gw: number, gh: number, bg: number, fg: number, x0: number, y0: number, x1: number, y1: number): Grid {
@@ -157,4 +157,40 @@ test("lines of text (a stack of short bands) are not ledges, a lone box top stil
   const lone = analyse(box(80, 60, 235, 120, 40, 20, 70, 50));
   assert.ok(lone.hsegs.some((h) => Math.abs(h.y - 20) <= 1), "a lone box top is kept");
   assert.equal(lone.bands, 0);
+});
+
+/** The upper part flat (empty space), the lower part fine stripes (text-like content). */
+function pocketOverContent(gw: number, gh: number, split: number): Grid {
+  const data = new Uint8Array(gw * gh).fill(235);
+  for (let y = split; y < gh; y++) for (let x = 0; x < gw; x++) data[y * gw + x] = x % 2 === 0 ? 235 : 120;
+  return { gw, gh, data };
+}
+
+test("the floor of a pocket of empty space over content is a place to stand, when the pocket is tall and wide enough", () => {
+  const s = analyse(pocketOverContent(80, 60, 30));
+  const spots = standSpots(s, 15);
+  assert.ok(spots.length >= 1, JSON.stringify(s.regions));
+  const best = spots[0];
+  assert.ok(best.y >= 26 && best.y <= 30, "the feet are in the last rows of the pocket: " + best.y);
+  assert.ok(best.x1 - best.x0 + 1 >= 50, "wide: " + (best.x1 - best.x0 + 1));
+  assert.ok(best.headroom >= 15);
+  assert.equal(standSpots(s, 40).length, 0, "a pocket shorter than the cat is no place to stand");
+});
+
+test("a narrow pocket and the floor of the screen itself are not stand spots", () => {
+  const narrow = pocketOverContent(80, 60, 30);
+  const d = narrow.data as Uint8Array;
+  for (let y = 0; y < 30; y++) for (let x = 0; x < 80; x++) if (x < 36 || x > 43) d[y * 80 + x] = 235 - (x % 2 ? 90 : 0); // stripes on both sides: an 8-cell gap
+  assert.equal(standSpots(analyse(narrow), 15).length, 0);
+  const flat = analyse({ gw: 60, gh: 40, data: new Uint8Array(2400).fill(200) });
+  assert.equal(standSpots(flat, 10).length, 0, "an empty screen has no content floor");
+  assert.equal(standSpots(flat, 0).length, 0);
+});
+
+test("stand spots are listed largest first and standSpots leaves the picture as it was", () => {
+  const s = analyse(pocketOverContent(80, 60, 30));
+  const before = Array.from(s.kinds);
+  const spots = standSpots(s, 12);
+  assert.deepEqual(Array.from(s.kinds), before);
+  for (let i = 1; i < spots.length; i++) assert.ok((spots[i - 1].x1 - spots[i - 1].x0) * spots[i - 1].headroom >= (spots[i].x1 - spots[i].x0) * spots[i].headroom);
 });

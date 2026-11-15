@@ -26,6 +26,8 @@
       /** The kind of each cell: 0 none, 1 plain, 2 panel, 3 rough (stage 2a, plan section 8). */
       kinds: number[];
       bands: number;
+      /** Places to stand over empty space (round 2 of stage 2b): the floor of a pocket at least as tall and wide as the cat. */
+      spots: { x0: number; x1: number; y: number; headroom: number }[];
       regions: { kind: "plain" | "panel" | "rough"; x0: number; y0: number; x1: number; y1: number; area: number; grey: number; borderShare: number; fill: number }[];
     } | null;
   }
@@ -124,12 +126,24 @@
       }
       g.lineWidth = 3;
       for (const h of pic.hsegs) {
+        if (!h.room && h.x1 - h.x0 + 1 < 12) continue; // a short line with no room above it is clutter (round 2)
         g.strokeStyle = h.room ? "rgb(0,230,90)" : "rgba(170,170,170,0.9)";
         g.beginPath();
         g.moveTo(h.x0 * sx, (h.y + 0.5) * sy);
         g.lineTo((h.x1 + 1) * sx, (h.y + 0.5) * sy);
         g.stroke();
       }
+      // the places to stand over empty space: a thick bright line under the feet, with the height of the room above in a number
+      g.lineWidth = 6;
+      g.strokeStyle = "rgb(0,255,120)";
+      g.font = "12px sans-serif";
+      for (const p of pic.spots) {
+        g.beginPath();
+        g.moveTo(p.x0 * sx, (p.y + 1) * sy);
+        g.lineTo((p.x1 + 1) * sx, (p.y + 1) * sy);
+        g.stroke();
+      }
+      g.lineWidth = 3;
       g.strokeStyle = "rgb(255,150,0)";
       for (const v of pic.vsegs) {
         g.beginPath();
@@ -147,7 +161,7 @@
       const n = (k: string) => pic.regions.filter((r) => r.kind === k).length;
       g.fillText(`areas: ${n("plain")} plains (blue), ${n("panel")} panels (purple), ${n("rough")} rough (red)`, 14, 63);
     }
-    if (pic) g.fillText(`picture: ${pic.hsegs.length} ledges (${pic.hsegs.filter((h) => h.room).length} with room), ${pic.vsegs.length} walls, ${pic.bands} text bands left out, threshold ${pic.threshold}, cat = ${pic.catCells} cells`, 14, 44);
+    if (pic) g.fillText(`picture: ${pic.hsegs.length} ledges (${pic.hsegs.filter((h) => h.room).length} with room), ${pic.vsegs.length} walls, ${pic.spots.length} stand spots, ${pic.bands} text bands left out, threshold ${pic.threshold}, cat = ${pic.catCells} cells`, 14, 44);
   }
 
   onMount(() => {
