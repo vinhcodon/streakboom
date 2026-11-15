@@ -156,7 +156,9 @@ def pair_scene(peak_look, step=0, z=True):
 
 
 def p1():
-    return pair_scene(dict(LOOK["rest"], lid=0.06, roll=7, cheek=0.85, lidR=1), 3, z=False)
+    """The first P1 (the author kept it), without the string of beads: Peak asleep with one eye open, Paws sitting beside."""
+    look = dict(LOOK["rest"], lid=0.06, roll=7, cheek=0.85, lidR=1)
+    return wrap(curled(look) + zzz(), 0, 20, 1.0) + wrap(paws("open", "smile"), 118, 20, 1.0)
 
 
 # ---------------------------------------------------------------- P2 the meeting
@@ -233,13 +235,16 @@ STK_LIST = [
 ]
 
 
+ACTIVE = {"D1", "D2", "D3", "P1"}   # the author's choice for now; the others are parked (stickers-draft/parked/), not in the manifest
+
+
 def build_inner(kind):
     S, DY = 2.3, 12
     x0, y0 = (360 - 120 * S) / 2, 82 - 20 * S + 8 + DY
     if kind in ("d1", "d2", "d3"):
         return wrap(globals()[kind](), x0, y0 - 4 * (kind == "d1"), S)
     if kind == "p1":
-        return wrap(p1(), 6, 104, 1.2)
+        return wrap(p1(), 2, 96, 1.5)
     if kind == "p2":
         peak, dog = p2()
         return wrap(peak, 2, 158, 1.5) + wrap(dog, 188, 168, 1.4)
@@ -258,9 +263,12 @@ def main():
     manifest = []
     for sid, slug, texts, titles, scenes, syn, kind in STK_LIST:
         inner = build_inner(kind)
+        base = OUT if sid in ACTIVE else os.path.join(OUT, "parked")
         for i, lang in enumerate(LANGS):
-            os.makedirs(os.path.join(OUT, lang), exist_ok=True)
-            png_from(inner, (360, 360), texts[i], os.path.join(OUT, lang, f"{sid}.png"), font=LANG_FONT[lang])
+            os.makedirs(os.path.join(base, lang), exist_ok=True)
+            png_from(inner, (360, 360), texts[i], os.path.join(base, lang, f"{sid}.png"), font=LANG_FONT[lang])
+        if sid not in ACTIVE:
+            continue
         who = "Peak" if sid.startswith("C") else ("Paws" if sid.startswith("D") else "Paws và Peak")
         manifest.append({
             "id": sid, "slug_en": slug, "kind": {"D": "paws-alone", "P": "pair", "S": "story", "C": "control-peak"}[sid[0]],
@@ -271,12 +279,12 @@ def main():
             "synonyms": syn, "reviewed": {"vi": True, "en": False, "ja": False}, "status": "draft",
         })
     with open(os.path.join(OUT, "manifest.json"), "w", encoding="utf-8", newline="\n") as fh:
-        json.dump({"version": "duo-draft", "creator": "Streakboom", "license": "CC BY 4.0", "stickers": manifest}, fh, ensure_ascii=False, indent=2)
+        json.dump({"version": "duo-draft-4", "creator": "Streakboom", "license": "CC BY 4.0", "stickers": manifest}, fh, ensure_ascii=False, indent=2)
         fh.write("\n")
     for lang in LANGS:  # a review sheet per language: light and dark ground
         rd = fitz.open()
-        pg = rd.new_page(width=1100, height=2 * 226 + 20)
-        for gi, (sid, *_r) in enumerate(STK_LIST):
+        pg = rd.new_page(width=1100, height=226 + 20)
+        for gi, (sid, *_r) in enumerate([t for t in STK_LIST if t[0] in ACTIVE]):
             for row, bg in enumerate(((1, 1, 1), (0.118, 0.122, 0.133))):
                 r = fitz.Rect(10 + (gi % 4) * 270, 10 + (gi // 4) * 226 + 0, 10 + (gi % 4) * 270 + 130, 10 + (gi // 4) * 226 + 130)
                 r2 = fitz.Rect(r.x0 + 133, r.y0, r.x0 + 263, r.y0 + 130)
@@ -286,9 +294,9 @@ def main():
         pg.get_pixmap(dpi=72).save(os.path.join(OUT, f"review_{lang}.png"))
     # one larger sheet for the author (vi): 4 x 2 at 256 px on light, plus 64 and 32 px on dark
     rd = fitz.open()
-    pg = rd.new_page(width=1100, height=760)
+    pg = rd.new_page(width=1100, height=400)
     pg.draw_rect(pg.rect, color=None, fill=(1, 1, 1))
-    for gi, (sid, *_r) in enumerate(STK_LIST):
+    for gi, (sid, *_r) in enumerate([t for t in STK_LIST if t[0] in ACTIVE]):
         x, y = 10 + (gi % 4) * 272, 10 + (gi // 4) * 370
         pg.draw_rect(fitz.Rect(x, y, x + 262, y + 262), color=(0.85, 0.85, 0.85), fill=(0.97, 0.97, 0.97))
         pg.insert_image(fitz.Rect(x + 3, y + 3, x + 259, y + 259), filename=os.path.join(OUT, "vi", f"{sid}.png"))
