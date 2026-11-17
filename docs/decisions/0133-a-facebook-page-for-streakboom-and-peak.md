@@ -5,7 +5,7 @@
 - **Decided by:** Vinh (author) for the Page and the pictures; Claude (the app session) for the defaults
 
 ## Decision
-1. **One Facebook Page, named Streakboom, category Software**, created by the author on 2026-11-17 (Page ID 1496647720191656, https://www.facebook.com/profile.php?id=61596355604714). Peak is its face: the profile picture is the app icon, the cover is Peak with the slogan. A readable name (`@streakboom`) is claimed later if free.
+1. **One Facebook Page, named Streakboom, category Software**, created by the author on 2026-11-17 (Page ID 1496647720191656, https://www.facebook.com/profile.php?id=61596355604714). Peak is its face: the profile picture is the app icon, the cover is Peak with the slogan. The readable name `@streakboom` was set by the author on the same day (https://www.facebook.com/streakboom).
 2. **The voice is the charter and the slogan of ADR-0104**, in Vietnamese first with English beside it (the Japanese is left out until a native speaker has read it). No health claim, no character that needs the person, no claim that Peak reads or understands content; the same word lists as the website. The About text says the app is for adults (18+).
 3. **The first five posts** are in `docs/plans/facebook-launch-posts.md`: an introduction, what Peak does not do, privacy in plain words, the stickers, and the optional chat. About two or three posts a week to begin with; one picture or a clip under 10 seconds each.
 4. **Links go in the first comment**, and the first post says plainly that the installer is not code-signed yet and Windows SmartScreen will warn (README, Code signing policy).

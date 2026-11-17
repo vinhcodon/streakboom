@@ -5,8 +5,8 @@ Written 2026-11-17 by the app session for the website session (`site/` and `scri
 ## What happened
 The author created a Facebook Page for Streakboom and Peak on 2026-11-17.
 
-- Page: https://www.facebook.com/profile.php?id=61596355604714 (Page ID 1496647720191656).
-- A readable address (`https://www.facebook.com/streakboom`) does **not** exist yet. When the author claims it, he will say so; until then use the address above.
+- Page: **https://www.facebook.com/streakboom** (the author set the username `@streakboom` on 2026-11-17; the address was opened and shows the Page). Use this one on the site.
+- The old address https://www.facebook.com/profile.php?id=61596355604714 (Page ID 1496647720191656) still works; do not use it.
 
 ## What to do (the author decides the details with you)
 1. **A link to the Page** in the footer or the "where to find us" place, in the three languages, with a name that is the same in all of them ("Facebook"). Open it in the same way as the other outside links. Nothing about followers, likes or counts on the site.

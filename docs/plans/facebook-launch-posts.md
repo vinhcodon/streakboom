@@ -8,7 +8,7 @@ These are defaults, not decisions; the author may change any of them (the ones t
 
 | Item | Default used |
 |---|---|
-| Page address | https://www.facebook.com/profile.php?id=61596355604714 (the Page ID is 1496647720191656); the readable name `@streakboom` is not claimed yet |
+| Page address | https://www.facebook.com/streakboom (the author set the username `@streakboom` on 2026-11-17; the address opens the Page; the old https://www.facebook.com/profile.php?id=61596355604714 and Page ID 1496647720191656 still work) |
 | Sticker page | https://streakboom.com/vi/stickers/ (answered 200 on 2026-11-17; the picture and the copy button were not looked at) |
 | Chat brains named | Gemini and Groq only, until Claude and OpenAI are tried with real keys |
 | Contact email on the Page | none for now |

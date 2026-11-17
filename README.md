@@ -15,6 +15,7 @@
 
 <p align="center">
   <a href="https://streakboom.com">Website</a> ·
+  <a href="https://www.facebook.com/streakboom">Facebook</a> ·
   <a href="https://github.com/vinhcodon/streakboom/releases/latest">Download</a> ·
   <a href="CHANGELOG.md">Changelog</a> ·
   <a href="docs/PROJECT.md">Project guide</a> ·
