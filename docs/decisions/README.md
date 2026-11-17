@@ -12,6 +12,7 @@ What was **decided**, why, and what was rejected. One short file per decision (a
 |---|---|---|---|
 | [0107](0107-the-language-strip-shows-once-and-the-button-of-the-wanted-language-is-brighter.md) | The language strip shows once and is quieter; the header button of the wanted language is a little brighter; amends ADR-0067 (the website session) | accepted, built | 2026-11-14 |
 | [0104](0104-the-slogan-under-the-name-and-the-taglines-of-the-home-page.md) | The slogan under the name on every page and twelve taglines that rotate at random on the home page (the website session) | accepted, built | 2026-11-14 |
+| [0134](0134-the-facebook-page-is-a-footer-link-and-a-sameas.md) | The Facebook Page is one footer link "Facebook" on every page and a sameAs, nothing that runs (the website session) | accepted, built (not published) | 2026-11-17 |
 | [0133](0133-the-right-click-is-step-aside-and-the-flick-is-measured-first.md) | The right click is step aside, the double right click is its place; the flick for the shove is measured first (amends 0109) | accepted | the author, 2026-11-16 |
 | [0132](0132-one-repository-with-a-platform-layer-and-named-zones.md) | One repository with a platform layer and named zones for Windows, macOS and the web (Option B; one product version; the macOS spike after the platform layer) | accepted | the author, 2026-11-15 |
 | [0131](0131-paws-is-drawn-as-the-mochi-option.md) | Paws is drawn as option A, "Mochi" (one round bean, floppy ears) | accepted | the author, 2026-11-15 |

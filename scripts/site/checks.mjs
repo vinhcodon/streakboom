@@ -3,7 +3,7 @@
 import { existsSync, readFileSync, readdirSync } from "node:fs";
 import { gzipSync } from "node:zlib";
 import { join } from "node:path";
-import { ORIGIN, RELEASES_URL, ROOT, fmtDate } from "./facts.mjs";
+import { FACEBOOK_URL, ORIGIN, RELEASES_URL, ROOT, fmtDate } from "./facts.mjs";
 import { HIDDEN_WORDS } from "./facts.mjs";
 import { DEFAULT_TAGLINE, FORBIDDEN_IN_SCRIPT, MAX_TAGLINE_LENGTH, TAGLINE_KEYS } from "./taglines.mjs";
 import { BEACON_SRC, clarityOn, clarityProblems, countingOn, countingProblems, measurementProblems, siteParagraph, stickerNote, webAnalyticsManual, webAnalyticsOn } from "./counting.mjs";
@@ -641,6 +641,19 @@ export function check({ ctx, pages, files, out }) {
       if (keyFiles.length !== 1) bad(`IndexNow: ${keyFiles.length} key files in the site (one is needed)`);
       if (files["sitemap.xml"].includes(ctx.indexnow.key)) bad("sitemap.xml names the IndexNow key file (it is not a page)");
     } else if (keyFiles.length) bad("IndexNow is off in indexnow.json but a key file is in the site");
+  }
+
+  // the Facebook Page (ADR-0134): a plain link in the footer of every page and a sameAs, in the form with the username; nothing of Facebook runs
+  for (const p of pages) {
+    const links = [...p.html.matchAll(/<a href="([^"]*facebook\.com[^"]*)">([^<]*)<\/a>/g)];
+    if (p.path === "/404.html") continue;
+    if (links.length !== 1 || links[0][1] !== FACEBOOK_URL || links[0][2] !== "Facebook") bad(`${p.path}: the footer must have exactly one link "Facebook" to ${FACEBOOK_URL}`);
+    if (/profile\.php|fbq\(|connect\.facebook\.net|fb-like|fb-root|facebook\.com\/tr|xfbml/i.test(p.html)) bad(`${p.path}: something of Facebook other than the link (a script, a pixel, a button): the privacy page says nothing is sent to anyone`);
+  }
+  for (const p of pages.filter((x) => x.path === "/" || x.path === "/vi/" || x.path === "/ja/")) {
+    const ld = [...p.html.matchAll(/<script type="application\/ld\+json">(.*?)<\/script>/gs)].map((m) => JSON.parse(m[1].replace(/\\u003c/g, "<")));
+    const app = ld.flatMap((o) => (o["@graph"] ? o["@graph"] : [o])).find((o) => o["@type"] === "SoftwareApplication");
+    if (!app || !Array.isArray(app.sameAs) || !app.sameAs.includes(FACEBOOK_URL)) bad(`${p.path}: the structured data has no sameAs with ${FACEBOOK_URL}`);
   }
 
   // 9. the files exist and are not empty
