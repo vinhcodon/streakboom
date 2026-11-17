@@ -484,3 +484,14 @@ The dog is **not** to be put in the app; this is a sticker test, and the decisio
 | RS-5 | The macOS spike on a Mac (window, tray, stubs, then the senses one by one with their permissions) | L | proposed; needs a Mac |
 | RS-6 | The website's download choice by platform (the website session) | S | proposed |
 
+## E33: A Facebook Page for Streakboom and Peak (ADR-0133, `docs/plans/facebook-launch-posts.md`)
+
+| ID | Story | Size | State |
+|---|---|---|---|
+| FB-1 | Create the Page (name, category, website link) | S | done 2026-11-17 by the author |
+| FB-2 | The cover and the profile picture | S | made 2026-11-17 (`docs/plans/assets/facebook-page/`), approved as files by the author; **not uploaded, not seen on Facebook** (V-169) |
+| FB-3 | The bio and the five first posts | S | written; **not posted**, not read by the author (V-170) |
+| FB-4 | A link to the Page and `sameAs` on the website; the share preview looked at in the Sharing Debugger | S | handed over (`docs/handoff/website-facebook-page.md`), the website session |
+| FB-5 | A clip under 10 seconds of Peak and a chat screenshot for posts 1 and 5 | S | proposed; the author records them |
+| FB-6 | Claim `@streakboom` and put the readable address in the handoff and the README | S | proposed; when free |
+| FB-7 | Measure what the Page brings: a short link per post on the download page, read after four weeks, then keep, change or stop the Page | M | proposed |

@@ -48,6 +48,7 @@ Notes handed **from one session or conversation to another** (a product discussi
 | [`website-duo-test.md`](website-duo-test.md) | the app session | 2026-11-15 | **superseded 2026-11-15** by `website-duo-stickers.md` and ADR-0129 (four stickers, up now, the test is not run) | The eight stickers of the duo test, the order rule and what to confirm in advance (the counting Worker) |
 | [`website-duo-stickers.md`](website-duo-stickers.md) | the sticker session | 2026-11-15 | **a handover to the website session**, by the author's order; the four go up now (ADR-0129); **built by the website session (2026-11-15), awaiting the author's look and his order to publish** (ADR-0130, W-81; the tags are by overrides, chosen by the author) | The four duo stickers (D1-D3, P1; `docs/plans/assets/paws/set-duo-4/`), what is parked, no control among the four |
 | [`sticker-paws-reference.md`](sticker-paws-reference.md) | the app session | 2026-11-15 | **a request to the sticker session** (ADR-0127); **done 2026-11-15**: Paws is option A (ADR-0131) and the stickers are handed over (`website-duo-stickers.md`) | The reference drawing of Paws, the dog, with what the render check found; the author looks at it before anything else is drawn |
+| [`website-facebook-page.md`](website-facebook-page.md) | the app session | 2026-11-17 | open | The new Facebook Page: a link in the footer, `sameAs`, no widgets, and looking at the share preview in the Sharing Debugger (W-3) |
 
 ## Where the handoff was out of date when received
 
