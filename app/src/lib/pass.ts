@@ -15,8 +15,8 @@ export interface PassState {
 
 /** A gap longer than this ends a pass. */
 export const PASS_GAP_MS = 250;
-/** A pass slower than this top speed (px per second) is not written: a slow drift over Peak is not what is being measured. */
-export const PASS_MIN_VMAX = 300;
+/** A pass slower than this top speed (px per second) is not written: only a pointer that is hardly moving is dropped, the slow strokes are part of the measure. */
+export const PASS_MIN_VMAX = 40;
 
 export const newPass = (): PassState => ({ pts: [] });
 

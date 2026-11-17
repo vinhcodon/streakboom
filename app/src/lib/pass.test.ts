@@ -14,11 +14,12 @@ test("a fast straight pass has a high top speed, no reversal and the net move", 
   assert.equal(st.ms, 120);
 });
 
-test("a slow stroke back and forth counts its reversals and is too slow to be written", () => {
+test("a slow stroke counts its reversals and is written; a pointer that hardly moves is not", () => {
   const pts = [0, 30, 0, 30, 0, 30].map((x, i) => ({ x, y: 0, t: i * 200 })); // 150 px per second
   const st = passStats(pts)!;
   assert.equal(st.rev, 4);
-  assert.equal(passLine(st, 140), null);
+  assert.match(passLine(st, 140)!, /^pass n=6 /);
+  assert.equal(passLine(passStats([{ x: 0, y: 0, t: 0 }, { x: 3, y: 0, t: 200 }]), 140), null); // 15 px per second
 });
 
 test("a single event is not a pass", () => {
