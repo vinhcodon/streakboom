@@ -28,6 +28,8 @@ These are defaults, not decisions; the author may change any of them (the ones t
 
 ## Post 1: Meet Peak (introduction)
 
+**Posted 2026-11-17** by Claude on the author's order, Public, with the first comment below. The picture (`docs/plans/assets/facebook-page/post1-peak-on-a-window-1200x630.png`: Peak on the edge of a window with a Meo~ bubble) was added the same day.
+
 **Picture:** the cover image, or a short clip of Peak walking on the edge of a window.
 
 **VI**
