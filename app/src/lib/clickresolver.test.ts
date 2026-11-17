@@ -65,3 +65,18 @@ test("cancel drops a pending click without acting", () => {
 test("the wait is about a quarter of a second, as the left click's", () => {
   assert.ok(RIGHT_DOUBLE_MS >= 200 && RIGHT_DOUBLE_MS <= 300);
 });
+
+test("onFirst is called at once on the first click, and not again for the second of a pair", () => {
+  const f = fake();
+  const got: string[] = [];
+  const r = clickResolver<number>((p) => got.push(`s${p}`), (p) => got.push(`d${p}`), f.timers, RIGHT_DOUBLE_MS, (p) => got.push(`f${p}`));
+  r.click(1);
+  assert.deepEqual(got, ["f1"]); // before the wait is over
+  r.click(2);
+  assert.deepEqual(got, ["f1", "d2"]); // the second click of a pair is the double, not a new first
+  f.fire();
+  assert.deepEqual(got, ["f1", "d2"]);
+  r.click(3);
+  f.fire();
+  assert.deepEqual(got, ["f1", "d2", "f3", "s3"]);
+});

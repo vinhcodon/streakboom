@@ -49,25 +49,33 @@ test("the gestures reach what the page does today", () => {
   assert.equal(resolveGesture("drag", calm), "carry");
   assert.equal(resolveGesture("sweep_head", calm), "scratch");
   assert.equal(resolveGesture("sweep_belly", calm), "belly_rub");
-  assert.equal(resolveGesture("right_click", calm), "shove");
+  assert.equal(resolveGesture("right_click", calm), "step_aside");
+  assert.equal(resolveGesture("right_double_click", calm), "seat");
   assert.equal(resolveGesture("tray_click", calm), "toggle_visibility");
 });
 
 test("a gate that is closed refuses the gesture", () => {
   assert.equal(resolveGesture("click", { ...calm, held: true }), null);
   assert.equal(resolveGesture("click", { ...calm, quiet: true }), null);
-  assert.equal(resolveGesture("right_click", { ...calm, cooldownOk: false }), null);
+  assert.equal(resolveGesture("right_click", { ...calm, away: true }), null);
   assert.equal(resolveGesture("tray_click", { ...calm, quiet: true, held: true, away: true }), "toggle_visibility");
 });
 
-test("step aside is built: the double right click reaches it when the gates are open", () => {
-  assert.equal(bindingByName("step_aside")?.status, "built");
-  assert.equal(resolveGesture("right_double_click", calm), "step_aside");
+test("the right click is step aside and the double right click is its place (ADR-0133)", () => {
+  assert.equal(bindingByName("step_aside")?.gesture, "right_click");
+  assert.equal(resolveGesture("right_click", calm), "step_aside");
+  assert.equal(resolveGesture("right_click", { ...calm, cooldownOk: false }), null);
+  assert.equal(resolveGesture("right_click", { ...calm, held: true }), null);
+  assert.equal(bindingByName("seat")?.gesture, "right_double_click");
+  assert.equal(resolveGesture("right_double_click", calm), "seat");
   assert.equal(resolveGesture("right_double_click", { ...calm, away: true }), null);
-  assert.equal(resolveGesture("right_double_click", { ...calm, cooldownOk: false }), null);
+  assert.equal(resolveGesture("right_double_click", { ...calm, quiet: true }), null);
+});
+
+test("the shove has no gesture until the flick is built", () => {
+  assert.equal(bindingByName("shove")?.gesture, null);
 });
 
 test("the typed commands have no gesture and are never a setting", () => {
   assert.equal(bindingByName("leave")?.gesture, null);
-  assert.equal(bindingByName("seat")?.gesture, null);
 });

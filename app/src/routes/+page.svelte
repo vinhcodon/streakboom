@@ -10,6 +10,7 @@
   import { recordPush, shouldHintAside } from "$lib/asidehint";
   import { MAX_CLARIFY, addKept, describeDate, dueToday, fallsOn, hasKept, keptForModel, markDone, missedSince, parseRemindAnswer, parseRemindArgs, pendingAlive, pruneOneOff, remindSay, replyKind, type Pending, type RemindLine } from "$lib/remind";
   import { clickResolver } from "$lib/clickresolver";
+  import { newPass, passEnd, passLine, passStep } from "$lib/pass";
   import { gatesPass, pickLine as pickFromPool, runSteps, type Host } from "$lib/skill-run";
   import { ASIDE_SKILL, LEAVE_SKILL, SEAT_HERE_SKILL, SEAT_SKILL } from "$lib/skills";
   import { seatFraction, seatMove, seatWalkMs } from "$lib/seat";
@@ -2089,6 +2090,13 @@
     const r = (e.currentTarget as HTMLElement).getBoundingClientRect();
     const res = scratchStep(scratch, { x: e.clientX - r.left, y: e.clientY - r.top, t: performance.now() }, r.height, r.width);
     scratch = res.state;
+    // E33: the speed of every pass of the pointer over Peak, as numbers, to calibrate the flick later (a test build writes it, nothing else reads it)
+    {
+      const ps = passStep(passState, { x: e.clientX - r.left, y: e.clientY - r.top, t: performance.now() });
+      passState = ps.state;
+      const l = passLine(ps.done, r.width);
+      if (l) lp(l);
+    }
     if (res.zone === "head") onHeadScratch();
     else if (res.zone === "belly") onBellyRub();
     // the eyes follow the cursor (in quarter steps, so a tiny move does not redraw anything)
@@ -2123,7 +2131,12 @@
     track("first_interaction");
     scheduleSave();
   }
+  let passState = newPass();
   function onPetLeave() {
+    const pe = passEnd(passState);
+    passState = pe.state;
+    const pl = passLine(pe.done, 140);
+    if (pl) lp(pl);
     gaze = null;
     scratch = { ...scratch, pts: [] };
   }
@@ -2141,23 +2154,33 @@
     scheduleSave();
   }
 
-  // Right-click: no menu (the only menu is the tray's, ADR-0055). It is a push away from the pointer (see `shove`).
-  // One right click waits RIGHT_DOUBLE_MS for a second (ADR-0109): a single is the push, a double is "step aside". A double
-  // is "step aside" (IM-3); when a gate refuses it, it falls back to the push, which has its own gates.
+  // Right-click: no menu (the only menu is the tray's, ADR-0055). The right button is the two polite requests (ADR-0133, which amends ADR-0109):
+  // one click is "step aside", two are "go back to your place". Peak starts to look at the pointer at once (the first click), so the wait of
+  // RIGHT_DOUBLE_MS to tell one click from two overlaps the look and is not felt; then it walks aside, or, on a second click, goes to its place.
+  // The shove (`shove`) has no gesture now: it waits for the flick, after a round that measures the speeds (`pass` lines of the loop trace).
+  const rightGates = () => ({ held: pose === "held", quiet, flying, away, leaving, cooldownOk: Date.now() - lastShove >= 2500 });
   const rightClicks = clickResolver<number>(
-    (dx) => void shove(dx),
     (dx) => {
-      const act = resolveGesture("right_double_click", {
-        held: pose === "held",
-        quiet,
-        flying,
-        away,
-        leaving,
-        cooldownOk: Date.now() - lastShove >= 2500,
-      });
-      lp(`right_double act=${act ?? "refused"} pose=${pose} panel=${panel === null ? 0 : 1}`);
+      const act = resolveGesture("right_click", rightGates());
+      lp(`right_click act=${act ?? "refused"} pose=${pose} panel=${panel === null ? 0 : 1}`);
       if (act === "step_aside" && panel === null) void startAside(dx);
-      else void shove(dx); // a gate is closed (it refuses itself), or a panel is open
+      else if (pose === "notice") enter("look"); // refused: the look it began is over
+    },
+    (dx) => {
+      const act = resolveGesture("right_double_click", rightGates());
+      lp(`right_double act=${act ?? "refused"} pose=${pose} panel=${panel === null ? 0 : 1}`);
+      if (act === "seat" && panel === null && startSeat("double_right_click")) return;
+      if (pose === "notice") enter("look");
+    },
+    undefined,
+    undefined,
+    (dx) => {
+      // the first click: it looks at the pointer at once (only when it is standing and may be asked)
+      if (quiet || flying || away || leaving || pose === "held" || panel !== null) return;
+      if (pose === "idle" || pose === "look") {
+        attentionGaze = toGaze(dx, 0);
+        enter("notice");
+      }
     },
   );
   function onPetMenu(e: MouseEvent) {
@@ -2289,20 +2312,25 @@
   let lastUserChatAt: number | null = null; // when the person last sent a chat message in this run (a conversation is going on if it was just now)
   let dismissState = freshDismissalState(); // dismissals typed in the middle of a conversation (ADR-0108); memory only
 
+  /**
+   * "Go back to your place": not a wish to be left alone (ADR-0108). Peak goes down to the floor if it is up on a window, walks to its usual
+   * place (taught by "sit here", or the right end of the floor) and nods (ADR-0117). The typed command and the double right click (ADR-0133)
+   * come here. False when a gate refuses it.
+   */
+  function startSeat(how: "command" | "double_right_click"): boolean {
+    if (!gatesPass(SEAT_SKILL.gates, { quiet, held: pose === "held", flying, away, leaving })) return false;
+    lt(`command_seat how=${how} pose=${pose}`);
+    closePanel();
+    void runSteps(SEAT_SKILL.steps, skillHost, () => true, lt).then((r) => {
+      lt(`seat ${r}`);
+      if (r === "failed" && !flying && pose !== "held") enter("nod"); // it could not walk there: it only nods, as before
+    });
+    return true;
+  }
+
   async function tryLeaveFromChat(text: string): Promise<boolean> {
     const m = matchIntent(text, [mem.petName]);
-    if (m?.skill === "seat" && m.kind === "exact") {
-      // "go back to your place": not a wish to be left alone (ADR-0108). Peak goes down to the floor if it is up on a window, walks to
-      // its usual place (taught by "sit here", or the right end of the floor) and nods (ADR-0117).
-      if (!gatesPass(SEAT_SKILL.gates, { quiet, held: pose === "held", flying, away, leaving })) return false;
-      lt(`command_seat pose=${pose}`);
-      closePanel();
-      void runSteps(SEAT_SKILL.steps, skillHost, () => true, lt).then((r) => {
-        lt(`seat ${r}`);
-        if (r === "failed" && !flying && pose !== "held") enter("nod"); // it could not walk there: it only nods, as before
-      });
-      return true;
-    }
+    if (m?.skill === "seat" && m.kind === "exact") return startSeat("command");
     if (m?.skill === "seat_here" && m.kind === "exact") {
       // "sit here from now on": the place where Peak stands along the floor becomes its usual place (ADR-0117)
       if (!gatesPass(SEAT_HERE_SKILL.gates, { quiet, held: pose === "held", flying, away, leaving })) return false;
@@ -2393,7 +2421,7 @@
       if (way === null) way = roomL > roomR ? -1 : 1;
       const room = way < 0 ? roomL : roomR;
       lt(`aside way=${way} room=${Math.round(room)} pose=${pose}`);
-      if (pose !== "idle" && pose !== "look") return false; // something else happened while asking
+      if (pose !== "idle" && pose !== "look" && pose !== "notice") return false; // something else happened while asking (a look at the pointer is the beat of a right click, ADR-0133)
       lastShove = now; // the cooldown is shared with the push
       if (await clearAside(way, from)) return true; // with the picture on: to the nearest clear place beyond the pointer
       if (room < LEAVE_MIN_ROOM_PX) {
