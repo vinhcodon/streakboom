@@ -13,7 +13,7 @@ These are defaults, not decisions; the author may change any of them (the ones t
 | Chat brains named | Gemini and Groq only, until Claude and OpenAI are tried with real keys |
 | Contact email on the Page | none for now |
 | Who answers messages and comments | the author alone; a reply in two or three days is a fair promise; no automatic reply |
-| Pictures still to make | a clip under 10 seconds of Peak on a window edge or asleep, and a chat screenshot with no key or personal text (posts 1 and 5 can go with the cover image and a still until then) |
+| Pictures still to make (the cover and the profile picture are uploaded) | a clip under 10 seconds of Peak on a window edge or asleep, and a chat screenshot with no key or personal text (posts 1 and 5 can go with the cover image and a still until then) |
 
 ## Before posting (read once)
 

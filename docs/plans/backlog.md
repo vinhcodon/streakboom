@@ -489,8 +489,8 @@ The dog is **not** to be put in the app; this is a sticker test, and the decisio
 | ID | Story | Size | State |
 |---|---|---|---|
 | FB-1 | Create the Page (name, category, website link) | S | done 2026-11-17 by the author |
-| FB-2 | The cover and the profile picture | S | made 2026-11-17 (`docs/plans/assets/facebook-page/`), approved as files by the author; **not uploaded, not seen on Facebook** (V-169) |
-| FB-3 | The bio and the five first posts | S | written; **not posted**, not read by the author (V-170) |
+| FB-2 | The cover and the profile picture | S | made 2026-11-17 (`docs/plans/assets/facebook-page/`), approved by the author and **uploaded by him the same day**; seen on a computer as the Page's manager (nothing cut, the face fits the round crop); **the phone and a signed-out visitor not seen** (V-169) |
+| FB-3 | The bio and the five first posts | S | the bio is on the Page (2026-11-17, seen); the five posts are written and **not posted**, not read by the author (V-170) |
 | FB-4 | A link to the Page and `sameAs` on the website; the share preview looked at in the Sharing Debugger | S | handed over (`docs/handoff/website-facebook-page.md`), the website session |
 | FB-5 | A clip under 10 seconds of Peak and a chat screenshot for posts 1 and 5 | S | proposed; the author records them |
 | FB-6 | Claim `@streakboom` and put the readable address in the handoff and the README | S | proposed; when free |
