@@ -55,3 +55,6 @@ Cloudflare Crawler Hints (Cache, Configuration; a Cloudflare setting turned on b
 
 ## The duo stickers (ADR-0129, ADR-0130)
 `scripts/site/stickers.mjs` lists extra sticker sets (`EXTRA_SETS`); the four duo stickers of `docs/plans/assets/paws/set-duo-4/` follow set-v2 as normal stickers (numbers 35 to 38 in the address of the picture, slugs from their manifest) and are tagged by `scripts/site/catalog/overrides.json`. The Pages workflow also runs when that folder changes.
+
+## The Facebook Page (ADR-0134)
+`FACEBOOK_URL` in `scripts/site/facts.mjs` is `https://www.facebook.com/streakboom`. The footer of every page has one link "Facebook" and the `sameAs` of the home pages names it; nothing of Facebook runs, and the build refuses a script, pixel or like button.
