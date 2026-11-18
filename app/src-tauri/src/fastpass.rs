@@ -38,6 +38,10 @@ pub struct Stats {
     pub rev: u32,
     pub dx: f64,
     pub dy: f64,
+    /// The speed over the last 24 ms or more of the pass (px per second): a strike has stopped by then, a transit leaves at speed.
+    pub vend: f64,
+    /// The pass ended because the pointer left the zone (true), or because it rested for more than 250 ms (false).
+    pub left: bool,
 }
 
 /// Is the pointer (logical px, relative to the window's top-left) inside the zone of a `w` by `h` window?
@@ -74,7 +78,7 @@ impl Tracker {
         let mut done = None;
         if let Some(l) = self.last {
             if s.t.saturating_sub(l.t) > GAP_MS {
-                done = self.finish();
+                done = self.finish(false);
             }
         }
         self.ring.push_back(s);
@@ -101,7 +105,7 @@ impl Tracker {
 
     /// The pointer left the zone: the pass is over, and nothing of it stays.
     pub fn leave(&mut self) -> Option<Stats> {
-        let done = self.finish();
+        let done = self.finish(true);
         self.ring.clear();
         done
     }
@@ -135,7 +139,18 @@ impl Tracker {
         }
     }
 
-    fn finish(&mut self) -> Option<Stats> {
+    /// The speed over the last 24 ms or more of what the ring holds (0 when it holds fewer than two samples).
+    fn end_speed(&self) -> f64 {
+        let Some(last) = self.ring.back() else { return 0.0 };
+        let Some(from) = self.ring.iter().rev().skip(1).find(|p| last.t.saturating_sub(p.t) >= 24).or_else(|| self.ring.front().filter(|p| p.t < last.t)) else {
+            return 0.0;
+        };
+        let d = ((last.x - from.x).powi(2) + (last.y - from.y).powi(2)).sqrt();
+        d * 1000.0 / last.t.saturating_sub(from.t).max(1) as f64
+    }
+
+    fn finish(&mut self, left: bool) -> Option<Stats> {
+        let vend = self.end_speed();
         let (f, l) = (self.first, self.last);
         let (n, path, vmax, rev) = (self.n, self.path, self.vmax, self.rev);
         self.n = 0;
@@ -150,7 +165,7 @@ impl Tracker {
             return None;
         }
         let ms = l.t.saturating_sub(f.t).max(1);
-        Some(Stats { n, ms, path, vmax, vavg: path * 1000.0 / ms as f64, rev, dx: l.x - f.x, dy: l.y - f.y })
+        Some(Stats { n, ms, path, vmax, vavg: path * 1000.0 / ms as f64, rev, dx: l.x - f.x, dy: l.y - f.y, vend, left })
     }
 }
 
@@ -162,7 +177,7 @@ pub fn line(st: &Stats, w: f64) -> Option<String> {
     }
     let hz = (st.n as f64 * 1000.0 / st.ms as f64).round() as i64;
     Some(format!(
-        "fast n={} ms={} path={} vmax={} vavg={} rev={} dx={} dy={} w={} hz={}",
+        "fast n={} ms={} path={} vmax={} vavg={} rev={} dx={} dy={} w={} hz={} vend={} left={}",
         st.n,
         st.ms,
         st.path.round() as i64,
@@ -172,7 +187,9 @@ pub fn line(st: &Stats, w: f64) -> Option<String> {
         st.dx.round() as i64,
         st.dy.round() as i64,
         w.round() as i64,
-        hz
+        hz,
+        st.vend.round() as i64,
+        st.left as u8
     ))
 }
 
@@ -214,7 +231,7 @@ mod tests {
         assert_eq!(st.rev, 0);
         assert_eq!(st.dx.round() as i64, 100);
         let l = line(&st, 140.0).unwrap();
-        assert_eq!(l, "fast n=6 ms=40 path=100 vmax=2500 vavg=2500 rev=0 dx=100 dy=0 w=140 hz=150");
+        assert_eq!(l, "fast n=6 ms=40 path=100 vmax=2500 vavg=2500 rev=0 dx=100 dy=0 w=140 hz=150 vend=2500 left=1");
     }
 
     #[test]
@@ -242,6 +259,26 @@ mod tests {
         assert_eq!(t.leave().unwrap().n, 2);
         let (mut t2, _) = run(&[(0, 5.0, 5.0)]);
         assert_eq!(t2.leave(), None);
+    }
+
+    #[test]
+    fn a_strike_that_stops_has_a_low_end_speed_and_a_transit_has_a_high_one() {
+        // fast, then still for 40 ms, then a gap: the pass ended by resting
+        let mut pts: Vec<(u64, f64, f64)> = (0..6).map(|i| (i as u64 * 8, i as f64 * 20.0, 0.0)).collect();
+        pts.extend((6..11).map(|i| (i as u64 * 8, 100.0, 0.0)));
+        let (mut t, _) = run(&pts);
+        let stop = t.leave().unwrap();
+        assert!(stop.vend < 1000.0, "vend {} after the stop", stop.vend);
+        assert_eq!(stop.vmax.round() as i64, 2500);
+        // a transit: the same speed up to the last sample
+        let run_pts: Vec<_> = (0..11).map(|i| (i as u64 * 8, i as f64 * 20.0, 0.0)).collect();
+        let (mut t2, _) = run(&run_pts);
+        let transit = t2.leave().unwrap();
+        assert_eq!(transit.vend.round() as i64, 2500);
+        assert!(transit.left);
+        // a pass that ends by a gap says so
+        let (_, done) = run(&[(0, 0.0, 0.0), (8, 10.0, 0.0), (16, 20.0, 0.0), (500, 90.0, 0.0)]);
+        assert!(!done[0].left);
     }
 
     #[test]

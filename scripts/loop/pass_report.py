@@ -17,9 +17,9 @@ args = sys.argv[1:]
 SRC = "fast" if "fast" in args else "pass"
 SINCE = next((int(a[6:]) for a in args if a.startswith("since=")), 0)
 d = next((a for a in args if a != "fast" and not a.startswith("since=")), os.path.join(os.environ.get("APPDATA", "."), "com.streakboom.app"))
-P = re.compile(r"(\d+) " + SRC + r" n=(\d+) ms=(\d+) path=(\d+) vmax=(\d+) vavg=(\d+) rev=(\d+) dx=(-?\d+) dy=(-?\d+) w=(\d+)")
+P = re.compile(r"(\d+) " + SRC + r" n=(\d+) ms=(\d+) path=(\d+) vmax=(\d+) vavg=(\d+) rev=(\d+) dx=(-?\d+) dy=(-?\d+) w=(\d+)(?: hz=(\d+) vend=(\d+) left=(\d))?")
 M = re.compile(r"(\d+) mark round=(\d+) kind=(\w+) variant=(\w+)(.*)")
-lines = [tuple(map(int, m.groups())) for l in open(os.path.join(d, "loop-trace.log"), encoding="utf8") if (m := P.match(l))]
+lines = [tuple(int(g or 0) for g in m.groups()) for l in open(os.path.join(d, "loop-trace.log"), encoding="utf8") if (m := P.match(l))]
 marks = [(int(m[1]), int(m[2]), m[3], m[4]) for l in open(os.path.join(d, "pass-marks.log"), encoding="utf-8-sig")
          if (m := M.match(l)) and "rect=" in m[5] and m[3] not in ("stop", "round_end") and int(m[2]) in (1, 2, 3)]
 marks = [m for m in marks if m[0] >= SINCE]
@@ -66,10 +66,11 @@ def horiz(p):
     return abs(p[7]) >= 0.7 * max(1, p[3])
 rules = {
     "vavg>=1000 & ms<=120": lambda p: p[5] >= 1000 and p[2] <= 120,
-    "... & horizontal": lambda p: p[5] >= 1000 and p[2] <= 120 and horiz(p),
-    "vavg>=1500 & ms<=120": lambda p: p[5] >= 1500 and p[2] <= 120,
-    "vavg>=1500 & ms<=120 & horiz": lambda p: p[5] >= 1500 and p[2] <= 120 and horiz(p),
-    "vmax>=2500": lambda p: p[4] >= 2500,
+    "... & vend<=0.5*vmax": lambda p: p[5] >= 1000 and p[2] <= 120 and p[11] <= 0.5 * p[4],
+    "... & vend<=600": lambda p: p[5] >= 1000 and p[2] <= 120 and p[11] <= 600,
+    "... & vend<=0.5*vmax & horiz": lambda p: p[5] >= 1000 and p[2] <= 120 and p[11] <= 0.5 * p[4] and horiz(p),
+    "vavg>=1500 & vend<=0.5*vmax": lambda p: p[5] >= 1500 and p[2] <= 120 and p[11] <= 0.5 * p[4],
+    "... & path<=260": lambda p: p[5] >= 1000 and p[2] <= 120 and p[11] <= 0.5 * p[4] and p[3] <= 260,
 }
 kinds = sorted(tot)
 for name, f in rules.items():
