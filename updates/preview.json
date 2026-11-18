@@ -1,11 +1,11 @@
 {
-    "version":  "0.11.10",
-    "notes":  "A switch in Settings for the screen picture, off by default. In Settings, Privacy, there is now a checkbox: Let Peak look at a tiny grey picture of the screen, to move out of the way of what you see. When it is on, about every ten seconds while Peak is awake it asks Windows for a grey picture of...",
-    "pub_date":  "2026-11-15T12:45:17Z",
+    "version":  "0.11.11",
+    "notes":  "A flick shoves Peak. Hit Peak with a quick stroke of the mouse or the trackpad and stop on it for a moment: it staggers the way you flicked (near the end of a seat it may teeter, as a push always did). The rule is strict on purpose: a pointer that only passes Peak on its way somewhere does nothin...",
+    "pub_date":  "2026-11-18T08:58:29Z",
     "platforms":  {
                       "windows-x86_64":  {
-                                             "signature":  "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVUcHBlQXhYUlVURmhvdW1KbkxMSGNPMkViaDRseHhIS2x0V1V4UnlCcjM2djk1akZMTFZyaGd5MnRwYVFvcFFvRUl4OW1yUm5NdFl4WWt1elhRNzJ1bFZXWU5YTGZ1U2dJPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzk0NzQ2NzE0CWZpbGU6U3RyZWFrYm9vbV8wLjExLjEwX3g2NC1zZXR1cC5leGUJdmVyc2lvbjowLjExLjEwCkVveStjcm1sSHh5WW93T2hZSjdsNkF2TGVCN0F6aVhpN0plSlg5WG9WcGhETEExT1BBMkxiejl3V0ZQY1VxWjlyMEc0SWJQUHY1MkR1c05YSEZLeERRPT0K",
-                                             "url":  "https://api.github.com/repos/vinhcodon/streakboom/releases/assets/750975451"
+                                             "signature":  "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVUcHBlQXhYUlVURm0rQ1gxRHNkcVhHYzRyTkdEVHN4V0V2RXgwQ0lJS2F5OVVkenpMUENqT053dm9mcHp2NkdWZlF4WHU5U3FOeUhJVVlCZ0tJNUVPbXJIWWRvdGozMHdvPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzk0OTkyMzA5CWZpbGU6U3RyZWFrYm9vbV8wLjExLjExX3g2NC1zZXR1cC5leGUJdmVyc2lvbjowLjExLjExCmdmd3YzMkhLRm5Nb1VkektCcjBHTnRNcWNhUnkyZHVDaDh6RkZKdWRHVG9DZTlTeEpOT1d5M1Q5ODAwdUNHSE5TdnRpR0YzVTJZVk92NW4yVnJYbkJ3PT0K",
+                                             "url":  "https://api.github.com/repos/vinhcodon/streakboom/releases/assets/762655089"
                                          }
                   }
 }
