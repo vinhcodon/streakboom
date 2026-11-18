@@ -1,4 +1,4 @@
-# ADR-0133: A Facebook Page for Streakboom and Peak
+# ADR-0137: A Facebook Page for Streakboom and Peak
 
 - **Status:** accepted on 2026-11-17. The author asked for the Page, created it, approved the cover and profile pictures ("Dùng được") and, having no preferences for the rest, asked Claude to choose ("bạn chọn giúp hết"); the choices below are those defaults and the author may reopen any of them.
 - **Date:** 2026-11-17
@@ -18,9 +18,9 @@ A Vietnamese-speaking audience is on Facebook and Zalo, and the stickers (ADR-00
 ## Rejected
 - **Posting for the author through an automated tool.** The edit dialogs of Facebook did not open in an automated session, and automation can get the account limited; the author uploads and posts.
 - **A Facebook group** instead of a Page: a group needs a moderator every day.
-- **Several channels at once.** One channel first; the number of downloads that come from it is the test (see `docs/plans/backlog.md`, E33).
+- **Several channels at once.** One channel first; the number of downloads that come from it is the test (see `docs/plans/backlog.md`, E34).
 
 ## Consequences
 - The website gets a link to the Page and `sameAs` in its structured data: a handoff note, `docs/handoff/website-facebook-page.md`; the app session does not edit `site/`.
 - The share preview of the website on Facebook (W-3) can now be looked at in the Sharing Debugger.
-- **Not verified:** the pictures as Facebook shows them (desktop and phone crops), the posts read by the author, the Page as seen by a visitor who is not signed in, whether the sticker page copies on a phone. Each is in `docs/plans/verification-debt.md` (V-169, V-170).
+- **Not verified:** the pictures as Facebook shows them (desktop and phone crops), the posts read by the author, the Page as seen by a visitor who is not signed in, whether the sticker page copies on a phone. Each is in `docs/plans/verification-debt.md` (V-173, V-174).

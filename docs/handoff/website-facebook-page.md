@@ -1,6 +1,6 @@
 # Handoff for the website session: the Facebook Page
 
-Written 2026-11-17 by the app session for the website session (`site/` and `scripts/site/` are yours; the app session does not touch them). Decision record: [`../decisions/0133-a-facebook-page-for-streakboom-and-peak.md`](../decisions/0133-a-facebook-page-for-streakboom-and-peak.md).
+Written 2026-11-17 by the app session for the website session (`site/` and `scripts/site/` are yours; the app session does not touch them). Decision record: [`../decisions/0137-a-facebook-page-for-streakboom-and-peak.md`](../decisions/0137-a-facebook-page-for-streakboom-and-peak.md).
 
 ## What happened
 The author created a Facebook Page for Streakboom and Peak on 2026-11-17.
