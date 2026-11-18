@@ -62,6 +62,8 @@ Note: the installer is not code-signed yet, so Windows SmartScreen warns the fir
 
 ## Post 2: What Peak does not do
 
+**Posted 2026-11-17** by Claude on the author's order, Vietnamese only, Public, no comment. The picture is `docs/plans/assets/facebook-page/post2-peak-asleep-1200x630.png` (Peak asleep on a window edge with a Zzz bubble, drawn in code like the picture of post 1).
+
 **Picture:** Peak asleep or sitting still in a corner of a screen.
 
 **VI**
