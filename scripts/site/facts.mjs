@@ -9,6 +9,8 @@ export const ORIGIN = "https://streakboom.com";
 export const REPO = "vinhcodon/streakboom";
 export const REPO_URL = `https://github.com/${REPO}`;
 export const RELEASES_URL = `${REPO_URL}/releases/latest`;
+/** The Facebook Page of the project (ADR-0134): the address with the username, never the profile.php form. A link and a sameAs, nothing from Facebook runs on the site. */
+export const FACEBOOK_URL = "https://www.facebook.com/streakboom";
 export const AUTHOR = { name: "Vinh Codon", github: "https://github.com/vinhcodon" };
 
 export function appVersion() {

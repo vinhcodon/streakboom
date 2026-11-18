@@ -2,7 +2,7 @@
 // serves as it is; nothing here runs in the visitor's browser. Text comes from site/strings.mjs, facts from facts.mjs.
 import { STRINGS, FEATURE_IDS, HTML_KEYS, STICKER_UI_KEYS, UI_KEYS, LANGS } from "../../site/strings.mjs";
 import { SCENES } from "../../site/scenes.js";
-import { AUTHOR, ORIGIN, RELEASES_URL, REPO_URL, fmtDate } from "./facts.mjs";
+import { AUTHOR, FACEBOOK_URL, ORIGIN, RELEASES_URL, REPO_URL, fmtDate } from "./facts.mjs";
 import { formatCount } from "./downloads.mjs";
 import { inlineScript } from "./langsuggest.mjs";
 import { loadPopular } from "./catalog.mjs";
@@ -122,7 +122,7 @@ function footer({ lang, ctx }) {
   const s = (k) => tx(lang, k, ctx);
   return `<footer class="footer">
     <p>${s("foot_a")}</p>
-    <p><a href="${REPO_URL}">GitHub</a> · <a href="${PATHS[lang].home}#install">${s("nav_install")}</a> · <a href="${PATHS[lang].home}#faq">${s("nav_faq")}</a> · <a href="${PATHS.changelog}">${s("nav_changelog")}</a> · <a href="${REPO_URL}/issues">${s("foot_bug")}</a> · <a href="${PATHS.feed}">Atom</a></p>
+    <p><a href="${REPO_URL}">GitHub</a> · <a href="${FACEBOOK_URL}">Facebook</a> · <a href="${PATHS[lang].home}#install">${s("nav_install")}</a> · <a href="${PATHS[lang].home}#faq">${s("nav_faq")}</a> · <a href="${PATHS.changelog}">${s("nav_changelog")}</a> · <a href="${REPO_URL}/issues">${s("foot_bug")}</a> · <a href="${PATHS.feed}">Atom</a></p>
   </footer>`;
 }
 
@@ -217,7 +217,7 @@ export function homeJsonLd(lang, ctx) {
         featureList: featureTitles(lang, ctx),
         softwareRequirements: raw(lang, "requirements", ctx),
         releaseNotes: `${ORIGIN}${PATHS.changelog}`,
-        sameAs: [REPO_URL],
+        sameAs: [REPO_URL, FACEBOOK_URL],
         author: { "@id": `${ORIGIN}/#author` },
       },
       { "@type": "Person", "@id": `${ORIGIN}/#author`, name: AUTHOR.name, sameAs: [AUTHOR.github] },

@@ -60,3 +60,19 @@ test("the page asks for the picture only when a switch is on", () => {
   assert.ok(page.includes("if (!pictureOn || settleOff || flying) return false;"), "clearAside and clearOutOfLane check the switch");
   assert.ok(/pictureOn = pictureTray \|\| user;/.test(page), "the switch is the person's choice or the tray of a test build");
 });
+
+test("the fine sampler of the pointer (ADR-0135) is a test build only, keeps its ring in memory and writes only fixed numbers", () => {
+  const pure = src("../../src-tauri/src/fastpass.rs").replace(/\/\/.*$/gm, "");
+  for (const bad of ["std::fs", "File::", "write(", "println!", "eprintln!", "emit(", "reqwest", "TcpStream", "serde_json", "invoke"]) {
+    assert.ok(!pure.includes(bad), `fastpass.rs must not use ${bad}`);
+  }
+  const lib = src("../../src-tauri/src/lib.rs");
+  const fn = lib.slice(lib.indexOf("fn spawn_fast_pass"), lib.indexOf("// ---------------------------------------------------------------------- tray"));
+  assert.ok(fn.includes("if !overlay_allowed()"), "the sampler starts only in a test build");
+  // ADR-0136: the page is told of one thing only, a flick, with its way and its power: no position, no speed, no time
+  const emits = [...fn.matchAll(/\.emit\(([\s\S]*?)\);/g)].map((m) => m[1].replace(/\s+/g, " "));
+  assert.equal(emits.length, 1, "one event");
+  assert.ok(/^"percept", serde_json::json!\(\{ "kind": "flick", "way": way, "power": f\.power \}\)$/.test(emits[0]), `the event is a flick with a way and a power only: ${emits[0]}`);
+  const writes = [...fn.matchAll(/append_trace\(([^)]*)\)/g)].map((m) => m[1]);
+  assert.ok(writes.length >= 2 && writes.every((w) => w.includes('"loop-trace.log"') && (w.includes("&line") || w.includes('&format!("flick_fired way={way} power={} vpeak={} vend={}"'))), "the only things written are the line of numbers and the flick line of fixed words and numbers");
+});

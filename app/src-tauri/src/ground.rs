@@ -8,6 +8,9 @@
 
 use serde::Serialize;
 
+// The calls to the system are in `platform` (ADR-0132); they are re-exported here so that the callers are unchanged.
+pub use crate::platform::{cover_at, ground_of_point, raise_own, window_holds, window_id_at};
+
 /// The kind of thing at a point of the screen.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize)]
 #[serde(rename_all = "lowercase")]
@@ -85,102 +88,6 @@ pub fn standing_on(points: &[Ground]) -> Ground {
     }
 }
 
-/// The topmost visible, enabled, non-click-through window at a physical point, as the system's handle (0: the desktop
-/// window itself or none). Windows the system hides ("cloaked", as a suspended Store app) are skipped.
-#[cfg(windows)]
-fn hit_window(x: i32, y: i32) -> isize {
-    use windows_sys::Win32::Foundation::{HWND, POINT};
-    use windows_sys::Win32::Graphics::Dwm::{DWMWA_CLOAKED, DwmGetWindowAttribute};
-    use windows_sys::Win32::UI::WindowsAndMessaging::{CWP_SKIPDISABLED, CWP_SKIPINVISIBLE, CWP_SKIPTRANSPARENT, ChildWindowFromPointEx, GW_HWNDNEXT, GetDesktopWindow, GetWindow};
-    // SAFETY: plain queries with handles the system gave us.
-    unsafe {
-        let desktop = GetDesktopWindow();
-        let mut hwnd: HWND = ChildWindowFromPointEx(desktop, POINT { x, y }, CWP_SKIPINVISIBLE | CWP_SKIPDISABLED | CWP_SKIPTRANSPARENT);
-        let mut guard = 0;
-        while !hwnd.is_null() && hwnd != desktop {
-            let mut cloaked: u32 = 0;
-            let hr = DwmGetWindowAttribute(hwnd, DWMWA_CLOAKED as u32, &mut cloaked as *mut u32 as *mut core::ffi::c_void, 4);
-            if hr != 0 || cloaked == 0 {
-                break;
-            }
-            guard += 1;
-            hwnd = GetWindow(hwnd, GW_HWNDNEXT);
-            if guard > 32 || hwnd.is_null() {
-                return 0;
-            }
-        }
-        if hwnd == desktop { 0 } else { hwnd as isize }
-    }
-}
-
-/// The kind of thing at a physical point of the screen.
-#[cfg(windows)]
-pub fn ground_of_point(x: i32, y: i32) -> Ground {
-    use windows_sys::Win32::Foundation::HWND;
-    use windows_sys::Win32::System::Threading::GetCurrentProcessId;
-    use windows_sys::Win32::UI::WindowsAndMessaging::{GA_ROOT, GetAncestor, GetClassNameW, GetForegroundWindow, GetWindowThreadProcessId};
-    let h = hit_window(x, y);
-    if h == 0 {
-        return Ground::Desktop; // the desktop window itself: nothing in front of the wallpaper
-    }
-    let hwnd = h as HWND;
-    // SAFETY: plain queries with a handle the system gave us; the buffer is valid for the size passed.
-    unsafe {
-        let mut pid: u32 = 0;
-        GetWindowThreadProcessId(hwnd, &mut pid);
-        if pid == GetCurrentProcessId() {
-            return Ground::Own;
-        }
-        let mut buf = [0u16; 64];
-        let n = GetClassNameW(hwnd, buf.as_mut_ptr(), buf.len() as i32);
-        let class = if n > 0 { String::from_utf16_lossy(&buf[..n as usize]) } else { String::new() };
-        if let Some(g) = class_ground(&class) {
-            return g; // the class string is dropped here: only the kind is kept
-        }
-        let front = GetAncestor(GetForegroundWindow(), GA_ROOT);
-        if !front.is_null() && GetAncestor(hwnd, GA_ROOT) == front { Ground::Foreground } else { Ground::App }
-    }
-}
-
-/// An opaque number for the ordinary window at a point (0 when it is the desktop, the taskbar, Peak's own window or
-/// nothing). It says only "the same window as before?"; nothing about the window is read, and the page keeps it just to
-/// compare it with the next one.
-#[cfg(windows)]
-pub fn window_id_at(x: i32, y: i32) -> u64 {
-    match ground_of_point(x, y) {
-        Ground::App | Ground::Foreground => {
-            use windows_sys::Win32::Foundation::HWND;
-            use windows_sys::Win32::UI::WindowsAndMessaging::{GA_ROOT, GetAncestor};
-            // SAFETY: a plain query with a handle the system gave us.
-            unsafe { GetAncestor(hit_window(x, y) as HWND, GA_ROOT) as usize as u64 }
-        }
-        _ => 0,
-    }
-}
-
-/// Is that window still there and still under that point: it exists, is shown (not minimized, not hidden by the
-/// system) and its rectangle holds the point. A closed, minimized or dragged-away window says no; another window raised
-/// over it does not.
-#[cfg(windows)]
-pub fn window_holds(id: u64, x: i32, y: i32) -> bool {
-    use windows_sys::Win32::Foundation::{HWND, RECT};
-    use windows_sys::Win32::Graphics::Dwm::{DWMWA_CLOAKED, DwmGetWindowAttribute};
-    use windows_sys::Win32::UI::WindowsAndMessaging::{GetWindowRect, IsIconic, IsWindow, IsWindowVisible};
-    let hwnd = id as usize as HWND;
-    // SAFETY: plain queries; a stale handle only makes `IsWindow` say no.
-    unsafe {
-        if IsWindow(hwnd) == 0 || IsWindowVisible(hwnd) == 0 || IsIconic(hwnd) != 0 {
-            return false;
-        }
-        let mut cloaked: u32 = 0;
-        if DwmGetWindowAttribute(hwnd, DWMWA_CLOAKED as u32, &mut cloaked as *mut u32 as *mut core::ffi::c_void, 4) == 0 && cloaked != 0 {
-            return false;
-        }
-        let mut r = RECT { left: 0, top: 0, right: 0, bottom: 0 };
-        GetWindowRect(hwnd, &mut r) != 0 && x >= r.left && x < r.right && y >= r.top && y < r.bottom
-    }
-}
-
 /// The kind at a point and, for an ordinary window, an opaque number for it (0 otherwise): one cell of the ground map with
 /// regions (spec/10). The number is the system's handle, compared only inside one map and then dropped.
 pub fn cell_at(x: i32, y: i32) -> (Ground, u64) {
@@ -188,87 +95,6 @@ pub fn cell_at(x: i32, y: i32) -> (Ground, u64) {
     let id = if matches!(g, Ground::App | Ground::Foreground) { window_id_at(x, y) } else { 0 };
     (g, id)
 }
-
-#[cfg(not(windows))]
-pub fn ground_of_point(_x: i32, _y: i32) -> Ground {
-    Ground::Unknown
-}
-
-#[cfg(not(windows))]
-pub fn window_id_at(_x: i32, _y: i32) -> u64 {
-    0
-}
-
-#[cfg(not(windows))]
-pub fn window_holds(_id: u64, _x: i32, _y: i32) -> bool {
-    true
-}
-
-/// A window that is in front of Peak at a point and that Peak cannot be raised over: the Start menu, Search and the like sit in
-/// a higher layer than an always-on-top window, so they hide the cat. Found by asking what is at the point (the system's answer
-/// skips Peak, it is click-through): an always-on-top window that is not ours, not the desktop and not the taskbar, and that is
-/// **not** below Peak in the stacking order (the windows of the higher layers do not appear in it at all, a window of the same
-/// layer that is below Peak does). Nothing about the window is read but that one is there.
-#[cfg(windows)]
-pub fn cover_at(own: isize, x: i32, y: i32) -> bool {
-    use windows_sys::Win32::Foundation::HWND;
-    use windows_sys::Win32::System::Threading::GetCurrentProcessId;
-    use windows_sys::Win32::UI::WindowsAndMessaging::{GA_ROOT, GW_HWNDNEXT, GWL_EXSTYLE, GetAncestor, GetClassNameW, GetWindow, GetWindowLongW, GetWindowThreadProcessId, WS_EX_TOPMOST};
-    let h = hit_window(x, y);
-    if h == 0 {
-        return false;
-    }
-    // SAFETY: plain queries with handles the system gave us; the buffer is valid for the size passed.
-    unsafe {
-        let top = GetAncestor(h as HWND, GA_ROOT);
-        if top.is_null() {
-            return false;
-        }
-        let mut pid: u32 = 0;
-        GetWindowThreadProcessId(top, &mut pid);
-        if pid == GetCurrentProcessId() {
-            return false;
-        }
-        let mut buf = [0u16; 64];
-        let n = GetClassNameW(top, buf.as_mut_ptr(), buf.len() as i32);
-        let class = if n > 0 { String::from_utf16_lossy(&buf[..n as usize]) } else { String::new() };
-        if class_ground(&class).is_some() {
-            return false;
-        }
-        if (GetWindowLongW(top, GWL_EXSTYLE) as u32) & WS_EX_TOPMOST == 0 {
-            return false; // an ordinary window cannot be in front of an always-on-top one
-        }
-        let mut w = GetWindow(own as HWND, GW_HWNDNEXT);
-        let mut guard = 0;
-        while !w.is_null() && guard < 800 {
-            if w == top {
-                return false; // below Peak
-            }
-            w = GetWindow(w, GW_HWNDNEXT);
-            guard += 1;
-        }
-        true
-    }
-}
-
-/// Raise Peak's window to the top of the always-on-top layer (over a window of its own layer that came later).
-#[cfg(windows)]
-pub fn raise_own(own: isize) {
-    use windows_sys::Win32::Foundation::HWND;
-    use windows_sys::Win32::UI::WindowsAndMessaging::{HWND_TOPMOST, SWP_NOACTIVATE, SWP_NOMOVE, SWP_NOSIZE, SetWindowPos};
-    // SAFETY: a plain call with the handle of our own window.
-    unsafe {
-        SetWindowPos(own as HWND, HWND_TOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE);
-    }
-}
-
-#[cfg(not(windows))]
-pub fn cover_at(_own: isize, _x: i32, _y: i32) -> bool {
-    false
-}
-
-#[cfg(not(windows))]
-pub fn raise_own(_own: isize) {}
 
 #[cfg(test)]
 mod tests {

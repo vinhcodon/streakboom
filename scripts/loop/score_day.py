@@ -18,3 +18,8 @@ per_hour = collections.Counter(datetime.datetime.fromtimestamp(ts(l)).strftime('
 print('moves by the rule per hour of the day:', dict(sorted(per_hour.items())))
 ev = collections.Counter(re.sub(r' (pose|button)=.*', '', l.split(' ', 1)[1]) for l in L if ' settle' not in l and ' aside_place' not in l and ' view ' not in l)
 print('other events:', dict(ev.most_common(15)))
+ps = [tuple(int(v) for v in re.findall(r'(?:vmax|vavg|rev|path|ms|n)=(-?\d+)', l)[:6]) for l in L if ' pass n=' in l]
+if ps:
+    vm = sorted(int(re.search(r'vmax=(\d+)', l)[1]) for l in L if ' pass n=' in l)
+    q = lambda f: vm[min(len(vm) - 1, int(len(vm) * f))]
+    print('passes of the pointer over Peak (E33): %d | vmax px/s: median %d, 90%% %d, max %d' % (len(vm), q(0.5), q(0.9), vm[-1]))

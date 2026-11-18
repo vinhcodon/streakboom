@@ -1,0 +1,24 @@
+# ADR-0135: The pointer near Peak is read fast in the Rust thread, so that the flick can be seen
+
+- **Status:** accepted on 2026-11-18 (the author chose option A of three: read the pointer on the Rust side; the others were a slower gesture, and pausing the shove). **Continues ADR-0133** (the flick is measured first). Nothing is built yet; the thresholds still wait for a real hand.
+- **Date:** 2026-11-18
+- **Built (IR-4a, 2026-11-18):** the sampler, in a **test build only**, writes the numbers of every pass as `fast n= ms= path= vmax= vavg= rev= dx= dy= w= hz=`; no event goes to the page yet. Measured on one machine in a debug build: the sampler thread costs about 0.4% of one core while the pointer is in the zone (the budget is 0.5%, a release build costs less); see the engineering log of 2026-11-18.
+- **Decided by:** Vinh (author), recorded by Claude (the app session)
+
+## Context
+Three scripted rounds (engineering log, 2026-11-18; 48 passes each with a seeded plan) showed that the page sees **5 of 48 flicks** (1200 to 4200 px/s) and **0 of 12** long fast runs past Peak. The window takes pointer events only after the hit-test thread has switched it on (a poll of 30 ms near the cat), and a flick crosses the 140 px sprite in 15 to 110 ms. A shove built on the page's events would miss about nine flicks in ten. A script is not a hand: this says what the page can see, not what a person does.
+
+## Decision
+1. **A small thread beside the hit-test thread samples the pointer faster, only in a zone around Peak.** Inside the window plus a margin of 80 px it reads the position every **8 ms** (about 125 Hz; 117 Hz were measured); everywhere else it looks every 60 ms and reads nothing. The hit-test thread keeps its rhythm (30 ms near the window, 150 ms far) and is not touched; it already reads the pointer position (`GetCursorPos`) to make the window click-through and to give Peak its gaze, and this raises the **resolution of an existing sense inside a small zone**. The wait uses a high-resolution timer **of that thread** (`precise_sleep`), not `timeBeginPeriod`, which made the whole program tick faster and cost about three times more. It is **not a new sense**: no key, no screen, no window, no click position, no pointer position outside the zone.
+2. **What is kept:** a ring of the last 300 ms of positions **in memory**, discarded when the pointer leaves the zone. **What leaves the thread:** one event to the page when a flick is recognised (`percept` with `kind: "flick"`, a direction of left or right and a strength class), and nothing else. Nothing is written to disk, sent anywhere or counted per person. A test build (Preview or developer) may write the **numbers of every pass** that the fast sampler sees (the same fixed words as `pass n= ms= ...`), as the page does now, to calibrate.
+3. **The recognition rule is not fixed here.** It comes from the numbers of the author's own hand and trackpad (IR-3) read at this rate, then from a second round that must show that the transit past Peak on the way to the taskbar does **not** trigger it (charter article 2: Peak does not take offence at a mouse that is only going somewhere). Until then the sampler only measures.
+4. **Cost:** the fast read is a few microseconds of work every 8 ms, only while the pointer is in the zone. It must be measured on the author's machine (the task manager and a loop of the cost, as for the picture, PS-10) before it ships; the budget is under 0.5% of one core on average over a working day, and the sampler returns to the slow rhythm at once when the pointer is out of the zone or the window is hidden.
+5. **Not decided here:** the throw on release, the press and hold, the Settings list (ADR-0133, item 5), and whether the flick ships in Stable or only in Preview first (the next Preview decides).
+
+## Rejected
+- **A slower gesture for the shove** (a push with a dwell on Peak): safe for the sampling, but it is not the quick, playful strike the author asked for.
+- **Pausing the shove:** leaves the right click to step aside and the shove to nobody; kept as the fall-back if the cost or the false triggers cannot be made small.
+- **Global pointer hooks** (`WH_MOUSE_LL`): they see every move on the whole screen; heavier, and a larger step than the contract needs.
+
+## Consequences
+The Rust thread (`spawn_hit_test` in `lib.rs`, and a new pure module for the ring and the rule with tests), the page (a `percept` handler that runs the shove through `resolveGesture`), `bindings.ts` (the shove gets the gesture `flick`), the privacy test (a line that the ring never leaves memory and no pointer position is written), spec 17 and spec 05 if the sensing list is there (to be checked), the privacy text of the README at the next Stable. IR-4 of E33 splits in two: **IR-4a** the fast sampler and its numbers (a test build), **IR-4b** the rule and the shove.

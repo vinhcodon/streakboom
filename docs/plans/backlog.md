@@ -478,11 +478,24 @@ The dog is **not** to be put in the app; this is a sticker test, and the decisio
 | ID | Story | Size | State |
 |---|---|---|---|
 | RS-1 | The author chooses the option, the version and tag model, the owners (ADR) | S | done 2026-11-15: ADR-0132 (Option B, one product version, the macOS spike after RS-2, a Mac with Apple Silicon; the macOS version and the owners of the zones are still to be given) |
-| RS-2 | The platform layer: the trait and `platform/windows.rs` (the Win32 code moved, behaviour unchanged) | L | proposed (after RS-1) |
+| RS-2 | The platform layer: `platform/mod.rs` (the contract), `windows.rs` (the Win32 code moved unchanged) and `macos.rs` (stubs) | L | built 2026-11-15, not yet seen on a Preview by the author (V-169) |
 | RS-3 | Scripts and CI by zone (`scripts/windows/`, workflows split, path filters, the release routine) | M | proposed |
 | RS-4 | The documents by zone (`docs/platform/`, the platform tag, PROJECT.md, development.md, AGENTS.md, CODEOWNERS, the audit script) | M | proposed |
 | RS-5 | The macOS spike on a Mac (window, tray, stubs, then the senses one by one with their permissions) | L | proposed; needs a Mac |
 | RS-6 | The website's download choice by platform (the website session) | S | proposed |
+
+## E33: The mouse and Peak, revised (`docs/plans/input-map-revision.md`, ADR-0133, amends ADR-0109)
+
+| ID | Story | Size | State |
+|---|---|---|---|
+| IR-1 | The right click is step aside (a look at once, a walk after 250 ms), the double right click is its place; the shove has no gesture | S | built, tested, **not committed: the author looks first** (rule 8) |
+| IR-2 | `pass.ts`: the speed of every pass of the pointer over Peak, as numbers in the loop trace (a test build) | S | built, same |
+| IR-3 | A round of measuring with the author's own hand and trackpad (slow strokes, ordinary pointer moves near Peak, quick flicks) and the thresholds read from it | S | waits for the author |
+| IR-4a | The fast sampler of the pointer near Peak (8 ms inside the window plus 80 px, a ring of 300 ms in memory, the numbers of every pass in a test build; ADR-0135) | M | **built, a test build only; tried with scripted rounds (33 of 48 flicks seen against 8 of 48 by the page; about 0.4% of a core in a debug build); no event to the page yet** |
+| IR-4b | The flick: a fast stroke followed by a stop on the sprite staggers Peak the way it was flicked (ADR-0136); the rule from the scripted rounds (12 of 48 flicks, none of 81 other passes), **in a Preview or developer build only**; a speed ceiling for the scratch, the power of the stagger and a real hand are still to do | M | **built, tested and committed after the author looked at a test build (2026-11-18)** |
+| IR-5 | Press and hold for a purr (a new gesture: an ADR) | S | later |
+| IR-6 | A throw on release of the carry | M | later, after IR-4b |
+| IR-7 | A read-only list of the gestures in Settings, from `bindings.ts` | S | later |
 
 ## E34: A Facebook Page for Streakboom and Peak (ADR-0137, `docs/plans/facebook-launch-posts.md`)
 
@@ -491,7 +504,7 @@ The dog is **not** to be put in the app; this is a sticker test, and the decisio
 | FB-1 | Create the Page (name, category, website link) | S | done 2026-11-17 by the author |
 | FB-2 | The cover and the profile picture | S | made 2026-11-17; **the cover was redone on 2026-11-18** at the author's order (its Peak had the same face as the profile picture): it now carries Peak of the sticker 13 "Sướng quá~" of set-v2 (`stickers/set-v2/vi/13.png`, the picture as it is, with the words cropped off at the author's order, then enlarged about 1.5 times and centred in the circle by its measured box, tail included) and was uploaded to the Page the same day. First version: (`docs/plans/assets/facebook-page/`), approved by the author and **uploaded by him the same day**; seen on a computer as the Page's manager (nothing cut, the face fits the round crop); **the phone and a signed-out visitor not seen** (V-173) |
 | FB-3 | The bio and the five first posts | S | the bio is on the Page (2026-11-17, seen); post 1 was **posted on 2026-11-17** (the first comment holds the link and the SmartScreen note); the picture `docs/plans/assets/facebook-page/post1-peak-on-a-window-1200x630.png` (Peak on a window edge, drawn in code from the icon and the og-image, **a new drawing the author has not looked at as a file**) was added to the post the same day; the Page's public phone number was removed at the author's request; post 2 was **posted on 2026-11-17** too (Vietnamese only, with `post2-peak-asleep-1200x630.png`); posts 3 to 5 are written and **not posted** (V-174) |
-| FB-4 | A link to the Page and `sameAs` on the website; the share preview looked at in the Sharing Debugger | S | handed over (`docs/handoff/website-facebook-page.md`), the website session |
+| FB-4 | A link to the Page and `sameAs` on the website; the share preview looked at in the Sharing Debugger | S | handed over (`docs/handoff/website-facebook-page.md`); the website session built the footer link and `sameAs` (ADR-0134), **not published yet**; the Sharing Debugger look waits for the publish |
 | FB-5 | A clip under 10 seconds of Peak and a chat screenshot for posts 1 and 5 | S | proposed; the author records them |
 | FB-6 | Claim `@streakboom` and put the readable address in the handoff and the README | S | done 2026-11-17: the author set it, the address opens the Page, the handoff and the ADR carry it; the README carries a Facebook link in its first row of links (2026-11-17) |
 | FB-7 | Measure what the Page brings: a short link per post on the download page, read after four weeks, then keep, change or stop the Page | M | proposed |

@@ -22,6 +22,8 @@ export function clickResolver<T>(
   onDouble: (payload: T) => void,
   timers: Timers = { set: (fn, ms) => setTimeout(fn, ms), clear: (h) => clearTimeout(h as ReturnType<typeof setTimeout>) },
   waitMs = RIGHT_DOUBLE_MS,
+  /** Called at once on the first click of a possible pair (ADR-0133: Peak starts to look at the pointer while the page waits to know if it is one click or two). */
+  onFirst?: (payload: T) => void,
 ): ClickResolver<T> {
   let handle: unknown = null;
   let first: T | null = null;
@@ -41,6 +43,7 @@ export function clickResolver<T>(
       }
       first = payload;
       waiting = true;
+      onFirst?.(payload);
       handle = timers.set(() => {
         const p = first as T;
         waiting = false;

@@ -1,5 +1,9 @@
 # 17. The input map: what the person does, what it is called, what Peak does
 
+**Update (2026-11-16, ADR-0133): the right button changed.** The **right click is step aside** (Peak looks at the pointer at once and walks aside after 250 ms if there is no second click), the **double right click is `seat`** (its place), and the **shove has no gesture** until the flick is built, after a round that measures the speeds. The tables below describe the map of ADR-0109 and are kept as written; `bindings.ts` is the truth. See `docs/plans/input-map-revision.md`.
+
+**Update (2026-11-18, ADR-0135 and ADR-0136): the flick is the shove.** A strike on Peak (fast, a real stroke, slowed down, ending on the sprite; the rule is in ADR-0136) staggers Peak in the way it was flicked. It is seen by a fine sampler of the pointer in the Rust side, **a Preview or developer build only for now**; Stable keeps the right click as step aside and has no flick. The gesture list gains `flick`.
+
 **Status:** **decided on 2026-11-14 (ADR-0109), written from an audit of the code of Preview 0.9.5. Built since on branch `vanish` (IM-1 to IM-4, ADR-0111; not seen, V-139 and V-140); the one-time hint (IM-4) too, V-141.** Two points differ from the text below: step aside keeps the gate `not_quiet`, and with no room it nods instead of hopping to another row (ADR-0111). The author asked for (a) a "step aside" action ("tránh ra", "xê ra") on a double right click, and (b) a review that names every action and ties each to the mouse events and keys that exist. The decisions of section 8 were taken as recommended (ADR-0109).
 
 ## 1. Why

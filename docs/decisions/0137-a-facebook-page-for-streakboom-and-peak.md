@@ -21,6 +21,7 @@ A Vietnamese-speaking audience is on Facebook and Zalo, and the stickers (ADR-00
 - **Several channels at once.** One channel first; the number of downloads that come from it is the test (see `docs/plans/backlog.md`, E34).
 
 ## Consequences
+- **A note on numbers.** This record was first written as ADR-0133. The website session's ADR-0134 (the footer link and `sameAs`) says "ADR-0133 of the app session"; it means **this** record. Another session had taken 0133 on `origin/main` (the right click and the flick), so this one became 0137 (backlog E34, V-173 and V-174 for the same reason). ADR-0134 is not edited; it is another session's record.
 - The website gets a link to the Page and `sameAs` in its structured data: a handoff note, `docs/handoff/website-facebook-page.md`; the app session does not edit `site/`.
 - The share preview of the website on Facebook (W-3) can now be looked at in the Sharing Debugger.
 - **Not verified:** the pictures as Facebook shows them (desktop and phone crops), the posts read by the author, the Page as seen by a visitor who is not signed in, whether the sticker page copies on a phone. Each is in `docs/plans/verification-debt.md` (V-173, V-174).
