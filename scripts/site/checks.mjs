@@ -517,7 +517,8 @@ export function check({ ctx, pages, files, out }) {
     if (!title) bad(`${p.path}: no title`);
     if (!desc) bad(`${p.path}: no description`);
     if (title.length > 90) bad(`${p.path}: title is ${title.length} characters`);
-    if (desc.length > 260) bad(`${p.path}: description is ${desc.length} characters`);
+    // Bing's page check calls a description over about 160 characters too long (the home page was 178 and 200: 2026-11-18)
+    if ([...unesc(desc)].length > 160) bad(`${p.path}: description is ${[...unesc(desc)].length} characters (160 at most: Bing calls a longer one too long)`);
   }
   const titles = pages.map((p) => unesc((p.html.match(/<title>(.*?)<\/title>/s) || [])[1] || ""));
   const descs = pages.map((p) => (p.html.match(/<meta name="description" content="(.*?)">/s) || [])[1] || "");
