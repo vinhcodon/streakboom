@@ -491,7 +491,8 @@ The dog is **not** to be put in the app; this is a sticker test, and the decisio
 | IR-1 | The right click is step aside (a look at once, a walk after 250 ms), the double right click is its place; the shove has no gesture | S | built, tested, **not committed: the author looks first** (rule 8) |
 | IR-2 | `pass.ts`: the speed of every pass of the pointer over Peak, as numbers in the loop trace (a test build) | S | built, same |
 | IR-3 | A round of measuring with the author's own hand and trackpad (slow strokes, ordinary pointer moves near Peak, quick flicks) and the thresholds read from it | S | waits for the author |
-| IR-4 | The flick: a strike across Peak (a speed floor in sprite widths per second, a stop on or just beyond the sprite, a cooldown) staggers Peak the way it was flicked; a speed ceiling for the scratch | M | proposed (after IR-3) |
+| IR-4a | The fast sampler in the hit-test thread: 8 ms inside the window plus 80 px, a ring of 300 ms in memory, the numbers of every pass in a test build; the cost measured (ADR-0135) | M | accepted, not built |
+| IR-4b | The flick: the rule from the author's hand and trackpad at this rate, a second round that shows the taskbar transit does not trigger it, the shove through `resolveGesture`, a cooldown; a speed ceiling for the scratch | M | after IR-4a and IR-3 |
 | IR-5 | Press and hold for a purr (a new gesture: an ADR) | S | later |
-| IR-6 | A throw on release of the carry | M | later, after IR-4 |
+| IR-6 | A throw on release of the carry | M | later, after IR-4b |
 | IR-7 | A read-only list of the gestures in Settings, from `bindings.ts` | S | later |
