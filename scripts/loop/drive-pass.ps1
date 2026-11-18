@@ -107,6 +107,7 @@ foreach ($rd in $Round) {
       'taskbar_run' { $sp = [P]::RandI(2500, 4500); $ms = [int](900 * 1000 / $sp); $y = $cy + [P]::RandI(-10, 60); Mark $rd $kind $var "speed=$sp"
                      if ([P]::RandI(0, 1)) { St ($L - 450) $y ($RT + 450) ($y + [P]::RandI(-15, 15)) $ms 0.2 } else { St ($RT + 450) $y ($L - 450) ($y + [P]::RandI(-15, 15)) $ms 0.2 } }
     }
+    if ($kind -eq 'flick') { [P]::Wait(45) }   # a hand rests where a strike ends; the live rule looks for the rest (ADR-0136)
     Park $rect
   }
   Mark $rd 'round_end' 'none' "name=$($sc.name)"
