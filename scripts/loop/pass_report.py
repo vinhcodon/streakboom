@@ -17,7 +17,7 @@ args = sys.argv[1:]
 SRC = "fast" if "fast" in args else "pass"
 SINCE = next((int(a[6:]) for a in args if a.startswith("since=")), 0)
 d = next((a for a in args if a != "fast" and not a.startswith("since=")), os.path.join(os.environ.get("APPDATA", "."), "com.streakboom.app"))
-P = re.compile(r"(\d+) " + SRC + r" n=(\d+) ms=(\d+) path=(\d+) vmax=(\d+) vavg=(\d+) rev=(\d+) dx=(-?\d+) dy=(-?\d+) w=(\d+)(?: hz=(\d+) vend=(\d+) left=(\d))?")
+P = re.compile(r"(\d+) " + SRC + r" n=(\d+) ms=(\d+) path=(\d+) vmax=(\d+) vavg=(\d+) rev=(\d+) dx=(-?\d+) dy=(-?\d+) w=(\d+)(?: hz=(\d+) vend=(\d+) left=(\d)(?: ex=(-?\d+) ey=(-?\d+))?)?")
 M = re.compile(r"(\d+) mark round=(\d+) kind=(\w+) variant=(\w+)(.*)")
 lines = [tuple(int(g or 0) for g in m.groups()) for l in open(os.path.join(d, "loop-trace.log"), encoding="utf8") if (m := P.match(l))]
 marks = [(int(m[1]), int(m[2]), m[3], m[4]) for l in open(os.path.join(d, "pass-marks.log"), encoding="utf-8-sig")
@@ -64,13 +64,19 @@ for key in sorted(var_meant):
 print("\n== candidate flick rules: passes (a pass counts once if any of its lines is caught) caught, by kind; meant totals in the last row")
 def horiz(p):
     return abs(p[7]) >= 0.7 * max(1, p[3])
+# indexes: 0 t, 1 n, 2 ms, 3 path, 4 vmax, 5 vavg, 6 rev, 7 dx, 8 dy, 9 w, 10 hz, 11 vend, 12 left, 13 ex, 14 ey (ex, ey: the last position, relative to Peak's square of 120 px)
+def ends_on_sprite(p, slack=15):
+    return -slack <= p[13] <= 120 + slack and -slack <= p[14] <= 120 + slack
+def ends_near(p, slack=45):
+    return -slack <= p[13] <= 120 + slack and -slack <= p[14] <= 120 + slack
+fastp = lambda p: p[5] >= 1000 and p[2] <= 120
 rules = {
-    "vavg>=1000 & ms<=120": lambda p: p[5] >= 1000 and p[2] <= 120,
-    "... & vend<=0.5*vmax": lambda p: p[5] >= 1000 and p[2] <= 120 and p[11] <= 0.5 * p[4],
-    "... & vend<=600": lambda p: p[5] >= 1000 and p[2] <= 120 and p[11] <= 600,
-    "... & vend<=0.5*vmax & horiz": lambda p: p[5] >= 1000 and p[2] <= 120 and p[11] <= 0.5 * p[4] and horiz(p),
-    "vavg>=1500 & vend<=0.5*vmax": lambda p: p[5] >= 1500 and p[2] <= 120 and p[11] <= 0.5 * p[4],
-    "... & path<=260": lambda p: p[5] >= 1000 and p[2] <= 120 and p[11] <= 0.5 * p[4] and p[3] <= 260,
+    "vavg>=1000 & ms<=120": fastp,
+    "... & vend<=0.5*vmax": lambda p: fastp(p) and p[11] <= 0.5 * p[4],
+    "... & ends on the sprite (+-15)": lambda p: fastp(p) and ends_on_sprite(p),
+    "... & ends near the sprite (+-45)": lambda p: fastp(p) and ends_near(p),
+    "... near & vend<=0.5*vmax": lambda p: fastp(p) and ends_near(p) and p[11] <= 0.5 * p[4],
+    "... on & vend<=0.5*vmax": lambda p: fastp(p) and ends_on_sprite(p) and p[11] <= 0.5 * p[4],
 }
 kinds = sorted(tot)
 for name, f in rules.items():

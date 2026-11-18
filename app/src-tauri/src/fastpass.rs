@@ -42,6 +42,10 @@ pub struct Stats {
     pub vend: f64,
     /// The pass ended because the pointer left the zone (true), or because it rested for more than 250 ms (false).
     pub left: bool,
+    /// Where the last position of the pass was (logical px, relative to Peak's square): a strike stops on or just beyond the sprite, a transit
+    /// leaves through the margin of the zone.
+    pub ex: f64,
+    pub ey: f64,
 }
 
 /// Is the pointer (logical px, relative to the window's top-left) inside the zone of a `w` by `h` window?
@@ -165,7 +169,7 @@ impl Tracker {
             return None;
         }
         let ms = l.t.saturating_sub(f.t).max(1);
-        Some(Stats { n, ms, path, vmax, vavg: path * 1000.0 / ms as f64, rev, dx: l.x - f.x, dy: l.y - f.y, vend, left })
+        Some(Stats { n, ms, path, vmax, vavg: path * 1000.0 / ms as f64, rev, dx: l.x - f.x, dy: l.y - f.y, vend, left, ex: l.x, ey: l.y })
     }
 }
 
@@ -177,7 +181,7 @@ pub fn line(st: &Stats, w: f64) -> Option<String> {
     }
     let hz = (st.n as f64 * 1000.0 / st.ms as f64).round() as i64;
     Some(format!(
-        "fast n={} ms={} path={} vmax={} vavg={} rev={} dx={} dy={} w={} hz={} vend={} left={}",
+        "fast n={} ms={} path={} vmax={} vavg={} rev={} dx={} dy={} w={} hz={} vend={} left={} ex={} ey={}",
         st.n,
         st.ms,
         st.path.round() as i64,
@@ -189,7 +193,9 @@ pub fn line(st: &Stats, w: f64) -> Option<String> {
         w.round() as i64,
         hz,
         st.vend.round() as i64,
-        st.left as u8
+        st.left as u8,
+        st.ex.round() as i64,
+        st.ey.round() as i64
     ))
 }
 
@@ -231,7 +237,7 @@ mod tests {
         assert_eq!(st.rev, 0);
         assert_eq!(st.dx.round() as i64, 100);
         let l = line(&st, 140.0).unwrap();
-        assert_eq!(l, "fast n=6 ms=40 path=100 vmax=2500 vavg=2500 rev=0 dx=100 dy=0 w=140 hz=150 vend=2500 left=1");
+        assert_eq!(l, "fast n=6 ms=40 path=100 vmax=2500 vavg=2500 rev=0 dx=100 dy=0 w=140 hz=150 vend=2500 left=1 ex=100 ey=0");
     }
 
     #[test]
