@@ -20,6 +20,18 @@ pub fn last_input_idle_ms() -> Option<u32> {
 
 pub fn timer_period(_begin: bool) {}
 
+pub fn precise_sleep(ms: u64) {
+    std::thread::sleep(std::time::Duration::from_millis(ms));
+}
+
+pub fn pointer_pos() -> Option<(i32, i32)> {
+    None
+}
+
+pub fn window_rect_of(_hwnd: isize) -> Option<(i32, i32, i32, i32)> {
+    None
+}
+
 pub fn show_without_activating(win: &WebviewWindow) {
     let _ = win.show();
 }

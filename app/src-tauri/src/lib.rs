@@ -1,5 +1,6 @@
 mod brain;
 mod claude;
+mod fastpass;
 mod ground;
 mod platform;
 mod groq;
@@ -10,7 +11,7 @@ mod updater;
 
 use brain::{AiError, Kind, Turn};
 use layout::Area;
-use platform::{busy_now, last_input_idle_ms, primary_button_raw, show_without_activating, timer_period};
+use platform::{busy_now, last_input_idle_ms, pointer_pos, primary_button_raw, precise_sleep, show_without_activating, timer_period, window_rect_of};
 use serde::{Deserialize, Serialize};
 use std::{
     fs,
@@ -1361,6 +1362,53 @@ fn spawn_hit_test(app: AppHandle, win: WebviewWindow) {
     });
 }
 
+/// The pointer near Peak at a fine rate (ADR-0135, E33 IR-4a): a small thread beside the hit-test thread, **a test build only** (the same gate as
+/// the terrain overlay). Inside a zone around Peak's window it reads the pointer every 8 ms with two cheap system calls (no round trip to the
+/// main thread), keeps the last 300 ms in memory and, when the pointer leaves, writes the numbers of the pass as one fixed line. Outside the
+/// zone it looks every 60 ms and reads nothing else. Nothing is stored, sent or shown to the page.
+fn spawn_fast_pass(app: AppHandle, win: WebviewWindow) {
+    if !overlay_allowed() || std::env::var_os("STREAKBOOM_NO_FAST").is_some() {
+        return; // the second condition is for the A/B measurement of the cost (a test build, set by hand)
+    }
+    std::thread::spawn(move || {
+        let hwnd = win.hwnd().ok().map(|h| h.0 as isize);
+        let mut scale = win.scale_factor().unwrap_or(1.0);
+        let mut scale_at = Instant::now();
+        let epoch = Instant::now();
+        let mut tracker = fastpass::Tracker::new();
+        loop {
+            if scale_at.elapsed() >= Duration::from_millis(500) {
+                scale = win.scale_factor().unwrap_or(scale);
+                scale_at = Instant::now();
+            }
+            let mut inside = false;
+            if let (Some(h), Some((cx, cy))) = (hwnd, pointer_pos()) {
+                if let Some((l, t, r, b)) = window_rect_of(h) {
+                    let (lx, ly) = ((cx - l) as f64 / scale, (cy - t) as f64 / scale);
+                    let (w, hh) = ((r - l) as f64 / scale, (b - t) as f64 / scale);
+                    if fastpass::in_zone(lx, ly, w, hh) {
+                        inside = true;
+                        let s = fastpass::Sample { t: epoch.elapsed().as_millis() as u64, x: lx - PET_LEFT, y: ly - PET_TOP };
+                        if let Some(done) = tracker.step(s) {
+                            if let Some(line) = fastpass::line(&done, PET_SIZE) {
+                                append_trace(&app, "loop-trace.log", &line);
+                            }
+                        }
+                    }
+                }
+            }
+            if !inside {
+                if let Some(done) = tracker.leave() {
+                    if let Some(line) = fastpass::line(&done, PET_SIZE) {
+                        append_trace(&app, "loop-trace.log", &line);
+                    }
+                }
+            }
+            precise_sleep(if inside { fastpass::SAMPLE_MS } else { 60 }); // a timer of this thread, not a finer one for the whole program
+        }
+    });
+}
+
 // ---------------------------------------------------------------------- tray
 
 /// May this build open the terrain overlay? A developer build (cargo feature `terrain-overlay`) and every **Preview** build (an odd
@@ -1863,7 +1911,8 @@ pub fn run() {
             // The speech bubble window is created on demand (see `bubble_ensure`), not here: a
             // webview costs about 35 MB and the bubble is hidden most of the time.
             let _ = win.show();
-            spawn_hit_test(app.handle().clone(), win);
+            spawn_hit_test(app.handle().clone(), win.clone());
+            spawn_fast_pass(app.handle().clone(), win);
             Ok(())
         })
         .on_window_event(|window, event| {

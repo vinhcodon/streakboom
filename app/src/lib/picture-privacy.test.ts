@@ -60,3 +60,16 @@ test("the page asks for the picture only when a switch is on", () => {
   assert.ok(page.includes("if (!pictureOn || settleOff || flying) return false;"), "clearAside and clearOutOfLane check the switch");
   assert.ok(/pictureOn = pictureTray \|\| user;/.test(page), "the switch is the person's choice or the tray of a test build");
 });
+
+test("the fine sampler of the pointer (ADR-0135) is a test build only, keeps its ring in memory and writes only fixed numbers", () => {
+  const pure = src("../../src-tauri/src/fastpass.rs").replace(/\/\/.*$/gm, "");
+  for (const bad of ["std::fs", "File::", "write(", "println!", "eprintln!", "emit(", "reqwest", "TcpStream", "serde_json", "invoke"]) {
+    assert.ok(!pure.includes(bad), `fastpass.rs must not use ${bad}`);
+  }
+  const lib = src("../../src-tauri/src/lib.rs");
+  const fn = lib.slice(lib.indexOf("fn spawn_fast_pass"), lib.indexOf("// ---------------------------------------------------------------------- tray"));
+  assert.ok(fn.includes("if !overlay_allowed()"), "the sampler starts only in a test build");
+  assert.ok(!fn.includes(".emit(") && !fn.includes("percept"), "nothing is told to the page in IR-4a");
+  const writes = [...fn.matchAll(/append_trace\(([^)]*)\)/g)].map((m) => m[1]);
+  assert.ok(writes.length >= 1 && writes.every((w) => w.includes('"loop-trace.log"') && w.includes("&line")), "the only thing written is the line of numbers");
+});

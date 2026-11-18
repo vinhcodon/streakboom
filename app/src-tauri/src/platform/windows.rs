@@ -53,6 +53,66 @@ pub fn timer_period(begin: bool) {
     }
 }
 
+/// Where the pointer is, in physical pixels of the whole screen (`GetCursorPos`). One position, nothing else; None on failure.
+pub fn pointer_pos() -> Option<(i32, i32)> {
+    use windows_sys::Win32::Foundation::POINT;
+    use windows_sys::Win32::UI::WindowsAndMessaging::GetCursorPos;
+    let mut p = POINT { x: 0, y: 0 };
+    // SAFETY: `p` is a valid POINT for the call to fill.
+    if unsafe { GetCursorPos(&mut p) } == 0 {
+        None
+    } else {
+        Some((p.x, p.y))
+    }
+}
+
+/// The rectangle of one of the program's own windows (left, top, right, bottom, physical px), `None` when it is hidden or unknown. A cheap
+/// call that does not go through the main thread, for the fine sampler of the pointer near Peak.
+pub fn window_rect_of(hwnd: isize) -> Option<(i32, i32, i32, i32)> {
+    use windows_sys::Win32::Foundation::RECT;
+    use windows_sys::Win32::UI::WindowsAndMessaging::{GetWindowRect, IsWindowVisible};
+    let mut r = RECT { left: 0, top: 0, right: 0, bottom: 0 };
+    // SAFETY: plain calls with the handle of the program's own window and a valid RECT; a stale handle makes them fail, not crash.
+    unsafe {
+        if IsWindowVisible(hwnd as _) == 0 || GetWindowRect(hwnd as _, &mut r) == 0 {
+            return None;
+        }
+    }
+    Some((r.left, r.top, r.right, r.bottom))
+}
+
+/// Sleep for `ms` milliseconds with a **high-resolution waitable timer of this thread** (Windows 10 1803 and later), so that a short, regular
+/// period (8 ms for the pointer sampler) is kept without asking Windows for a finer system timer for the whole program (`timer_period` does
+/// that, and costs more: every wait of the program then ticks faster). Falls back to an ordinary sleep when the timer cannot be made.
+pub fn precise_sleep(ms: u64) {
+    use std::cell::Cell;
+    use windows_sys::Win32::System::Threading::{
+        CreateWaitableTimerExW, SetWaitableTimer, WaitForSingleObject, CREATE_WAITABLE_TIMER_HIGH_RESOLUTION, INFINITE, TIMER_ALL_ACCESS,
+    };
+    thread_local! {
+        static TIMER: Cell<isize> = const { Cell::new(0) };
+    }
+    TIMER.with(|c| {
+        if c.get() == 0 {
+            // SAFETY: no pointers but two nulls (default security, no name); the handle lives as long as the thread, which is the program.
+            let h = unsafe { CreateWaitableTimerExW(std::ptr::null(), std::ptr::null(), CREATE_WAITABLE_TIMER_HIGH_RESOLUTION, TIMER_ALL_ACCESS) };
+            c.set(if h.is_null() { -1 } else { h as isize });
+        }
+        let h = c.get();
+        if h > 0 {
+            let due: i64 = -((ms as i64) * 10_000); // relative, in 100 ns units
+            // SAFETY: `due` outlives the call; no completion routine; the handle is this thread's own timer.
+            unsafe {
+                if SetWaitableTimer(h as _, &due, 0, None, std::ptr::null(), 0) != 0 {
+                    WaitForSingleObject(h as _, INFINITE);
+                    return;
+                }
+            }
+        }
+        std::thread::sleep(std::time::Duration::from_millis(ms));
+    });
+}
+
 /// Show a window without making it the active one (`SW_SHOWNOACTIVATE`), so that Peak reappearing by itself never takes
 /// the keyboard focus. If the call fails, it is an ordinary `show`.
 pub fn show_without_activating(win: &WebviewWindow) {

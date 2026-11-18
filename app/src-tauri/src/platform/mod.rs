@@ -9,6 +9,8 @@
 //! - `primary_button_raw() -> i16`: the state of the button the person clicks with (negative: down); 0 where it cannot be read.
 //! - `last_input_idle_ms() -> Option<u32>`: milliseconds since the last keyboard or mouse input; None where unknown. One number, no key identity.
 //! - `timer_period(begin)`: ask for a finer system timer while a flight runs, and give it back.
+//! - `pointer_pos() -> Option<(i32, i32)>`, `window_rect_of(hwnd) -> Option<(i32, i32, i32, i32)>`: the pointer's position, and the rectangle of one of the program's own visible windows; read by the fine sampler near Peak (ADR-0135, a test build only for now).
+//! - `precise_sleep(ms)`: sleep with a timer of the calling thread that keeps a short period (8 ms) without a finer system timer for the whole program.
 //! - `show_without_activating(window)`: show a window without taking the keyboard focus.
 //! - `ground_of_point(x, y) -> Ground`: the **kind** of thing at a physical point (the desktop, the taskbar, a window, the window in front, Peak itself), never what it is.
 //! - `window_id_at(x, y) -> u64`, `window_holds(id, x, y) -> bool`: an opaque number for the ordinary window at a point, and whether it is still there.
@@ -52,7 +54,7 @@ mod tests {
     fn the_platform_files_offer_the_same_functions() {
         let win = pub_fns(include_str!("windows.rs"));
         let other = pub_fns(include_str!("macos.rs"));
-        assert!(win.len() >= 12, "the contract has at least twelve functions: {win:?}");
+        assert!(win.len() >= 15, "the contract has at least fifteen functions: {win:?}");
         assert_eq!(win, other, "windows.rs and macos.rs must have the same pub fn names");
     }
 
@@ -65,6 +67,9 @@ mod tests {
         assert_eq!(s::last_input_idle_ms(), None);
         s::timer_period(true);
         s::timer_period(false);
+        assert_eq!(s::pointer_pos(), None);
+        s::precise_sleep(1);
+        assert_eq!(s::window_rect_of(5), None);
         assert_eq!(s::ground_of_point(1, 1), crate::ground::Ground::Unknown);
         assert_eq!(s::window_id_at(1, 1), 0);
         assert!(s::window_holds(5, 1, 1));

@@ -18,6 +18,7 @@ public static class P {
   [DllImport("user32.dll")] static extern bool GetWindowRect(IntPtr h, out R r);
   [DllImport("user32.dll")] static extern int GetWindowText(IntPtr h, StringBuilder s, int n);
   [DllImport("user32.dll")] static extern bool SetCursorPos(int x, int y);
+  [DllImport("winmm.dll")] public static extern uint timeBeginPeriod(uint ms);
   [StructLayout(LayoutKind.Sequential)] public struct R { public int L, T, R2, B; }
   public static Random Rnd = new Random(11);
   public static int[] Rect(uint pid) {
@@ -49,6 +50,7 @@ public static class P {
   public static int RandI(int a, int b) { return Rnd.Next(a, b + 1); }
 }
 '@
+[void][P]::timeBeginPeriod(1)   # without it a step of 8 ms is really 15 ms and a quick flick has two or three positions, not a mouse's hundred a second
 $marks = Join-Path $env:APPDATA "com.streakboom.app\pass-marks.log"
 function Mark($rd, $kind, $variant, $info) {
   $ms = [DateTimeOffset]::UtcNow.ToUnixTimeMilliseconds()
