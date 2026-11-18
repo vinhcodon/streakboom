@@ -1,6 +1,6 @@
 # ADR-0136: The flick is the shove: a strict rule that prefers missing a flick to firing on a pass
 
-- **Status:** accepted on 2026-11-18 (the author chose to build IR-4b with the strict rule proposed from the scripted rounds). **Continues ADR-0135** (the fine sampler) and **ADR-0133** (the right click is step aside; the shove waits for the flick). A **new gesture** (`flick`), which is why it has a record. Built and tested in code (124 Rust tests, 416 JS tests, the scripted rounds); **the code is not committed until the author has looked at a test build** (rule 8); **in a Preview or developer build only** (the sampler starts only there).
+- **Status:** accepted on 2026-11-18 (the author chose to build IR-4b with the strict rule proposed from the scripted rounds). **Continues ADR-0135** (the fine sampler) and **ADR-0133** (the right click is step aside; the shove waits for the flick). A **new gesture** (`flick`), which is why it has a record. Built and tested in code (124 Rust tests, 416 JS tests, the scripted rounds); **the author looked at a test build on 2026-11-18 and said it was seen, and the code was committed**; **in a Preview or developer build only** (the sampler starts only there).
 - **Date:** 2026-11-18
 - **Decided by:** Vinh (author), recorded by Claude (the app session)
 
