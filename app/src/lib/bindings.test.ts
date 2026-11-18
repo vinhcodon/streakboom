@@ -72,8 +72,13 @@ test("the right click is step aside and the double right click is its place (ADR
   assert.equal(resolveGesture("right_double_click", { ...calm, quiet: true }), null);
 });
 
-test("the shove has no gesture until the flick is built", () => {
-  assert.equal(bindingByName("shove")?.gesture, null);
+test("the shove is reached by the flick, and only while it is free (not quiet, not held, not cooling down)", () => {
+  assert.equal(bindingByName("shove")?.gesture, "flick");
+  const free = { held: false, quiet: false, flying: false, away: false, leaving: false, cooldownOk: true };
+  assert.equal(resolveGesture("flick", free), "shove");
+  assert.equal(resolveGesture("flick", { ...free, quiet: true }), null);
+  assert.equal(resolveGesture("flick", { ...free, held: true }), null);
+  assert.equal(resolveGesture("flick", { ...free, cooldownOk: false }), null);
 });
 
 test("the typed commands have no gesture and are never a setting", () => {

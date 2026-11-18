@@ -69,7 +69,10 @@ test("the fine sampler of the pointer (ADR-0135) is a test build only, keeps its
   const lib = src("../../src-tauri/src/lib.rs");
   const fn = lib.slice(lib.indexOf("fn spawn_fast_pass"), lib.indexOf("// ---------------------------------------------------------------------- tray"));
   assert.ok(fn.includes("if !overlay_allowed()"), "the sampler starts only in a test build");
-  assert.ok(!fn.includes(".emit(") && !fn.includes("percept"), "nothing is told to the page in IR-4a");
+  // ADR-0136: the page is told of one thing only, a flick, with its way and its power: no position, no speed, no time
+  const emits = [...fn.matchAll(/\.emit\(([\s\S]*?)\);/g)].map((m) => m[1].replace(/\s+/g, " "));
+  assert.equal(emits.length, 1, "one event");
+  assert.ok(/^"percept", serde_json::json!\(\{ "kind": "flick", "way": way, "power": f\.power \}\)$/.test(emits[0]), `the event is a flick with a way and a power only: ${emits[0]}`);
   const writes = [...fn.matchAll(/append_trace\(([^)]*)\)/g)].map((m) => m[1]);
-  assert.ok(writes.length >= 1 && writes.every((w) => w.includes('"loop-trace.log"') && w.includes("&line")), "the only thing written is the line of numbers");
+  assert.ok(writes.length >= 2 && writes.every((w) => w.includes('"loop-trace.log"') && (w.includes("&line") || w.includes('&format!("flick_fired way={way} power={} vpeak={} vend={}"'))), "the only things written are the line of numbers and the flick line of fixed words and numbers");
 });

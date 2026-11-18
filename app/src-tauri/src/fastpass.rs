@@ -21,11 +21,47 @@ pub const MIN_VMAX: f64 = 40.0;
 /// A change of direction counts only after this many px.
 const REV_PX: f64 = 8.0;
 
+// The rule of the flick (ADR-0136), read from the scripted rounds of 2026-11-18 and made strict on purpose: it must never fire on a transit (a
+// pointer that only passes Peak on its way to the taskbar), and may miss a flick. A flick is a strike: a **fast stroke** (a speed over 24 ms or more
+// of at least 1500 px/s somewhere in the last 120 ms, a path of at least 60 px, mostly sideways) after which the hand **has stopped** (a speed over
+// the last 24 ms or more of at most 250 px/s) **on the sprite** (the last position within 15 px of Peak's square). The stop is measured as an
+// absolute speed, not as a share of the top speed: the time between two samples is not exact, and a ratio of two noisy speeds fired on crossings.
+pub const FLICK_WINDOW_MS: u64 = 120;
+pub const FLICK_MIN_VPEAK: f64 = 1500.0;
+pub const FLICK_MIN_PATH: f64 = 60.0;
+pub const FLICK_STOP_SPEED: f64 = 250.0;
+pub const FLICK_END_SLACK: f64 = 15.0;
+/// The side of Peak's square, for "ends on the sprite" (logical px).
+pub const SPRITE: f64 = 120.0;
+/// After a flick another one is not looked for during this time (ms).
+pub const FLICK_COOLDOWN_MS: u64 = 1500;
+/// A flick this fast is a hard one.
+pub const FLICK_HARD_VPEAK: f64 = 3500.0;
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum Way {
+    Left,
+    Right,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct Flick {
+    pub way: Way,
+    /// 1 a flick, 2 a hard one.
+    pub power: u8,
+    pub vpeak: f64,
+    pub vend: f64,
+}
+
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct Sample {
     pub t: u64, // ms
     pub x: f64, // logical px, relative to Peak's square
     pub y: f64,
+    /// The same position on the screen (logical px). Peak moves (it looks, steps aside, staggers) and the window with it, which shifts `x` and
+    /// `y` without the hand moving: the speed of a strike is the hand's, so the flick rule reads its speeds from these.
+    pub ax: f64,
+    pub ay: f64,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq)]
@@ -64,6 +100,7 @@ pub struct Tracker {
     dir: i8,
     extreme: f64,
     rev: u32,
+    last_flick: Option<u64>,
 }
 
 impl Tracker {
@@ -143,6 +180,40 @@ impl Tracker {
         }
     }
 
+    /// Is the last stretch of the ring a flick (see the rule above)? Looked at after every sample; once it says yes it says no for 1.5 s.
+    pub fn flick(&mut self) -> Option<Flick> {
+        let last = *self.ring.back()?;
+        if self.last_flick.is_some_and(|t| last.t.saturating_sub(t) < FLICK_COOLDOWN_MS) {
+            return None;
+        }
+        let win: Vec<Sample> = self.ring.iter().copied().filter(|p| last.t.saturating_sub(p.t) <= FLICK_WINDOW_MS).collect();
+        if win.len() < 4 {
+            return None;
+        }
+        // the speed is read over spans of at least 24 ms, not between two neighbouring samples: the time between two samples is not
+        // exact (the first version took the top speed from single steps, and a step of 3 ms made a transit look like a strike)
+        let mut path = 0.0f64;
+        for w in win.windows(2) {
+            path += ((w[1].ax - w[0].ax).powi(2) + (w[1].ay - w[0].ay).powi(2)).sqrt();
+        }
+        let span_speed = |k: usize| -> Option<f64> {
+            let j = (0..k).rev().find(|&j| win[k].t.saturating_sub(win[j].t) >= 24)?;
+            let d = ((win[k].ax - win[j].ax).powi(2) + (win[k].ay - win[j].ay).powi(2)).sqrt();
+            Some(d * 1000.0 / win[k].t.saturating_sub(win[j].t).max(1) as f64)
+        };
+        let speeds: Vec<f64> = (1..win.len()).filter_map(span_speed).collect();
+        let vpeak = speeds.iter().copied().fold(0.0f64, f64::max);
+        let vend = span_speed(win.len() - 1).unwrap_or(0.0);
+        let dx = last.ax - win[0].ax;
+        let on = |v: f64| (-FLICK_END_SLACK..=SPRITE + FLICK_END_SLACK).contains(&v);
+        let ok = path >= FLICK_MIN_PATH && vpeak >= FLICK_MIN_VPEAK && dx.abs() >= 0.5 * path && vend <= FLICK_STOP_SPEED && on(last.x) && on(last.y);
+        if !ok {
+            return None;
+        }
+        self.last_flick = Some(last.t);
+        Some(Flick { way: if dx > 0.0 { Way::Right } else { Way::Left }, power: if vpeak >= FLICK_HARD_VPEAK { 2 } else { 1 }, vpeak, vend })
+    }
+
     /// The speed over the last 24 ms or more of what the ring holds (0 when it holds fewer than two samples).
     fn end_speed(&self) -> f64 {
         let Some(last) = self.ring.back() else { return 0.0 };
@@ -207,7 +278,7 @@ mod tests {
         let mut t = Tracker::new();
         let mut done = Vec::new();
         for &(ms, x, y) in points {
-            if let Some(d) = t.step(Sample { t: ms, x, y }) {
+            if let Some(d) = t.step(Sample { t: ms, x, y, ax: x, ay: y }) {
                 done.push(d);
             }
         }
@@ -285,6 +356,114 @@ mod tests {
         // a pass that ends by a gap says so
         let (_, done) = run(&[(0, 0.0, 0.0), (8, 10.0, 0.0), (16, 20.0, 0.0), (500, 90.0, 0.0)]);
         assert!(!done[0].left);
+    }
+
+    /// A smooth stroke like a hand's (a minimum-jerk speed curve) from (x0, y0) to (x1, y1) in `ms`, a sample every 8 ms.
+    fn stroke(x0: f64, y0: f64, x1: f64, y1: f64, ms: u64, t0: u64) -> Vec<(u64, f64, f64)> {
+        (0..=ms / 8)
+            .map(|i| {
+                let t = (i * 8) as f64 / ms as f64;
+                let u = t * t * t * (10.0 - 15.0 * t + 6.0 * t * t);
+                (t0 + i * 8, x0 + (x1 - x0) * u, y0 + (y1 - y0) * u)
+            })
+            .collect()
+    }
+
+    /// The same, and then the hand rests there for 40 ms (a few samples at the same place), as a hand does when a strike is over.
+    fn strike(x0: f64, y0: f64, x1: f64, y1: f64, ms: u64, t0: u64) -> Vec<(u64, f64, f64)> {
+        let mut v = stroke(x0, y0, x1, y1, ms, t0);
+        let end = *v.last().unwrap();
+        v.extend((1..=5).map(|i| (end.0 + i * 8, end.1, end.2)));
+        v
+    }
+
+    fn fires(points: &[(u64, f64, f64)]) -> Vec<Flick> {
+        let mut t = Tracker::new();
+        points.iter().filter_map(|&(ms, x, y)| {
+            t.step(Sample { t: ms, x, y, ax: x, ay: y });
+            t.flick()
+        }).collect()
+    }
+
+    #[test]
+    fn a_strike_that_stops_on_the_sprite_is_a_flick_in_the_way_it_went() {
+        let right = fires(&strike(-20.0, 60.0, 90.0, 66.0, 48, 0));
+        assert_eq!(right.len(), 1, "{right:?}");
+        assert_eq!(right[0].way, Way::Right);
+        let left = fires(&strike(150.0, 60.0, 40.0, 56.0, 48, 0));
+        assert_eq!(left.len(), 1);
+        assert_eq!(left[0].way, Way::Left);
+        assert_eq!(fires(&strike(-20.0, 60.0, 130.0, 60.0, 24, 0))[0].power, 2, "very fast is a hard one");
+        assert!(fires(&stroke(-20.0, 60.0, 90.0, 66.0, 48, 0)).is_empty(), "a stroke that is still moving when the pointer leaves has not stopped: a transit");
+    }
+
+    #[test]
+    fn a_noisy_crossing_that_never_stops_is_not_a_flick() {
+        // a crossing at about 1500 px/s whose samples are up to 8 ms stale (the speed over 24 ms swings by a third) and that never rests
+        let mut pts = Vec::new();
+        let mut seed = 12345u64;
+        let mut next = || { seed = seed.wrapping_mul(6364136223846793005).wrapping_add(1442695040888963407); ((seed >> 33) % 9) as f64 };
+        for i in 0..50u64 {
+            let t = i * 8;
+            let stale = next();
+            pts.push((t, -80.0 + 1.5 * (t as f64 - stale), 60.0));
+        }
+        assert!(fires(&pts).is_empty(), "{:?}", fires(&pts));
+    }
+
+    #[test]
+    fn a_pointer_that_only_passes_is_never_a_flick() {
+        // across the whole zone at 4000 px/s, a constant speed: it leaves at full speed
+        let pass: Vec<_> = (0..40).map(|i| (i as u64 * 8, -70.0 + i as f64 * 32.0, 60.0)).collect();
+        assert!(fires(&pass).is_empty());
+        // across at a smooth speed curve, ending in the margin on the far side, not on the sprite
+        assert!(fires(&stroke(-80.0, 60.0, 230.0, 60.0, 200, 0)).is_empty());
+        // the same stroke, but only the part inside the zone is seen, at speed
+        let part: Vec<_> = stroke(-80.0, 60.0, 230.0, 60.0, 200, 0).into_iter().filter(|p| p.1 > -40.0 && p.1 < 130.0).collect();
+        assert!(fires(&part).is_empty(), "a transit that is cut by the edge of the zone is not a flick");
+    }
+
+    #[test]
+    fn peak_moving_under_a_still_hand_is_not_a_flick() {
+        // the hand is still on the screen; Peak's window slides 110 px in 48 ms (a stagger or a step), so the position relative to Peak moves like a strike
+        let mut t = Tracker::new();
+        let mut fired = Vec::new();
+        for (ms, x, y) in strike(-20.0, 60.0, 90.0, 66.0, 48, 0) {
+            t.step(Sample { t: ms, x, y, ax: 400.0, ay: 300.0 });
+            fired.extend(t.flick());
+        }
+        assert!(fired.is_empty(), "{fired:?}");
+    }
+
+    #[test]
+    fn a_transit_with_uneven_sample_times_is_not_a_flick() {
+        // a constant 1600 px/s across the sprite, the samples 4 ms and 12 ms apart in turn (the true cadence is not exact)
+        let mut t = 0u64;
+        let mut x = -60.0f64;
+        let mut pts = Vec::new();
+        for i in 0..40 {
+            pts.push((t, x, 60.0));
+            let dt = if i % 2 == 0 { 4 } else { 12 };
+            t += dt;
+            x += 1600.0 * dt as f64 / 1000.0;
+        }
+        assert!(fires(&pts).is_empty(), "{:?}", fires(&pts));
+    }
+
+    #[test]
+    fn slow_short_and_vertical_strokes_are_not_flicks() {
+        assert!(fires(&strike(0.0, 60.0, 100.0, 60.0, 400, 0)).is_empty(), "a rub is slow");
+        assert!(fires(&strike(60.0, -10.0, 70.0, 110.0, 48, 0)).is_empty(), "mostly vertical");
+        assert!(fires(&strike(-20.0, 60.0, 300.0, 66.0, 48, 0)).is_empty(), "it ends far from the sprite");
+        assert!(fires(&strike(40.0, 60.0, 80.0, 60.0, 24, 0)).is_empty(), "40 px is not a stroke");
+    }
+
+    #[test]
+    fn a_flick_is_followed_by_a_pause() {
+        let mut pts = strike(-20.0, 60.0, 90.0, 66.0, 48, 0);
+        let again = strike(90.0, 66.0, -20.0, 60.0, 48, 600);
+        pts.extend(again);
+        assert_eq!(fires(&pts).len(), 1, "a second strike within 1.5 s is not looked for");
     }
 
     #[test]

@@ -1811,7 +1811,7 @@
    * a change of monitors drops what was believed about the old layout; the user starting to work probes at once instead
    * of waiting for the next poll.
    */
-  function onPercept(p: { kind: string; on?: boolean }) {
+  function onPercept(p: { kind: string; on?: boolean; way?: string; power?: number }) {
     note(`percept ${p.kind}${p.on === undefined ? "" : p.on ? " on" : " off"}`);
     if (p.kind === "monitors") {
       groundW = startGroundWatch();
@@ -1820,6 +1820,11 @@
       void probeFocus();
     } else if (p.kind === "covered" && p.on) {
       void coverTick(); // told by Rust when the cat is under the Start menu or Search, and again every 3 s while it is
+    } else if (p.kind === "flick" && (p.way === "left" || p.way === "right")) {
+      // a strike on Peak seen by the fine sampler in Rust (ADR-0136; a Preview or developer build): the shove, in the way it was flicked
+      const act = resolveGesture("flick", rightGates());
+      lp(`flick way=${p.way} power=${p.power === 2 ? 2 : 1} act=${act ?? "refused"} pose=${pose}`);
+      if (act === "shove") void shove(p.way === "right" ? -60 : 60); // the push goes away from the pointer: a flick to the right is a pointer on the left
     }
   }
 

@@ -9,6 +9,7 @@ export const GESTURES = [
   "drag",
   "sweep_head",
   "sweep_belly",
+  "flick",
   "right_click",
   "right_double_click",
   "tray_click",
@@ -35,8 +36,8 @@ export const BINDINGS: readonly Binding[] = [
   { name: "belly_rub", gesture: "sweep_belly", skill: null, gates: ["not_held", "not_quiet"], status: "built" },
   { name: "carry", gesture: "drag", skill: null, gates: ["not_quiet"], status: "built" },
   { name: "open_chat", gesture: "double_click", skill: null, gates: ["not_quiet"], status: "built" },
-  // the shove has no gesture until the flick is built (ADR-0133: the right click is step aside now; the flick waits for a round that measures the speeds)
-  { name: "shove", gesture: null, skill: null, gates: ["not_quiet", "not_held", "cooldown"], status: "built" },
+  // the shove is the flick (ADR-0136): a strike on Peak, seen by the fine sampler in Rust (a Preview or developer build only for now)
+  { name: "shove", gesture: "flick", skill: null, gates: ["not_quiet", "not_held", "cooldown"], status: "built" },
   { name: "step_aside", gesture: "right_click", skill: "aside", gates: ["not_quiet", "not_held", "not_flying", "not_away", "not_leaving", "cooldown"], status: "built" },
   { name: "seat_here", gesture: null, skill: "seat_here", gates: ["not_held", "not_flying", "not_away", "not_leaving"], status: "built" },
   { name: "leave", gesture: null, skill: "leave", gates: ["not_held", "not_flying", "not_away", "not_leaving"], status: "built" },

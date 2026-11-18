@@ -1365,7 +1365,7 @@ fn spawn_hit_test(app: AppHandle, win: WebviewWindow) {
 /// The pointer near Peak at a fine rate (ADR-0135, E33 IR-4a): a small thread beside the hit-test thread, **a test build only** (the same gate as
 /// the terrain overlay). Inside a zone around Peak's window it reads the pointer every 8 ms with two cheap system calls (no round trip to the
 /// main thread), keeps the last 300 ms in memory and, when the pointer leaves, writes the numbers of the pass as one fixed line. Outside the
-/// zone it looks every 60 ms and reads nothing else. Nothing is stored, sent or shown to the page.
+/// zone it looks every 60 ms and reads nothing else. Nothing is stored or sent; **one event goes to the page, when a flick is recognised** (ADR-0136).
 fn spawn_fast_pass(app: AppHandle, win: WebviewWindow) {
     if !overlay_allowed() || std::env::var_os("STREAKBOOM_NO_FAST").is_some() {
         return; // the second condition is for the A/B measurement of the cost (a test build, set by hand)
@@ -1388,11 +1388,17 @@ fn spawn_fast_pass(app: AppHandle, win: WebviewWindow) {
                     let (w, hh) = ((r - l) as f64 / scale, (b - t) as f64 / scale);
                     if fastpass::in_zone(lx, ly, w, hh) {
                         inside = true;
-                        let s = fastpass::Sample { t: epoch.elapsed().as_millis() as u64, x: lx - PET_LEFT, y: ly - PET_TOP };
+                        let s = fastpass::Sample { t: epoch.elapsed().as_millis() as u64, x: lx - PET_LEFT, y: ly - PET_TOP, ax: cx as f64 / scale, ay: cy as f64 / scale };
                         if let Some(done) = tracker.step(s) {
                             if let Some(line) = fastpass::line(&done, PET_SIZE) {
                                 append_trace(&app, "loop-trace.log", &line);
                             }
+                        }
+                        // a strike on Peak (ADR-0136): one event for the page, with the way and a power, nothing else
+                        if let Some(f) = tracker.flick() {
+                            let way = if f.way == fastpass::Way::Right { "right" } else { "left" };
+                            let _ = app.emit("percept", serde_json::json!({ "kind": "flick", "way": way, "power": f.power }));
+                            append_trace(&app, "loop-trace.log", &format!("flick_fired way={way} power={} vpeak={} vend={}", f.power, f.vpeak.round() as i64, f.vend.round() as i64));
                         }
                     }
                 }
