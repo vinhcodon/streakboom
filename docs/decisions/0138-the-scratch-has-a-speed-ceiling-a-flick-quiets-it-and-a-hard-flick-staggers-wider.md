@@ -1,4 +1,4 @@
-# ADR-0137: The scratch has a speed ceiling, a flick quiets it, and a hard flick staggers wider
+# ADR-0138: The scratch has a speed ceiling, a flick quiets it, and a hard flick staggers wider
 
 - **Status:** accepted on 2026-11-18 (the author: "continue E33" on the main branch; the three points are the open ends of IR-4b in ADR-0136). **The code is not committed until the author has looked at a test build** (rule 8: the stagger is a motion). Continues ADR-0136 and ADR-0133.
 - **Date:** 2026-11-18
