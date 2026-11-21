@@ -33,6 +33,7 @@ Last state decides. Start: the pets that were out come out. None out: the tray c
 2. **Calling the other pet is done in the chat**, for example "gọi Paws ra đi". No menu item, no gesture.
 3. **Discovery in the shipped product: not decided**; the prototype uses a developer flag.
 
-## New questions these answers raise
-- **The chat needs the person's own API key** (ADR-0001), and the handoff says no AI chat for Paws. Calling, sending away and talking to one or both pets by chat then works only for people with a key; and "talk to Paws" contradicts "no AI chat for Paws". Without a key there would be no way to call the second pet or to send one away. The author decides (a command layer that needs no AI, or the chat for both pets).
-- **The bubble when the person talks to one pet or to both** (who answers, where the bubble sits, what a reply of two looks like) is a design the author has asked for; options are in the next turn of `duo-review-log.md`.
+## Settled afterwards (2026-11-22, multiple choice)
+- **A short command layer that needs no AI and no key**: the chat box understands a few fixed phrases (call Paws out, Paws go in, in VI/EN/JA) and runs them on the device; nothing is sent anywhere, and it reads only what the person types in the box (no new sense). AI chat stays for people with a key.
+- **The bubble belongs to the pet that answers.** The person picks by name; with no name, the pet that was last spoken to answers. Both answer only when the person says "both", one after the other with a short bubble each, never together.
+- Still open: whether Paws may answer with the AI chat at all (the handoff says no AI chat for Paws); for the prototype Paws answers only the command phrases, with canned lines and no AI.
