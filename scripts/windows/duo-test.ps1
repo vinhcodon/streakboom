@@ -47,7 +47,7 @@ Start-Sleep -Seconds 2; $d = Dump; $log += "T4 after a click on Peak (ball must 
 Cmd "tray"; Start-Sleep 2; $d = Dump; $log += "T5 tray: everyone goes in"; $log += $d; Shot "t5-tray-in"
 Cmd "tray"; Start-Sleep 2; $d = Dump; $log += "T5 tray again: the last one comes out"; $log += $d; Shot "t5-tray-out"
 # T6: the state is restored at the next start
-Cmd "tray"; Start-Sleep 2; Cmd "call"; Start-Sleep 3
+Cmd "call"; Start-Sleep 3; $d = Dump; $log += "T6 before the restart"; $log += $d
 Stop-Process -Id $p.Id -Force; Start-Sleep 2
 $log += "T6 duo.json before the restart"; $log += (Get-Content "$data\duo.json")
 $p = Start-Process $Exe -PassThru; Start-Sleep 7

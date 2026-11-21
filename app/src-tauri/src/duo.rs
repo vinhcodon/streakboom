@@ -327,6 +327,8 @@ fn paws_go_in(app: &AppHandle) {
 // The scene engine is `app/src/lib/scene.ts`; it runs in the page of Paws (a scene needs both pets out, and that page exists exactly then).
 // Rust only moves windows, shows the shared ball, and tells Peak's page to hold its own wandering and show a pose.
 
+static BALL_LOCK: Mutex<()> = Mutex::new(());
+
 #[derive(Serialize)]
 pub struct Stage { pub peak: (i32, i32), pub paws: (i32, i32), pub size: i32, pub inset: i32, pub body: i32, pub scale: f64 }
 
@@ -352,6 +354,8 @@ pub fn duo_pos(app: AppHandle, label: String, x: i32, y: i32) {
 /// Show the shared object (a window of its own, click-through) or take it away. `kind` is "ball" or "cushion".
 #[tauri::command]
 pub async fn duo_ball(app: AppHandle, show: bool, kind: String, x: i32, y: i32) -> Result<(), String> {
+    // one call at a time: the page asks every frame, and two calls that both find no window would build two (seen as several balls)
+    let _one = BALL_LOCK.lock().unwrap_or_else(|e| e.into_inner());
     if !show {
         if let Some(w) = app.get_webview_window("ball") { let _ = w.destroy(); }
         return Ok(());
@@ -390,7 +394,7 @@ pub fn scene_start(app: &AppHandle, id: &str) {
 /// A touch, or a pet going in: the scene ends at once, the object goes, Peak gets its own behaviour back.
 pub fn scene_cleanup(app: &AppHandle) {
     let _ = app.emit_to(PAWS_LABEL, "scene-cancel", ());
-    if let Some(w) = app.get_webview_window("ball") { let _ = w.destroy(); }
+    { let _one = BALL_LOCK.lock().unwrap_or_else(|e| e.into_inner()); if let Some(w) = app.get_webview_window("ball") { let _ = w.destroy(); } }
     let _ = app.emit_to("main", "duo-scene-pose", serde_json::json!({ "pose": "idle", "dir": 1, "hold": false }));
 }
 

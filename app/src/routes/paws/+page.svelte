@@ -182,7 +182,7 @@
 <style>
   :global(html, body) { margin: 0; background: transparent; overflow: hidden; }
   .stage { width: 140px; height: 140px; box-sizing: border-box; padding: 10px; display: flex; align-items: flex-end; justify-content: center; }
-  img { display: block; width: 92px; height: 92px; animation: breathe 3.2s ease-in-out infinite; transform-origin: 50% 100%; }
+  img { display: block; width: 100px; height: 100px; animation: breathe 3.2s ease-in-out infinite; transform-origin: 50% 100%; }
   @keyframes breathe { 0%, 100% { translate: 0 0; } 50% { translate: 0 -3px; } }
   .walking img { animation: bob 0.34s ease-in-out infinite; }
   @keyframes bob { 0%, 100% { translate: 0 0; rotate: -1.5deg; } 50% { translate: 0 -5px; rotate: 1.5deg; } }
