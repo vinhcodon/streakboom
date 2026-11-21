@@ -12,6 +12,9 @@
 - **Chat commands** (`duo-command.ts`, `duo_command` in `duo.rs`): "gọi Paws ra đi", "Paws vào đi", "call Paws out", "Pawsを呼んで" and the like, understood on the device: no model, no key, no chat turn. Only a short message naming one pet and saying out or in.
 - **Paws answers through the AI chat** (ADR-0140): its own voice layer (`persona/paws-voice.md`, from the character bible) with the locked layers shared with Peak; the pet named answers, with no name the one last spoken to, Paws only while it is out. Its key: its own entry if one was stored, else the shared key (Rust commands to store, ask and forget it; **no Settings control yet**). The bubble stands next to the pet that answers (same bubble window, placed against Paws for the length of the line).
 
+- **The talk on screen (ADR-0141, steps 1 and 2 of its build order):** `conversation.ts` (room log, turn order, pass, aside, cancel; tested with a scripted model and a fake clock); every message that names Paws or both goes through it; one line at a time as a bubble beside the speaker with a name tag and colour; the listener turns its head first; a pass is a nod; the log with a name per speaker opens in the chat panel; the model is given a situation layer and its tags are checked by the code. Peak-only turns keep Peak's own chat path and are copied into the room.
+- **Check without a key:** `STREAKBOOM_DUO_FAKE=1` gives canned replies and the line `type:<text>` in `duo-cmd.txt` sends a message the way the box does (ASCII only: the channel file is ASCII).
+
 ## Checked by me, with the real program (script `scripts/windows/duo-test.ps1`, release build, identifier `com.streakboom.duospike`)
 Tests: 427 TS tests, 6 Rust tests of `duo.rs`, `svelte-check` clean. On a 1920x1080 screen at 125 percent:
 - Paws stands on the work area, on the same floor as Peak (the first build put it behind the taskbar: fixed).
@@ -20,6 +23,7 @@ Tests: 427 TS tests, 6 Rust tests of `duo.rs`, `svelte-check` clean. On a 1920x1
 - The tray sends both in and brings the last one out; a restart restores who was out.
 - Chat commands through the developer channel (`cmd:paws:in` and so on): Paws in, a second send-in refused, out again, Peak in with Paws staying, Peak out refused.
 - The bubble: a line said as Paws (`say:paws:...`, no model) stands centred above Paws; a line as Peak stands above Peak (window positions and a picture).
+- The talk with canned replies (T9): to Paws alone one line; to both the lines come one after the other (the second after a beat), the first said in the room (`to=person+peak`), a pass shows as a pass, an aside as `to=peak`; the bubble stands centred over the speaker; the name tag shows; Paws turns toward the speaker.
 - Pictures read by me: sizes of Peak and Paws are close; Peak keeps its own walk and sleep poses in the scenes.
 
 ## Seen and not solved
