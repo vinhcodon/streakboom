@@ -21,7 +21,7 @@ Last state decides. Start: the pets that were out come out. None out: the tray c
 | 11 | Start at login | The same rule; no entrance walk if the screen is busy (fullscreen, game) |
 | 12 | Screen busy when the person calls or clicks the tray | The call is honoured but the entrance is quiet (no scene, no sound) |
 | 13 | Reduced motion | Appear without travel |
-| 14 | Stable opens the same data | Peak alone; the Paws fields are kept untouched when Stable writes `pet.json` |
+| 14 | Stable opens the same data | Peak alone. A Stable build rewrites `pet.json` and drops fields it does not know (`channel-data.test.ts`), so the duo state is in its own file, `duo.json`, which Stable never touches |
 | 15 | Person touches a pet during a scene | Both stop and the scene is cancelled; the old callbacks cannot bring a hidden pet back (scene token) |
 | 16 | Two monitors | The entrance is per monitor; a pet comes out on the monitor it went in on if present |
 | 17 | Paws out, Peak's right-click menu, chat | Chat belongs to Peak only (no AI chat for Paws); the menu of Paws has the call of Peak and nothing else new |
