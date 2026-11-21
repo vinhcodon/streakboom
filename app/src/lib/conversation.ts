@@ -146,3 +146,38 @@ export class Conversation {
 
   private gesture(pet: PetId) { this.pass(pet, false); }
 }
+
+const NAME: Record<PetId, string> = { peak: "Peak", paws: "Paws" };
+export interface HistoryTurn { role: "user" | "model"; text: string }
+
+/** What a pet heard, as the turns a model is given: its own lines are the model's, the person's are the user's, and what the other pet said is
+ *  told to it as heard in the room. Neighbours of one role are joined; the first turn is always the user's. */
+export function toHistory(view: Turn[], pet: PetId): HistoryTurn[] {
+  const out: HistoryTurn[] = [];
+  for (const t of view) {
+    if (t.act !== "say") continue;
+    const role: "user" | "model" = t.from === pet ? "model" : "user";
+    const text = t.from === pet || t.from === "person" ? t.text : `(${NAME[t.from]} said: ${t.text})`;
+    const last = out[out.length - 1];
+    if (last && last.role === role) last.text += `\n${text}`;
+    else out.push({ role, text });
+  }
+  while (out.length > 0 && out[0].role === "model") out.shift();
+  return out;
+}
+
+/** The situation layer (L3) for one call: who is present, who was spoken to, and what this pet may do now. Built by the code each time. */
+export function situation(pet: PetId, role: "first" | "second", both: boolean): string {
+  const other = pet === "peak" ? "paws" : "peak";
+  const parts = [
+    `Two pets live on this desktop: Peak, a cat, and Paws, a small dog. You are ${NAME[pet]}.`,
+    both ? "The person is talking to both of you." : "The person is talking to you.",
+  ];
+  if (!both) parts.push("Answer in one or two short lines.");
+  else if (role === "first") parts.push("Answer in one or two short lines; the other pet will hear you.");
+  else parts.push(
+    `${NAME[other]} has just answered in the room (you see it as a line in brackets). Add something of your own in one or two short lines, or answer only [pass] if you have nothing to add. To speak to ${NAME[other]} instead of the person, start your line with [to:${other}].`,
+  );
+  parts.push("Never mention a pet's words as if the person had said them.");
+  return parts.join(" ");
+}

@@ -45,3 +45,15 @@ test("the pet named answers; with no name the one last spoken to; Paws only whil
   assert.equal(addressedPet("Paws và Peak nghĩ sao?", "paws", true), "paws"); // both named: the last spoken to
   assert.equal(addressedPet("Paws ơi", "peak", false), "peak"); // Paws is away: Peak answers
 });
+
+import { addressees } from "./duo-command.ts";
+
+test("who a message is for: both when both are named or a word for both is used, only while Paws is out", () => {
+  assert.deepEqual(addressees("Paws và Peak nghĩ sao?", "peak", true), ["peak", "paws"]);
+  assert.deepEqual(addressees("hai đứa đang làm gì đấy", "peak", true), ["peak", "paws"]);
+  assert.deepEqual(addressees("how are you both?", "peak", true), ["peak", "paws"]);
+  assert.deepEqual(addressees("二人とも元気？", "peak", true), ["peak", "paws"]);
+  assert.deepEqual(addressees("Paws ơi", "peak", true), ["paws"]);
+  assert.deepEqual(addressees("hôm nay thế nào", "paws", true), ["paws"]);
+  assert.deepEqual(addressees("hai đứa đang làm gì đấy", "peak", false), ["peak"]);
+});

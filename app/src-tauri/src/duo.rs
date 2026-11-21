@@ -180,6 +180,8 @@ fn spawn_dev_commands(app: AppHandle, dir: PathBuf) {
                 l if l.starts_with("scene:") => scene_start(&app, &l[6..]),
                 "tray" => tray(&app),
                 "cancel" => scene_cleanup(&app),
+                // a message typed to the pets without the box: `type:<text>` (the page routes it like the chat box does)
+                l if l.starts_with("type:") => { let _ = app.emit_to("main", "duo-type", l[5..].to_string()); }
                 // a line in the bubble of a pet without the model: `say:paws:text`
                 l if l.starts_with("say:") => {
                     let mut p = l[4..].splitn(2, ':');
@@ -233,6 +235,25 @@ pub fn tray(app: &AppHandle) {
 
 #[tauri::command]
 pub fn duo_enabled() -> bool { enabled() }
+
+/// Developer channel: canned replies instead of the model (`STREAKBOOM_DUO_FAKE=1`), so the talk is checked without a key.
+#[tauri::command]
+pub fn duo_fake() -> bool { enabled() && std::env::var("STREAKBOOM_DUO_FAKE").is_ok_and(|v| v == "1") }
+
+fn label_of(pet: &str) -> &'static str { if pet == "paws" { PAWS_LABEL } else { "main" } }
+
+/// The talk (ADR-0141): the listener turns its head toward the speaker (the side it stands on), before the line appears.
+#[tauri::command]
+pub fn duo_face(app: AppHandle, listener: String, speaker: String) {
+    let (Some(l), Some(s)) = (app.get_webview_window(label_of(&listener)), app.get_webview_window(label_of(&speaker))) else { return };
+    let (Ok(lp), Ok(sp)) = (l.outer_position(), s.outer_position()) else { return };
+    let dir = if sp.x >= lp.x { 1 } else { -1 };
+    let _ = app.emit_to(label_of(&listener), "duo-face", serde_json::json!({ "dir": dir }));
+}
+
+/// A nod (a pass, or a gesture instead of words) of the pet.
+#[tauri::command]
+pub fn duo_nod(app: AppHandle, pet: String) { let _ = app.emit_to(label_of(&pet), "duo-nod", ()); }
 
 #[tauri::command]
 pub fn duo_paws_out(app: AppHandle) -> bool { app.get_webview_window(PAWS_LABEL).is_some() }

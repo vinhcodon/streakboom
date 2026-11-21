@@ -341,6 +341,14 @@ pub fn persona_layers_paws(lang: &str, gentle: bool) -> Vec<PersonaLayer> {
     v
 }
 
+/// The situation layer of a talk between the person and two pets (ADR-0141, L3): built by the page for each call, appended last.
+pub fn with_situation(system: String, situation: Option<&str>) -> String {
+    match situation.map(str::trim).filter(|t| !t.is_empty()) {
+        Some(t) => format!("{system} {t}"),
+        None => system,
+    }
+}
+
 pub fn persona_paws(lang: &str, gentle: bool) -> String {
     persona_layers_paws(lang, gentle).into_iter().map(|l| l.text).collect::<Vec<_>>().join(" ")
 }

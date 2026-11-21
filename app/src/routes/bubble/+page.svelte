@@ -173,6 +173,7 @@
   <div class="root {side}" bind:this={root}>
     <div class="card">
       {#if view.kind === "say"}
+        {#if view.who}<div class="tag {view.who}">{view.who === "paws" ? "Paws" : "Peak"}</div>{/if}
         <div class="say" class:exclaim={view.exclaim === true && !reduceMotion}>{view.text}</div>
       {:else if view.kind === "ask"}
         <div class="say">{view.text}</div>
@@ -234,7 +235,14 @@
           <button class="btn" onclick={() => fromBubble({ type: "consent", yes: true })}>{view.yes}</button>
         </div>
       {:else if view.kind === "chat"}
-        {#if view.user}
+        {#if view.log && view.log.length > 0}
+          <!-- the talk so far (duo prototype, ADR-0141): a name and a colour for each speaker -->
+          <div class="log" aria-label="conversation">
+            {#each view.log as l, i (i)}
+              <div class="lrow"><span class="tag {l.who}">{l.who === "person" ? "You" : l.who === "paws" ? "Paws" : "Peak"}</span><span class="said">{l.text}</span></div>
+            {/each}
+          </div>
+        {:else if view.user}
           <div class="you">{view.user}</div>
         {/if}
         {#if view.phase === "thinking"}
@@ -242,7 +250,7 @@
             <span class="dots"><i></i><i></i><i></i></span>
             {#if view.slow}<span class="slow">{view.slow}</span>{/if}
           </div>
-        {:else if view.phase === "reply" && view.reply}
+        {:else if view.phase === "reply" && view.reply && !(view.log && view.log.length > 0)}
           <!-- The full text is laid out invisibly so the bubble keeps one size while it types. -->
           <div class="say typing">
             <span class="ghost">{view.reply}</span>
@@ -308,6 +316,15 @@
     55% { transform: scale(1.05) translateX(2px); }
     100% { transform: scale(1); }
   }
+  /* The name of the speaker (duo prototype): a small tag, a colour for each. */
+  .tag { font-size: 0.72em; font-weight: 600; letter-spacing: 0.02em; opacity: 0.85; }
+  .tag.peak { color: #b8741a; }
+  .tag.paws { color: #4a6a8f; }
+  .tag.person { color: #6b6b6b; }
+  .log { display: flex; flex-direction: column; gap: 4px; max-width: 260px; text-align: left; }
+  .lrow { display: flex; gap: 6px; align-items: baseline; }
+  .lrow .tag { flex: none; min-width: 2.6em; }
+  .said { word-break: break-word; white-space: pre-line; }
   .say {
     text-align: center;
     word-break: break-word;

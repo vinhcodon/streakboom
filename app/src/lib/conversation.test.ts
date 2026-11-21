@@ -158,3 +158,21 @@ test("a new message cancels the one before it", async () => {
   await Promise.all([first, second]);
   assert.deepEqual(lines.map((l) => [l.pet, l.text]), [["paws", "Splendid."]]);
 });
+
+import { situation, toHistory } from "./conversation.ts";
+
+test("the history of a pet: its lines are the model's, the other pet's are heard in brackets, neighbours are joined, the first turn is the user's", () => {
+  let room = newRoom();
+  const add = (from: "person" | PetId, to: ("person" | PetId)[], text: string) => { room = addTurn(room, { from, to, text, at: 0, act: "say" }).room; };
+  add("peak", ["person"], "old line of peak");
+  add("person", ["peak", "paws"], "how are you both");
+  add("peak", ["person", "paws"], "Fine.");
+  assert.deepEqual(toHistory(heard(room, "paws"), "paws"), [{ role: "user", text: "how are you both\n(Peak said: Fine.)" }]);
+  assert.deepEqual(toHistory(heard(room, "peak"), "peak"), [{ role: "user", text: "how are you both" }, { role: "model", text: "Fine." }]); // the leading model turn is dropped
+});
+
+test("the situation layer says who the pet is, who was spoken to, and allows a pass only to the second pet", () => {
+  assert.match(situation("paws", "first", false), /You are Paws.*talking to you/);
+  assert.match(situation("paws", "second", true), /\[pass\].*\[to:peak\]/);
+  assert.doesNotMatch(situation("peak", "first", true), /\[pass\]/);
+});

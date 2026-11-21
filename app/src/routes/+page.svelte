@@ -14,7 +14,8 @@
   import { gatesPass, pickLine as pickFromPool, runSteps, type Host } from "$lib/skill-run";
   import { ASIDE_SKILL, LEAVE_SKILL, SEAT_HERE_SKILL, SEAT_SKILL } from "$lib/skills";
   import { seatFraction, seatMove, seatWalkMs } from "$lib/seat";
-  import { addressedPet, parseDuoCommand } from "$lib/duo-command";
+  import { addressees, parseDuoCommand } from "$lib/duo-command";
+  import { Conversation, addTurn, situation, toHistory, type Line } from "$lib/conversation";
   import type { PetId } from "$lib/duo";
   import { LEAVE_PACE_PX_S, RETRY_SECS, isLeaveCommand, leaveDeadlineMs, mayLeave, nearerEdge } from "$lib/farewell";
   import { matchIntent, shortEnoughForSkill } from "$lib/intents";
@@ -448,6 +449,7 @@
   function showBubble(text: string, minMs = 0, exclaim = false) {
     if (away) return; // its window is hidden: nothing is shown while it is away
     bubbleText = text;
+    bubbleWho = null;
     bubbleExclaim = exclaim;
     bubbleOn = true;
     clearTimeout(bubbleTimer);
@@ -2342,47 +2344,121 @@
   // Prototype (branch only, developer flag): "gọi Paws ra", "Paws go in" are Peak's business, not a message to the model (ADR-0139).
   let duoOn: boolean | null = null;
   async function tryDuoFromChat(text: string): Promise<boolean> {
-    if (duoOn === null) duoOn = await invoke<boolean>("duo_enabled").catch(() => false);
+    if (duoOn === null) { duoOn = await invoke<boolean>("duo_enabled").catch(() => false); duoFake = duoOn && (await invoke<boolean>("duo_fake").catch(() => false)); }
     if (!duoOn) return false;
     const c = parseDuoCommand(text);
     if (!c) return false;
     const ok = await invoke<boolean>("duo_command", { target: c.target, act: c.act }).catch(() => false);
     lt(`command_duo target=${c.target} act=${c.act} ok=${ok}`);
+    if (ok && c.act === "in") talk.tucked(c.target);
     if (ok && c.target === "paws") { closePanel(); enter("nod"); }
     return true; // recognised: no model call and no chat turn, even when it changed nothing
   }
 
-  // Paws answers through the AI chat with its own persona and the bubble next to it (ADR-0139/0140; branch only).
+  // The talk among the person, Peak and Paws (ADR-0141; branch only): one room log, the lines shown one at a time as a bubble beside the
+  // speaker, the listener turning its head first, a nod for a pass. The words come from the model; who speaks, when, and what is dropped is the code's.
   let lastChatPet: PetId = "peak";
-  let pawsHistory: { role: "user" | "model"; text: string }[] = [];
-  async function sayAs(pet: PetId, text: string) {
-    if (pet === "paws") await invoke("duo_bubble_to", { pet, ms: 4000 + text.length * 60 + 1500 }).catch(() => {});
-    showBubble(text);
+  let duoFake = false; // developer channel: canned replies instead of the model, so the talk can be checked without a key
+  function fakeReply(pet: PetId, role: "first" | "second", said: string): string {
+    if (pet === "peak") return "[neutral] Fine, as usual.";
+    if (role === "first") return "[happy] Duty is done, and the cushion is in perfect order.";
+    return said.includes("pass") ? "[pass]" : said.includes("aside") ? "[to:peak] Shall I fetch the ball?" : "[happy] Splendid, as always.";
   }
-  async function tryPawsFromChat(text: string): Promise<boolean> {
-    if (!duoOn || !canChat) return false;
+  let bubbleWho = $state<PetId | null>(null);
+  let talkLog = $state<{ who: "person" | PetId; text: string }[]>([]);
+  const talk = new Conversation(
+    {
+      model: async (pet, view, role) => {
+        if (duoFake) { await pause(400); return fakeReply(pet, role, [...view].reverse().find((t) => t.from === "person")?.text ?? ""); }
+        data = recordAi(data, "chat", Date.now());
+        const lastPerson = [...view].reverse().find((t) => t.from === "person");
+        const both = !!lastPerson && lastPerson.to.length === 2;
+        const out = await invoke<{ text: string }>("brain_chat", {
+          lang,
+          tier: pet === "peak" ? tierOf(data.closeness) : 0,
+          gentle: data.settings.gentle,
+          history: toHistory(view, pet),
+          known: pet === "peak" ? knownFor(mem, lang) : undefined,
+          followUser: true,
+          clock: clockLine(new Date()),
+          pet,
+          duo: true,
+          situation: situation(pet, role, both),
+        });
+        return out.text;
+      },
+      allow: () => duoFake || aiGate(data, "chat", Date.now()) === "ok",
+      quiet: () => quiet || away,
+      sleep: (ms) => new Promise((r) => setTimeout(r, ms)),
+      beat: () => 600 + Math.random() * 600,
+      now: () => Date.now(),
+    },
+    (l) => enqueueLine(l),
+  );
+  function syncLog() {
+    talkLog = talk.room.turns.filter((t) => t.act === "say").slice(-6).map((t) => ({ who: t.from, text: t.text }));
+  }
+  let lineGen = 0;
+  let lineChain: Promise<void> = Promise.resolve();
+  const pause = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));
+  async function sayAs(pet: PetId, text: string) {
+    await invoke("duo_bubble_to", { pet, ms: 4000 + text.length * 60 + 1500 }).catch(() => {}); // the bubble stands beside the speaker
+    showBubble(text);
+    bubbleWho = pet;
+  }
+  function enqueueLine(l: Line) {
+    syncLog();
+    void invoke("duo_log", { line: `line ${l.pet} ${l.act} to=${l.to.join("+")} ${l.text}` }).catch(() => {});
+    const g = lineGen;
+    lineChain = lineChain
+      .then(async () => {
+        if (g !== lineGen) return;
+        const other: PetId = l.pet === "peak" ? "paws" : "peak";
+        if (l.act === "say") {
+          void invoke("duo_face", { listener: other, speaker: l.pet }).catch(() => {});
+          await pause(500);
+          if (g !== lineGen) return;
+          await sayAs(l.pet, l.text);
+          await pause(Math.min(9000, 1500 + l.text.length * 55)); // the time to read it, before the next speaker
+        } else {
+          if (l.pet === "peak") enter("nod");
+          else await invoke("duo_nod", { pet: "paws" }).catch(() => {});
+          await pause(700);
+        }
+      })
+      .catch(() => {});
+  }
+  /** A touch, or the pet going in: the lines still waiting are thrown away and a line being written is dropped. */
+  function cancelTalk() {
+    lineGen++;
+    talk.cancel();
+  }
+  function mirrorPeak(user: string, reply: string) {
+    if (!duoOn) return;
+    let r = addTurn(talk.room, { from: "person", to: ["peak"], text: user, at: Date.now(), act: "say" }).room;
+    r = addTurn(r, { from: "peak", to: ["person"], text: reply, at: Date.now(), act: "say" }).room;
+    talk.room = r;
+    talk.lastSpoken = "peak";
+    syncLog();
+  }
+  async function tryTalkFromChat(text: string): Promise<boolean> {
+    if (!duoOn || !(canChat || duoFake)) return false;
     const pawsOut = await invoke<boolean>("duo_paws_out").catch(() => false);
-    lastChatPet = addressedPet(text, lastChatPet, pawsOut);
-    if (lastChatPet !== "paws") return false;
-    if (aiGate(data, "chat", Date.now()) !== "ok") return false;
-    data = recordAi(data, "chat", Date.now());
+    const to = addressees(text, lastChatPet, pawsOut);
+    if (to.length === 1 && to[0] === "peak") { lastChatPet = "peak"; return false; } // Peak alone: its own chat, as before
+    if (to.length === 1) lastChatPet = to[0];
     busy = true;
     closePanel();
     void invoke("duo_scene_cancel").catch(() => {});
-    pawsHistory = [...pawsHistory, { role: "user" as const, text }].slice(-8);
+    lineGen++; // a new message drops the lines still waiting from the one before
     try {
-      const out = await invoke<{ text: string; mood: string }>("brain_chat", {
-        lang, tier: 0, gentle: data.settings.gentle, history: pawsHistory, followUser: true, clock: clockLine(new Date()), pet: "paws",
-      });
-      pawsHistory = [...pawsHistory, { role: "model" as const, text: out.text }].slice(-8);
-      await sayAs("paws", out.text);
+      await talk.person(text, to, pawsOut ? ["peak", "paws"] : ["peak"]);
     } catch (e) {
-      pawsHistory = pawsHistory.slice(0, -1);
-      if (errKind(e) === "invalid_key") brainBad = true;
-      lt(`paws_chat_failed ${errKind(e)}`);
+      lt(`talk_failed ${errKind(e)}`);
     } finally {
       busy = false;
     }
+    if (talk.lastSpoken) lastChatPet = talk.lastSpoken;
     return true;
   }
 
@@ -2804,7 +2880,7 @@
     if (!text) return;
     // A plain command to go away is Peak's own business, not a message to the model: no key, no chat turn counted (spec 14, A5).
     if (!busy && (await tryDuoFromChat(text))) return;
-    if (!busy && (await tryPawsFromChat(text))) return;
+    if (!busy && (await tryTalkFromChat(text))) return;
     if (!busy && (await tryLeaveFromChat(text))) return;
     // A yes or a no to the question about a day is Peak's business too (ADR-0115): no model call, no chat turn counted.
     if (!busy && answerDay(text)) return;
@@ -2895,6 +2971,7 @@
       replyMood = out.mood;
       history = [...history, { role: "model" as const, text: reply }].slice(-8);
       chatReply = reply;
+      mirrorPeak(text, reply);
       void maybeRemember();
     } catch (e) {
       const k = errKind(e);
@@ -3269,6 +3346,7 @@
         reply: chatReply,
         thinking: ui.thinking,
         slow: chatSlow ? ui.slowChat : "",
+        log: talkLog.length > 0 ? talkLog : undefined,
       };
     }
     if (panel === "input") {
@@ -3305,7 +3383,7 @@
     if (panel === "consent") {
       return { kind: "consent", text: ui.consentText, note: ui.consentNote, yes: ui.consentYes, no: ui.consentNo };
     }
-    if (bubbleOn) return { kind: "say", text: bubbleText, exclaim: bubbleExclaim };
+    if (bubbleOn) return { kind: "say", text: bubbleText, exclaim: bubbleExclaim, who: bubbleWho ?? undefined };
     return { kind: "none" };
   });
   let lastSent = "";
@@ -3369,8 +3447,10 @@
         if (e.payload.hold) { dir = e.payload.dir; pose = e.payload.pose; poseTick++; }
         else { if (pose === "walk" || pose === "look" || pose === "sleep") pose = "idle"; scheduleNext(); }
       }));
+      cleanups.push(await win.listen<string>("duo-type", (e) => void sendChat(e.payload))); // developer channel: a message typed without the box
+      cleanups.push(await win.listen<{ dir: 1 | -1 }>("duo-face", (e) => { if (pose === "idle") dir = e.payload.dir; })); // the talk: the head turns toward the speaker
       cleanups.push(await win.listen<{ pet: PetId; text: string }>("duo-say", (e) => void sayAs(e.payload.pet, e.payload.text))); // developer channel: a line in Paws' bubble without the model
-      const touchEndsScene = () => { if (sceneHold) void invoke("duo_scene_cancel"); };
+      const touchEndsScene = () => { if (sceneHold) void invoke("duo_scene_cancel"); if (duoOn) cancelTalk(); };
       window.addEventListener("pointerdown", touchEndsScene, true);
       cleanups.push(() => window.removeEventListener("pointerdown", touchEndsScene, true));
       cleanups.push(await win.listen<SettingsPatch>("settings-patch", (e) => onSettingsPatch(e.payload)));

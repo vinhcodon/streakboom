@@ -12,7 +12,7 @@ export type ProviderId = "gemini" | "groq" | "claude" | "openai";
 /** What the bubble window should show. The pet window resolves all text (language included). */
 export type BubbleView =
   | { kind: "none" }
-  | { kind: "say"; text: string; exclaim?: boolean } // exclaim: a cry (bigger, bolder, a small jolt)
+  | { kind: "say"; text: string; exclaim?: boolean; who?: "peak" | "paws" } // exclaim: a cry (bigger, bolder, a small jolt)
   | {
       kind: "chat";
       phase: "compose" | "thinking" | "reply";
@@ -22,6 +22,7 @@ export type BubbleView =
       reply: string; // the pet's answer
       thinking: string; // text shown next to the dots
       slow: string; // extra hint when the answer takes long ("" = none)
+      log?: { who: "person" | "peak" | "paws"; text: string }[]; // the talk so far, a name for each speaker (duo prototype, ADR-0141)
     }
   | { kind: "ask"; text: string; yes: string; later: string }
   | { kind: "consent"; text: string; note: string; yes: string; no: string }

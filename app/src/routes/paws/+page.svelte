@@ -11,6 +11,7 @@
   const from = q.get("from") ?? "up"; // the way it faces when it comes in
   let dir: 1 | -1 = $state(from === "left" ? -1 : 1);
   let front = $state(false); // standing, looking at the person
+  let nodding = $state(false); // a short nod: a pass in the talk (ADR-0141)
   let walking = $state(false); // a small bob of the body while it moves (the art has no legs to move)
 
   // ---- the director
@@ -171,11 +172,15 @@
     const offs: (() => void)[] = [];
     void listen<string>("scene-start", (e) => void begin(e.payload)).then((f) => offs.push(f));
     void listen("scene-cancel", () => stop()).then((f) => offs.push(f));
+    // the talk: turn the head toward the one who speaks (side view only), and the nod of a pass
+    void listen<{ dir: 1 | -1 }>("duo-face", (e) => { if (!front) dir = e.payload.dir; }).then((f) => offs.push(f));
+    let nodT: ReturnType<typeof setTimeout> | undefined;
+    void listen("duo-nod", () => { nodding = true; clearTimeout(nodT); nodT = setTimeout(() => (nodding = false), 700); }).then((f) => offs.push(f));
     return () => { stop(); offs.forEach((f) => f()); };
   });
 </script>
 
-<div class="stage" class:walking>
+<div class="stage" class:walking class:nodding>
   {#if front}
     <img src="/paws/paws-front.svg" alt="" />
   {:else}
@@ -190,5 +195,7 @@
   @keyframes breathe { 0%, 100% { translate: 0 0; } 50% { translate: 0 -3px; } }
   .walking img { animation: bob 0.34s ease-in-out infinite; }
   @keyframes bob { 0%, 100% { translate: 0 0; rotate: -1.5deg; } 50% { translate: 0 -5px; rotate: 1.5deg; } }
-  @media (prefers-reduced-motion: reduce) { img, .walking img { animation: none; } }
+  .nodding img { animation: nod 0.7s ease-in-out 1; }
+  @keyframes nod { 0%, 100% { rotate: 0deg; translate: 0 0; } 30% { rotate: 6deg; translate: 0 2px; } 60% { rotate: -2deg; translate: 0 -1px; } }
+  @media (prefers-reduced-motion: reduce) { img, .walking img, .nodding img { animation: none; } }
 </style>

@@ -1128,14 +1128,17 @@ async fn brain_chat(
     open_day: Option<String>,
     kept_days: Option<Vec<String>>,
     pet: Option<String>,
+    duo: Option<bool>,
+    situation: Option<String>,
 ) -> Result<ChatReply, AiError> {
     tauri::async_runtime::spawn_blocking(move || {
         let state = app.state::<AppState>();
         if pet.as_deref() == Some("paws") {
             // Paws (ADR-0140): its own persona, its own key if it has one else the shared one; no notes about the person, no skills.
             let key = brain::load_key_for_paws(active(&state)).ok_or_else(|| AiError::new(Kind::InvalidKey, "no key"))?;
-            let system = brain::with_clock(brain::persona_paws(&lang, gentle), clock.as_deref());
+            let system = brain::with_situation(brain::with_clock(brain::persona_paws(&lang, gentle), clock.as_deref()), situation.as_deref());
             let raw = run_generate(&state, &key, &system, &history)?;
+            if duo.unwrap_or(false) { return Ok(ChatReply { text: raw, mood: String::new(), skill: None, skill_args: None }); } // the page reads the tags ([pass], [to:..]) of the talk
             let r = brain::split_reply(&raw);
             return Ok(ChatReply { text: r.text, mood: r.mood, skill: None, skill_args: None });
         }
@@ -1150,7 +1153,9 @@ async fn brain_chat(
         let system = if remind.unwrap_or(false) { brain::with_open_day(system, open_day.as_deref()) } else { system };
         // the days the person asked it to keep, so that it can answer about them; never in a remark after a reflex (that path has its own card)
         let system = if event.is_none() { brain::with_kept_days(system, kept_days.as_deref().unwrap_or(&[])) } else { system };
+        let system = brain::with_situation(system, situation.as_deref());
         let raw = run_generate(&state, &key, &system, &history)?;
+        if duo.unwrap_or(false) { return Ok(ChatReply { text: raw, mood: String::new(), skill: None, skill_args: None }); }
         let r = brain::split_reply(&raw);
         // Without the skills layer the model was not told about the tag: a tag it still wrote is ignored, never acted on.
         let skill = match r.skill.as_deref() {
@@ -1992,6 +1997,9 @@ pub fn run() {
             duo::duo_command,
             duo::duo_bubble_to,
             duo::duo_paws_out,
+            duo::duo_fake,
+            duo::duo_face,
+            duo::duo_nod,
             brain_paws_store_key,
             brain_paws_has_own_key,
             brain_paws_forget_key,

@@ -46,3 +46,14 @@ export function addressedPet(raw: string, lastSpoken: PetId, pawsOut: boolean): 
   if (who === "paws" && !pawsOut) who = "peak";
   return who;
 }
+
+const BOTH = [/cả hai/, /hai đứa/, /hai bạn/, /hai đứa bây/, /\bboth\b/, /\byou two\b/, /二人/, /ふたり/, /両方/];
+
+/** Who a message is for: both pets (both names, or a word for both) while Paws is out; else the one pet `addressedPet` picks. */
+export function addressees(raw: string, lastSpoken: PetId, pawsOut: boolean): PetId[] {
+  if (!pawsOut) return ["peak"];
+  const text = raw.toLowerCase();
+  const names = text.includes("paws") && text.includes("peak");
+  if (names || BOTH.some((r) => r.test(text))) return ["peak", "paws"];
+  return [addressedPet(raw, lastSpoken, pawsOut)];
+}

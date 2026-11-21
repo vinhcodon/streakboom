@@ -27,7 +27,7 @@ function Rect($dump, $label) { $l = $dump | Where-Object { $_ -like "$label *" }
 
 if (Get-Process streakboom -ErrorAction SilentlyContinue) { throw "a streakboom.exe is already running: not touching it" }
 Remove-Item "$data\duo.json", "$data\duo-log.txt" -ErrorAction SilentlyContinue
-$env:STREAKBOOM_DUO = "1"
+$env:STREAKBOOM_DUO = "1"; $env:STREAKBOOM_DUO_FAKE = "1"
 $p = Start-Process $Exe -PassThru
 Start-Sleep 7
 $log = @()
@@ -73,6 +73,17 @@ $d = Dump; $log += "T8 state before"; $log += $d
 Cmd "say:paws:Duty is done, and the cushion is in perfect order."; Start-Sleep 2.5; $d = Dump; $log += "T8 Paws speaks: the bubble must stand next to Paws"; $log += $d; Shot "t8-paws-says"
 Start-Sleep 9
 Cmd "say:peak:A plain line from Peak."; Start-Sleep 2.5; $d = Dump; $log += "T8 Peak speaks: the bubble must stand next to Peak"; $log += $d; Shot "t8-peak-says"
+# T9: the talk with canned replies (STREAKBOOM_DUO_FAKE, no key): routing, one line at a time, the bubble beside the speaker, a nod for a pass, an aside
+function Talk($name, $text, $n) {
+  Start-Sleep 6  # the bubble of the last line is gone
+  Cmd "type:$text"
+  for ($i = 0; $i -lt $n; $i++) { Start-Sleep -Milliseconds 1100; $d = Dump; $script:log += "T9 $name +$i"; $script:log += $d; Shot ("t9-{0}-{1:d2}" -f $name, $i) }
+}
+Talk "to-paws" "Paws, how is your day" 3
+Talk "to-both" "how are you both" 6
+Talk "both-pass" "how are you both pass" 6
+Talk "both-aside" "how are you both aside" 6
+Talk "to-peak" "Peak, and you?" 2
 Stop-Process -Id $p.Id -Force
 $log += "duo-log.txt"; $log += (Get-Content "$data\duo-log.txt" -ErrorAction SilentlyContinue)
 $log | Set-Content "$Out\duo-test-log.txt"
