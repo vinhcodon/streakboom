@@ -67,6 +67,12 @@ $log += (CmdR "cmd:paws:in"); $log += "T7 (a second send-in must be ok=False)"
 $log += (CmdR "cmd:paws:out"); Start-Sleep 2; $log += "T7 Paws called out again"; $log += (Dump); Shot "t7-paws-out"
 $log += (CmdR "cmd:peak:in"); Start-Sleep 2; $log += "T7 Peak sent in, Paws stays"; $log += (Dump); Shot "t7-peak-in"
 $log += (CmdR "cmd:peak:out"); $log += "T7 (Peak out must be ok=False: Peak is not the pet on the screen to call)"
+# T8: the bubble belongs to the pet that answers (a line said as Paws without the model: the persona and the key are not exercised here)
+Cmd "call"; Start-Sleep 3  # Paws is out alone: it calls Peak back
+$d = Dump; $log += "T8 state before"; $log += $d
+Cmd "say:paws:Duty is done, and the cushion is in perfect order."; Start-Sleep 2.5; $d = Dump; $log += "T8 Paws speaks: the bubble must stand next to Paws"; $log += $d; Shot "t8-paws-says"
+Start-Sleep 9
+Cmd "say:peak:A plain line from Peak."; Start-Sleep 2.5; $d = Dump; $log += "T8 Peak speaks: the bubble must stand next to Peak"; $log += $d; Shot "t8-peak-says"
 Stop-Process -Id $p.Id -Force
 $log += "duo-log.txt"; $log += (Get-Content "$data\duo-log.txt" -ErrorAction SilentlyContinue)
 $log | Set-Content "$Out\duo-test-log.txt"

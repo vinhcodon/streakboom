@@ -35,3 +35,14 @@ export function parseDuoCommand(raw: string): DuoCommand | null {
   if (OUT.some((r) => r.test(text))) return { target, act: "out" };
   return null;
 }
+
+/** Which pet answers a chat message (ADR-0139/0140): the one the person names; with no name (or both names), the pet last spoken to.
+ *  Paws can answer only while it is out; otherwise Peak does. ("Both, one after the other" is not built.) */
+export function addressedPet(raw: string, lastSpoken: PetId, pawsOut: boolean): PetId {
+  const text = raw.toLowerCase();
+  const paws = text.includes("paws");
+  const peak = text.includes("peak");
+  let who: PetId = paws && !peak ? "paws" : peak && !paws ? "peak" : lastSpoken;
+  if (who === "paws" && !pawsOut) who = "peak";
+  return who;
+}

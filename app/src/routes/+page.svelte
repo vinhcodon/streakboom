@@ -14,7 +14,8 @@
   import { gatesPass, pickLine as pickFromPool, runSteps, type Host } from "$lib/skill-run";
   import { ASIDE_SKILL, LEAVE_SKILL, SEAT_HERE_SKILL, SEAT_SKILL } from "$lib/skills";
   import { seatFraction, seatMove, seatWalkMs } from "$lib/seat";
-  import { parseDuoCommand } from "$lib/duo-command";
+  import { addressedPet, parseDuoCommand } from "$lib/duo-command";
+  import type { PetId } from "$lib/duo";
   import { LEAVE_PACE_PX_S, RETRY_SECS, isLeaveCommand, leaveDeadlineMs, mayLeave, nearerEdge } from "$lib/farewell";
   import { matchIntent, shortEnoughForSkill } from "$lib/intents";
   import { emitTo } from "@tauri-apps/api/event";
@@ -2351,6 +2352,40 @@
     return true; // recognised: no model call and no chat turn, even when it changed nothing
   }
 
+  // Paws answers through the AI chat with its own persona and the bubble next to it (ADR-0139/0140; branch only).
+  let lastChatPet: PetId = "peak";
+  let pawsHistory: { role: "user" | "model"; text: string }[] = [];
+  async function sayAs(pet: PetId, text: string) {
+    if (pet === "paws") await invoke("duo_bubble_to", { pet, ms: 4000 + text.length * 60 + 1500 }).catch(() => {});
+    showBubble(text);
+  }
+  async function tryPawsFromChat(text: string): Promise<boolean> {
+    if (!duoOn || !canChat) return false;
+    const pawsOut = await invoke<boolean>("duo_paws_out").catch(() => false);
+    lastChatPet = addressedPet(text, lastChatPet, pawsOut);
+    if (lastChatPet !== "paws") return false;
+    if (aiGate(data, "chat", Date.now()) !== "ok") return false;
+    data = recordAi(data, "chat", Date.now());
+    busy = true;
+    closePanel();
+    void invoke("duo_scene_cancel").catch(() => {});
+    pawsHistory = [...pawsHistory, { role: "user" as const, text }].slice(-8);
+    try {
+      const out = await invoke<{ text: string; mood: string }>("brain_chat", {
+        lang, tier: 0, gentle: data.settings.gentle, history: pawsHistory, followUser: true, clock: clockLine(new Date()), pet: "paws",
+      });
+      pawsHistory = [...pawsHistory, { role: "model" as const, text: out.text }].slice(-8);
+      await sayAs("paws", out.text);
+    } catch (e) {
+      pawsHistory = pawsHistory.slice(0, -1);
+      if (errKind(e) === "invalid_key") brainBad = true;
+      lt(`paws_chat_failed ${errKind(e)}`);
+    } finally {
+      busy = false;
+    }
+    return true;
+  }
+
   async function tryLeaveFromChat(text: string): Promise<boolean> {
     const m = matchIntent(text, [mem.petName]);
     if (m?.skill === "seat" && m.kind === "exact") return startSeat("command");
@@ -2769,6 +2804,7 @@
     if (!text) return;
     // A plain command to go away is Peak's own business, not a message to the model: no key, no chat turn counted (spec 14, A5).
     if (!busy && (await tryDuoFromChat(text))) return;
+    if (!busy && (await tryPawsFromChat(text))) return;
     if (!busy && (await tryLeaveFromChat(text))) return;
     // A yes or a no to the question about a day is Peak's business too (ADR-0115): no model call, no chat turn counted.
     if (!busy && answerDay(text)) return;
@@ -3333,6 +3369,7 @@
         if (e.payload.hold) { dir = e.payload.dir; pose = e.payload.pose; poseTick++; }
         else { if (pose === "walk" || pose === "look" || pose === "sleep") pose = "idle"; scheduleNext(); }
       }));
+      cleanups.push(await win.listen<{ pet: PetId; text: string }>("duo-say", (e) => void sayAs(e.payload.pet, e.payload.text))); // developer channel: a line in Paws' bubble without the model
       const touchEndsScene = () => { if (sceneHold) void invoke("duo_scene_cancel"); };
       window.addEventListener("pointerdown", touchEndsScene, true);
       cleanups.push(() => window.removeEventListener("pointerdown", touchEndsScene, true));

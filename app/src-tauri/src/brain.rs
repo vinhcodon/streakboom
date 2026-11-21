@@ -325,6 +325,26 @@ pub fn persona_layers(lang: &str, tier: u8, gentle: bool) -> Vec<PersonaLayer> {
     v
 }
 
+/// The layers of Paws (ADR-0140): its own voice in place of Peak's, then the locked layers every pet shares (language, safety, reply format).
+/// No closeness layer and no Japanese voice yet: those are written for Peak (the Paws voice in Japanese is not authored, V-180).
+pub fn persona_layers_paws(lang: &str, gentle: bool) -> Vec<PersonaLayer> {
+    let language = language_name(lang);
+    let mut v = vec![
+        layer("voice", false, include_str!("../persona/paws-voice.md")),
+        layer("language", true, &include_str!("../persona/language.md").replace("{language}", language)),
+        layer("core", true, include_str!("../persona/core.md")),
+    ];
+    if gentle {
+        v.push(layer("tone", false, include_str!("../persona/gentle.md")));
+    }
+    v.push(layer("mood", true, include_str!("../persona/mood.md")));
+    v
+}
+
+pub fn persona_paws(lang: &str, gentle: bool) -> String {
+    persona_layers_paws(lang, gentle).into_iter().map(|l| l.text).collect::<Vec<_>>().join(" ")
+}
+
 pub fn persona(lang: &str, tier: u8, gentle: bool) -> String {
     persona_layers(lang, tier, gentle).into_iter().map(|l| l.text).collect::<Vec<_>>().join(" ")
 }
@@ -776,6 +796,29 @@ pub fn load_key(p: Provider) -> Option<String> {
         .filter(|k| !k.is_empty())
 }
 
+// A second entry per provider for Paws (ADR-0140): "shared" is the default, a separate key is used only when it was stored.
+fn paws_user(p: Provider) -> String { format!("{}-paws", p.key_user()) }
+
+pub fn store_key_paws(p: Provider, key: &str) -> Result<(), AiError> {
+    keyring::Entry::new(KEY_SERVICE, &paws_user(p))
+        .and_then(|e| e.set_password(key.trim()))
+        .map_err(|_| AiError::new(Kind::Storage, "credential store"))
+}
+
+pub fn load_key_paws(p: Provider) -> Option<String> {
+    keyring::Entry::new(KEY_SERVICE, &paws_user(p)).and_then(|e| e.get_password()).ok().filter(|k| !k.is_empty())
+}
+
+/// The key Paws talks with: its own if it has one, else the shared key of the provider.
+pub fn load_key_for_paws(p: Provider) -> Option<String> { load_key_paws(p).or_else(|| load_key(p)) }
+
+pub fn delete_key_paws(p: Provider) -> Result<(), AiError> {
+    match keyring::Entry::new(KEY_SERVICE, &paws_user(p)).and_then(|e| e.delete_credential()) {
+        Ok(()) | Err(keyring::Error::NoEntry) => Ok(()),
+        Err(_) => Err(AiError::new(Kind::Storage, "credential store")),
+    }
+}
+
 pub fn delete_key(p: Provider) -> Result<(), AiError> {
     match keyring::Entry::new(KEY_SERVICE, p.key_user()).and_then(|e| e.delete_credential()) {
         Ok(()) | Err(keyring::Error::NoEntry) => Ok(()),
@@ -837,6 +880,23 @@ mod tests {
         // RX-5 moved the persona into persona/*.md; this fingerprint is the persona as it was before (every language, tier
         // and tone). Changing a persona file is a decision: change this number with it. Changed by ADR-0059 (spec 12 section 3).
         assert_eq!(persona_fingerprint(), 11250909298575782921);
+    }
+
+    #[test]
+    fn paws_has_its_own_voice_and_the_same_locked_safety_and_format_layers() {
+        let paws = persona_layers_paws("en", false);
+        let peak = persona_layers("en", 2, false);
+        let by = |v: &[PersonaLayer], n: &str| v.iter().find(|l| l.name == n).map(|l| l.text.clone());
+        assert_ne!(by(&paws, "voice"), by(&peak, "voice")); // the two sound different (H-02)
+        for locked in ["language", "core", "mood"] {
+            assert_eq!(by(&paws, locked), by(&peak, locked), "{locked}: shared, never edited for one pet");
+        }
+        let joined = persona_paws("vi", true);
+        assert!(joined.contains("Reply in Vietnamese") || joined.contains("Vietnamese"));
+        let text = joined.to_lowercase();
+        for banned in ["healing", "therapy", "lonely", "i missed you", "hungry"] {
+            assert!(!text.contains(banned), "{banned}");
+        }
     }
 
     #[test]

@@ -34,3 +34,14 @@ test("a message is not a command unless it names one pet and says out or in", ()
 test("a long sentence is a conversation, not a command", () => {
   assert.equal(c("hôm qua tớ định gọi Paws ra nhưng tớ bận quá nên thôi, để mai"), null);
 });
+
+import { addressedPet } from "./duo-command.ts";
+
+test("the pet named answers; with no name the one last spoken to; Paws only while out", () => {
+  assert.equal(addressedPet("Paws ơi, hôm nay thế nào?", "peak", true), "paws");
+  assert.equal(addressedPet("Peak, còn bạn?", "paws", true), "peak");
+  assert.equal(addressedPet("hôm nay thế nào?", "paws", true), "paws");
+  assert.equal(addressedPet("hôm nay thế nào?", "peak", true), "peak");
+  assert.equal(addressedPet("Paws và Peak nghĩ sao?", "paws", true), "paws"); // both named: the last spoken to
+  assert.equal(addressedPet("Paws ơi", "peak", false), "peak"); // Paws is away: Peak answers
+});

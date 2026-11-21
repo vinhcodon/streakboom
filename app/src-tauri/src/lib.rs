@@ -109,6 +109,8 @@ struct AppState {
     /// Bumped whenever the bubble is shown or hidden; lets the delayed "destroy when idle"
     /// know whether the bubble was used again in the meantime.
     bubble_gen: AtomicU64,
+    /// The window the bubble stands next to: "main" (Peak), or "paws" while Paws answers (duo prototype, ADR-0140).
+    bubble_anchor: Mutex<String>,
     /// "Lượn đi" (spec 14, story S2): Peak has walked off and its window is hidden until a timer runs out or the person calls it
     /// back (the tray, or starting the program again). Never saved: after a restart Peak is simply on screen. `away_gen`
     /// numbers each leaving, so that a timer of an earlier leaving does nothing.
@@ -687,7 +689,8 @@ fn place_bubble(app: &AppHandle) {
     if !b.visible {
         return;
     }
-    let (Some(main), Some(bubble)) = (app.get_webview_window("main"), app.get_webview_window("bubble")) else {
+    let anchor = state.bubble_anchor.lock().unwrap().clone();
+    let (Some(main), Some(bubble)) = (app.get_webview_window(&anchor).or_else(|| app.get_webview_window("main")), app.get_webview_window("bubble")) else {
         return;
     };
     let (Ok(pos), Ok(scale)) = (main.outer_position(), main.scale_factor()) else {
@@ -713,7 +716,8 @@ fn bubble_fit(app: AppHandle, state: State<AppState>, w: f64, h: f64, interactiv
         return;
     };
     // The bubble belongs to the pet: while the pet is hidden (tray Show / Hide) nothing is shown.
-    if !app.get_webview_window("main").is_some_and(|m| m.is_visible().unwrap_or(false)) {
+    let anchor = state.bubble_anchor.lock().unwrap().clone();
+    if !app.get_webview_window(&anchor).or_else(|| app.get_webview_window("main")).is_some_and(|m| m.is_visible().unwrap_or(false)) {
         bubble_hide(app.clone(), state);
         return;
     }
@@ -1123,9 +1127,18 @@ async fn brain_chat(
     remind: Option<bool>,
     open_day: Option<String>,
     kept_days: Option<Vec<String>>,
+    pet: Option<String>,
 ) -> Result<ChatReply, AiError> {
     tauri::async_runtime::spawn_blocking(move || {
         let state = app.state::<AppState>();
+        if pet.as_deref() == Some("paws") {
+            // Paws (ADR-0140): its own persona, its own key if it has one else the shared one; no notes about the person, no skills.
+            let key = brain::load_key_for_paws(active(&state)).ok_or_else(|| AiError::new(Kind::InvalidKey, "no key"))?;
+            let system = brain::with_clock(brain::persona_paws(&lang, gentle), clock.as_deref());
+            let raw = run_generate(&state, &key, &system, &history)?;
+            let r = brain::split_reply(&raw);
+            return Ok(ChatReply { text: r.text, mood: r.mood, skill: None, skill_args: None });
+        }
         let key = brain::load_key(active(&state)).ok_or_else(|| AiError::new(Kind::InvalidKey, "no key"))?;
         // A remark after a reflex (RX-7) uses the persona and the card of that event, never the user's notes.
         let system = match event.as_deref() {
@@ -1150,6 +1163,29 @@ async fn brain_chat(
     })
     .await
     .map_err(|_| task_failed())?
+}
+
+/// Paws' own key (ADR-0140), typed in Settings and sent straight here, never shown or logged. Stored for the active provider.
+#[tauri::command]
+async fn brain_paws_store_key(app: AppHandle, key: String) -> Result<(), AiError> {
+    tauri::async_runtime::spawn_blocking(move || brain::store_key_paws(active(&app.state::<AppState>()), &key))
+        .await
+        .map_err(|_| task_failed())?
+}
+
+/// True when Paws has a key of its own (false: it uses the shared one).
+#[tauri::command]
+async fn brain_paws_has_own_key(app: AppHandle) -> bool {
+    tauri::async_runtime::spawn_blocking(move || brain::load_key_paws(active(&app.state::<AppState>())).is_some())
+        .await
+        .unwrap_or(false)
+}
+
+#[tauri::command]
+async fn brain_paws_forget_key(app: AppHandle) -> Result<(), AiError> {
+    tauri::async_runtime::spawn_blocking(move || brain::delete_key_paws(active(&app.state::<AppState>())))
+        .await
+        .map_err(|_| task_failed())?
 }
 
 /// A small background call: which lasting facts did the user state in this chat? The transcript
@@ -1886,6 +1922,7 @@ pub fn run() {
                 tray_items: Mutex::new(None),
                 settings_section: Mutex::new(None),
                 bubble_gen: AtomicU64::new(0),
+                bubble_anchor: Mutex::new("main".to_string()),
                 away: AtomicBool::new(false),
                 away_gen: AtomicU64::new(0),
                 picture_on: AtomicBool::new(false),
@@ -1953,6 +1990,11 @@ pub fn run() {
             duo::duo_log,
             duo::duo_enabled,
             duo::duo_command,
+            duo::duo_bubble_to,
+            duo::duo_paws_out,
+            brain_paws_store_key,
+            brain_paws_has_own_key,
+            brain_paws_forget_key,
             set_tray_labels,
             set_hit_rect,
             get_prefs,

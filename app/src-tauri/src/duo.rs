@@ -180,6 +180,11 @@ fn spawn_dev_commands(app: AppHandle, dir: PathBuf) {
                 l if l.starts_with("scene:") => scene_start(&app, &l[6..]),
                 "tray" => tray(&app),
                 "cancel" => scene_cleanup(&app),
+                // a line in the bubble of a pet without the model: `say:paws:text`
+                l if l.starts_with("say:") => {
+                    let mut p = l[4..].splitn(2, ':');
+                    if let (Some(t), Some(x)) = (p.next(), p.next()) { let _ = app.emit_to("main", "duo-say", serde_json::json!({ "pet": t, "text": x })); }
+                }
                 // the chat command without the chat box: `cmd:paws:out`, `cmd:paws:in`, `cmd:peak:in`
                 l if l.starts_with("cmd:") => {
                     let mut p = l[4..].split(':');
@@ -197,7 +202,7 @@ fn spawn_dev_commands(app: AppHandle, dir: PathBuf) {
 
 fn dump(app: &AppHandle, dir: &PathBuf) {
     let mut o = String::new();
-    for l in ["main", "paws", "ball"] {
+    for l in ["main", "paws", "ball", "bubble"] {
         match app.get_webview_window(l) {
             Some(w) => {
                 let (p, s) = (w.outer_position().ok(), w.outer_size().ok());
@@ -228,6 +233,25 @@ pub fn tray(app: &AppHandle) {
 
 #[tauri::command]
 pub fn duo_enabled() -> bool { enabled() }
+
+#[tauri::command]
+pub fn duo_paws_out(app: AppHandle) -> bool { app.get_webview_window(PAWS_LABEL).is_some() }
+
+/// The bubble belongs to the pet that answers (ADR-0139/0140): it stands next to `pet` ("peak" or "paws") for `ms` milliseconds, then goes
+/// back to Peak. The bubble window is the same one; only the window it is placed against changes.
+#[tauri::command]
+pub fn duo_bubble_to(app: AppHandle, pet: String, ms: u64) {
+    let state = app.state::<crate::AppState>();
+    let label = if pet == "paws" && app.get_webview_window(PAWS_LABEL).is_some() { PAWS_LABEL } else { "main" };
+    *state.bubble_anchor.lock().unwrap() = label.to_string();
+    if label == PAWS_LABEL {
+        let app2 = app.clone();
+        std::thread::spawn(move || {
+            std::thread::sleep(Duration::from_millis(ms));
+            *app2.state::<crate::AppState>().bubble_anchor.lock().unwrap() = "main".to_string();
+        });
+    }
+}
 
 /// The chat command (step 4), said to the pet on the screen (Peak's chat): `act` "out" has Peak call `target` out, "in" sends `target` in.
 /// False when it changes nothing (already out, already in, busy), so the page can stay silent. No model, no key.
