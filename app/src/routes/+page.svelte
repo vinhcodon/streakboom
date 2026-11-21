@@ -824,7 +824,11 @@
     nextTimer = setTimeout(pickNext, rand(4_000, 11_000));
   }
 
+  /** exp/duo-prototype: true while a duo scene plays; Peak's own wandering waits. */
+  let sceneHold = false;
+
   function pickNext() {
+    if (sceneHold) return scheduleNext();
     if (leaving) return scheduleNext(); // the leaving is Peak's only business until it ends
     if (flying) return scheduleNext();
     if (pose === "peek" || pose === "ledge") return scheduleNext(); // a rest at the edge is not cut short
@@ -3308,6 +3312,15 @@
       cleanups.push(await win.listen("settings-ready", pushSettings));
       cleanups.push(await win.listen("away-due", () => void onAwayDue()));
       cleanups.push(await win.listen("away-ended", () => endAway(true)));
+      // exp/duo-prototype (ADR-0139): a duo scene holds Peak's own wandering and shows the pose the scene gives (the director is in the page of Paws)
+      cleanups.push(await win.listen<{ pose: PetState; dir: 1 | -1; hold: boolean }>("duo-scene-pose", (e) => {
+        sceneHold = e.payload.hold;
+        if (e.payload.hold) { dir = e.payload.dir; pose = e.payload.pose; poseTick++; }
+        else { if (pose === "walk" || pose === "look" || pose === "sleep") pose = "idle"; scheduleNext(); }
+      }));
+      const touchEndsScene = () => { if (sceneHold) void invoke("duo_scene_cancel"); };
+      window.addEventListener("pointerdown", touchEndsScene, true);
+      cleanups.push(() => window.removeEventListener("pointerdown", touchEndsScene, true));
       cleanups.push(await win.listen<SettingsPatch>("settings-patch", (e) => onSettingsPatch(e.payload)));
       cleanups.push(await win.listen<BrainChange>("brain-changed", (e) => onBrainChanged(e.payload)));
 

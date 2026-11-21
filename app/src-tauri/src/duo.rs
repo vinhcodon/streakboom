@@ -12,12 +12,14 @@ use std::{
     sync::{atomic::{AtomicBool, Ordering}, Mutex},
     time::{Duration, Instant, SystemTime, UNIX_EPOCH},
 };
-use tauri::{AppHandle, Manager, PhysicalPosition, PhysicalSize, WebviewUrl, WebviewWindowBuilder};
+use tauri::{AppHandle, Emitter, Manager, PhysicalPosition, PhysicalSize, WebviewUrl, WebviewWindowBuilder};
 
 const BROWSER_ARGS: &str = "--disable-features=msWebOOUI,msPdfOOUI,msSmartScreenProtection --disable-gpu";
 const PAWS_LABEL: &str = "paws";
 /// Logical size of a pet window (the main window is 200 by 200).
 const PET: f64 = 200.0;
+/// Logical size of the shared object window.
+const BALL: f64 = 48.0;
 const SLIDE: Duration = Duration::from_millis(900);
 
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
@@ -160,6 +162,7 @@ pub fn init(app: &AppHandle) {
 pub fn tray(app: &AppHandle) {
     let Some(d) = app.try_state::<Duo>() else { return };
     if d.busy.swap(true, Ordering::SeqCst) { return; }
+    scene_cleanup(app);
     let (send_in, bring_out) = { let mut s = d.state.lock().unwrap(); let r = s.tray_click(now_ms()); save(&d, &s); r };
     apply(app, send_in, bring_out);
 }
@@ -267,6 +270,80 @@ fn paws_go_in(app: &AppHandle) {
     }
     let _ = win.destroy();
 }
+
+// ------------------------------------------------------------------ scenes (step 3)
+// The scene engine is `app/src/lib/scene.ts`; it runs in the page of Paws (a scene needs both pets out, and that page exists exactly then).
+// Rust only moves windows, shows the shared ball, and tells Peak's page to hold its own wandering and show a pose.
+
+#[derive(Serialize)]
+pub struct Stage { pub peak: (i32, i32), pub paws: (i32, i32), pub size: i32, pub scale: f64 }
+
+/// Where the two pet windows are (physical px, top-left) and how big a pet window is; None unless both are out.
+#[tauri::command]
+pub fn duo_stage(app: AppHandle) -> Option<Stage> {
+    let main = app.get_webview_window("main")?;
+    let paws = app.get_webview_window(PAWS_LABEL)?;
+    if !main.is_visible().unwrap_or(false) { return None; }
+    let (a, b) = (main.outer_position().ok()?, paws.outer_position().ok()?);
+    let scale = scale(&app);
+    Some(Stage { peak: (a.x, a.y), paws: (b.x, b.y), size: (PET * scale).round() as i32, scale })
+}
+
+/// Move one of the windows of a scene: "main" (Peak), "paws" or "ball".
+#[tauri::command]
+pub fn duo_pos(app: AppHandle, label: String, x: i32, y: i32) {
+    let l = if label == "peak" { "main" } else { label.as_str() };
+    if !matches!(l, "main" | "paws" | "ball") { return; }
+    if let Some(w) = app.get_webview_window(l) { let _ = w.set_position(PhysicalPosition::new(x, y)); }
+}
+
+/// Show the shared object (a window of its own, click-through) or take it away. `kind` is "ball" or "cushion".
+#[tauri::command]
+pub async fn duo_ball(app: AppHandle, show: bool, kind: String, x: i32, y: i32) -> Result<(), String> {
+    if !show {
+        if let Some(w) = app.get_webview_window("ball") { let _ = w.destroy(); }
+        return Ok(());
+    }
+    let kind = if kind == "cushion" { "cushion" } else { "ball" };
+    if let Some(w) = app.get_webview_window("ball") {
+        let _ = w.set_position(PhysicalPosition::new(x, y));
+        let _ = app.emit_to("ball", "ball-kind", kind);
+        return Ok(());
+    }
+    let url = format!("ball?kind={kind}");
+    let w = WebviewWindowBuilder::new(&app, "ball", WebviewUrl::App(url.into()))
+        .title("Streakboom ball").inner_size(BALL, BALL)
+        .decorations(false).transparent(true).always_on_top(true).skip_taskbar(true).resizable(false).shadow(false).focused(false)
+        .additional_browser_args(BROWSER_ARGS).build().map_err(|e| e.to_string())?;
+    let _ = w.set_position(PhysicalPosition::new(x, y));
+    let _ = w.set_ignore_cursor_events(true);
+    Ok(())
+}
+
+/// Peak's page holds its own wandering while a scene runs and shows the pose given; `hold: false` gives the control back.
+#[tauri::command]
+pub fn duo_peak_pose(app: AppHandle, pose: String, dir: i32, hold: bool) {
+    let _ = app.emit_to("main", "duo-scene-pose", serde_json::json!({ "pose": pose, "dir": dir, "hold": hold }));
+}
+
+/// Start a scene (a prototype menu item for now; the automatic start needs the attention mode of Peak's page). Needs both pets out.
+pub fn scene_start(app: &AppHandle) {
+    if let Some(d) = app.try_state::<Duo>() {
+        let s = d.state.lock().unwrap();
+        if s.out().len() != 2 || d.busy.load(Ordering::SeqCst) { return; }
+    } else { return; }
+    let _ = app.emit_to(PAWS_LABEL, "scene-start", ());
+}
+
+/// A touch, or a pet going in: the scene ends at once, the object goes, Peak gets its own behaviour back.
+pub fn scene_cleanup(app: &AppHandle) {
+    let _ = app.emit_to(PAWS_LABEL, "scene-cancel", ());
+    if let Some(w) = app.get_webview_window("ball") { let _ = w.destroy(); }
+    let _ = app.emit_to("main", "duo-scene-pose", serde_json::json!({ "pose": "idle", "dir": 1, "hold": false }));
+}
+
+#[tauri::command]
+pub fn duo_scene_cancel(app: AppHandle) { scene_cleanup(&app); }
 
 #[cfg(test)]
 mod tests {
