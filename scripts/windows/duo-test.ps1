@@ -59,6 +59,14 @@ Stop-Process -Id $p.Id -Force; Start-Sleep 2
 $log += "T6 duo.json before the restart"; $log += (Get-Content "$data\duo.json")
 $p = Start-Process $Exe -PassThru; Start-Sleep 7
 $d = Dump; $log += "T6 after the restart (the same pets are out)"; $log += $d; Shot "t6-restored"
+# T7: the chat commands (without the chat box): Paws in and out where it went in, Peak in, a refusal when nobody asks it
+function CmdR($c) { Remove-Item "$data\duo-cmd-result.txt" -ErrorAction SilentlyContinue; Cmd $c; Start-Sleep -Milliseconds 400; if (Test-Path "$data\duo-cmd-result.txt") { Get-Content "$data\duo-cmd-result.txt" } else { "no result" } }
+$log += "T7 start: both out"; $log += (Dump)
+$log += (CmdR "cmd:paws:in"); Start-Sleep 2; $log += "T7 Paws sent in"; $log += (Dump); Shot "t7-paws-in"
+$log += (CmdR "cmd:paws:in"); $log += "T7 (a second send-in must be ok=False)"
+$log += (CmdR "cmd:paws:out"); Start-Sleep 2; $log += "T7 Paws called out again"; $log += (Dump); Shot "t7-paws-out"
+$log += (CmdR "cmd:peak:in"); Start-Sleep 2; $log += "T7 Peak sent in, Paws stays"; $log += (Dump); Shot "t7-peak-in"
+$log += (CmdR "cmd:peak:out"); $log += "T7 (Peak out must be ok=False: Peak is not the pet on the screen to call)"
 Stop-Process -Id $p.Id -Force
 $log += "duo-log.txt"; $log += (Get-Content "$data\duo-log.txt" -ErrorAction SilentlyContinue)
 $log | Set-Content "$Out\duo-test-log.txt"

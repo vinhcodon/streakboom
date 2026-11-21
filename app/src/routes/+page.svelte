@@ -14,6 +14,7 @@
   import { gatesPass, pickLine as pickFromPool, runSteps, type Host } from "$lib/skill-run";
   import { ASIDE_SKILL, LEAVE_SKILL, SEAT_HERE_SKILL, SEAT_SKILL } from "$lib/skills";
   import { seatFraction, seatMove, seatWalkMs } from "$lib/seat";
+  import { parseDuoCommand } from "$lib/duo-command";
   import { LEAVE_PACE_PX_S, RETRY_SECS, isLeaveCommand, leaveDeadlineMs, mayLeave, nearerEdge } from "$lib/farewell";
   import { matchIntent, shortEnoughForSkill } from "$lib/intents";
   import { emitTo } from "@tauri-apps/api/event";
@@ -2337,6 +2338,19 @@
     return true;
   }
 
+  // Prototype (branch only, developer flag): "gọi Paws ra", "Paws go in" are Peak's business, not a message to the model (ADR-0139).
+  let duoOn: boolean | null = null;
+  async function tryDuoFromChat(text: string): Promise<boolean> {
+    if (duoOn === null) duoOn = await invoke<boolean>("duo_enabled").catch(() => false);
+    if (!duoOn) return false;
+    const c = parseDuoCommand(text);
+    if (!c) return false;
+    const ok = await invoke<boolean>("duo_command", { target: c.target, act: c.act }).catch(() => false);
+    lt(`command_duo target=${c.target} act=${c.act} ok=${ok}`);
+    if (ok && c.target === "paws") { closePanel(); enter("nod"); }
+    return true; // recognised: no model call and no chat turn, even when it changed nothing
+  }
+
   async function tryLeaveFromChat(text: string): Promise<boolean> {
     const m = matchIntent(text, [mem.petName]);
     if (m?.skill === "seat" && m.kind === "exact") return startSeat("command");
@@ -2754,6 +2768,7 @@
     const text = raw.trim();
     if (!text) return;
     // A plain command to go away is Peak's own business, not a message to the model: no key, no chat turn counted (spec 14, A5).
+    if (!busy && (await tryDuoFromChat(text))) return;
     if (!busy && (await tryLeaveFromChat(text))) return;
     // A yes or a no to the question about a day is Peak's business too (ADR-0115): no model call, no chat turn counted.
     if (!busy && answerDay(text)) return;

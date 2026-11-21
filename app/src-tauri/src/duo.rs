@@ -180,6 +180,14 @@ fn spawn_dev_commands(app: AppHandle, dir: PathBuf) {
                 l if l.starts_with("scene:") => scene_start(&app, &l[6..]),
                 "tray" => tray(&app),
                 "cancel" => scene_cleanup(&app),
+                // the chat command without the chat box: `cmd:paws:out`, `cmd:paws:in`, `cmd:peak:in`
+                l if l.starts_with("cmd:") => {
+                    let mut p = l[4..].split(':');
+                    if let (Some(t), Some(a)) = (p.next(), p.next()) {
+                        let ok = duo_command(app.clone(), t.into(), a.into());
+                        let _ = std::fs::write(dir.join("duo-cmd-result.txt"), format!("{l} ok={ok}"));
+                    }
+                }
                 "dump" => dump(&app, &dir),
                 _ => {}
             }
@@ -218,7 +226,31 @@ pub fn tray(app: &AppHandle) {
     apply(app, send_in, bring_out);
 }
 
-/// A prototype helper until the chat command exists (step 4): the pet on the screen calls the other one.
+#[tauri::command]
+pub fn duo_enabled() -> bool { enabled() }
+
+/// The chat command (step 4), said to the pet on the screen (Peak's chat): `act` "out" has Peak call `target` out, "in" sends `target` in.
+/// False when it changes nothing (already out, already in, busy), so the page can stay silent. No model, no key.
+#[tauri::command]
+pub fn duo_command(app: AppHandle, target: String, act: String) -> bool {
+    if !enabled() { return false; }
+    let Some(d) = app.try_state::<Duo>() else { return false };
+    if d.busy.swap(true, Ordering::SeqCst) { return false; }
+    let id = if target == "peak" { Id::Peak } else { Id::Paws };
+    let go_in = act == "in";
+    let done = {
+        let mut s = d.state.lock().unwrap();
+        let ok = if go_in { s.tuck(id, now_ms(), None) } else { s.call(Id::Peak, id) };
+        if ok { save(&d, &s); }
+        ok
+    };
+    if !done { d.busy.store(false, Ordering::SeqCst); return false; }
+    scene_cleanup(&app);
+    if go_in { apply(&app, vec![id], vec![]); } else { apply(&app, vec![], vec![id]); }
+    true
+}
+
+/// A prototype helper for the developer channel: the pet on the screen calls the other one.
 pub fn call_other(app: &AppHandle) {
     let Some(d) = app.try_state::<Duo>() else { return };
     if d.busy.swap(true, Ordering::SeqCst) { return; }
@@ -247,7 +279,17 @@ fn apply(app: &AppHandle, send_in: Vec<Id>, bring_out: Vec<Id>) {
                     crate::toggle_visibility(app); // visible -> hides it and its bubble
                 }
             }
-            Id::Paws => paws_work = true,
+            Id::Paws => {
+                // it comes out again where it goes in now (ADR-0139)
+                if let Some(w) = app.get_webview_window(PAWS_LABEL) {
+                    if let Ok(p) = w.outer_position() {
+                        let e = nearest_entrance(p.x, p.y, (PET * scale(app)) as i32, &monitors(app));
+                        let mut s = d.state.lock().unwrap();
+                        if let Some(e) = e { s.pets.paws.entrance = Some(e); save(&d, &s); }
+                    }
+                }
+                paws_work = true;
+            }
         }
     }
     for id in &bring_out {
