@@ -1776,10 +1776,6 @@ fn build_tray(app: &AppHandle, quiet: bool) -> tauri::Result<()> {
         menu.append(&MenuItem::with_id(app, "overlay", "Terrain overlay (Preview)", true, None::<&str>)?)?;
         menu.append(&MenuItem::with_id(app, "picture", "Screen picture on/off (experiment)", true, None::<&str>)?)?;
     }
-    if duo::enabled() {
-        menu.append(&MenuItem::with_id(app, "duo_call", "Call the other pet (prototype)", true, None::<&str>)?)?;
-        menu.append(&MenuItem::with_id(app, "duo_scene", "Play a scene (prototype)", true, None::<&str>)?)?;
-    }
     let quiet_ref = quiet_item.clone();
     *app.state::<AppState>().quiet_item.lock().unwrap() = Some(quiet_item.clone());
     *app.state::<AppState>().tray_items.lock().unwrap() = Some([toggle.clone(), settings.clone(), quit.clone()]);
@@ -1790,8 +1786,6 @@ fn build_tray(app: &AppHandle, quiet: bool) -> tauri::Result<()> {
         .show_menu_on_left_click(false)
         .on_menu_event(move |app, event| match event.id.as_ref() {
             "toggle" => { if duo::enabled() { duo::tray(app); } else { toggle_visibility(app); } }
-            "duo_call" => duo::call_other(app),
-            "duo_scene" => duo::scene_start(app),
             "settings" => open_settings_async(app),
             "quiet" => set_quiet(app, quiet_ref.is_checked().unwrap_or(false)),
             "quit" => quit_app(app),

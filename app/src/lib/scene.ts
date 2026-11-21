@@ -91,13 +91,15 @@ export interface StartContext {
   busy: boolean;
   reducedMotion: boolean;
   out: readonly PetId[];
+  /** a scene started by hand (the developer channel of the prototype) does not wait for the gap */
+  ignoreGap?: boolean;
 }
 
 /** Whether a scene may start now. The caller then spends one slot of the shared gate (`startReaction`), so scenes never add a second quota. */
 export function mayStart(d: DirectorState, c: StartContext): boolean {
   if (d.scene || c.reactionActive || c.busy || c.reducedMotion) return false;
   if (!c.out.includes("peak") || !c.out.includes("paws") || c.out.length !== 2) return false;
-  if (c.now - d.lastEndedAt < SCENE_GAP_MS) return false;
+  if (!c.ignoreGap && c.now - d.lastEndedAt < SCENE_GAP_MS) return false;
   return mayAct(c.mode, 1, "own", c.quiet);
 }
 

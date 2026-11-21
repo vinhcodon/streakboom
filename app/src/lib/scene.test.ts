@@ -91,3 +91,11 @@ test("3 (roll): the reaction of Peak comes after the action of Paws, with a dela
   const look = ROLL.beats.find((b) => b.who === "peak" && b.act === "face")!;
   assert.ok(look.t - push.t >= 300);
 });
+
+test("a scene started by hand does not wait for the gap, but still needs both pets", () => {
+  let d = newDirector();
+  const r = start(d, ctx(), ROLL)!;
+  d = due(r.state, r.token, T0 + ROLL.durationMs + 1).state;
+  assert.equal(mayStart(d, ctx({ now: T0 + ROLL.durationMs + 1000, ignoreGap: true })), true);
+  assert.equal(mayStart(d, ctx({ now: T0 + ROLL.durationMs + 1000, ignoreGap: true, out: ["peak"] })), false);
+});

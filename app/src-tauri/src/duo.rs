@@ -16,8 +16,11 @@ use tauri::{AppHandle, Emitter, Manager, PhysicalPosition, PhysicalSize, Webview
 
 const BROWSER_ARGS: &str = "--disable-features=msWebOOUI,msPdfOOUI,msSmartScreenProtection --disable-gpu";
 const PAWS_LABEL: &str = "paws";
-/// Logical size of a pet window (the main window is 200 by 200).
-const PET: f64 = 200.0;
+/// Logical size of a pet window (the real window of Peak is 140 by 140, see WIN_W in lib.rs).
+const PET: f64 = 140.0;
+/// The drawn pet inside its window, as in lib.rs (PET_LEFT, PET_TOP, PET_SIZE): the window is 140 and the pet 120 at offset 10.
+const INSET: f64 = 10.0;
+const BODY: f64 = 120.0;
 /// Logical size of the shared object window.
 const BALL: f64 = 48.0;
 const SLIDE: Duration = Duration::from_millis(900);
@@ -99,14 +102,16 @@ pub fn resolve_entrance(e: &Option<Entrance>, mons: &[Mon]) -> Option<(Entrance,
     }
 }
 
-/// Top-left of a pet of `size` standing flush with the edge, and the same position pushed fully outside the monitor.
-pub fn entrance_pos(e: &Entrance, m: &Mon, size: i32) -> ((i32, i32), (i32, i32)) {
-    let span = |len: i32| ((len - size).max(0) as f64 * e.along.clamp(0.0, 1.0)).round() as i32;
+/// Top-left of the WINDOW of a pet (`body` px square drawn `inset` px inside a window) standing flush with the edge, and the same window pushed
+/// fully outside the monitor (the work area).
+pub fn entrance_pos(e: &Entrance, m: &Mon, body: i32, inset: i32) -> ((i32, i32), (i32, i32)) {
+    let win = body + 2 * inset;
+    let span = |len: i32| ((len - body).max(0) as f64 * e.along.clamp(0.0, 1.0)).round() as i32;
     match e.edge {
-        Edge::Left => ((m.x, m.y + span(m.h)), (m.x - size, m.y + span(m.h))),
-        Edge::Right => ((m.x + m.w - size, m.y + span(m.h)), (m.x + m.w, m.y + span(m.h))),
-        Edge::Top => ((m.x + span(m.w), m.y), (m.x + span(m.w), m.y - size)),
-        Edge::Bottom => ((m.x + span(m.w), m.y + m.h - size), (m.x + span(m.w), m.y + m.h)),
+        Edge::Left => ((m.x - inset, m.y + span(m.h) - inset), (m.x - win, m.y + span(m.h) - inset)),
+        Edge::Right => ((m.x + m.w - body - inset, m.y + span(m.h) - inset), (m.x + m.w, m.y + span(m.h) - inset)),
+        Edge::Top => ((m.x + span(m.w) - inset, m.y - inset), (m.x + span(m.w) - inset, m.y - win)),
+        Edge::Bottom => ((m.x + span(m.w) - inset, m.y + m.h - body - inset), (m.x + span(m.w) - inset, m.y + m.h)),
     }
 }
 
@@ -133,7 +138,8 @@ fn now_ms() -> u64 { SystemTime::now().duration_since(UNIX_EPOCH).map(|d| d.as_m
 
 fn monitors(app: &AppHandle) -> Vec<Mon> {
     app.available_monitors().unwrap_or_default().iter().enumerate().map(|(i, m)| {
-        let p = m.position(); let s = m.size();
+        // the work area: the screen without the taskbar (a pet that stands on the bottom edge must stand on the taskbar, not behind it)
+        let wa = m.work_area(); let p = wa.position; let s = wa.size;
         Mon { id: m.name().cloned().unwrap_or_else(|| format!("m{i}")), x: p.x, y: p.y, w: s.width as i32, h: s.height as i32 }
     }).collect()
 }
@@ -156,6 +162,51 @@ pub fn init(app: &AppHandle) {
     app.manage(Duo { state: Mutex::new(state), path, busy: AtomicBool::new(false) });
     if !peak_out { if let Some(w) = app.get_webview_window("main") { let _ = w.hide(); } }
     if paws_out { paws_in_thread(app.clone(), true); }
+    spawn_dev_commands(app.clone(), dir);
+}
+
+/// The developer channel of the prototype (instead of menu items): a line written to `duo-cmd.txt` in the data folder is run once and the file is
+/// removed. `call` (the pet on the screen calls the other), `scene`, `tray`, `cancel`, `dump` (the state and the windows to `duo-dump.txt`).
+fn spawn_dev_commands(app: AppHandle, dir: PathBuf) {
+    std::thread::spawn(move || loop {
+        std::thread::sleep(Duration::from_millis(300));
+        let f = dir.join("duo-cmd.txt");
+        let Ok(text) = std::fs::read_to_string(&f) else { continue };
+        let _ = std::fs::remove_file(&f);
+        for line in text.lines().map(str::trim).filter(|l| !l.is_empty()) {
+            match line {
+                "call" => call_other(&app),
+                "scene" => scene_start(&app, ""),
+                l if l.starts_with("scene:") => scene_start(&app, &l[6..]),
+                "tray" => tray(&app),
+                "cancel" => scene_cleanup(&app),
+                "dump" => dump(&app, &dir),
+                _ => {}
+            }
+        }
+    });
+}
+
+fn dump(app: &AppHandle, dir: &PathBuf) {
+    let mut o = String::new();
+    for l in ["main", "paws", "ball"] {
+        match app.get_webview_window(l) {
+            Some(w) => {
+                let (p, s) = (w.outer_position().ok(), w.outer_size().ok());
+                o += &format!("{l} visible={} pos={:?} size={:?}
+", w.is_visible().unwrap_or(false), p.map(|p| (p.x, p.y)), s.map(|s| (s.width, s.height)));
+            }
+            None => o += &format!("{l} none
+"),
+        }
+    }
+    for m in monitors(app) { o += &format!("work-area {} x={} y={} w={} h={}
+", m.id, m.x, m.y, m.w, m.h); }
+    if let Some(d) = app.try_state::<Duo>() { o += &format!("state {}
+", serde_json::to_string(&*d.state.lock().unwrap()).unwrap_or_default()); }
+    o += &format!("scale {}
+", scale(app));
+    let _ = std::fs::write(dir.join("duo-dump.txt"), o);
 }
 
 /// The tray click (with the flag): everyone goes in, or the pet tucked last comes out. Ignored while an entrance is running.
@@ -237,8 +288,9 @@ fn paws_come_out(app: &AppHandle, quiet: bool) {
     let entrance = d.state.lock().unwrap().pets.paws.entrance.clone();
     let mons = monitors(app);
     let Some((e, m)) = resolve_entrance(&entrance, &mons) else { return };
-    let size = (PET * scale(app)).round() as i32;
-    let (at, outside) = entrance_pos(&e, &m, size);
+    let (body, inset) = ((BODY * scale(app)).round() as i32, (INSET * scale(app)).round() as i32);
+    let size = body + 2 * inset;
+    let (at, outside) = entrance_pos(&e, &m, body, inset);
     let from = if quiet { at } else { outside };
     let facing = match e.edge { Edge::Left => "right", Edge::Right => "left", Edge::Top => "down", Edge::Bottom => "up" };
     let url = format!("paws?from={facing}");
@@ -264,8 +316,8 @@ fn paws_go_in(app: &AppHandle) {
     let Some(d) = app.try_state::<Duo>() else { return };
     let entrance = d.state.lock().unwrap().pets.paws.entrance.clone();
     if let Some((e, m)) = resolve_entrance(&entrance, &monitors(app)) {
-        let size = (PET * scale(app)).round() as i32;
-        let (at, outside) = entrance_pos(&e, &m, size);
+        let (body, inset) = ((BODY * scale(app)).round() as i32, (INSET * scale(app)).round() as i32);
+        let (at, outside) = entrance_pos(&e, &m, body, inset);
         if let Ok(p) = win.outer_position() { slide(&win, (p.x, p.y), outside); } else { slide(&win, at, outside); }
     }
     let _ = win.destroy();
@@ -276,7 +328,7 @@ fn paws_go_in(app: &AppHandle) {
 // Rust only moves windows, shows the shared ball, and tells Peak's page to hold its own wandering and show a pose.
 
 #[derive(Serialize)]
-pub struct Stage { pub peak: (i32, i32), pub paws: (i32, i32), pub size: i32, pub scale: f64 }
+pub struct Stage { pub peak: (i32, i32), pub paws: (i32, i32), pub size: i32, pub inset: i32, pub body: i32, pub scale: f64 }
 
 /// Where the two pet windows are (physical px, top-left) and how big a pet window is; None unless both are out.
 #[tauri::command]
@@ -286,7 +338,7 @@ pub fn duo_stage(app: AppHandle) -> Option<Stage> {
     if !main.is_visible().unwrap_or(false) { return None; }
     let (a, b) = (main.outer_position().ok()?, paws.outer_position().ok()?);
     let scale = scale(&app);
-    Some(Stage { peak: (a.x, a.y), paws: (b.x, b.y), size: (PET * scale).round() as i32, scale })
+    Some(Stage { peak: (a.x, a.y), paws: (b.x, b.y), size: (PET * scale).round() as i32, inset: (INSET * scale).round() as i32, body: (BODY * scale).round() as i32, scale })
 }
 
 /// Move one of the windows of a scene: "main" (Peak), "paws" or "ball".
@@ -327,12 +379,12 @@ pub fn duo_peak_pose(app: AppHandle, pose: String, dir: i32, hold: bool) {
 }
 
 /// Start a scene (a prototype menu item for now; the automatic start needs the attention mode of Peak's page). Needs both pets out.
-pub fn scene_start(app: &AppHandle) {
+pub fn scene_start(app: &AppHandle, id: &str) {
     if let Some(d) = app.try_state::<Duo>() {
         let s = d.state.lock().unwrap();
         if s.out().len() != 2 || d.busy.load(Ordering::SeqCst) { return; }
     } else { return; }
-    let _ = app.emit_to(PAWS_LABEL, "scene-start", ());
+    let _ = app.emit_to(PAWS_LABEL, "scene-start", id.to_string());
 }
 
 /// A touch, or a pet going in: the scene ends at once, the object goes, Peak gets its own behaviour back.
@@ -392,8 +444,8 @@ mod tests {
     #[test]
     fn the_entrance_is_flush_with_the_edge_and_falls_back_to_a_present_monitor() {
         let e = Entrance { monitor: Some("m2".into()), edge: Edge::Right, along: 0.0 };
-        let ((x, _), (ox, _)) = entrance_pos(&e, &m2(), 250);
-        assert_eq!((x, ox), (1920 + 1280 - 250, 1920 + 1280));
+        let ((x, _), (ox, _)) = entrance_pos(&e, &m2(), 120, 10);
+        assert_eq!((x, ox), (1920 + 1280 - 120 - 10, 1920 + 1280));
         let (r, m) = resolve_entrance(&Some(e), &[m1()]).unwrap();
         assert_eq!((r.monitor.as_deref(), m.id.as_str()), (Some("m1"), "m1"));
         assert!(resolve_entrance(&None, &[]).is_none());
