@@ -68,7 +68,7 @@ jobs:
       - name: Check that the tag, the versions and the changelog agree (a Preview writes its version into this build folder only); write the release notes
         id: prepare
         shell: pwsh
-        run: ./scripts/ci-release-prepare.ps1 -Tag "${{ steps.tag.outputs.tag }}" -NotesPath "$env:RUNNER_TEMP/release-notes.md"
+        run: ./scripts/windows/ci-release-prepare.ps1 -Tag "${{ steps.tag.outputs.tag }}" -NotesPath "$env:RUNNER_TEMP/release-notes.md"
 
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:

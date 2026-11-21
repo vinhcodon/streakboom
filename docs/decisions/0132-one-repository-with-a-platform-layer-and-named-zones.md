@@ -13,3 +13,7 @@
 
 ## Consequences
 The stages are RS-2 to RS-6 of E32. The documents get a platform tag (M-n for the macOS checks); `AGENTS.md`, `CODEOWNERS` and the audit script learn the zones at stage 4. Nothing about macOS has been tried; the statements in the proposal about macOS are to be verified on the Mac.
+
+## Progress
+- **Stage 2 (platform layer), 2026-11-15:** built, in Preview 0.11.11.
+- **Stage 3 (scripts and CI), 2026-11-21, in part:** the Windows scripts are in `scripts/windows/` with one-line stubs at the old paths; the release workflow calls the new path; `ci.yml` has a `macos` job (compile only); `Cargo.toml` has the Keychain and the private API for macOS and `tauri.macos.conf.json` the matching flag. **Not done:** `tauri.windows.conf.json` (the bundle settings stay in `tauri.conf.json` until a macOS distribution), path filters, `scripts/macos/` (nothing to distribute yet). **The author chose** to do stage 3 before trying macOS, to open a Claude Code session on his Mac for the macOS code, and a short branch `macos-spike`; the first milestone is M0 (the app opens on the Mac with a transparent Peak window).

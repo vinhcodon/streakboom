@@ -19,11 +19,16 @@ app/                    the application (Tauri 2 + SvelteKit + Svelte 5)
                         updater (updater.rs), the ground map of windows (ground.rs), the picture of the screen (picture.rs);
                         platform/ is the boundary with the operating system (windows.rs holds every Win32 call, macos.rs the
                         stubs of the other platforms; the contract is in platform/mod.rs, ADR-0132)
-scripts/                release.ps1 (signed build and update manifest), test-update/ (configs
-                        for trying the update flow against a local server); build-site.mjs,
-                        site-dev.mjs, gen-assets.html and site/ (the website builder, see website.md); audit-docs.mjs
-                        (checks that the documents agree) and line-report.mjs (how often each line is seen);
-                        loop/ (the rounds of behaviour tests and the day-run script, `docs/plans/loop-engineering.md`)
+scripts/                the tools, by zone (ADR-0132; the stage 3 move)
+  windows/              WINDOWS release.ps1 (signed build and update manifest), release-finish.ps1 (the author's signing and
+                        publishing step), ci-release-prepare.ps1 and release-lib.ps1 (used by the CI), test-release-lib.ps1 (their tests),
+                        test-update/ (configs for trying the update flow against a local server), updater-verify/, and the measuring
+                        scripts (cpu-breakdown, soak-log, check-*); the same names stay at scripts/ as one-line stubs until a release has
+                        been made through the new path
+  macos/                MACOS   (not yet: signing and notarization come with the first distribution)
+  site/, build-site.mjs, site-dev.mjs, gen-assets.html   WEB the website builder (see website.md; the website session owns them)
+  audit-docs.mjs, line-report.mjs, gen-third-party-notices.mjs   SHARED the documents agree (audit), how often each line is seen
+  loop/                 SHARED  the rounds of behaviour tests and the day-run script (; the PowerShell parts are Windows only)
 site/                   the website sources: text (strings.mjs), style, scripts, assets; the pages are built from them into _site/ (git-ignored) and served at streakboom.com
 assets/                 peak-icon-1024.png, the source of the app icon (npm run tauri icon); the README shows
                         its 256 px frame, app/src-tauri/icons/128x128@2x.png
@@ -64,7 +69,7 @@ npm run tauri build -- --bundles nsis # signed installer (needs the signing key,
 
 **The remind harness (RM-2, ADR-0115).** The same way, `cargo test -- --ignored remind_harness --nocapture` sends 26 labelled messages (told days in three languages, and time-of-day reminders, tasks, unclear dates and ordinary talk that must not be tagged) and prints how many told days were tagged, how many with exactly the right date, and the false tags. `remind_answer_harness` sends 14 replies to the question "keep this day?" that the page's table does not know (a loose yes or no, a corrected date, talk about something else) with the open question added as the page does, and prints how many were read as intended.
 
-**Seeing remind without the chat model (ADR-0115).** `scripts/test-remind-seed.ps1`, run with Peak closed (tray, Quit): `-Today` puts one kept day for today and one that came by two days ago into `memory.json` (Peak cheers within a minute of starting, then says the late one), `-ResetChat` sets today's chat count in `pet.json` to 0 when the daily limit of 60 is reached, `-Clear` removes the seeded days. It keeps a `.bak` copy of each file it changes, never touches a key, and refuses to touch the real data folder while Peak is running.
+**Seeing remind without the chat model (ADR-0115).** `scripts/windows/test-remind-seed.ps1`, run with Peak closed (tray, Quit): `-Today` puts one kept day for today and one that came by two days ago into `memory.json` (Peak cheers within a minute of starting, then says the late one), `-ResetChat` sets today's chat count in `pet.json` to 0 when the daily limit of 60 is reached, `-Clear` removes the seeded days. It keeps a `.bak` copy of each file it changes, never touches a key, and refuses to touch the real data folder while Peak is running.
 
 **Seeing the terrain and the perch attempts (ADR-0116).** A Preview build has a tray item "Terrain overlay (Preview)": a thin click-through layer over the work area that draws the grid, the windows, the surfaces, the cat's feet and the ledge it would choose, plus the attention mode and the last gate of the perch trace. `perch-trace.log` in `%APPDATA%com.streakboom.app` has one line for each perch attempt (the gate that stopped it, or what it chose); read it after a day of use.
 

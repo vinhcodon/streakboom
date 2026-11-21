@@ -38,7 +38,7 @@
 - **The desktop as terrain** (spec 07, 08, 10; ADR-0030, 0044, 0045, 0046): a coarse 16 by 9 grid of anonymous window ids kept in memory, from which it finds surfaces to hop onto or climb, walls, and the plane below to fall to. Nothing about titles or contents is read (ADR-0031: shapes and activity, never meaning).
 - **Brains** (ADR-0001, 0007, 0008, 0037): the person's own key, kept in the Windows Credential Manager, sent only to the provider chosen; one brain in use; daily caps (chat, unprompted lines, notes); a locked part of the prompt that no setting can change (not a human, no secrets, no medical advice, a clean goodbye, a crisis rule, glad for the person's friends) in `app/src-tauri/persona/`.
 - **Data:** `%APPDATA%\com.streakboom.app\` (`state.json`, `pet.json`, `memory.json`); telemetry opt-in, local, counts only ([`privacy.md`](privacy.md)).
-- **Updates and release** ([`releasing.md`](releasing.md)): signed with a private key that is not in the repository; `scripts/release.ps1`; two manifest addresses (ADR-0025); GitHub keeps the two newest releases (ADR-0028).
+- **Updates and release** ([`releasing.md`](releasing.md)): signed with a private key that is not in the repository; `scripts/windows/release.ps1`; two manifest addresses (ADR-0025); GitHub keeps the two newest releases (ADR-0028).
 
 ## 6. Where everything is
 
@@ -59,7 +59,7 @@
 ## 7. Working rules (the author's, and why)
 
 1. **Commit explicit paths, never `git add -A`**, and release from a clean tree (ADR-0023). Several sessions share the checkout (the app, the website, the stickers): stage only your own files, and do not edit `site/` or `scripts/site/` (the website session owns them; tell it through [`handoff/website-release-prompt.md`](handoff/website-release-prompt.md)).
-2. **Do not push, release or publish unless the author orders it.** "Đẩy lên GitHub" is the order to push; each release is ordered, for example "Phát hành 0.4.2". A release is merged, `main` pushed **before** publishing (the tag goes on the head of the default branch at publish time), then `scripts/release.ps1 -Publish`, then the routine of ADR-0033.
+2. **Do not push, release or publish unless the author orders it.** "Đẩy lên GitHub" is the order to push; each release is ordered, for example "Phát hành 0.4.2". A release is merged, `main` pushed **before** publishing (the tag goes on the head of the default branch at publish time), then `scripts/windows/release.ps1 -Publish`, then the routine of ADR-0033.
 3. **The author looks at a test build before any motion or art change is committed.** Build with `npm run tauri build -- --no-bundle` and start the exe on the real machine.
 4. **Decisions go to the author as a multiple choice, and become an ADR.** List `decisions/` first to take the next free number (the website session also writes ADRs, so numbers collide: check `origin` before you commit one). A decision about behaviour is checked against the charter.
 5. **After each task:** update the backlog and the progress, compare with the roadmap, propose the next stories, say what was **not** verified, and add each unverified item to `plans/verification-debt.md`.

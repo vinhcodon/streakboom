@@ -1,6 +1,6 @@
 # 16. Version numbers: what each number means, when it moves, and how a build becomes Stable
 
-**Status:** **approved by the author on 2026-11-13 (ADR-0093)**; the four questions of section 9 are answered with the defaults. The rule of the channels is ADR-0090 (an even middle number is Stable, an odd one is Preview). This spec writes down how the numbers are *managed* so that every release, by anyone, follows the same logic. It changes no code. Companions: [`../docs/plans/preview-channel-plan.md`](../docs/plans/preview-channel-plan.md), [`../docs/releasing.md`](../docs/releasing.md), the code in `app/src-tauri/src/updater.rs`, `app/src/lib/channel.ts` and `scripts/release-lib.ps1`.
+**Status:** **approved by the author on 2026-11-13 (ADR-0093)**; the four questions of section 9 are answered with the defaults. The rule of the channels is ADR-0090 (an even middle number is Stable, an odd one is Preview). This spec writes down how the numbers are *managed* so that every release, by anyone, follows the same logic. It changes no code. Companions: [`../docs/plans/preview-channel-plan.md`](../docs/plans/preview-channel-plan.md), [`../docs/releasing.md`](../docs/releasing.md), the code in `app/src-tauri/src/updater.rs`, `app/src/lib/channel.ts` and `scripts/windows/release-lib.ps1`.
 
 ## 1. The format and the one rule
 

@@ -64,3 +64,41 @@ jobs:
 
       - name: Website build (it also checks the README)
         run: node scripts/build-site.mjs
+
+  # macOS (ADR-0132, the spike): does the program compile and do the pure tests pass on a Mac? It builds nothing to ship and signs nothing.
+  # Never run yet (V-169): the first run decides whether it is green. The Windows job above is unchanged.
+  macos:
+    runs-on: macos-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: app/package-lock.json
+
+      - name: Install the app dependencies
+        working-directory: app
+        run: npm ci
+
+      - name: JavaScript tests (the pure logic)
+        working-directory: app
+        run: npm test
+
+      - name: Build the front end (the Rust core needs it)
+        working-directory: app
+        run: npm run build
+
+      - uses: dtolnay/rust-toolchain@b725eda525362e7cf34af9a7243cac1e3f01a7ec # stable
+        with:
+          toolchain: stable
+
+      - uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2.9.3
+        with:
+          workspaces: app/src-tauri
+
+      - name: Rust compiles for macOS (the platform stubs, the Keychain, the private API)
+        working-directory: app/src-tauri
+        run: cargo check --locked --all-targets

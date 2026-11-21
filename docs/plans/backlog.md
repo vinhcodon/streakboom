@@ -479,7 +479,7 @@ The dog is **not** to be put in the app; this is a sticker test, and the decisio
 |---|---|---|---|
 | RS-1 | The author chooses the option, the version and tag model, the owners (ADR) | S | done 2026-11-15: ADR-0132 (Option B, one product version, the macOS spike after RS-2, a Mac with Apple Silicon; the macOS version and the owners of the zones are still to be given) |
 | RS-2 | The platform layer: `platform/mod.rs` (the contract), `windows.rs` (the Win32 code moved unchanged) and `macos.rs` (stubs) | L | built 2026-11-15, not yet seen on a Preview by the author (V-169) |
-| RS-3 | Scripts and CI by zone (`scripts/windows/`, workflows split, path filters, the release routine) | M | proposed |
+| RS-3 | Scripts and CI by zone (`scripts/windows/`, workflows split, path filters, the release routine) | M | **built 2026-11-21 in part** (the Windows scripts moved with stubs at the old paths, the CI step of the release workflow points to the new path, the macOS compile job and the Cargo and Tauri entries for macOS are written); not yet used by a real release (V-176); `tauri.windows.conf.json` and the path filters are not done |
 | RS-4 | The documents by zone (`docs/platform/`, the platform tag, PROJECT.md, development.md, AGENTS.md, CODEOWNERS, the audit script) | M | proposed |
 | RS-5 | The macOS spike on a Mac (window, tray, stubs, then the senses one by one with their permissions) | L | proposed; needs a Mac |
 | RS-6 | The website's download choice by platform (the website session) | S | proposed |
