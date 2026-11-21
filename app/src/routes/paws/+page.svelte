@@ -125,11 +125,12 @@
   async function begin(id = "") {
     if (director.scene) return;
     stage = await invoke<Stage | null>("duo_stage");
-    if (!stage) return;
-    if (Math.abs(stage.peak[1] - stage.paws[1]) > 40 * stage.scale) return; // the two must stand on the same floor
+    if (!stage) return void invoke("duo_log", { line: `scene ${id || "next"} refused: a pet is not out` });
+    if (Math.abs(stage.peak[1] - stage.paws[1]) > 40 * stage.scale) return void invoke("duo_log", { line: `scene ${id || "next"} refused: Peak is not on the floor (y ${stage.peak[1]}, Paws ${stage.paws[1]})` }); // the two must stand on the same floor
     const r = start(director, { now: Date.now(), mode: "free", quiet: false, reactionActive: false, busy: false, reducedMotion: matchMedia("(prefers-reduced-motion: reduce)").matches, out: ["peak", "paws"], ignoreGap: true }, SCENES.find((s) => s.id === id));
-    if (!r) return;
+    if (!r) return void invoke("duo_log", { line: `scene ${id || "next"} refused by the director` });
     director = r.state; token = r.token;
+    void invoke("duo_log", { line: `scene ${director.scene?.id} started` });
     floorY = stage.peak[1];
     cx = Math.round((stage.peak[0] + stage.paws[0]) / 2 + stage.size / 2);
     pos.peak = (stage.peak[0] + stage.size / 2 - cx) / (HALF * stage.scale);
@@ -147,6 +148,7 @@
   }
 
   function finish() {
+    void invoke("duo_log", { line: "scene ended" });
     if (loop) clearInterval(loop);
     loop = undefined;
     for (const k of Object.keys(tweens)) tweens[k] = undefined;

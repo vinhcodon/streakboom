@@ -398,6 +398,16 @@ pub fn scene_cleanup(app: &AppHandle) {
     let _ = app.emit_to("main", "duo-scene-pose", serde_json::json!({ "pose": "idle", "dir": 1, "hold": false }));
 }
 
+/// A line for `duo-log.txt` in the data folder (why a scene did not start, when it ended): the prototype's own trace, read by the test script.
+#[tauri::command]
+pub fn duo_log(app: AppHandle, line: String) {
+    use std::io::Write;
+    let Ok(dir) = app.path().app_data_dir() else { return };
+    if let Ok(mut f) = std::fs::OpenOptions::new().create(true).append(true).open(dir.join("duo-log.txt")) {
+        let _ = writeln!(f, "{} {}", now_ms(), line.chars().take(200).collect::<String>());
+    }
+}
+
 #[tauri::command]
 pub fn duo_scene_cancel(app: AppHandle) { scene_cleanup(&app); }
 

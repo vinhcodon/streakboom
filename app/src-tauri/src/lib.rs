@@ -1950,6 +1950,7 @@ pub fn run() {
             duo::duo_ball,
             duo::duo_peak_pose,
             duo::duo_scene_cancel,
+            duo::duo_log,
             set_tray_labels,
             set_hit_rect,
             get_prefs,
