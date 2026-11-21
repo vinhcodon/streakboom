@@ -3,6 +3,7 @@ mod claude;
 mod fastpass;
 mod ground;
 mod platform;
+mod spike; // the duo render spike (exp/duo-prototype only)
 mod groq;
 mod openai;
 mod picture;
@@ -1836,6 +1837,9 @@ pub fn run() {
         .plugin(tauri_plugin_autostart::init(tauri_plugin_autostart::MacosLauncher::LaunchAgent, None))
         .manage(updater::PendingUpdate::default())
         .setup(|app| {
+            if let Some(m) = spike::mode() {
+                return spike::setup(app, &m); // a measurement scenario, not the pet
+            }
             let dir = app.path().app_data_dir()?;
             let _ = fs::create_dir_all(&dir);
             let path = dir.join("state.json");
@@ -1938,6 +1942,7 @@ pub fn run() {
             }
         })
         .invoke_handler(tauri::generate_handler![
+            spike::spike_phase,
             set_tray_labels,
             set_hit_rect,
             get_prefs,
