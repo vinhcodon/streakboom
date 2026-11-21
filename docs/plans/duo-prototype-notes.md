@@ -8,12 +8,18 @@
 - **Scenes** (`scene.ts`): three wordless scenes (tidy the ball and the cushion; Peak shifts away and Paws does not chase; Paws pushes the ball and Peak stops it after a beat); one at a time, a token, the attention rule `mayAct`, a 5-minute gap, cancel on a touch or when a pet goes in. A shared ball or cushion is a third small window only while a scene runs. Peak's page holds its own wandering and shows the pose of the scene (one small block in `+page.svelte`, on the branch only).
 - **No menu items.** The prototype is driven through `duo-cmd.txt` in its data folder (`call`, `scene[:id]`, `tray`, `cancel`, `dump`) and traced in `duo-log.txt`.
 
+## Built (steps 4 and 5)
+- **Chat commands** (`duo-command.ts`, `duo_command` in `duo.rs`): "gọi Paws ra đi", "Paws vào đi", "call Paws out", "Pawsを呼んで" and the like, understood on the device: no model, no key, no chat turn. Only a short message naming one pet and saying out or in.
+- **Paws answers through the AI chat** (ADR-0140): its own voice layer (`persona/paws-voice.md`, from the character bible) with the locked layers shared with Peak; the pet named answers, with no name the one last spoken to, Paws only while it is out. Its key: its own entry if one was stored, else the shared key (Rust commands to store, ask and forget it; **no Settings control yet**). The bubble stands next to the pet that answers (same bubble window, placed against Paws for the length of the line).
+
 ## Checked by me, with the real program (script `scripts/windows/duo-test.ps1`, release build, identifier `com.streakboom.duospike`)
 Tests: 427 TS tests, 6 Rust tests of `duo.rs`, `svelte-check` clean. On a 1920x1080 screen at 125 percent:
 - Paws stands on the work area, on the same floor as Peak (the first build put it behind the taskbar: fixed).
 - The three scenes run in order, one ball at a time, and the ball is gone at the end (the first build made several balls: fixed with a lock).
 - A real mouse click on Peak during a scene ends it at once (about 6 s into a 14 s scene) and removes the ball.
 - The tray sends both in and brings the last one out; a restart restores who was out.
+- Chat commands through the developer channel (`cmd:paws:in` and so on): Paws in, a second send-in refused, out again, Peak in with Paws staying, Peak out refused.
+- The bubble: a line said as Paws (`say:paws:...`, no model) stands centred above Paws; a line as Peak stands above Peak (window positions and a picture).
 - Pictures read by me: sizes of Peak and Paws are close; Peak keeps its own walk and sleep poses in the scenes.
 
 ## Seen and not solved
@@ -24,4 +30,4 @@ Tests: 427 TS tests, 6 Rust tests of `duo.rs`, `svelte-check` clean. On a 1920x1
 - The ball window cannot be narrower than 166 px (a Windows limit): it is invisible but it is wider than the ball.
 
 ## Not verified (each in `verification-debt.md`, V-181)
-Two monitors, other scale factors, the attention mode of the real Peak (the prototype passes "free"), automatic start of a scene, reduced motion, the AI chat of Paws and its persona (ADR-0140: not built), the command layer in the chat box, and above all the question of the handoff: do the two feel like they live together, or like two animations side by side. That is for the author to judge from the program.
+Two monitors, other scale factors, the attention mode of the real Peak (the prototype passes "free"), automatic start of a scene, reduced motion, the answers of Paws from a real key (nobody has seen one: whether the two voices are told apart, H-02), the second key as a person sees it (no Settings control), the commands typed into the real chat box, the Japanese voice of Paws, "both answer one after the other", talking to Paws when Peak is in (the chat box is Peak's), and above all the question of the handoff: do the two feel like they live together, or like two animations side by side. That is for the author to judge from the program.
