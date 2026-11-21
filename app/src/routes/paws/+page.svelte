@@ -137,6 +137,8 @@
     pos.paws = (stage.paws[0] + stage.size / 2 - cx) / (HALF * stage.scale);
     peakDir = pos.paws >= pos.peak ? 1 : -1;
     peakPose("idle");
+    // standing on each other looks wrong: when the two start closer than 0.4 of the stage, Paws steps away first
+    if (Math.abs(pos.peak - pos.paws) < 0.4) tweenTo("paws", Math.max(-0.9, Math.min(0.9, pos.peak + (pos.paws <= pos.peak ? -0.6 : 0.6))), 0.5);
     loop = setInterval(() => {
       if (!isLive(director, token)) return;
       const x = due(director, token, Date.now());
