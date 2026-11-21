@@ -13,7 +13,7 @@
 <style>
   :global(html, body) { margin: 0; background: transparent; overflow: hidden; }
   .stage { width: 200px; height: 200px; display: flex; align-items: flex-end; justify-content: center; }
-  img { width: 180px; height: 180px; animation: breathe 3.2s ease-in-out infinite; transform-origin: 50% 100%; }
+  img { width: 120px; height: 120px; animation: breathe 3.2s ease-in-out infinite; transform-origin: 50% 100%; }
   @keyframes breathe { 0%, 100% { translate: 0 0; } 50% { translate: 0 -3px; } }
   @media (prefers-reduced-motion: reduce) { img { animation: none; } }
 </style>
