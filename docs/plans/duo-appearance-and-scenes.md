@@ -28,7 +28,11 @@ Last state decides. Start: the pets that were out come out. None out: the tray c
 | 18 | The person calls a pet that is mid-entrance | Ignored; one entrance at a time |
 | 19 | Both out, a third request (tray click) | As today for Peak alone: tuck the last used pet? (open, see question 1) |
 
-## Open points for the author
-1. **Tray click while a pet is on the screen**: what does it do today and what should it do with two?
-2. **How the person asks the pet on the screen to call the other**: a menu item in its right-click menu, a gesture, or a click on a small object beside it.
-3. **How the person first learns Paws exists**: not at all in the prototype (a developer flag), but the shipped answer is open.
+## Answers of the author (2026-11-22)
+1. **Tray click = send everyone away**: every pet on the screen walks in. To send one pet away, the person tells it in the chat. (Scenario 19 is settled: with two out, the tray click tucks both.)
+2. **Calling the other pet is done in the chat**, for example "gọi Paws ra đi". No menu item, no gesture.
+3. **Discovery in the shipped product: not decided**; the prototype uses a developer flag.
+
+## New questions these answers raise
+- **The chat needs the person's own API key** (ADR-0001), and the handoff says no AI chat for Paws. Calling, sending away and talking to one or both pets by chat then works only for people with a key; and "talk to Paws" contradicts "no AI chat for Paws". Without a key there would be no way to call the second pet or to send one away. The author decides (a command layer that needs no AI, or the chat for both pets).
+- **The bubble when the person talks to one pet or to both** (who answers, where the bubble sits, what a reply of two looks like) is a design the author has asked for; options are in the next turn of `duo-review-log.md`.
