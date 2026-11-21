@@ -34,7 +34,11 @@ $log = @()
 $d = Dump; $log += "T1 start"; $log += $d; Shot "t1-start"
 Cmd "call"; Start-Sleep 2
 $d = Dump; $log += "T2 call"; $log += $d; Shot "t2-called"
-$d = Dump; $pk = Rect $d "main"; if ($pk) { Drag ($pk[0] + 70) ($pk[1] + 90) ($pk[0] + 70) 1000; Start-Sleep 4 }  # the person puts Peak on the floor, as the scenes need
+for ($try = 0; $try -lt 5; $try++) {
+  $d = Dump; $pk = Rect $d "main"; $pw = Rect $d "paws"
+  if ($pk -and $pw -and [Math]::Abs($pk[1] - $pw[1]) -le 40) { break }
+  if ($pk) { Drag ($pk[0] + 87) ($pk[1] + 100) ($pk[0] + 87) 1020; Start-Sleep 4 }  # the person puts Peak on the floor, as the scenes need
+}
 $d = Dump; $log += "T2b Peak dropped to the floor"; $log += $d
 Cmd "scene"
 $t0 = Get-Date
