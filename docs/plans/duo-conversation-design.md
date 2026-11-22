@@ -72,7 +72,7 @@ Consequences: Peak's and Paws' *capability to talk* is a profile, so a third pet
 5. Pet profiles as files (L2) and the capability layer of the prompt.
 6. Relay (situation 8) and the aside (situation 4): last, because they cost the most attention and calls.
 
-## 8. Decisions (answered 2026-11-22, ADR-0141: D, I4, two calls, aside only)
+## 8. Decisions (answered 2026-11-22, ADR-0141: D, I4, two calls, aside only; the way of typing amended by ADR-0142: one floating box)
 1. The display: A, B, C or D (D recommended).
 2. The input: I1, I2, I3 or I4 (I4 recommended).
 3. *Both*: two calls (a, recommended) or one script (b).
