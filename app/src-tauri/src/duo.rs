@@ -660,7 +660,36 @@ fn show_box(app: &AppHandle, win: &tauri::WebviewWindow) {
     BOX_SHOWN_AT.store(now_ms(), Ordering::SeqCst);
     let _ = win.show();
     let _ = win.set_focus();
+    take_foreground(win);
     let _ = app.emit_to(BOX_LABEL, "chatbox-open", ());
+}
+
+/// Make the box the window in front that has the keyboard, also when another program (the hidden-icons flyout of the taskbar, where the person just
+/// clicked our icon) is in front. Windows refuses `SetForegroundWindow` to a program that is not allowed to take the foreground, and the box then
+/// opens behind the flyout, which stays open (seen by the author). The usual remedy: for a moment share the input queue of the window now in front.
+fn take_foreground(win: &tauri::WebviewWindow) {
+    #[cfg(windows)]
+    {
+        use windows_sys::Win32::{
+            System::Threading::{AttachThreadInput, GetCurrentThreadId},
+            UI::{
+                WindowsAndMessaging::{BringWindowToTop, GetForegroundWindow, GetWindowThreadProcessId, SetForegroundWindow},
+            },
+        };
+        let Ok(h) = win.hwnd() else { return };
+        let target = h.0 as isize as _;
+        unsafe {
+            let front = GetForegroundWindow();
+            if front == target { return; }
+            let (mine, theirs) = (GetCurrentThreadId(), GetWindowThreadProcessId(front, std::ptr::null_mut()));
+            let attached = theirs != 0 && theirs != mine && AttachThreadInput(mine, theirs, 1) != 0;
+            BringWindowToTop(target);
+            SetForegroundWindow(target);
+            if attached { AttachThreadInput(mine, theirs, 0); }
+        }
+    }
+    #[cfg(not(windows))]
+    let _ = win;
 }
 
 /// Show the box, or hide it if it is showing. The window is made the first time and kept after that.
