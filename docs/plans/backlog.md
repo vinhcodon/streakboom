@@ -520,7 +520,7 @@ The dog is **not** to be put in the app; this is a sticker test, and the decisio
 
 | ID | Story | Size | State |
 |---|---|---|---|
-| CB-1 | A long reply is cut at the end of a sentence, limits by use, the talk keeps the whole reply, a budget for the model (ADR-0146) | S | built on `main` 2026-11-22; the model's behaviour not verified (V-188) |
+| CB-1 | A long reply is cut at the end of a sentence, limits by use, the talk keeps the whole reply, a budget for the model (ADR-0146) | S | built on `main` 2026-11-22; the model's behaviour not verified (V-193) |
 | CB-2 | The Vietnamese text of the box: `lang`, the font stack, NFC, the composition guard; find the cause with the author's screenshot and typing program | S | the bubble `lang` done; the box part is for the duo session (`docs/handoff/chat-overlay-for-duo-session.md`); the cause is not established |
 | CB-3 | The overlay, step 1: the ambient log with pills, fading and the pin (no hover) | M | proposed (the duo branch; the author's choices are in the handoff) |
 | CB-4 | The overlay, step 2: hover with a delay and a margin, the engaged mode (solid, input, history) | M | proposed |
