@@ -22,7 +22,6 @@ export type BubbleView =
       reply: string; // the pet's answer
       thinking: string; // text shown next to the dots
       slow: string; // extra hint when the answer takes long ("" = none)
-      chips?: { on: "peak" | "paws" | "both"; options: { id: "peak" | "paws" | "both"; label: string }[] }; // who the box is for (duo prototype, ADR-0141): only while two pets are out
       log?: { who: "person" | "peak" | "paws"; text: string }[]; // the talk so far, a name for each speaker (duo prototype, ADR-0141)
     }
   | { kind: "ask"; text: string; yes: string; later: string }
@@ -40,7 +39,6 @@ export type MemField = "petName" | "callMe";
 /** Bubble window -> pet window. */
 export type BubbleAction =
   | { type: "chat-send"; text: string }
-  | { type: "recipient"; to: "peak" | "paws" | "both" } // a chip of the chat box (duo prototype)
   | { type: "chat-blocked" } // the disabled text box was clicked (no brain yet)
   | { type: "typing"; nonEmpty: boolean }
   | { type: "choice"; id: "startup"; yes: boolean }

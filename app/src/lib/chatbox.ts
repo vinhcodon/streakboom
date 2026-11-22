@@ -2,7 +2,6 @@
 // Pure logic: the page only draws what `groupTurns` returns.
 
 export type BoxWho = "person" | "peak" | "paws";
-export type Recipient = "peak" | "paws" | "both";
 
 export interface BoxTurn { id: number; who: BoxWho; text: string; at: number }
 export interface BoxView {
@@ -13,12 +12,11 @@ export interface BoxView {
   turns: BoxTurn[];
   /** The pet that is writing now (three dots), or null. */
   typing: "peak" | "paws" | null;
-  recipient: Recipient;
   /** false: no brain is connected; the box still takes the local commands. */
   canChat: boolean;
 }
 
-export const EMPTY_VIEW: BoxView = { lang: "en", callMe: "", turns: [], typing: null, recipient: "peak", canChat: false };
+export const EMPTY_VIEW: BoxView = { lang: "en", callMe: "", turns: [], typing: null, canChat: false };
 
 /** A time is shown between turns more than this far apart (and before the first one). */
 export const TIME_GAP_MS = 10 * 60 * 1000;
@@ -51,8 +49,7 @@ export function timeLabel(at: number, now: number, locale: string, today: string
 
 /** A message from the box: the text and who it is for (the main page checks it again). */
 export type BoxAction =
-  | { type: "send"; text: string; to: Recipient }
-  | { type: "recipient"; to: Recipient }
+  | { type: "send"; text: string }
   | { type: "command"; act: "out" | "in"; target: "peak" | "paws" } // a command of the slash list: bring a pet out or send it in (local, no model)
   | { type: "clear" } // clear this chat: the talk is forgotten, by the box and by the pets
   | { type: "name"; value: string }; // `/name Vinh`: what the pets call the person (the main page cleans it again)
@@ -119,19 +116,12 @@ export function recallStep(list: readonly string[], idx: number, dir: -1 | 1): {
   return n >= list.length ? { idx: -1, text: "" } : { idx: n, text: list[n] };
 }
 
-/** Tab and Shift+Tab: Peak, Paws, Both in turn. With Paws away only Peak can be written to, so nothing changes. */
-export function nextRecipient(cur: Recipient, dir: 1 | -1, pawsOut: boolean): Recipient {
-  if (!pawsOut) return "peak";
-  const order: Recipient[] = ["peak", "paws", "both"];
-  const i = order.indexOf(cur);
-  return order[(i + dir + order.length) % order.length];
-}
-
-/** Ctrl+1, 2, 3: Peak, Paws, Both directly; Paws and Both only while Paws is out. */
-export function recipientByNumber(n: number, pawsOut: boolean): Recipient | null {
-  if (n === 1) return "peak";
-  if (!pawsOut) return null;
-  return n === 2 ? "paws" : n === 3 ? "both" : null;
+/** The text the field gets when a pet is double clicked (ADR-0145): `@Peak ` or `@Paws ` in front of what is there, only when both pets are out (with one out
+ *  there is nobody to pick) and when the field does not already begin with a mention. Plain text: the person may delete it. */
+export function withMention(draft: string, pet: PetKey, out: Presence): string {
+  if (!(out.peak && out.paws)) return draft;
+  if (/^\s*@(peak|paws)\b/i.test(draft)) return draft;
+  return `@${pet === "paws" ? "Paws" : "Peak"} ${draft}`;
 }
 
 /** A key combination pressed in the Settings field, as the text the program registers ("Ctrl+Alt+P"), or null when it cannot be a global shortcut:

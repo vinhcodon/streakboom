@@ -27,7 +27,7 @@ test("the time label says Today for the same day", () => {
   assert.doesNotMatch(timeLabel(noon - 2 * 24 * 3600_000, noon, "en-GB", "Today"), /Today/);
 });
 
-import { nextRecipient, recallStep, recipientByNumber, slashItems } from "./chatbox.ts";
+import { recallStep, slashItems, withMention } from "./chatbox.ts";
 
 test("the slash list offers only what can happen, and a start of a verb in English, Vietnamese or Japanese is enough", () => {
   const away = { peak: true, paws: false };
@@ -56,16 +56,13 @@ test("arrow up and down step through what was sent, and past the newest the fiel
   assert.deepEqual(recallStep([], -1, -1), { idx: -1, text: null });
 });
 
-test("Tab goes round Peak, Paws, Both; with Paws away only Peak; Ctrl+number picks directly", () => {
-  assert.equal(nextRecipient("peak", 1, true), "paws");
-  assert.equal(nextRecipient("paws", 1, true), "both");
-  assert.equal(nextRecipient("both", 1, true), "peak");
-  assert.equal(nextRecipient("peak", -1, true), "both");
-  assert.equal(nextRecipient("paws", 1, false), "peak");
-  assert.equal(recipientByNumber(1, false), "peak");
-  assert.equal(recipientByNumber(2, false), null);
-  assert.equal(recipientByNumber(3, true), "both");
-  assert.equal(recipientByNumber(4, true), null);
+test("a double click writes @Name in front only when both are out and no mention is there already", () => {
+  const both = { peak: true, paws: true };
+  assert.equal(withMention("", "paws", both), "@Paws ");
+  assert.equal(withMention("hello", "peak", both), "@Peak hello");
+  assert.equal(withMention("@Paws hello", "peak", both), "@Paws hello"); // already a mention: not changed
+  assert.equal(withMention("", "paws", { peak: true, paws: false }), ""); // one out: nobody to pick
+  assert.equal(withMention("", "peak", { peak: false, paws: false }), "");
 });
 
 import { comboFromEvent } from "./chatbox.ts";

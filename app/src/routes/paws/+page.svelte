@@ -181,7 +181,7 @@
 </script>
 
 <!-- svelte-ignore a11y_no_static_element_interactions -->
-<div class="stage" class:walking class:nodding onpointerdown={() => void invoke("duo_touch", { pet: "paws" })} ondblclick={() => void invoke("duo_open_chat", { pet: "paws" })}>
+<div class="stage" class:walking class:nodding onpointerdown={() => void invoke("duo_touch", { pet: "paws" })} ondblclick={() => void invoke("duo_open_box", { pet: "paws" })}>
   {#if front}
     <img src="/paws/paws-front.svg" alt="" />
   {:else}

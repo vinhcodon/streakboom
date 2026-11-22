@@ -5,7 +5,9 @@
   import { invoke } from "@tauri-apps/api/core";
   import { listen, emitTo } from "@tauri-apps/api/event";
   import { boxStrings, slashLabel } from "$lib/chatbox-ui";
-  import { EMPTY_VIEW, groupTurns, nextRecipient, recallStep, recipientByNumber, slashItems, timeLabel, type BoxAction, type BoxView, type Recipient, type SlashItem } from "$lib/chatbox";
+  import { parseCallMe } from "$lib/callme";
+  import { parseDuoCommand } from "$lib/duo-command";
+  import { EMPTY_VIEW, groupTurns, recallStep, slashItems, timeLabel, withMention, type BoxAction, type BoxView, type PetKey, type SlashItem } from "$lib/chatbox";
 
   let view = $state<BoxView>(EMPTY_VIEW);
   let presence = $state({ peak: true, paws: false });
@@ -22,7 +24,9 @@
   const locale = $derived(t.locale);
   const PETS = ["peak", "paws"] as const;
   const NAME = $derived({ peak: "Peak", paws: "Paws", person: t.you } as const);
-  const placeholder = $derived(!view.canChat ? t.noBrain : view.recipient === "both" ? t.messageBoth : view.recipient === "paws" ? t.messagePaws : t.messagePeak);
+  const anyOut = $derived(presence.peak || presence.paws);
+  // who hears is who is out (ADR-0145): the field says it in its own words, no buttons
+  const placeholder = $derived(!view.canChat ? t.noBrain : !anyOut ? t.bothResting : presence.peak && presence.paws ? t.messageBoth : presence.paws ? t.messagePaws : t.messagePeak);
 
   const sent = $derived(view.turns.filter((t) => t.who === "person").map((t) => t.text).slice(-30));
   const slash = $derived<SlashItem[]>(!slashOff && draft.startsWith("/") && !draft.includes(String.fromCharCode(10)) ? slashItems(draft.slice(1), presence) : []);
@@ -31,15 +35,12 @@
   function act(a: BoxAction) {
     void emitTo("main", "chatbox-action", a).catch(() => {});
   }
-  function pick(to: Recipient) {
-    view = { ...view, recipient: to };
-    act({ type: "recipient", to });
-    input?.focus();
-  }
   function send() {
     const text = draft.trim();
     if (!text) return;
-    act({ type: "send", text, to: view.recipient });
+    // with both pets in only a local command goes ("call Paws out", "call me ..."): anything else stays in the field and the placeholder says why
+    if (!anyOut && !parseDuoCommand(text) && !parseCallMe(text)) return;
+    act({ type: "send", text });
     draft = "";
     recallIdx = -1;
     grow();
@@ -60,9 +61,6 @@
     else act({ type: "command", act: it.act.kind, target: it.act.target });
     input?.focus();
   }
-  function setRecipient(r: Recipient) {
-    if (r !== view.recipient) pick(r);
-  }
   function onKey(e: KeyboardEvent) {
     if (e.isComposing) return; // a word still being composed (a typing mode) is not a key of the box
     // the list of commands, while it is open
@@ -79,11 +77,6 @@
       if (r.text !== null) { e.preventDefault(); recallIdx = r.idx; draft = r.text; queueMicrotask(grow); }
       return;
     }
-    if (e.key === "Tab") { e.preventDefault(); setRecipient(nextRecipient(view.recipient, e.shiftKey ? -1 : 1, presence.paws)); return; }
-    if (e.ctrlKey && !e.altKey && /^[1-3]$/.test(e.key)) {
-      const r = recipientByNumber(Number(e.key), presence.paws);
-      if (r) { e.preventDefault(); setRecipient(r); }
-    }
   }
   function togglePin() {
     pinned = !pinned;
@@ -91,6 +84,18 @@
   }
   async function refreshPresence() {
     presence = await invoke<{ peak: boolean; paws: boolean }>("duo_presence").catch(() => presence);
+  }
+  /** A double click on a pet opened the box: the pet is waiting in Rust (the page may not have existed when it was clicked). */
+  async function takePrefill() {
+    const pet = await invoke<string | null>("chatbox_take_prefill").catch(() => null);
+    if (!pet) return;
+    await refreshPresence();
+    draft = withMention(draft, pet === "paws" ? "paws" : "peak", presence);
+    await tick();
+    grow();
+    input?.focus();
+    const n = draft.length;
+    input?.setSelectionRange(n, n);
   }
   async function toBottom() {
     await tick();
@@ -106,13 +111,14 @@
     const offs: (() => void)[] = [];
     void (async () => {
       offs.push(await listen<BoxView>("chatbox-view", (e) => { view = e.payload; void refreshPresence(); }));
-      offs.push(await listen("chatbox-open", () => { void refreshPresence(); setTimeout(() => input?.focus(), 30); }));
+      offs.push(await listen("chatbox-open", () => { void refreshPresence(); setTimeout(() => input?.focus(), 30); void takePrefill(); }));
       await emitTo("main", "chatbox-ready", {}).catch(() => {});
     })();
     // the box is shown before this page has loaded the first time, so the event of opening can be missed: take the focus when the page is ready and whenever the window gets it
     const focusInput = () => input?.focus();
     window.addEventListener("focus", focusInput);
     setTimeout(focusInput, 60);
+    setTimeout(() => void takePrefill(), 120);
     const poll = setInterval(refreshPresence, 2000);
     void refreshPresence();
     return () => { clearInterval(poll); window.removeEventListener("focus", focusInput); offs.forEach((f) => f()); };
@@ -122,13 +128,12 @@
 
 <div class="box">
   <header>
-    <div class="who" role="group" aria-label={t.sendTo}>
+    <div class="who">
       {#each PETS as p (p)}
-        <button class="chip" class:on={view.recipient === p} class:away={!presence[p]} aria-pressed={view.recipient === p} onclick={() => pick(p)}>
+        <span class="chip" class:away={!presence[p]} aria-label={NAME[p]}>
           <span class="av {p}"><img src={p === "paws" ? "/paws/paws-front.svg" : "/peak-avatar.png"} alt="" /><i class="dot" class:out={presence[p]}></i></span>{NAME[p]}
-        </button>
+        </span>
       {/each}
-      <button class="chip both" class:on={view.recipient === "both"} aria-pressed={view.recipient === "both"} onclick={() => pick("both")}>{t.both}</button>
     </div>
     <button class="pin" class:on={pinned} aria-pressed={pinned} aria-label={t.keepOpen} title={t.keepOpen} onclick={togglePin}>
       <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 4h6l-1 6 3 3v1H7v-1l3-3-1-6z"/><path d="M12 14v6"/></svg>
@@ -169,6 +174,7 @@
     {/if}
   </div>
 
+  {#if !anyOut}<div class="resting">{t.bothResting}</div>{/if}
   <footer>
     {#if slash.length > 0}
       <ul class="slash" role="listbox" aria-label={t.commands}>
@@ -191,11 +197,9 @@
   .box { box-sizing: border-box; width: 100vw; height: 100vh; display: flex; flex-direction: column; background: var(--bg); color: var(--ink); border: 1px solid var(--line); border-radius: 14px; overflow: hidden; }
   header { display: flex; align-items: center; gap: 8px; padding: 9px 10px; border-bottom: 1px solid var(--line); }
   .who { display: flex; gap: 6px; flex: 1; flex-wrap: wrap; }
-  .chip { display: flex; align-items: center; gap: 6px; padding: 3px 10px 3px 4px; border-radius: 999px; border: 1px solid var(--line); background: transparent; color: inherit; font: inherit; cursor: pointer; }
-  .chip.both { padding: 3px 11px; }
-  .chip.on { border-color: var(--ring); box-shadow: 0 0 0 1px var(--ring) inset; }
+  .chip { display: flex; align-items: center; gap: 6px; padding: 3px 10px 3px 4px; border-radius: 999px; border: 1px solid var(--line); background: transparent; color: inherit; font: inherit; cursor: default; }
   .chip.away .av img { filter: grayscale(1); opacity: 0.6; }
-  .chip:focus-visible, .pin:focus-visible, .send:focus-visible { outline: 2px solid var(--ring); outline-offset: 1px; }
+  .pin:focus-visible, .send:focus-visible { outline: 2px solid var(--ring); outline-offset: 1px; }
   .av { position: relative; display: inline-flex; width: 24px; height: 24px; border-radius: 50%; flex: none; background: var(--soft); }
   .av img { width: 100%; height: 100%; border-radius: 50%; object-fit: cover; }
   .av.peak img { transform: scale(1.18); }
@@ -221,6 +225,7 @@
   .typing i:nth-child(2) { animation-delay: 0.2s; } .typing i:nth-child(3) { animation-delay: 0.4s; }
   @keyframes blink { 0%, 80%, 100% { opacity: 0.25; } 40% { opacity: 1; } }
   @media (prefers-reduced-motion: reduce) { .typing i { animation: none; opacity: 0.6; } }
+  .resting { padding: 5px 12px; font-size: 12px; color: var(--muted); text-align: center; border-top: 1px solid var(--line); }
   .hint { margin-top: 10px; font-size: 12px; }
   .hint code { font: 11px/1.6 ui-monospace, Consolas, monospace; background: var(--soft); padding: 0 4px; border-radius: 4px; }
   .empty { margin: auto; text-align: center; color: var(--muted); padding: 0 24px; }

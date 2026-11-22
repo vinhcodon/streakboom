@@ -85,6 +85,12 @@ impl DuoState {
         self.get_mut(target).out = true;
         true
     }
+    /// With nobody out the person may bring either pet out by name (the slash list of the chat box, ADR-0145): there is no pet on the screen to call it.
+    pub fn bring_when_none_out(&mut self, target: Id) -> bool {
+        if !self.out().is_empty() { return false; }
+        self.get_mut(target).out = true;
+        true
+    }
 }
 
 #[derive(Clone, Debug)]
@@ -180,6 +186,7 @@ fn spawn_dev_commands(app: AppHandle, dir: PathBuf) {
                 "scene" => scene_start(&app, ""),
                 l if l.starts_with("scene:") => scene_start(&app, &l[6..]),
                 "tray" => tray(&app),
+                l if l.starts_with("openbox:") => duo_open_box(app.clone(), l[8..].to_string()), // a double click on a pet, without the mouse
                 "opensettings" => crate::open_settings_window(&app, None),
                 // `setkey:box:Ctrl+Alt+F9`: the Settings field, without the keys; the answer goes to duo-cmd-result.txt
                 l if l.starts_with("setkey:") => {
@@ -302,9 +309,6 @@ pub fn duo_touch(app: AppHandle, pet: String) {
     let _ = app.emit_to("main", "duo-touch", pet);
 }
 
-/// A double click on Paws opens the chat for it (ADR-0141, I2): the chat box is the page of Peak, which is told whose box it is.
-#[tauri::command]
-pub fn duo_open_chat(app: AppHandle, pet: String) { let _ = app.emit_to("main", "duo-open-chat", pet); }
 
 /// The hit test of the Paws window: the window takes the pointer only while it is over the pet, as Peak's does, and lets it through elsewhere.
 fn spawn_paws_hit_test(app: AppHandle) {
@@ -333,7 +337,7 @@ pub fn duo_command(app: AppHandle, target: String, act: String) -> bool {
     let go_in = act == "in";
     let done = {
         let mut s = d.state.lock().unwrap();
-        let ok = if go_in { s.tuck(id, now_ms(), None) } else { s.call(Id::Peak, id) };
+        let ok = if go_in { s.tuck(id, now_ms(), None) } else if s.out().is_empty() { s.bring_when_none_out(id) } else { s.call(Id::Peak, id) };
         if ok { save(&d, &s); }
         ok
     };
@@ -572,6 +576,15 @@ mod tests {
         assert_eq!(DuoState::parse(&j), s);
     }
     #[test]
+    fn with_nobody_out_the_person_may_bring_either_pet_out_by_name_and_with_one_out_only_that_pet_calls() {
+        let mut s = DuoState::default();
+        s.pets.peak.out = false;
+        assert!(s.bring_when_none_out(Id::Paws));
+        assert!(s.pets.paws.out && !s.pets.peak.out);
+        assert!(!s.bring_when_none_out(Id::Peak)); // Paws is out now: only a pet on the screen calls
+        assert!(s.call(Id::Paws, Id::Peak));
+    }
+    #[test]
     fn the_tray_sends_everyone_in_then_brings_out_the_last_tucked() {
         let mut s = both();
         let (send, out) = s.tray_click(100);
@@ -719,6 +732,11 @@ pub fn chatbox_toggle(app: &AppHandle) {
         }
         return;
     }
+    make_box(app);
+}
+
+/// Make the window of the box (hidden), set its blur rule, and show it. Called when it does not exist yet.
+fn make_box(app: &AppHandle) {
     let built = WebviewWindowBuilder::new(app, BOX_LABEL, WebviewUrl::App("chatbox".into()))
         .title("Streakboom chat")
         .inner_size(BOX_W, BOX_H)
@@ -740,6 +758,28 @@ pub fn chatbox_toggle(app: &AppHandle) {
     });
     show_box(app, &win);
 }
+
+/// A double click on Peak or Paws (ADR-0145): the box is shown if it was not, takes the keyboard, and the pet that was clicked is kept for the page,
+/// which writes `@Name ` in the field when both are out. The pet is kept here because the page may not exist yet when the box is made.
+#[tauri::command]
+pub fn duo_open_box(app: AppHandle, pet: String) {
+    log(&app, &format!("open_box pet={pet} exists={}", app.get_webview_window(BOX_LABEL).is_some()));
+    *BOX_PREFILL.lock().unwrap() = Some(pet);
+    std::thread::spawn(move || {
+        dismiss_tray_flyout();
+        if let Some(win) = app.get_webview_window(BOX_LABEL) {
+            show_box(&app, &win); // also when it is showing: it takes the keyboard and the page reads the pet
+        } else {
+            make_box(&app);
+        }
+    });
+}
+
+/// The page of the box takes the pet that was double clicked (once).
+#[tauri::command]
+pub fn chatbox_take_prefill() -> Option<String> { BOX_PREFILL.lock().unwrap().take() }
+
+static BOX_PREFILL: Mutex<Option<String>> = Mutex::new(None);
 
 /// The box asks to hide (Esc, or its own button).
 #[tauri::command]

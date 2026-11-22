@@ -34,6 +34,13 @@ function Click($x, $y) {
   foreach ($lab in @("main", "paws", "chatbox", "bubble")) { $r = Rect4 $d $lab; if ($r -and $r.v -and $x -ge $r.x -and $x -le $r.x + $r.w -and $y -ge $r.y -and $y -le $r.y + $r.h) { $ok = $true } }
   if ($ok) { RawClick $x $y } else { Write-Output "click at $x,$y skipped: not inside a window of the program under test" }
 }
+function DblClick($x, $y) {
+  # one check against the windows of the program under test, then the two clicks close together (the check takes a second: a double click needs them within half a second)
+  $d = Dump; $ok = $false
+  foreach ($lab in @("main", "paws", "chatbox", "bubble")) { $r = Rect4 $d $lab; if ($r -and $r.v -and $x -ge $r.x -and $x -le $r.x + $r.w -and $y -ge $r.y -and $y -le $r.y + $r.h) { $ok = $true } }
+  if (-not $ok) { Write-Output "double click at $x,$y skipped: not inside a window of the program under test"; return }
+  RawClick $x $y; Start-Sleep -Milliseconds 90; RawClick $x $y
+}
 function Rect($dump, $label) { $l = $dump | Where-Object { $_ -like "$label *" }; if ($l -match 'pos=Some\(\((-?\d+), (-?\d+)\)\)') { [int]$matches[1], [int]$matches[2] } }
 switch ($Step) {
   "start" {
@@ -47,7 +54,7 @@ switch ($Step) {
   "dblclick" {  # on the pet named in -Who, at the middle of its art (window 140 logical, art at about 70,85 logical; scale 1.25 here)
     $d = Dump; $label = if ($Who -eq "paws") { "paws" } else { "main" }; $r = Rect $d $label
     $cx = $r[0] + 87; $cy = $r[1] + 106
-    Click $cx $cy; Start-Sleep -Milliseconds 90; Click $cx $cy
+    DblClick $cx $cy
     Start-Sleep -Milliseconds 1800; Dump; Shot "dblclick-$Who"
   }
   "click" { Click $X $Y; Start-Sleep -Milliseconds 800; Shot "click-$X-$Y" }
@@ -55,7 +62,7 @@ switch ($Step) {
   "flow"  {  # one go, because the chat box closes by itself when left alone: double click on -Who, click the chip at -X -Y, click the input at -InX -InY, type -Text
     $d = Dump; $label = if ($Who -eq "paws") { "paws" } else { "main" }; $r = Rect $d $label
     $cx = $r[0] + 87; $cy = $r[1] + 106
-    Click $cx $cy; Start-Sleep -Milliseconds 90; Click $cx $cy
+    DblClick $cx $cy
     Start-Sleep -Milliseconds 1500; $d2 = Dump; Shot "flow-1-opened"; $d2 | Where-Object { $_ -match "^(main|paws|bubble)" }
     if ($X -gt 0) { Click $X $Y; Start-Sleep -Milliseconds 600; Shot "flow-2-chip" }
     if ($InX -gt 0) { Click $InX $InY; Start-Sleep -Milliseconds 500 }

@@ -30,6 +30,13 @@ function Click($x, $y) {
   foreach ($lab in @("main", "paws", "chatbox", "bubble")) { $r = Rect4 $d $lab; if ($r -and $r.v -and $x -ge $r.x -and $x -le $r.x + $r.w -and $y -ge $r.y -and $y -le $r.y + $r.h) { $ok = $true } }
   if ($ok) { RawClick $x $y } else { Write-Output "click at $x,$y skipped: not inside a window of the program under test" }
 }
+function DblClick($x, $y) {
+  # one check against the windows of the program under test, then the two clicks close together (the check takes a second: a double click needs them within half a second)
+  $d = Dump; $ok = $false
+  foreach ($lab in @("main", "paws", "chatbox", "bubble")) { $r = Rect4 $d $lab; if ($r -and $r.v -and $x -ge $r.x -and $x -le $r.x + $r.w -and $y -ge $r.y -and $y -le $r.y + $r.h) { $ok = $true } }
+  if (-not $ok) { Write-Output "double click at $x,$y skipped: not inside a window of the program under test"; return }
+  RawClick $x $y; Start-Sleep -Milliseconds 90; RawClick $x $y
+}
 function ProgramHasFocus { $q = [uint32]0; [void][M]::GetWindowThreadProcessId([M]::GetForegroundWindow(), [ref]$q); $p = Get-Process -Id $q -ErrorAction SilentlyContinue; return ($p -and $p.Path -eq $Exe) }
 # a strip of frames around the pets while something happens, as one picture
 function Strip($name, $seconds) {
@@ -57,13 +64,10 @@ function PasteAndSend($text) {
 function Say($step, $pet, $chip, $text, $watch) {
   $d = Dump; $r = Rect4 $d ($(if ($pet -eq "paws") { "paws" } else { "main" }))
   $cx = $r.x + 87; $cy = $r.y + 106
-  Click $cx $cy; Start-Sleep -Milliseconds 90; Click $cx $cy; Start-Sleep -Milliseconds 1500
-  $b = Rect4 (Dump) "bubble"; if (-not $b.v) { "$step : the box did not open"; Shot "$step-nobox"; return }
-  $mid = $b.x + [int]($b.w / 2); $bottom = $b.y + $b.h
-  Shot "$step-1-open"
-  if ($chip) { $dx = @{ peak = -56; paws = 0; both = 56 }[$chip]; Click ($mid + $dx) ($bottom - 80); Start-Sleep -Milliseconds 700
-               $b = Rect4 (Dump) "bubble"; $mid = $b.x + [int]($b.w / 2); $bottom = $b.y + $b.h; Shot "$step-2-chip-$chip" }
-  Click $mid ($bottom - 40); Start-Sleep -Milliseconds 500
+  DblClick $cx $cy; Start-Sleep -Milliseconds 1500
+  $b = Rect4 (Dump) "chatbox"; if (-not ($b -and $b.v)) { "$step : the box did not open"; Shot "$step-nobox"; return }
+  Shot "$step-1-open"   # $chip is not used any more: no buttons choose who hears (ADR-0145)
+  if (ProgramHasFocus) { [System.Windows.Forms.SendKeys]::SendWait("^a{DEL}"); Start-Sleep -Milliseconds 300 }   # the double click wrote @Name: the message names who it is for, or nobody
   PasteAndSend $text
   Strip "$step-3-strip" $watch
 }

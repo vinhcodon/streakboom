@@ -60,8 +60,6 @@ try {
   PasteText "hello"; Keys "{ENTER}"; Start-Sleep -Seconds 4; Shot "k1-sent"
   Keys "{UP}"; Shot "k2-recalled"
   Keys "{ESC}"; Shot "k2b-escaped"; Note "K2 after Esc the box must still be visible"; Note (Dump | Where-Object { $_ -match "^chatbox" })
-  # K3 the recipient by Tab and by Ctrl+number
-  Keys "{TAB}"; Shot "k3a-tab"; Keys "{TAB}"; Shot "k3b-tab"; Keys "+{TAB}"; Shot "k3c-shifttab"; Keys "^1"; Shot "k3d-ctrl1"; Keys "^3"; Shot "k3e-ctrl3"
   # K4 Shift+Enter breaks the line
   PasteText "line one"; Keys "+{ENTER}"; PasteText "line two"; Shot "k4a-two-lines"; Keys "{ENTER}"; Start-Sleep -Seconds 6; Shot "k4b-sent"
   # K5 the list of commands

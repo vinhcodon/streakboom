@@ -2,7 +2,7 @@
 // Pure and local: no model, no key, no chat turn counted. Short on purpose: a long sentence is a conversation and goes to the chat.
 // Only a message that names exactly one pet (Paws or Peak) and says out or in is a command; anything else is not.
 
-import type { PetId } from "./duo.ts";
+import { PETS, type PetId } from "./duo.ts";
 
 export type DuoAct = "out" | "in";
 export interface DuoCommand { target: PetId; act: DuoAct }
@@ -36,34 +36,28 @@ export function parseDuoCommand(raw: string): DuoCommand | null {
   return null;
 }
 
-/** Which pet answers a chat message (ADR-0139/0140): the one the person names; with no name (or both names), the pet last spoken to.
- *  Paws can answer only while it is out; otherwise Peak does. ("Both, one after the other" is not built.) */
-export function addressedPet(raw: string, lastSpoken: PetId, pawsOut: boolean): PetId {
-  const text = raw.toLowerCase();
-  const paws = text.includes("paws");
-  const peak = text.includes("peak");
-  let who: PetId = paws && !peak ? "paws" : peak && !paws ? "peak" : lastSpoken;
-  if (who === "paws" && !pawsOut) who = "peak";
-  return who;
-}
+const BOTH = [/cả hai/, /hai đứa/, /hai bạn/, /hai đứa bây/, /both/, /you two/, /二人/, /ふたり/, /両方/];
 
-const BOTH = [/cả hai/, /hai đứa/, /hai bạn/, /hai đứa bây/, /\bboth\b/, /\byou two\b/, /二人/, /ふたり/, /両方/];
+export interface Out { peak: boolean; paws: boolean }
 
-/** Who a message is for: both pets (both names, or a word for both) while Paws is out; else the one pet `addressedPet` picks. */
-export function addressees(raw: string, fallback: PetId | "both", pawsOut: boolean): PetId[] {
-  if (!pawsOut) return ["peak"];
+/** Who a message is for (ADR-0145): every pet that is out. A name ("Paws ơi", "Peak, ...", "@Paws ...") picks one, also when both are out; a message that
+ *  opens with one name is for that one unless the next words name the other too; a word for both ("hai đứa", "both") keeps both. A name of a pet that is in
+ *  sends the message to whoever is out. Nobody out gives an empty list: the caller does not send. */
+export function addressees(raw: string, out: Out): PetId[] {
+  const here = PETS.filter((p) => out[p]);
+  if (here.length === 0) return [];
+  if (here.length === 1) return here;
   const text = raw.toLowerCase();
   const names = text.includes("paws") && text.includes("peak");
-  // a message that opens with one name ("Peak, what do you think of Paws?") is for that pet, unless the next words name the other one too
-  const lead = /^\s*(peak|paws)/.exec(text);
+  // a message that opens with one name ("Peak, what do you think of Paws?", "@Paws ...") is for that pet, unless the next words name the other one too
+  const lead = /^\s*@?(peak|paws)/.exec(text);
   if (lead && names) {
     const other = lead[1] === "peak" ? "paws" : "peak";
-    if (!new RegExp(String.raw`^\s*${lead[1]}[\s,&]*(và|and|với|と)?[\s,]*${other}`).test(text)) return [lead[1] as PetId];
+    if (!new RegExp(String.raw`^\s*@?${lead[1]}[\s,&]*(và|and|với|と)?[\s,]*@?${other}`).test(text)) return [lead[1] as PetId];
   }
-  if (names || BOTH.some((r) => r.test(text))) return ["peak", "paws"];
-  if (text.includes("paws") !== text.includes("peak")) return [text.includes("paws") ? "paws" : "peak"]; // one name in the text beats the chip
-  if (fallback === "both") return ["peak", "paws"];
-  return [addressedPet(raw, fallback, pawsOut)];
+  if (names || BOTH.some((r) => r.test(text))) return here;
+  if (text.includes("paws") !== text.includes("peak")) return [text.includes("paws") ? "paws" : "peak"];
+  return here;
 }
 
 const RELAY = [/\bhỏi\s+(paws|peak)\b/, /\bask\s+(paws|peak)\b/, /(paws|peak)\s*に\s*(聞い|きい|尋ね|たずね)/];

@@ -8,14 +8,13 @@ export type BoxLang = "vi" | "en" | "ja";
 export interface BoxStrings {
   today: string;
   you: string;
-  sendTo: string;
-  both: string;
   keepOpen: string;
   send: string;
   commands: string;
   messagePeak: string;
   messagePaws: string;
   messageBoth: string;
+  bothResting: string; // both pets are in: a message that is not a command is not sent
   noBrain: string;
   empty: string;
   emptyNoBrain: string;
@@ -28,8 +27,8 @@ export interface BoxStrings {
 
 export const BOX_UI: Record<BoxLang, BoxStrings> = {
   en: {
-    today: "Today", you: "You", sendTo: "Send to", both: "Both", keepOpen: "Keep open", send: "Send", commands: "Commands",
-    messagePeak: "Message Peak", messagePaws: "Message Paws", messageBoth: "Message Peak and Paws",
+    today: "Today", you: "You", keepOpen: "Keep open", send: "Send", commands: "Commands",
+    messagePeak: "Message Peak", messagePaws: "Message Paws", messageBoth: "Message Peak and Paws", bothResting: "Both are resting: type / to call one out",
     noBrain: "No brain connected: commands only",
     empty: "Say something to Peak or Paws.",
     emptyNoBrain: "No brain is connected. Commands such as “call Paws out” still work.",
@@ -38,8 +37,8 @@ export const BOX_UI: Record<BoxLang, BoxStrings> = {
     slash: { outPaws: "Call Paws out", outPeak: "Call Peak out", inPaws: "Send Paws in", inPeak: "Send Peak in", pin: "Keep the box open", clear: "Clear this chat", callMe: "Call me {name}" },
   },
   vi: {
-    today: "Hôm nay", you: "Bạn", sendTo: "Gửi cho", both: "Cả hai", keepOpen: "Giữ hộp luôn mở", send: "Gửi", commands: "Lệnh",
-    messagePeak: "Nhắn cho Peak", messagePaws: "Nhắn cho Paws", messageBoth: "Nhắn cho Peak và Paws",
+    today: "Hôm nay", you: "Bạn", keepOpen: "Giữ hộp luôn mở", send: "Gửi", commands: "Lệnh",
+    messagePeak: "Nhắn cho Peak", messagePaws: "Nhắn cho Paws", messageBoth: "Nhắn cho Peak và Paws", bothResting: "Cả hai đang nghỉ: gõ / để gọi ra",
     noBrain: "Chưa có bộ não: chỉ dùng được lệnh",
     empty: "Nói gì đó với Peak hoặc Paws đi.",
     emptyNoBrain: "Chưa có bộ não nào. Các lệnh như “gọi Paws ra” vẫn dùng được.",
@@ -48,8 +47,8 @@ export const BOX_UI: Record<BoxLang, BoxStrings> = {
     slash: { outPaws: "Gọi Paws ra", outPeak: "Gọi Peak ra", inPaws: "Cho Paws vào", inPeak: "Cho Peak vào", pin: "Giữ hộp luôn mở", clear: "Xóa cuộc trò chuyện này", callMe: "Hãy gọi tôi là {name}" },
   },
   ja: {
-    today: "今日", you: "あなた", sendTo: "宛先", both: "ふたり", keepOpen: "開いたままにする", send: "送信", commands: "コマンド",
-    messagePeak: "Peakにメッセージ", messagePaws: "Pawsにメッセージ", messageBoth: "PeakとPawsにメッセージ",
+    today: "今日", you: "あなた", keepOpen: "開いたままにする", send: "送信", commands: "コマンド",
+    messagePeak: "Peakにメッセージ", messagePaws: "Pawsにメッセージ", messageBoth: "PeakとPawsにメッセージ", bothResting: "ふたりとも休み中：/ で呼び出せます",
     noBrain: "ブレインが未接続です：コマンドのみ",
     empty: "PeakかPawsに話しかけてみよう。",
     emptyNoBrain: "ブレインが未接続です。「Pawsを呼んで」などのコマンドは使えます。",

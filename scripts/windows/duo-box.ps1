@@ -52,9 +52,6 @@ $b = Rect4 $d "chatbox"; Click ($b.x + [int]($b.w / 2) - 20) ($b.y + $b.h - 40);
 PasteAndSend "how are you both"
 for ($i = 1; $i -le 7; $i++) { Start-Sleep -Milliseconds 1300; Shot ("b2-talk-{0:d2}" -f $i) }
 # B3: a message to Peak alone with the Peak chip, and one more
-$d = Dump; $b = Rect4 $d "chatbox"; $s = 1.25
-Click ($b.x + [int](50 * $s)) ($b.y + [int](26 * $s)); Start-Sleep -Milliseconds 500
-PasteAndSend "Peak, and you?"; Start-Sleep -Seconds 3; Shot "b3-to-peak"
 # B4: the focus goes to a pet: the box hides itself (unpinned first)
 $bp = Rect4 (Dump) "chatbox"; Click ($bp.x + $bp.w - 28) ($bp.y + 31); Start-Sleep -Milliseconds 400
 $d = Dump; $pk = Rect4 $d "paws"; Click ($pk.x + 87) ($pk.y + 106); Start-Sleep -Milliseconds 1200; $d = Dump; $log += "B4 a click on a pet: the box must hide"; $log += ($d | Where-Object { $_ -match "^chatbox" }); Shot "b4-after-blur"

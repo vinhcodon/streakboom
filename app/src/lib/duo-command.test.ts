@@ -35,33 +35,29 @@ test("a long sentence is a conversation, not a command", () => {
   assert.equal(c("hôm qua tớ định gọi Paws ra nhưng tớ bận quá nên thôi, để mai"), null);
 });
 
-import { addressedPet } from "./duo-command.ts";
-
-test("the pet named answers; with no name the one last spoken to; Paws only while out", () => {
-  assert.equal(addressedPet("Paws ơi, hôm nay thế nào?", "peak", true), "paws");
-  assert.equal(addressedPet("Peak, còn bạn?", "paws", true), "peak");
-  assert.equal(addressedPet("hôm nay thế nào?", "paws", true), "paws");
-  assert.equal(addressedPet("hôm nay thế nào?", "peak", true), "peak");
-  assert.equal(addressedPet("Paws và Peak nghĩ sao?", "paws", true), "paws"); // both named: the last spoken to
-  assert.equal(addressedPet("Paws ơi", "peak", false), "peak"); // Paws is away: Peak answers
-});
-
 import { addressees } from "./duo-command.ts";
 
-test("who a message is for: both when both are named or a word for both is used, only while Paws is out", () => {
-  assert.deepEqual(addressees("Paws và Peak nghĩ sao?", "peak", true), ["peak", "paws"]);
-  assert.deepEqual(addressees("hai đứa đang làm gì đấy", "peak", true), ["peak", "paws"]);
-  assert.deepEqual(addressees("how are you both?", "peak", true), ["peak", "paws"]);
-  assert.deepEqual(addressees("二人とも元気？", "peak", true), ["peak", "paws"]);
-  assert.deepEqual(addressees("Paws ơi", "peak", true), ["paws"]);
-  assert.deepEqual(addressees("Peak, what do you think of Paws?", "paws", true), ["peak"]); // opens with one name: for that pet
-  assert.deepEqual(addressees("Paws, and Peak, how are you?", "peak", true), ["peak", "paws"]);
-  assert.deepEqual(addressees("Paws và Peak nghĩ sao?", "peak", true), ["peak", "paws"]);
-  assert.deepEqual(addressees("hôm nay thế nào", "paws", true), ["paws"]);
-  assert.deepEqual(addressees("hai đứa đang làm gì đấy", "peak", false), ["peak"]);
-  assert.deepEqual(addressees("hôm nay thế nào", "both", true), ["peak", "paws"]); // the Both chip
-  assert.deepEqual(addressees("Paws ơi", "both", true), ["paws"]); // a name in the text overrides the chip
-  assert.deepEqual(addressees("hôm nay thế nào", "both", false), ["peak"]); // nobody else is out
+const both = { peak: true, paws: true };
+test("a message goes to every pet that is out; a name or an @ picks one; a word for both keeps both", () => {
+  assert.deepEqual(addressees("hôm nay thế nào", both), ["peak", "paws"]); // no name: everyone out hears
+  assert.deepEqual(addressees("Paws ơi", both), ["paws"]);
+  assert.deepEqual(addressees("@Paws how are you", both), ["paws"]);
+  assert.deepEqual(addressees("Peak, còn bạn?", both), ["peak"]);
+  assert.deepEqual(addressees("Peak, what do you think of Paws?", both), ["peak"]); // opens with one name: for that pet
+  assert.deepEqual(addressees("@Paws, what does Peak think?", both), ["paws"]);
+  assert.deepEqual(addressees("Paws, and Peak, how are you?", both), ["peak", "paws"]);
+  assert.deepEqual(addressees("@Paws và @Peak nghĩ sao?", both), ["peak", "paws"]);
+  assert.deepEqual(addressees("Paws và Peak nghĩ sao?", both), ["peak", "paws"]);
+  assert.deepEqual(addressees("hai đứa đang làm gì đấy", both), ["peak", "paws"]);
+  assert.deepEqual(addressees("how are you both?", both), ["peak", "paws"]);
+  assert.deepEqual(addressees("二人とも元気？", both), ["peak", "paws"]);
+});
+
+test("with one pet out it hears everything, also what names the other; with none out nobody is addressed", () => {
+  assert.deepEqual(addressees("Paws ơi", { peak: true, paws: false }), ["peak"]); // Paws is in: whoever is out answers
+  assert.deepEqual(addressees("hôm nay thế nào", { peak: false, paws: true }), ["paws"]);
+  assert.deepEqual(addressees("Peak ơi", { peak: false, paws: true }), ["paws"]);
+  assert.deepEqual(addressees("anyone there", { peak: false, paws: false }), []);
 });
 
 import { parseRelay } from "./duo-command.ts";

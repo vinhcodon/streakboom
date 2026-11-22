@@ -257,13 +257,6 @@
             <span class="typed">{#each shownWords as w, i (i)}<span class="w">{w}</span>{/each}</span>
           </div>
         {/if}
-        {#if view.chips}
-          <div class="chips" role="group" aria-label="to">
-            {#each view.chips.options as o (o.id)}
-              <button class="chip {o.id}" class:on={view.chips.on === o.id} aria-pressed={view.chips.on === o.id} onclick={() => fromBubble({ type: "recipient", to: o.id })}>{o.label}</button>
-            {/each}
-          </div>
-        {/if}
         <!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_static_element_interactions -->
         <div class="inputwrap" onclick={() => !hasBrain && fromBubble({ type: "chat-blocked" })}>
           <input
@@ -329,11 +322,6 @@
   .tag.paws { color: #4a6a8f; }
   .tag.person { color: #6b6b6b; }
   .log { display: flex; flex-direction: column; gap: 4px; max-width: 260px; text-align: left; }
-  .chips { display: flex; gap: 4px; justify-content: center; }
-  .chip { font: inherit; font-size: 0.78em; padding: 2px 9px; border-radius: 999px; border: 1px solid #c9c9c9; background: transparent; color: inherit; cursor: pointer; }
-  .chip.on { background: #f2e3c8; border-color: #b8741a; }
-  .chip.paws.on { background: #dbe5f1; border-color: #4a6a8f; }
-  .chip:focus-visible { outline: 2px solid #4a6a8f; outline-offset: 1px; }
   .lrow { display: flex; gap: 6px; align-items: baseline; }
   .lrow .tag { flex: none; min-width: 2.6em; }
   .said { word-break: break-word; white-space: pre-line; }
