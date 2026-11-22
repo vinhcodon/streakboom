@@ -64,6 +64,16 @@ mod tests {
     }
 
     #[test]
+    fn the_height_is_108_only_on_a_16_9_screen_and_never_above_the_limit() {
+        // ADR-0128's text said 'at most 192 by 108'; the grid is 192 wide and as tall as the screen's shape asks, up to GRID_H_MAX (issue 2)
+        assert_eq!(grid_dims(1366, 768), Some((192, 108)));
+        assert_eq!(grid_dims(1920, 1200), Some((192, 120)));
+        assert_eq!(grid_dims(1280, 1024), Some((192, 154)));
+        assert_eq!(grid_dims(1080, 1920), Some((192, GRID_H_MAX)));
+        assert!(grid_dims(1280, 1024).unwrap().1 > 108);
+    }
+
+    #[test]
     fn grey_is_taken_from_blue_green_red_pixels() {
         // blue, green, red, unused
         assert_eq!(gray_from_bgra(&[0, 0, 0, 0, 255, 255, 255, 0]), vec![0, 255]);
