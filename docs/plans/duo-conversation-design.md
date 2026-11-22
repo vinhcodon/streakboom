@@ -1,5 +1,7 @@
 # Duo conversation: who talks to whom, how it is shown, how it is typed, and how the layers are cut
 
+> **Status 2026-11-22:** decided (ADR-0141, amended by ADR-0142) and built on the branch `exp/duo-prototype` in the order of section 7: the room log and turn order (`conversation.ts`), the bubble by the speaker with a log (now in the chat box), the hit test of Paws, "both" by two calls, the profiles of the pets (L2) and the relay. The aside, the pass and the quiet paths were checked with canned replies; the rest with the author's real brains once. What was seen and what is not verified: `duo-prototype-notes.md`, V-182.
+
 2026-11-22. A design proposal, nothing decided and nothing built beyond the prototype (`duo-prototype-notes.md`). It answers the author's remark after trying step 5: one input box on Peak and an answer of Paws in a plain bubble does not feel natural. Decisions it needs are at the end (section 8) and become an ADR once answered. Inputs: ADR-0139, ADR-0140, charter articles 2, 5, 7 and the manners (`docs/charter.md`), `peak-paws-living-spec-v0.2.md` section 6.
 
 ## 1. The parties and the situations

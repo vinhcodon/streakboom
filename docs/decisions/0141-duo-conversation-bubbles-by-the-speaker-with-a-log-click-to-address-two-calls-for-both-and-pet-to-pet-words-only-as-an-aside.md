@@ -3,6 +3,7 @@
 - **Status:** accepted on 2026-11-22 for the prototype and as the direction for the spec; nothing ships (see ADR-0139). The author chose each point from the options of `docs/plans/duo-conversation-design.md`.
 - **Date:** 2026-11-22
 - **Decided by:** Vinh (author)
+- **Amended by:** ADR-0142 (2026-11-22): the person types in one floating chat box, not beside a pet; the chips of point 2 became the recipient avatars at the top of that box. The bubbles of point 1 and points 3 to 5 stand.
 
 ## Decision
 1. **Display (option D):** every line is a short bubble beside its speaker, one at a time through a queue; the listener turns its head to the speaker before the line appears. The same turns are kept in a room log shown as a panel when the person clicks a pet to talk. Under reduced motion the panel is the main text surface.
