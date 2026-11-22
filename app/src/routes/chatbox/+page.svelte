@@ -4,13 +4,16 @@
   import { onMount, tick } from "svelte";
   import { invoke } from "@tauri-apps/api/core";
   import { listen, emitTo } from "@tauri-apps/api/event";
-  import { EMPTY_VIEW, groupTurns, timeLabel, type BoxAction, type BoxView, type Recipient } from "$lib/chatbox";
+  import { EMPTY_VIEW, groupTurns, nextRecipient, recallStep, recipientByNumber, slashItems, timeLabel, type BoxAction, type BoxView, type Recipient, type SlashItem } from "$lib/chatbox";
 
   let view = $state<BoxView>(EMPTY_VIEW);
   let presence = $state({ peak: true, paws: false });
   let pinned = $state(false);
   let draft = $state("");
-  let input = $state<HTMLInputElement | null>(null);
+  let input = $state<HTMLTextAreaElement | null>(null);
+  let recallIdx = -1; // arrow up and down: where in the messages sent before (-1: not browsing)
+  let slashSel = $state(0);
+  let slashOff = $state(false); // Esc closed the list: it stays closed until the field changes
   let scroller = $state<HTMLDivElement | null>(null);
 
   const items = $derived(groupTurns(view.turns));
@@ -20,6 +23,10 @@
   const placeholder = $derived(
     !view.canChat ? "No brain connected: commands only" : view.recipient === "both" ? "Message Peak and Paws" : `Message ${NAME[view.recipient]}`,
   );
+
+  const sent = $derived(view.turns.filter((t) => t.who === "person").map((t) => t.text).slice(-30));
+  const slash = $derived<SlashItem[]>(!slashOff && draft.startsWith("/") && !draft.includes(String.fromCharCode(10)) ? slashItems(draft.slice(1), presence) : []);
+  $effect(() => { void draft; slashSel = 0; });
 
   function act(a: BoxAction) {
     void emitTo("main", "chatbox-action", a).catch(() => {});
@@ -34,10 +41,48 @@
     if (!text) return;
     act({ type: "send", text, to: view.recipient });
     draft = "";
+    recallIdx = -1;
+    grow();
+  }
+  /** The field grows with what is written, up to four lines. */
+  function grow() {
+    if (!input) return;
+    input.style.height = "auto";
+    input.style.height = `${Math.min(input.scrollHeight, 88)}px`;
+  }
+  function runSlash(it: SlashItem) {
+    draft = "";
+    recallIdx = -1;
+    grow();
+    if (it.act.kind === "pin") togglePin();
+    else if (it.act.kind === "clear") act({ type: "clear" });
+    else act({ type: "command", act: it.act.kind, target: it.act.target });
+    input?.focus();
+  }
+  function setRecipient(r: Recipient) {
+    if (r !== view.recipient) pick(r);
   }
   function onKey(e: KeyboardEvent) {
-    if (e.key === "Enter" && !e.isComposing) { e.preventDefault(); send(); }
-    else if (e.key === "Escape") { if (draft) draft = ""; else void invoke("chatbox_hide"); }
+    if (e.isComposing) return; // a word still being composed (a typing mode) is not a key of the box
+    // the list of commands, while it is open
+    if (slash.length > 0) {
+      if (e.key === "ArrowDown") { e.preventDefault(); slashSel = (slashSel + 1) % slash.length; return; }
+      if (e.key === "ArrowUp") { e.preventDefault(); slashSel = (slashSel - 1 + slash.length) % slash.length; return; }
+      if (e.key === "Enter" || e.key === "Tab") { e.preventDefault(); runSlash(slash[slashSel]); return; }
+      if (e.key === "Escape") { e.preventDefault(); slashOff = true; return; }
+    }
+    if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); send(); return; } // Shift+Enter breaks the line
+    if (e.key === "Escape") { e.preventDefault(); if (draft) { draft = ""; recallIdx = -1; grow(); } else void invoke("chatbox_hide"); return; }
+    if ((e.key === "ArrowUp" || e.key === "ArrowDown") && !e.shiftKey && (draft === "" || recallIdx !== -1)) {
+      const r = recallStep(sent, recallIdx, e.key === "ArrowUp" ? -1 : 1);
+      if (r.text !== null) { e.preventDefault(); recallIdx = r.idx; draft = r.text; queueMicrotask(grow); }
+      return;
+    }
+    if (e.key === "Tab") { e.preventDefault(); setRecipient(nextRecipient(view.recipient, e.shiftKey ? -1 : 1, presence.paws)); return; }
+    if (e.ctrlKey && !e.altKey && /^[1-3]$/.test(e.key)) {
+      const r = recipientByNumber(Number(e.key), presence.paws);
+      if (r) { e.preventDefault(); setRecipient(r); }
+    }
   }
   function togglePin() {
     pinned = !pinned;
@@ -73,7 +118,6 @@
   });
 </script>
 
-<svelte:window onkeydown={(e) => e.key === "Escape" && !draft && void invoke("chatbox_hide")} />
 
 <div class="box">
   <header>
@@ -122,7 +166,14 @@
   </div>
 
   <footer>
-    <input bind:this={input} bind:value={draft} {placeholder} maxlength="300" autocomplete="off" onkeydown={onKey} aria-label={placeholder} />
+    {#if slash.length > 0}
+      <ul class="slash" role="listbox" aria-label="Commands">
+        {#each slash as it, i (it.id)}
+          <li role="option" aria-selected={i === slashSel} class:sel={i === slashSel}><button tabindex="-1" onmousedown={(e) => { e.preventDefault(); runSlash(it); }}><span>{it.label}</span><code>{it.hint}</code></button></li>
+        {/each}
+      </ul>
+    {/if}
+    <textarea bind:this={input} bind:value={draft} rows="1" {placeholder} maxlength="300" autocomplete="off" oninput={() => { slashOff = false; recallIdx = -1; grow(); }} onkeydown={onKey} aria-label={placeholder}></textarea>
     <button class="send" aria-label="Send" disabled={!draft.trim()} onclick={send}>
       <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12l14-7-5 14-2-6-7-1z"/></svg>
     </button>
@@ -167,9 +218,13 @@
   @keyframes blink { 0%, 80%, 100% { opacity: 0.25; } 40% { opacity: 1; } }
   @media (prefers-reduced-motion: reduce) { .typing i { animation: none; opacity: 0.6; } }
   .empty { margin: auto; text-align: center; color: var(--muted); padding: 0 24px; }
-  footer { display: flex; gap: 8px; align-items: center; padding: 8px 10px; border-top: 1px solid var(--line); }
-  footer input { flex: 1; font: inherit; color: inherit; background: transparent; border: 1px solid var(--line); border-radius: 18px; padding: 7px 12px; outline: none; }
-  footer input:focus { border-color: var(--ring); }
+  footer { position: relative; display: flex; gap: 8px; align-items: center; padding: 8px 10px; border-top: 1px solid var(--line); }
+  footer textarea { flex: 1; font: inherit; color: inherit; background: transparent; border: 1px solid var(--line); border-radius: 18px; padding: 7px 12px; outline: none; resize: none; overflow-y: auto; max-height: 88px; line-height: 1.4; }
+  footer textarea:focus { border-color: var(--ring); }
+  .slash { position: absolute; left: 10px; right: 10px; bottom: calc(100% - 2px); margin: 0; padding: 4px; list-style: none; background: var(--bg); border: 1px solid var(--line); border-radius: 12px; box-shadow: 0 2px 10px rgba(0, 0, 0, 0.14); }
+  .slash button { all: unset; box-sizing: border-box; display: flex; justify-content: space-between; gap: 10px; width: 100%; padding: 6px 9px; border-radius: 8px; cursor: pointer; }
+  .slash li.sel button, .slash button:hover { background: var(--soft); }
+  .slash code { color: var(--muted); font: 11px/1.6 ui-monospace, Consolas, monospace; }
   .send { border: 0; background: transparent; color: var(--ring); cursor: pointer; padding: 4px; border-radius: 6px; }
   .send:disabled { color: var(--muted); cursor: default; }
 </style>

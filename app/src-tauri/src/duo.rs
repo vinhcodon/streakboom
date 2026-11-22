@@ -179,6 +179,8 @@ fn spawn_dev_commands(app: AppHandle, dir: PathBuf) {
                 "scene" => scene_start(&app, ""),
                 l if l.starts_with("scene:") => scene_start(&app, &l[6..]),
                 "tray" => tray(&app),
+                "pinbox" => chatbox_pin(true), // the pin without a click: the person's own windows may take the focus while a script runs
+                "unpinbox" => chatbox_pin(false),
                 "traysingle" => tray_single(&app), // the tray clicks without the mouse (the real tray is for the person to try)
                 "traydouble" => tray_double(&app),
                 "cancel" => scene_cleanup(&app),

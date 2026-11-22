@@ -15,7 +15,7 @@
   import { ASIDE_SKILL, LEAVE_SKILL, SEAT_HERE_SKILL, SEAT_SKILL } from "$lib/skills";
   import { seatFraction, seatMove, seatWalkMs } from "$lib/seat";
   import { addressees, parseDuoCommand, parseRelay } from "$lib/duo-command";
-  import { Conversation, addTurn, situation, toHistory, type Line } from "$lib/conversation";
+  import { Conversation, addTurn, newRoom, situation, toHistory, type Line } from "$lib/conversation";
   import type { BoxAction, BoxView } from "$lib/chatbox";
   import type { PetId } from "$lib/duo";
   import { LEAVE_PACE_PX_S, RETRY_SECS, isLeaveCommand, leaveDeadlineMs, mayLeave, nearerEdge } from "$lib/farewell";
@@ -2444,7 +2444,25 @@
   $effect(() => pushBox());
   function onBoxAction(a: BoxAction) {
     if (a.type === "recipient") { recipient = a.to; return; }
-    if (a.type === "send") { recipient = a.to; void sendChat(a.text); }
+    if (a.type === "send") { recipient = a.to; void sendChat(a.text); return; }
+    if (a.type === "clear") {
+      // "clear this chat": the talk is forgotten by the box and by the pets, and the lines waiting to be said are dropped
+      cancelTalk();
+      talk.room = newRoom();
+      talk.lastSpoken = null;
+      syncLog();
+      return;
+    }
+    if (a.type === "command") {
+      // a command of the slash list: bring a pet out or send it in, on the device, no model (the same as "call Paws out" typed)
+      void (async () => {
+        const ok = await invoke<boolean>("duo_command", { target: a.target, act: a.act }).catch(() => false);
+        lt(`command_duo target=${a.target} act=${a.act} ok=${ok} from=box`);
+        if (ok && a.act === "in") talk.tucked(a.target);
+        await refreshPawsOut();
+        if (ok && a.target === "paws") enter("nod");
+      })();
+    }
   }
   function syncLog() {
     talkLog = talk.room.turns.filter((t) => t.act === "say").slice(-6).map((t) => ({ who: t.from, text: t.text }));
