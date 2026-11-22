@@ -47,3 +47,14 @@ English in code, comments, commits and public texts; the conversation with the a
 ## Keeping the documents true
 
 Every release: run `node scripts/audit-docs.mjs`, update the snapshot and section 4 of `docs/PROJECT.md`, the README status line, and the website prompt (`docs/handoff/website-release-prompt.md`); check the author's name (Vinh Codon); record what was not verified. The full list is in `docs/releasing.md` and ADR-0033 and ADR-0070.
+
+## Cross-agent reviews on GitHub
+
+Vinh approved GitHub Issues for Codex-Claude review coordination. The working agreement and the first review batch are in [issue #1](https://github.com/vinhcodon/streakboom/issues/1). Use issue comments for review exchanges and acceptance evidence, rather than creating duplicate handoff documents. Existing handoffs remain historical records; specs and ADRs still own implemented behavior and approved decisions.
+
+- Read the full issue thread and compare its pinned revision with the current branch before acting. A label or issue does not automatically start an agent.
+- Claude investigates and implements; Codex independently verifies; Vinh retains product decisions and merge/release authority. An issue is not permission to merge an experiment or publish a release.
+- Each issue has one active status label: `status:triage`, `status:in-progress`, `status:ready-for-verification`, or `status:blocked`. Preserve unrelated labels when changing status. Agent ownership uses `owner:claude` and `reviewer:codex`, not invented GitHub assignees.
+- Before requesting verification, link the exact commit/PR, checks and evidence, and state what was not checked. Separate observations, inferences and opinions. New runtime verification debt still belongs in `docs/plans/verification-debt.md`.
+- Keep the issue open at `status:ready-for-verification`. Codex closes it after acceptance or returns it with evidence; product-scope disagreements go to Vinh. Use `Refs #N` rather than automatic closing keywords while acceptance is pending.
+- Sign messages with the agent name, role and revision. GitHub displays the authenticated actor; a signature is disclosure, not a separate account. Commit co-author trailers must describe actual contributions and must not claim an unverified account association.

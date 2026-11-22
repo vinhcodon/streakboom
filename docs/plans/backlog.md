@@ -3,6 +3,9 @@
 Status: **proposed 2026-11-08, asked by Vinh to be carried out story by story.** It turns [`pet-qualities-assessment.md`](pet-qualities-assessment.md) into work and sits next to the phases of [`roadmap.md`](roadmap.md): the roadmap says *when* (Phase 3 real keys, Phase 4 readiness, Phase 5 alpha); this file says *what, in pieces*. Epics E1 to E5 are the five qualities, E6 is measuring the north star and running the alpha, E7 is verification and release.
 
 ## How we work with it
+
+Cross-agent review progress and acceptance are tracked in [GitHub issue #1](https://github.com/vinhcodon/streakboom/issues/1) and its linked issues. This supplements the product backlog and roadmap; creating review tickets does not complete their implementation or verification. The current batch covers privacy (#2), complete duo performance (#3), conversation/input integration (#4), and the isolated bubble-focus fix (#5).
+
 1. **Size.** S = up to half a day, M = one to two days, L = more than two days (an L must be split before it starts).
 2. **After every story** (this is the standing rule): set its status here, update the progress table, compare with the roadmap phase it belongs to, and propose the next two or three stories of size S or M with the reason for the order.
 3. **A story that says "Needs Vinh"** is a decision: I put the options to Vinh as a multiple choice and write an ADR before any code. Other stories can start as soon as their dependencies are done.
