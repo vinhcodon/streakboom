@@ -6,7 +6,7 @@
 
 ## 1. What this is
 
-**Streakboom** is an open-source (MIT) desktop pet for Windows 10/11. The character is **Peak**, a golden mochi cat that lives in the corner of the screen, reacts to being stroked, poked and carried, perches on the edges of windows, speaks Vietnamese, English or Japanese (Japanese is a beta), and keeps the person company. It works with no AI at all (a mood and closeness model and hand-written lines); with the person's **own API key** (Gemini, Groq, Claude or OpenAI) it can also chat. The author is Vinh (GitHub `vinhcodon`, display name Vinh Codon) and works with Claude; the owner of every decision is the author.
+**Streakboom** is an open-source (MIT) desktop pet for Windows 10/11. The character is **Peak**, a golden mochi cat that lives in the corner of the screen, reacts to being stroked, poked and carried, perches on the edges of windows, speaks Vietnamese, English or Japanese (Japanese is a beta), and keeps the person company. It works with no AI at all (a mood and closeness model and hand-written lines); with the person's **own API key** (Gemini, Groq, Claude or OpenAI) it can also chat. The author is Vinh (GitHub `vinhcodon`, display name Vinh Codon) and works with Claude and Codex; the owner of every decision is the author.
 
 - **Mission** (ADR-0057): a small friend who makes the workday lighter and leads you back to real life. It has succeeded when the person lives well and needs it less. It makes **no health claim**: never "healing", "therapy", "clinically proven", never that it reduces anxiety, depression, ADHD or loneliness; the audit fails on those words in the README and the app's texts.
 - **Audience** (ADR-0056): adults, 18 and over (self-declared; whether that is enough waits for a lawyer, [`foundation/legal-questions.md`](foundation/legal-questions.md)). Never write "safe" or "adults only" as a promise.
@@ -68,6 +68,8 @@
 8. **Languages:** the conversation with the author is in Vietnamese; the README, the public texts, the code and most documents are English; the foundation and the earlier requirements draft are Vietnamese.
 
 ## 8. Keeping this file true (the update rule)
+
+**Cross-agent reviews:** use GitHub Issues for Codex-Claude discussion, implementation evidence and independent acceptance ([issue #1](https://github.com/vinhcodon/streakboom/issues/1), the protocol in [`../AGENTS.md`](../AGENTS.md#cross-agent-reviews-on-github)). Do not duplicate these exchanges as handoff documents. Claude marks work ready for verification; Codex verifies before closing. Specs, ADRs and verification debt remain the repository's records, and Vinh retains merge/release authority.
 
 Every release, and every change that alters a fact stated in this file, updates in the **same commit**: the snapshot at the top (version and date; the audit fails if the version is stale), section 4 (released versions, open next), the topic list in section 6 if a decision opened a new topic, and the README (version in the status line; the numbers the website checks). The routine of ADR-0033 and ADR-0070 lists the rest. `node scripts/audit-docs.mjs` checks links, indexes, versions, names, health-claim words and the README's size.
 

@@ -3,6 +3,9 @@
 Status: **proposed 2026-11-08, asked by Vinh to be carried out story by story.** It turns [`pet-qualities-assessment.md`](pet-qualities-assessment.md) into work and sits next to the phases of [`roadmap.md`](roadmap.md): the roadmap says *when* (Phase 3 real keys, Phase 4 readiness, Phase 5 alpha); this file says *what, in pieces*. Epics E1 to E5 are the five qualities, E6 is measuring the north star and running the alpha, E7 is verification and release.
 
 ## How we work with it
+
+Cross-agent review progress and acceptance are tracked in [GitHub issue #1](https://github.com/vinhcodon/streakboom/issues/1) and its linked issues. This supplements the product backlog and roadmap; creating review tickets does not complete their implementation or verification. The current batch covers privacy (#2), complete duo performance (#3), conversation/input integration (#4), and the isolated bubble-focus fix (#5).
+
 1. **Size.** S = up to half a day, M = one to two days, L = more than two days (an L must be split before it starts).
 2. **After every story** (this is the standing rule): set its status here, update the progress table, compare with the roadmap phase it belongs to, and propose the next two or three stories of size S or M with the reason for the order.
 3. **A story that says "Needs Vinh"** is a decision: I put the options to Vinh as a multiple choice and write an ADR before any code. Other stories can start as soon as their dependencies are done.
@@ -512,3 +515,14 @@ The dog is **not** to be put in the app; this is a sticker test, and the decisio
 | FB-5 | A clip under 10 seconds of Peak and a chat screenshot for posts 1 and 5 | S | proposed; the author records them |
 | FB-6 | Claim `@streakboom` and put the readable address in the handoff and the README | S | done 2026-11-17: the author set it, the address opens the Page, the handoff and the ADR carry it; the README carries a Facebook link in its first row of links (2026-11-17) |
 | FB-7 | Measure what the Page brings: a short link per post on the download page, read after four weeks, then keep, change or stop the Page | M | proposed |
+
+## E35: The chat box, revised (`docs/plans/chat-box-issues-and-overlay-proposal.md`, ADR-0146; the overlay is for the duo branch)
+
+| ID | Story | Size | State |
+|---|---|---|---|
+| CB-1 | A long reply is cut at the end of a sentence, limits by use, the talk keeps the whole reply, a budget for the model (ADR-0146) | S | built on `main` 2026-11-22; the model's behaviour not verified (V-188) |
+| CB-2 | The Vietnamese text of the box: `lang`, the font stack, NFC, the composition guard; find the cause with the author's screenshot and typing program | S | the bubble `lang` done; the box part is for the duo session (`docs/handoff/chat-overlay-for-duo-session.md`); the cause is not established |
+| CB-3 | The overlay, step 1: the ambient log with pills, fading and the pin (no hover) | M | proposed (the duo branch; the author's choices are in the handoff) |
+| CB-4 | The overlay, step 2: hover with a delay and a margin, the engaged mode (solid, input, history) | M | proposed |
+| CB-5 | The head of a reply in the bubble and the whole in the box (the duo box) | S | proposed (after ADR-0146 is on the branch) |
+

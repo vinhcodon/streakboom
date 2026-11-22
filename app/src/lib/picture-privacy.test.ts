@@ -1,4 +1,4 @@
-// PS-9: the privacy checks of the screen picture, on the page's side. The picture (a grey grid of at most 192 by 108 cells) is read for
+// PS-9: the privacy checks of the screen picture, on the page's side. The picture (a grey grid 192 cells wide and at most 216 tall) is read for
 // empty cells and dropped; these tests read the sources so that a later change that saves, logs or sends it fails here. They are checks of
 // the code, not a proof of what a person's machine does (that stays in docs/plans/verification-debt.md).
 import { test } from "node:test";
