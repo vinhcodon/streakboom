@@ -162,6 +162,7 @@ pub fn init(app: &AppHandle) {
     app.manage(Duo { state: Mutex::new(state), path, busy: AtomicBool::new(false) });
     if !peak_out { if let Some(w) = app.get_webview_window("main") { let _ = w.hide(); } }
     if paws_out { paws_in_thread(app.clone(), true); }
+    crate::duo_keys::init(app);
     spawn_dev_commands(app.clone(), dir);
 }
 
@@ -179,6 +180,17 @@ fn spawn_dev_commands(app: AppHandle, dir: PathBuf) {
                 "scene" => scene_start(&app, ""),
                 l if l.starts_with("scene:") => scene_start(&app, &l[6..]),
                 "tray" => tray(&app),
+                "opensettings" => crate::open_settings_window(&app, None),
+                // `setkey:box:Ctrl+Alt+F9`: the Settings field, without the keys; the answer goes to duo-cmd-result.txt
+                l if l.starts_with("setkey:") => {
+                    let mut p = l[7..].splitn(2, ':');
+                    if let (Some(w), Some(c)) = (p.next(), p.next()) {
+                        let r = crate::duo_keys::duo_keys_set(w.into(), c.into());
+                        let _ = std::fs::write(dir.join("duo-cmd-result.txt"), format!("{l} -> {}", match r { Ok(_) => "ok".to_string(), Err(e) => format!("refused: {e}") }));
+                    }
+                }
+                "hotbox" => chatbox_toggle(&app), // what the global shortcuts do, without the keys
+                "hotall" => tray(&app),
                 "pinbox" => chatbox_pin(true), // the pin without a click: the person's own windows may take the focus while a script runs
                 "unpinbox" => chatbox_pin(false),
                 "traysingle" => tray_single(&app), // the tray clicks without the mouse (the real tray is for the person to try)
@@ -223,6 +235,7 @@ fn dump(app: &AppHandle, dir: &PathBuf) {
 ", m.id, m.x, m.y, m.w, m.h); }
     if let Some(d) = app.try_state::<Duo>() { o += &format!("state {}
 ", serde_json::to_string(&*d.state.lock().unwrap()).unwrap_or_default()); }
+    if let Some(k) = crate::duo_keys::current() { o += &format!("hotkeys box={} ok={} all={} ok={}\n", k.r#box.combo, k.r#box.ok, k.all.combo, k.all.ok); }
     o += &format!("scale {}
 ", scale(app));
     let _ = std::fs::write(dir.join("duo-dump.txt"), o);

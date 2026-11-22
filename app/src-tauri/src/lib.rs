@@ -4,7 +4,8 @@ mod fastpass;
 mod ground;
 mod platform;
 mod spike; // the duo render spike (exp/duo-prototype only)
-mod duo; // the duo prototype, behind STREAKBOOM_DUO=1 (exp/duo-prototype only)
+mod duo;
+mod duo_keys; // the duo prototype, behind STREAKBOOM_DUO=1 (exp/duo-prototype only)
 mod groq;
 mod openai;
 mod picture;
@@ -778,7 +779,7 @@ fn bubble_hide(app: AppHandle, state: State<AppState>) {
 // ------------------------------------------------------------ settings and menus
 
 /// Open (or bring to front) the settings window. `section` scrolls to a part of it ("brain").
-fn open_settings_window(app: &AppHandle, section: Option<&str>) {
+pub(crate) fn open_settings_window(app: &AppHandle, section: Option<&str>) {
     if let Some(w) = app.get_webview_window("settings") {
         let _ = w.show();
         let _ = w.unminimize();
@@ -2042,6 +2043,9 @@ pub fn run() {
             duo::duo_command,
             duo::duo_bubble_to,
             duo::duo_paws_out,
+            duo_keys::duo_keys_get,
+            duo_keys::duo_keys_set,
+            duo_keys::duo_keys_reset,
             duo::chatbox_hide,
             duo::chatbox_pin,
             duo::duo_presence,

@@ -6,6 +6,7 @@
   import { invoke } from "@tauri-apps/api/core";
   import { getVersion } from "@tauri-apps/api/app";
   import { channelOf } from "$lib/channel";
+  import { comboFromEvent } from "$lib/chatbox";
   import { describeDate } from "$lib/remind";
   import { emitTo } from "@tauri-apps/api/event";
   import { getCurrentWebviewWindow } from "@tauri-apps/api/webviewWindow";
@@ -225,14 +226,9 @@
   }
 
 
-  // what the pet remembers: the drafts follow the stored names when those change
-  let petDraft = $state("");
+  // what the pet remembers: the draft follows the stored name when it changes (the pet itself is not named by the person, ADR-0143)
   let meDraft = $state("");
-  const storedPet = $derived(snap?.memory.petName ?? "");
   const storedMe = $derived(snap?.memory.callMe ?? "");
-  $effect(() => {
-    petDraft = storedPet;
-  });
   $effect(() => {
     meDraft = storedMe;
   });
@@ -427,8 +423,33 @@
     }
   }
 
+  // Shortcuts (duo prototype, ADR-0142; only with the developer flag, English only for now): the two global shortcuts, changed by pressing the keys
+  type KeyView = { combo: string; ok: boolean; error: string | null };
+  let duoOn = $state(false);
+  let keys = $state<{ box: KeyView; all: KeyView } | null>(null);
+  let capturing = $state<"box" | "all" | null>(null);
+  let keyMsg = $state("");
+  async function loadKeys() {
+    keys = await invoke<{ box: KeyView; all: KeyView } | null>("duo_keys_get").catch(() => null);
+  }
+  function captureKey(e: KeyboardEvent) {
+    if (!capturing) return;
+    e.preventDefault();
+    if (e.key === "Escape") { capturing = null; keyMsg = ""; return; }
+    const combo = comboFromEvent(e);
+    if (!combo) { keyMsg = "Hold Ctrl, Alt or Win and press a letter, a digit, F1 to F12 or Space."; return; }
+    const which = capturing;
+    capturing = null;
+    invoke<{ box: KeyView; all: KeyView }>("duo_keys_set", { which, combo }).then((v) => { keys = v; keyMsg = ""; }).catch((err) => { keyMsg = `${combo}: ${err}`; });
+  }
+  async function resetKeys() {
+    keys = await invoke<{ box: KeyView; all: KeyView }>("duo_keys_reset").catch(() => keys);
+    keyMsg = "";
+  }
+
   onMount(() => {
     const cleanups: Array<() => void> = [];
+    void invoke<boolean>("duo_enabled").then((v) => { duoOn = v; if (v) void loadKeys(); }).catch(() => {});
     const onFocus = () => {
       if (waitingForReturn) {
         waitingForReturn = false;
@@ -489,6 +510,24 @@
         {/each}
       </div>
       <p class="muted">{s.updates === "auto" ? (ownChannel === "preview" ? ui.updatesNoteAutoPreview : ui.updatesNoteAuto) : s.updates === "off" ? ui.updatesNoteOff : ui.updatesNoteAsk}</p>
+    </section>
+    {/if}
+
+    {#if page === "general" && duoOn && keys}
+    <section id="sec-shortcuts" class="card">
+      <h2>Shortcuts</h2>
+      <p class="muted">Two shortcuts work from any program while Streakboom runs. Streakboom learns only that one of these two combinations was pressed, never any other key. Press the keys to change one; Esc cancels.</p>
+      {#each [["box", "Show or hide the chat box"], ["all", "Send everyone in or bring them out"]] as [id, label] (id)}
+        {@const k = id === "box" ? keys.box : keys.all}
+        <div class="row">
+          <span class="lbl">{label}</span>
+          <button class="seg" onkeydown={captureKey} onclick={() => { capturing = id === "box" ? "box" : "all"; keyMsg = ""; }} onblur={() => { if (capturing === id) capturing = null; }}>{capturing === id ? "Press the keys…" : k.combo}</button>
+        </div>
+        {#if !k.ok}<p class="muted help">{k.combo} is not active: {k.error}</p>{/if}
+      {/each}
+      {#if keyMsg}<p class="muted help">{keyMsg}</p>{/if}
+      <div class="row"><button class="seg" onclick={resetKeys}>Back to the defaults</button></div>
+      <p class="muted">In the chat box: Enter sends, Shift+Enter breaks the line, Esc clears the field and then hides the box, the up arrow brings back the last message, Tab or Ctrl+1, 2, 3 change who it is for, and / opens the commands.</p>
     </section>
     {/if}
 
@@ -606,11 +645,6 @@
         <input type="checkbox" checked={snap.memory.learn} onchange={(e) => setLearn(e.currentTarget.checked)} />
         {ui.memLearn}
       </label>
-      <div class="row">
-        <span class="lbl">{ui.memPetName}</span>
-        <input class="txt" maxlength="20" placeholder={ui.memNone} bind:value={petDraft} onkeydown={(e) => e.key === "Enter" && saveName("petName", petDraft)} />
-        <button class="seg" disabled={petDraft.trim() === snap.memory.petName} onclick={() => saveName("petName", petDraft)}>{ui.memSave}</button>
-      </div>
       <div class="row">
         <span class="lbl">{ui.memCallMe}</span>
         <input class="txt" maxlength="20" placeholder={ui.memNone} bind:value={meDraft} onkeydown={(e) => e.key === "Enter" && saveName("callMe", meDraft)} />

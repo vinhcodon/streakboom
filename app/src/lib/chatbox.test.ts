@@ -67,3 +67,19 @@ test("Tab goes round Peak, Paws, Both; with Paws away only Peak; Ctrl+number pic
   assert.equal(recipientByNumber(3, true), "both");
   assert.equal(recipientByNumber(4, true), null);
 });
+
+import { comboFromEvent } from "./chatbox.ts";
+
+test("a pressed combination becomes the text of a global shortcut, or nothing when it cannot be one", () => {
+  const ev = (code: string, o: Partial<{ ctrlKey: boolean; altKey: boolean; shiftKey: boolean; metaKey: boolean }> = {}) => ({ ctrlKey: false, altKey: false, shiftKey: false, metaKey: false, code, ...o });
+  assert.equal(comboFromEvent(ev("KeyP", { ctrlKey: true, altKey: true })), "Ctrl+Alt+P");
+  assert.equal(comboFromEvent(ev("KeyP", { shiftKey: true, altKey: true, ctrlKey: true })), "Ctrl+Alt+Shift+P");
+  assert.equal(comboFromEvent(ev("Digit7", { ctrlKey: true })), "Ctrl+7");
+  assert.equal(comboFromEvent(ev("F5", { altKey: true })), "Alt+F5");
+  assert.equal(comboFromEvent(ev("Space", { ctrlKey: true })), "Ctrl+Space");
+  assert.equal(comboFromEvent(ev("KeyP")), null); // no modifier
+  assert.equal(comboFromEvent(ev("KeyP", { shiftKey: true })), null); // Shift alone takes a letter from typing
+  assert.equal(comboFromEvent(ev("ControlLeft", { ctrlKey: true })), null); // a bare modifier
+  assert.equal(comboFromEvent(ev("Enter", { ctrlKey: true })), null); // a key that is not allowed
+  assert.equal(comboFromEvent(ev("F13", { ctrlKey: true })), null);
+});

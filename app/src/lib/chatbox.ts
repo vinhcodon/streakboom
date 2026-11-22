@@ -124,3 +124,16 @@ export function recipientByNumber(n: number, pawsOut: boolean): Recipient | null
   if (!pawsOut) return null;
   return n === 2 ? "paws" : n === 3 ? "both" : null;
 }
+
+/** A key combination pressed in the Settings field, as the text the program registers ("Ctrl+Alt+P"), or null when it cannot be a global shortcut:
+ *  it needs Ctrl, Alt or Win (Shift alone would take a letter away from typing) and one key: a letter, a digit, F1 to F12 or Space. */
+export function comboFromEvent(e: { ctrlKey: boolean; altKey: boolean; shiftKey: boolean; metaKey: boolean; code: string }): string | null {
+  if (!(e.ctrlKey || e.altKey || e.metaKey)) return null;
+  let key: string | null = null;
+  const m = /^Key([A-Z])$/.exec(e.code) ?? /^Digit([0-9])$/.exec(e.code);
+  if (m) key = m[1];
+  else if (/^F([1-9]|1[0-2])$/.test(e.code)) key = e.code;
+  else if (e.code === "Space") key = "Space";
+  if (!key) return null;
+  return [e.ctrlKey && "Ctrl", e.altKey && "Alt", e.shiftKey && "Shift", e.metaKey && "Win", key].filter(Boolean).join("+");
+}
