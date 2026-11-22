@@ -1,0 +1,2 @@
+message '@Paws latency one': lines shown = 1 (one model call each); first line after 553 ms, last after 553 ms (from writing the command; the command itself waits 800 ms in the script)
+message 'latency both pets': lines shown = 2 (one model call each); first line after 575 ms, last after 1849 ms (from writing the command; the command itself waits 800 ms in the script)
