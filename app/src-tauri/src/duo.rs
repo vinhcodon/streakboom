@@ -85,6 +85,14 @@ impl DuoState {
         self.get_mut(target).out = true;
         true
     }
+    /// The person asks for `target` to come out ("call Peak out", the slash list): the pet that is on the screen calls it, whichever pet that is (it was Peak
+    /// only, so with Paws out Peak could not be called); with nobody on the screen the person brings it out by name.
+    pub fn request_out(&mut self, target: Id) -> bool {
+        if self.get(target).out { return false; }
+        if self.out().is_empty() { return self.bring_when_none_out(target); }
+        let caller = if target == Id::Peak { Id::Paws } else { Id::Peak };
+        self.call(caller, target)
+    }
     /// With nobody out the person may bring either pet out by name (the slash list of the chat box, ADR-0145): there is no pet on the screen to call it.
     pub fn bring_when_none_out(&mut self, target: Id) -> bool {
         if !self.out().is_empty() { return false; }
@@ -337,7 +345,7 @@ pub fn duo_command(app: AppHandle, target: String, act: String) -> bool {
     let go_in = act == "in";
     let done = {
         let mut s = d.state.lock().unwrap();
-        let ok = if go_in { s.tuck(id, now_ms(), None) } else if s.out().is_empty() { s.bring_when_none_out(id) } else { s.call(Id::Peak, id) };
+        let ok = if go_in { s.tuck(id, now_ms(), None) } else { s.request_out(id) };
         if ok { save(&d, &s); }
         ok
     };
@@ -583,6 +591,19 @@ mod tests {
         assert!(s.pets.paws.out && !s.pets.peak.out);
         assert!(!s.bring_when_none_out(Id::Peak)); // Paws is out now: only a pet on the screen calls
         assert!(s.call(Id::Paws, Id::Peak));
+    }
+    #[test]
+    fn a_pet_that_is_out_is_called_by_whichever_pet_is_on_the_screen() {
+        let mut s = DuoState::default(); // Peak out
+        assert!(s.request_out(Id::Paws)); // Peak calls Paws
+        assert!(!s.request_out(Id::Paws)); // already out
+        let mut t = DuoState::default();
+        t.pets.peak.out = false; t.pets.paws.out = true; // the case the author hit: Paws out, Peak in
+        assert!(t.request_out(Id::Peak)); // Paws calls Peak
+        assert!(t.pets.peak.out && t.pets.paws.out);
+        let mut n = DuoState::default();
+        n.pets.peak.out = false; // nobody out: by name
+        assert!(n.request_out(Id::Paws));
     }
     #[test]
     fn the_tray_sends_everyone_in_then_brings_out_the_last_tucked() {
