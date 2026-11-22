@@ -2409,6 +2409,7 @@
           situation: situation(pet, role, both, undefined, mem.callMe),
         }).catch((e) => {
           void invoke("duo_log", { line: `brain_failed ${pet} ${errKind(e)}` }).catch(() => {});
+          if (errKind(e) === "rate_limit") data = coolDown(data, Date.now()); // as every other brain call: the second pet of a turn is then a gesture, not a second refused call (issue 4)
           throw e;
         });
         return out.text;

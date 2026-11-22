@@ -83,6 +83,7 @@ export class Conversation {
   room: Room = newRoom();
   lastSpoken: PetId | null = null;
   private token = 0;
+  private writes = 0;
   private gone = new Set<PetId>();
   /** The text of a person turn already put in the room the moment it was sent (so the box shows it at once); the turn that follows does not add it again. */
   private noted: string | null = null;
@@ -105,8 +106,10 @@ export class Conversation {
 
   /** One model call for one pet, with the "writing" signal on while it lasts. */
   private async ask(pet: PetId, role: "first" | "second" | "relayed"): Promise<string> {
+    const mine = ++this.writes;
     this.deps.writing?.(pet);
-    try { return await this.deps.model(pet, heard(this.room, pet), role); } finally { this.deps.writing?.(null); }
+    // an older call that ends after a newer one began must not switch the dots off for the newer one (issue 4)
+    try { return await this.deps.model(pet, heard(this.room, pet), role); } finally { if (mine === this.writes) this.deps.writing?.(null); }
   }
 
   private takeNote(text: string): boolean {

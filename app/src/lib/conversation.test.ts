@@ -176,3 +176,85 @@ test("the situation layer says who the pet is, who was spoken to, and allows a p
   assert.match(situation("paws", "second", true), /\[pass\].*\[to:peak\]/);
   assert.doesNotMatch(situation("peak", "first", true), /\[pass\]/);
 });
+
+// ---- issue 4: races, failures and the shared quota ----
+
+test("an older call that ends late does not switch the writing dots off for the newer one", async () => {
+  let releaseOld: (s: string) => void = () => {};
+  const old = new Promise<string>((r) => { releaseOld = r; });
+  let releaseNew: (s: string) => void = () => {};
+  const fresh = new Promise<string>((r) => { releaseNew = r; });
+  const signal: (string | null)[] = [];
+  const { talk } = rig({ peak: () => old, paws: () => fresh }, { writing: (p) => signal.push(p) });
+  const first = talk.person("one", ["peak"], ["peak", "paws"]);
+  await Promise.resolve();
+  const second = talk.person("two", ["paws"], ["peak", "paws"]);
+  await Promise.resolve();
+  releaseOld("late"); // the old turn was cancelled by the new message
+  await first;
+  assert.equal(signal[signal.length - 1], "paws", "the dots stay on for the pet that is still writing");
+  releaseNew("Splendid.");
+  await second;
+  assert.equal(signal[signal.length - 1], null, "and go off when the current call ends");
+});
+
+test("replies that finish in the wrong order: only the current turn is shown", async () => {
+  const done: ((s: string) => void)[] = [];
+  const mk = () => () => new Promise<string>((r) => { done.push(r); });
+  const { talk, lines } = rig({ peak: mk(), paws: mk() });
+  const a = talk.person("one", ["peak"], ["peak", "paws"]);
+  await Promise.resolve();
+  const b = talk.person("two", ["paws"], ["peak", "paws"]);
+  await Promise.resolve();
+  done[1]("[happy] new answer"); // the newer call ends first
+  await b;
+  done[0]("old answer"); // then the older one
+  await a;
+  assert.deepEqual(lines.map((l) => [l.pet, l.text]), [["paws", "new answer"]]);
+});
+
+test("both calls fail: two gestures, two calls, no chain", async () => {
+  const { talk, lines, calls } = rig({}); // no key for either: both reject
+  await talk.person("both?", ["peak", "paws"], ["peak", "paws"]);
+  assert.deepEqual(lines.map((l) => [l.pet, l.act]), [["peak", "gesture"], ["paws", "gesture"]]);
+  assert.equal(calls.length, 2);
+});
+
+test("the second call fails alone: the first line stays, the second pet gestures", async () => {
+  const { talk, lines } = rig({ peak: "Fine." });
+  await talk.person("both?", ["peak", "paws"], ["peak", "paws"]);
+  assert.deepEqual(lines.map((l) => [l.pet, l.act]), [["peak", "say"], ["paws", "gesture"]]);
+});
+
+test("one quota slot left for two pets: the first is answered by the model and the second is a gesture, one charge", async () => {
+  let left = 1;
+  const { talk, lines, calls } = rig({ peak: "Fine.", paws: "Splendid." }, { allow: () => left > 0 });
+  // the page charges inside the model call (recordAi); the gate is asked before each call
+  const model = (talk as unknown as { deps: Deps }).deps.model;
+  (talk as unknown as { deps: Deps }).deps.model = async (...a) => { left--; return model(...a); };
+  await talk.person("both?", ["peak", "paws"], ["peak", "paws"]);
+  assert.deepEqual(lines.map((l) => [l.pet, l.act]), [["peak", "say"], ["paws", "gesture"]]);
+  assert.equal(calls.length, 1);
+});
+
+test("a refusal that starts a cooldown makes the other pet of the turn a gesture, not a second refused call", async () => {
+  let cool = false;
+  const { talk, lines, calls } = rig({ paws: "never" }, { allow: () => !cool });
+  const model = (talk as unknown as { deps: Deps }).deps.model;
+  (talk as unknown as { deps: Deps }).deps.model = async (...a) => { try { return await model(...a); } catch (e) { cool = true; throw e; } }; // what the page does on rate_limit
+  await talk.person("both?", ["peak", "paws"], ["peak", "paws"]); // peak has no key: rejects
+  assert.deepEqual(lines.map((l) => [l.pet, l.act]), [["peak", "gesture"], ["paws", "gesture"]]);
+  assert.equal(calls.length, 1);
+});
+
+test("a message sent while a relay waits for its beat cancels it", async () => {
+  let release = () => {};
+  const { talk, lines, calls } = rig({ peak: "x", paws: "Splendid." }, { sleep: () => new Promise<void>((r) => { release = r; }) });
+  const relayed = talk.relay("ask Paws", "peak", "paws", ["peak", "paws"]);
+  await Promise.resolve();
+  talk.cancel();
+  release();
+  await relayed;
+  assert.equal(calls.length, 0);
+  assert.deepEqual(lines.map((l) => l.act), ["turn"], "only the turn to Paws was shown, no answer follows");
+});
