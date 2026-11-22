@@ -709,19 +709,6 @@ pub(crate) fn place_bubble(app: &AppHandle) {
     let _ = app.emit_to("bubble", "bubble-place", BubblePlace { side: p.side, tail: p.tail as f64 / scale });
 }
 
-/// Show a window without activating it (SW_SHOWNA): it appears, the window that has the keyboard keeps it.
-pub(crate) fn show_without_focus(w: &WebviewWindow) {
-    #[cfg(windows)]
-    {
-        use windows_sys::Win32::UI::WindowsAndMessaging::{ShowWindow, SW_SHOWNA};
-        if let Ok(h) = w.hwnd() {
-            unsafe { ShowWindow(h.0 as isize as _, SW_SHOWNA) };
-            return;
-        }
-    }
-    let _ = w.show();
-}
-
 /// The bubble page measured its content: size the window to it, show it and place it.
 /// `interactive` bubbles take clicks and keys; plain speech is click-through and never takes
 /// focus from the app the user is typing in.
@@ -750,7 +737,7 @@ fn bubble_fit(app: AppHandle, state: State<AppState>, w: f64, h: f64, interactiv
     if !was_visible {
         // Plain speech is shown without taking the keyboard. Found with the chat box (ADR-0142): a pet's line took the focus from the box the person
         // was typing in (the program was already in front, so Windows let the bubble be activated). Only a bubble that is asked to take focus does.
-        if interactive { let _ = bubble.show(); } else { show_without_focus(&bubble); }
+        if interactive { let _ = bubble.show(); } else { show_without_activating(&bubble); }
     }
     if focus && interactive {
         let _ = bubble.set_focus();

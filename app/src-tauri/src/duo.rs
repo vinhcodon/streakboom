@@ -733,7 +733,7 @@ fn show_ambient(app: &AppHandle, win: &tauri::WebviewWindow) {
     BOX_ENGAGED.store(false, Ordering::SeqCst);
     let _ = win.set_focusable(false);
     let _ = win.set_ignore_cursor_events(true);
-    crate::show_without_focus(win);
+    crate::platform::show_without_activating(win);
     let _ = app.emit_to(BOX_LABEL, "chatbox-mode", false);
 }
 
@@ -804,7 +804,7 @@ fn hover_engage(app: &AppHandle, win: &tauri::WebviewWindow) {
     BOX_ENGAGED.store(true, Ordering::SeqCst);
     let _ = win.set_focusable(true);
     let _ = win.set_ignore_cursor_events(false);
-    crate::show_without_focus(win); // changing the focusable style takes the window off the screen: it is shown again, still without taking the keyboard (found with the real mouse)
+    crate::platform::show_without_activating(win); // changing the focusable style takes the window off the screen: it is shown again, still without taking the keyboard (found with the real mouse)
     let _ = app.emit_to(BOX_LABEL, "chatbox-mode", true);
 }
 
