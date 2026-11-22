@@ -13,7 +13,7 @@ test("every language has every word, and the names of the pets are never transla
   for (const l of ["vi", "en", "ja"] as const) {
     assert.match(BOX_UI[l].slash.outPaws, /Paws/);
     assert.match(BOX_UI[l].slash.inPeak, /Peak/);
-    assert.match(BOX_UI[l].messageBoth, /Peak/);
+    assert.ok(BOX_UI[l].say.length > 3 && !/Peak|Paws/.test(BOX_UI[l].say), "one simple line that names nobody");
     assert.match(BOX_UI[l].writing, /\{name\}/);
   }
 });

@@ -258,3 +258,17 @@ test("a message sent while a relay waits for its beat cancels it", async () => {
   assert.equal(calls.length, 0);
   assert.deepEqual(lines.map((l) => l.act), ["turn"], "only the turn to Paws was shown, no answer follows");
 });
+
+test("the language the person writes in is said again, last, to each pet, with the chosen one as the fallback; none is said when it is not known", () => {
+  assert.match(situation("paws", "first", false, undefined, "", "vi"), /language the person is writing in.*reply in Vietnamese/);
+  assert.match(situation("peak", "second", true, undefined, "Vinh", "ja"), /language the person is writing in.*reply in Japanese.*likes to be called Vinh/);
+  assert.doesNotMatch(situation("paws", "first", false), /language the person is writing in/);
+});
+
+test("a mood tag is a known mood or neutral; a misspelling keeps its mood; a stray known tag is never left in the words", () => {
+  assert.equal(parseUtterance("[ssad] Oh dear.").mood, "sad");
+  assert.equal(parseUtterance("[giggly] Hello.").mood, "neutral");
+  assert.deepEqual(parseUtterance('"[happy] Hello there." [sad]').text, 'Hello there."');
+  assert.equal(parseUtterance("**[warm]** Hi").text, "Hi");
+  assert.equal(parseUtterance("Hi [sad] there").text, "Hi there");
+});

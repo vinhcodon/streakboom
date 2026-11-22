@@ -162,11 +162,13 @@ pub fn split_mood(raw: &str) -> (String, String) {
         }
         Some((word, (s.len() - rest.len()) + end + 1))
     };
-    if let Some((w, n)) = tag(&text) {
+    // leading tags, one or several ("[sad] [ssad] ..."): the first known one is the mood; a misspelling that holds a known mood ("ssad") counts for it
+    let mut first = true;
+    while let Some((w, n)) = tag(&text) {
         let lead = text.len() - text.trim_start().len();
-        if MOODS.contains(&w.as_str()) {
-            mood = w;
-        }
+        let known = MOODS.iter().find(|m| **m == w).or_else(|| MOODS.iter().find(|m| w.contains(**m)));
+        if first { if let Some(m) = known { mood = (*m).to_string(); } }
+        first = false;
         text = text[lead + n..].trim_start().to_string();
     }
     // a tag the model put at the end instead
@@ -181,7 +183,16 @@ pub fn split_mood(raw: &str) -> (String, String) {
             }
         }
     }
-    (text, mood)
+    // a known mood tag in the middle of the words is taken out too, never shown
+    for m in MOODS {
+        let t = format!("[{m}]");
+        while let Some(i) = text.to_lowercase().find(&t) {
+            let end = i + t.len();
+            if mood == "neutral" { mood = m.to_string(); }
+            text = format!("{}{}", text[..i].trim_end(), if text[end..].starts_with(|c: char| c.is_whitespace() || c.is_ascii_punctuation()) { text[end..].to_string() } else { format!(" {}", &text[end..]) });
+        }
+    }
+    (text.trim().to_string(), mood)
 }
 
 /// The skills the model may name in a `[skill:name]` tag (spec 14, story S4): a closed list. Anything else in such a tag is removed
@@ -855,6 +866,14 @@ mod tests {
             }
         }
         h
+    }
+
+    #[test]
+    fn several_and_misspelt_mood_tags_never_reach_the_screen() {
+        assert_eq!(split_mood("[sad] [ssad] Oh dear."), ("Oh dear.".to_string(), "sad".to_string()));
+        assert_eq!(split_mood("[ssad] Oh dear.").1, "sad");
+        assert_eq!(split_mood("[giggly] Hello.").1, "neutral");
+        assert_eq!(split_mood("Hi [sad] there").0, "Hi there");
     }
 
     #[test]

@@ -709,7 +709,7 @@ pub(crate) fn place_bubble(app: &AppHandle) {
 }
 
 /// Show a window without activating it (SW_SHOWNA): it appears, the window that has the keyboard keeps it.
-fn show_without_focus(w: &WebviewWindow) {
+pub(crate) fn show_without_focus(w: &WebviewWindow) {
     #[cfg(windows)]
     {
         use windows_sys::Win32::UI::WindowsAndMessaging::{ShowWindow, SW_SHOWNA};
@@ -2048,6 +2048,10 @@ pub fn run() {
             duo_keys::duo_keys_reset,
             duo::chatbox_hide,
             duo::chatbox_pin,
+            duo::chatbox_mode,
+            duo::chatbox_state,
+            duo::chatbox_fit,
+            duo::duo_box_ambient,
             duo::duo_presence,
             duo::duo_touch,
             duo::duo_open_box,

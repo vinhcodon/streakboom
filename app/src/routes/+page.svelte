@@ -2410,7 +2410,7 @@
           clock: clockLine(new Date()),
           pet,
           duo: true,
-          situation: situation(pet, role, both, undefined, mem.callMe),
+          situation: situation(pet, role, both, undefined, mem.callMe, lang),
         }).catch((e) => {
           void invoke("duo_log", { line: `brain_failed ${pet} ${errKind(e)}` }).catch(() => {});
           if (errKind(e) === "rate_limit") data = coolDown(data, Date.now()); // as every other brain call: the second pet of a turn is then a gesture, not a second refused call (issue 4)
@@ -2429,12 +2429,15 @@
   );
   // The chat box: what it shows is pushed to its window whenever it changes; what is written in it comes back as an action.
   let lastBox = "";
+  let lastBoxTurns = 0;
   function pushBox(force = false) {
     const v = $state.snapshot({ lang, callMe: mem.callMe, turns: boxTurns, typing: chatPhase === "thinking" ? "peak" : modelTyping, canChat: canChat || duoFake }) as BoxView;
     if (!duoOn) return;
     const s = JSON.stringify(v);
     if (!force && s === lastBox) return;
     lastBox = s;
+    if (boxTurns.length > lastBoxTurns) void invoke("duo_box_ambient").catch(() => {}); // a message arrived: the ambient log shows it (no focus taken)
+    lastBoxTurns = boxTurns.length;
     void emitTo("chatbox", "chatbox-view", v).catch(() => {});
   }
   $effect(() => pushBox());
@@ -2532,6 +2535,17 @@
     const to = addressees(text, out); // every pet that is out, or the one the message names (ADR-0145)
     if (to.length === 0) return true; // nobody is out: nothing is sent
     if (to.length === 1 && to[0] === "peak") return false; // Peak alone: its own chat, as before
+    // the daily limit or a cooldown: the pet says so in its own words and no call is made (it used to be a silent gesture, and the person saw nothing)
+    const gate = duoFake ? "ok" : aiGate(data, "chat", Date.now());
+    if (gate !== "ok") {
+      const line = gate === "cap" ? ui.capHit[Math.floor(Math.random() * ui.capHit.length)] : ui.err.rate_limit;
+      talk.notePerson(text, to);
+      talk.room = addTurn(talk.room, { from: to[0], to: ["person"], text: line, at: Date.now(), act: "say" }).room;
+      syncLog();
+      lineGen++;
+      await sayAs(to[0], line);
+      return true;
+    }
     busy = true;
     closePanel();
     void invoke("duo_scene_cancel").catch(() => {});
@@ -3024,7 +3038,7 @@
         remind: !away && !leaving, // a day told in a chat is told in a chat, so the model is offered this one in a conversation too (ADR-0115)
         banter: talking, // in a conversation a "go away" is a tease: stay and answer in kind (ADR-0108)
         clock: clockLine(new Date()), // the local time, the weekday and the part of the day, so the model does not guess them (ADR-0105)
-        situation: duoOn && pawsOutNow ? situation("peak", "first", false, undefined, mem.callMe) : undefined, // Paws is out: Peak knows it is its housemate, not a name it never heard (duo prototype)
+        situation: duoOn && pawsOutNow ? situation("peak", "first", false, undefined, mem.callMe, lang) : undefined, // Paws is out: Peak knows it is its housemate, not a name it never heard (duo prototype)
       });
       // The model's own word is checked again here: the name is on the closed list, the message is short and not a question,
       // and the same gates as for the table (Preview, not Quiet, not carried, not in the air). Its words are not shown: Peak says

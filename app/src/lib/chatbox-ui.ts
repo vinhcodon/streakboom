@@ -11,9 +11,7 @@ export interface BoxStrings {
   keepOpen: string;
   send: string;
   commands: string;
-  messagePeak: string;
-  messagePaws: string;
-  messageBoth: string;
+  say: string; // the placeholder of the field: one line, whoever is out (ADR-0147; who hears is shown by the pets on the screen)
   bothResting: string; // both pets are in: a message that is not a command is not sent
   noBrain: string;
   empty: string;
@@ -28,7 +26,7 @@ export interface BoxStrings {
 export const BOX_UI: Record<BoxLang, BoxStrings> = {
   en: {
     today: "Today", you: "You", keepOpen: "Keep open", send: "Send", commands: "Commands",
-    messagePeak: "Message Peak", messagePaws: "Message Paws", messageBoth: "Message Peak and Paws", bothResting: "Both are resting: type / to call one out",
+    say: "Say something…", bothResting: "Both are resting: type / to call one out",
     noBrain: "No brain connected: commands only",
     empty: "Say something to Peak or Paws.",
     emptyNoBrain: "No brain is connected. Commands such as “call Paws out” still work.",
@@ -38,7 +36,7 @@ export const BOX_UI: Record<BoxLang, BoxStrings> = {
   },
   vi: {
     today: "Hôm nay", you: "Bạn", keepOpen: "Giữ hộp luôn mở", send: "Gửi", commands: "Lệnh",
-    messagePeak: "Nhắn cho Peak", messagePaws: "Nhắn cho Paws", messageBoth: "Nhắn cho Peak và Paws", bothResting: "Cả hai đang nghỉ: gõ / để gọi ra",
+    say: "Nói gì đó đi…", bothResting: "Cả hai đang nghỉ: gõ / để gọi ra",
     noBrain: "Chưa có bộ não: chỉ dùng được lệnh",
     empty: "Nói gì đó với Peak hoặc Paws đi.",
     emptyNoBrain: "Chưa có bộ não nào. Các lệnh như “gọi Paws ra” vẫn dùng được.",
@@ -48,7 +46,7 @@ export const BOX_UI: Record<BoxLang, BoxStrings> = {
   },
   ja: {
     today: "今日", you: "あなた", keepOpen: "開いたままにする", send: "送信", commands: "コマンド",
-    messagePeak: "Peakにメッセージ", messagePaws: "Pawsにメッセージ", messageBoth: "PeakとPawsにメッセージ", bothResting: "ふたりとも休み中：/ で呼び出せます",
+    say: "なにか話しかけてね…", bothResting: "ふたりとも休み中：/ で呼び出せます",
     noBrain: "ブレインが未接続です：コマンドのみ",
     empty: "PeakかPawsに話しかけてみよう。",
     emptyNoBrain: "ブレインが未接続です。「Pawsを呼んで」などのコマンドは使えます。",

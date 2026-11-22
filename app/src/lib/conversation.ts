@@ -39,6 +39,12 @@ export function plan(to: PetId[], present: PetId[], lastSpoken: PetId | null): P
 
 export interface Utterance { text: string; mood: string; pass: boolean; to: PetId[] }
 
+const MOOD_NAMES = ["neutral", "happy", "warm", "sassy", "surprised", "curious", "sad"];
+/** A mood tag as a mood: a known one, a known one inside a misspelling ("ssad" is sad), else neutral. */
+function moodOf(tag: string): string {
+  return MOOD_NAMES.find((m) => m === tag) ?? MOOD_NAMES.find((m) => tag.includes(m)) ?? "neutral";
+}
+
 /** The reply of a model: leading tags `[mood]`, `[pass]` and `[to:paws]` (any order) and then the words. Untrusted: the director checks it. */
 export function parseUtterance(raw: string): Utterance {
   let rest = raw.trim();
@@ -46,14 +52,16 @@ export function parseUtterance(raw: string): Utterance {
   let pass = false;
   const to: PetId[] = [];
   for (;;) {
-    const m = /^\[([a-z:]+)\]\s*/i.exec(rest);
+    const m = /^[\s"'*_]*\[([a-z:]+)\][*_]*\s*/i.exec(rest);
     if (!m) break;
     const tag = m[1].toLowerCase();
     if (tag === "pass") pass = true;
     else if (tag.startsWith("to:")) { const id = tag.slice(3) as PetId; if (PETS.includes(id) && !to.includes(id)) to.push(id); }
-    else mood = tag;
+    else mood = moodOf(tag);
     rest = rest.slice(m[0].length);
   }
+  // a known mood tag left in the middle or at the end of the words (a model sometimes puts it there) is taken out, never shown as text
+  rest = rest.replace(new RegExp(String.raw`\s*\[(${MOOD_NAMES.join("|")})\]`, "gi"), "");
   return { text: rest.trim(), mood, pass, to };
 }
 
@@ -217,7 +225,7 @@ export function toHistory(view: Turn[], pet: PetId, profiles: Profiles = loadPro
 }
 
 /** The situation layer (L3) for one call: who is present, who was spoken to, and what this pet may do now. Built by the code each time. */
-export function situation(pet: PetId, role: "first" | "second" | "relayed", both: boolean, profiles: Profiles = loadProfiles(), callMe = ""): string {
+export function situation(pet: PetId, role: "first" | "second" | "relayed", both: boolean, profiles: Profiles = loadProfiles(), callMe = "", lang = ""): string {
   const me = profiles[pet];
   const other = profiles[pet === "peak" ? "paws" : "peak"];
   const parts = [
@@ -234,6 +242,10 @@ export function situation(pet: PetId, role: "first" | "second" | "relayed", both
     parts.push(`${say}${pass}${aside}.`);
   }
   parts.push("Never mention a pet's words as if the person had said them.");
+  // the voice texts are written in English and a small model follows them into English: the language is said again, last, for every pet. It is the language
+  // the person writes in (the model reads it from their last message); the language chosen in Settings is only the one to fall back on.
+  const language = lang === "vi" ? "Vietnamese" : lang === "ja" ? "Japanese" : lang === "en" ? "English" : "";
+  if (language) parts.push(`Always reply in the language the person is writing in, taken from their last message, even when it is not ${language}; if their message does not show a language, reply in ${language}. Whatever language the other pet or these notes use, do not follow it.`);
   if (callMe) parts.push(`The person likes to be called ${callMe}; both of you call them that.`);
   if (me.note) parts.push(me.note);
   return parts.join(" ");

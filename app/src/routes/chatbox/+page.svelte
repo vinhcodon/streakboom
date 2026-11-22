@@ -12,7 +12,8 @@
 
   let view = $state<BoxView>(EMPTY_VIEW);
   let presence = $state({ peak: true, paws: false });
-  let pinned = $state(false);
+  let pinned = $state(true); // by default (ADR-0147): the box stays shown when it loses the focus; it is hidden by the shortcut, the tray, Esc or /pin off
+  let engaged = $state(false); // the box takes clicks and keys (shortcut, tray, double click, or the pointer resting on it); else the same box lets the mouse through. The layout never changes between the two
   let draft = $state("");
   let input = $state<HTMLTextAreaElement | null>(null);
   let recallIdx = -1; // arrow up and down: where in the messages sent before (-1: not browsing)
@@ -21,15 +22,22 @@
   let settledDraft = $state(""); // the draft as the list of commands sees it: it does not move while a word is composed (ADR-0147)
   let slashOff = $state(false); // Esc closed the list: it stays closed until the field changes
   let scroller = $state<HTMLDivElement | null>(null);
+  let inner = $state<HTMLDivElement | null>(null);
+  const maxH = typeof screen !== "undefined" ? Math.round(screen.availHeight * 0.55) : 480; // the tallest the stack grows (logical px); beyond it the talk scrolls, without a bar
 
   const items = $derived(groupTurns(view.turns));
+  const typingWho = $derived(view.typing);
+  // what the program needs to know to treat the pointer (ADR-0147): whether the field is empty (the pointer leaving gives the box back only then)
+  $effect(() => { void invoke("chatbox_state", { empty: draft.trim() === "", content: true }).catch(() => {}); });
+  const allItems = $derived(items.filter((i) => i.kind === "group"));
+  const shown = $derived(allItems);
   const t = $derived(boxStrings(view.lang));
   const locale = $derived(t.locale);
   const PETS = ["peak", "paws"] as const;
   const NAME = $derived({ peak: "Peak", paws: "Paws", person: t.you } as const);
   const anyOut = $derived(presence.peak || presence.paws);
-  // who hears is who is out (ADR-0145): the field says it in its own words, no buttons
-  const placeholder = $derived(!view.canChat ? t.noBrain : !anyOut ? t.bothResting : presence.peak && presence.paws ? t.messageBoth : presence.paws ? t.messagePaws : t.messagePeak);
+  // who hears is who is out (ADR-0145); the field says one simple line (the pets on the screen show who is out)
+  const placeholder = $derived(!view.canChat ? t.noBrain : !anyOut ? t.bothResting : t.say);
 
   const sent = $derived(view.turns.filter((t) => t.who === "person").map((t) => t.text).slice(-30));
   const slash = $derived<SlashItem[]>(!slashOff && settledDraft.startsWith("/") && !settledDraft.includes(String.fromCharCode(10)) ? slashItems(settledDraft.slice(1), presence) : []);
@@ -105,6 +113,16 @@
     const n = draft.length;
     input?.setSelectionRange(n, n);
   }
+  /** The window is as tall as the stack (ADR-0147): the page tells the program how tall it wants to be, and the program sizes and places it at the bottom right. */
+  let lastFit = 0;
+  function fit() {
+    if (!inner) return;
+    const h = Math.ceil(inner.offsetHeight) + 16;
+    if (Math.abs(h - lastFit) < 2) return;
+    lastFit = h;
+    void invoke("chatbox_fit", { h }).catch(() => {});
+  }
+  $effect(() => { if (!inner) return; const ro = new ResizeObserver(() => fit()); ro.observe(inner); fit(); return () => ro.disconnect(); });
   async function toBottom() {
     await tick();
     if (scroller) scroller.scrollTop = scroller.scrollHeight;
@@ -112,6 +130,7 @@
 
   $effect(() => {
     void view.turns.length; void view.typing; // follow the end of the talk
+    void engaged; void scroller; // and when the box is engaged again: its log is made new, and starts at the end, not the top
     void toBottom();
   });
 
@@ -119,6 +138,9 @@
     const offs: (() => void)[] = [];
     void (async () => {
       offs.push(await listen<BoxView>("chatbox-view", (e) => { view = e.payload; void refreshPresence(); }));
+      offs.push(await listen<boolean>("chatbox-mode", (e) => { engaged = e.payload; }));
+      engaged = await invoke<boolean>("chatbox_mode").catch(() => false);
+      void invoke("chatbox_pin", { on: pinned });
       offs.push(await listen("chatbox-open", () => { void refreshPresence(); setTimeout(() => input?.focus(), 30); void takePrefill(); }));
       await emitTo("main", "chatbox-ready", {}).catch(() => {});
     })();
@@ -129,121 +151,96 @@
     setTimeout(() => void takePrefill(), 120);
     const poll = setInterval(refreshPresence, 2000);
     void refreshPresence();
-    return () => { clearInterval(poll); window.removeEventListener("focus", focusInput); offs.forEach((f) => f()); };
+    return () => { clearInterval(poll);  window.removeEventListener("focus", focusInput); offs.forEach((f) => f()); };
   });
 </script>
 
 
-<div class="box">
-  <header>
-    <div class="who">
-      {#each PETS as p (p)}
-        <span class="chip" class:away={!presence[p]} aria-label={NAME[p]}>
-          <span class="av {p}"><img src={p === "paws" ? "/paws/paws-front.svg" : "/peak-avatar.png"} alt="" /><i class="dot" class:out={presence[p]}></i></span>{NAME[p]}
-        </span>
+<!-- One overlay (ADR-0147): the stack of the talk at the bottom right, on a scrim that is dense at the bottom and clear at the top; each message on a light pill, a pet with its small
+     avatar, the person in a colour; the old ones fade by age and by place. Reading: click-through, only the recent messages. Writing (the shortcut, the tray, a double click
+     on a pet, or the pointer resting on it): the whole talk (it scrolls, without a bar) and a slim field at the bottom. The window is as tall as the stack. -->
+<div class="overlay" style:--maxh="{maxH}px">
+  {#if allItems.length > 0 || typingWho}<div class="scrim" aria-hidden="true"></div>{/if}
+  <div class="inner" bind:this={inner}>
+    <div class="col scroll" bind:this={scroller}>
+      {#each shown as it (it.kind === "group" ? it.lines[0].id : 0)}
+        {#if it.kind === "group"}
+          {#if it.who === "person"}
+            <div class="arow">
+              <div class="alines">
+                {#each it.lines as l (l.id)}<div class="pill me" >{nfc(l.text)}</div>{/each}
+              </div>
+            </div>
+          {:else}
+            <div class="arow">
+              <div class="alines">
+                <div class="name {it.who}">{NAME[it.who]}</div>
+                {#each it.lines as l (l.id)}<div class="pill pet" >{nfc(l.text)}</div>{/each}
+              </div>
+              <span class="av small {it.who}"><img src={it.who === "paws" ? "/paws/paws-front.svg" : "/peak-avatar.png"} alt="" /></span>
+            </div>
+          {/if}
+        {/if}
       {/each}
-    </div>
-    <button class="pin" class:on={pinned} aria-pressed={pinned} aria-label={t.keepOpen} title={t.keepOpen} onclick={togglePin}>
-      <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 4h6l-1 6 3 3v1H7v-1l3-3-1-6z"/><path d="M12 14v6"/></svg>
-    </button>
-  </header>
-
-  <div class="log" bind:this={scroller}>
-    {#each items as it, i (i)}
-      {#if it.kind === "time"}
-        <div class="time">{timeLabel(it.at, Date.now(), locale, t.today)}</div>
-      {:else if it.who === "person"}
-        <div class="row me">
-          <div class="lines">
-            {#each it.lines as l (l.id)}<div class="msg me">{nfc(l.text)}</div>{/each}
-          </div>
-        </div>
-      {:else}
-        <div class="row pet">
-          <span class="av small {it.who}"><img src={it.who === "paws" ? "/paws/paws-front.svg" : "/peak-avatar.png"} alt={NAME[it.who]} /></span>
-          <div class="lines">
-            <div class="name {it.who}">{NAME[it.who]}</div>
-            {#each it.lines as l (l.id)}<div class="msg pet">{nfc(l.text)}</div>{/each}
-          </div>
-        </div>
+      {#if typingWho}
+        <div class="arow"><div class="alines"><div class="pill pet typing" aria-label={t.writing.replace("{name}", NAME[typingWho])}><i></i><i></i><i></i></div></div><span class="av small {typingWho}"><img src={typingWho === "paws" ? "/paws/paws-front.svg" : "/peak-avatar.png"} alt="" /></span></div>
       {/if}
-    {/each}
-    {#if view.typing}
-      <div class="row pet">
-        <span class="av small {view.typing}"><img src={view.typing === "paws" ? "/paws/paws-front.svg" : "/peak-avatar.png"} alt={NAME[view.typing]} /></span>
-        <div class="lines"><div class="msg pet typing" aria-label={t.writing.replace("{name}", NAME[view.typing])}><i></i><i></i><i></i></div></div>
-      </div>
-    {/if}
-    {#if items.length === 0 && !view.typing}
-      <div class="empty">
-        <div>{view.canChat ? t.empty : t.emptyNoBrain}</div>
-        {#if !view.callMe}<div class="hint">{t.hintName} <code>/name</code> {t.hintNameAfter}</div>{/if}
-      </div>
-    {/if}
+    </div>
+    {#if !anyOut}<div class="arow"><div class="pill pet resting">{t.bothResting}</div></div>{/if}
+    <footer>
+        {#if slash.length > 0}
+          <ul class="slash" role="listbox" aria-label={t.commands}>
+            {#each slash as it, i (it.id)}
+              <li role="option" aria-selected={i === slashSel} class:sel={i === slashSel}><button tabindex="-1" onmousedown={(e) => { e.preventDefault(); runSlash(it); }}><span>{slashLabel(t, it)}</span><code>{it.hint}</code></button></li>
+            {/each}
+          </ul>
+        {/if}
+        <textarea bind:this={input} bind:value={draft} rows="1" {placeholder} maxlength="300" autocomplete="off" oninput={() => { settledDraft = settled(settledDraft, draft, composing); if (!composing) { slashOff = false; recallIdx = -1; grow(); } }} oncompositionstart={() => { composing = true; }} oncompositionend={() => { composing = false; settledDraft = draft; slashOff = false; recallIdx = -1; grow(); }} onkeydown={onKey} aria-label={placeholder}></textarea>
+        <button class="send" aria-label={t.send} disabled={!draft.trim()} onclick={send}>
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12l14-7-5 14-2-6-7-1z"/></svg>
+        </button>
+    </footer>
   </div>
-
-  {#if !anyOut}<div class="resting">{t.bothResting}</div>{/if}
-  <footer>
-    {#if slash.length > 0}
-      <ul class="slash" role="listbox" aria-label={t.commands}>
-        {#each slash as it, i (it.id)}
-          <li role="option" aria-selected={i === slashSel} class:sel={i === slashSel}><button tabindex="-1" onmousedown={(e) => { e.preventDefault(); runSlash(it); }}><span>{slashLabel(t, it)}</span><code>{it.hint}</code></button></li>
-        {/each}
-      </ul>
-    {/if}
-    <textarea bind:this={input} bind:value={draft} rows="1" {placeholder} maxlength="300" autocomplete="off" oninput={() => { settledDraft = settled(settledDraft, draft, composing); if (!composing) { slashOff = false; recallIdx = -1; grow(); } }} oncompositionstart={() => { composing = true; }} oncompositionend={() => { composing = false; settledDraft = draft; slashOff = false; recallIdx = -1; grow(); }} onkeydown={onKey} aria-label={placeholder}></textarea>
-    <button class="send" aria-label={t.send} disabled={!draft.trim()} onclick={send}>
-      <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12l14-7-5 14-2-6-7-1z"/></svg>
-    </button>
-  </footer>
 </div>
 
 <style>
-  :global(html), :global(body) { margin: 0; background: transparent; overflow: hidden; font: 13px/1.45 "Segoe UI", "Segoe UI Variable Text", "Noto Sans", Arial, sans-serif; }
+  :global(html), :global(body) { margin: 0; background: transparent; overflow: hidden; font: 14px/1.45 "Segoe UI", "Segoe UI Variable Text", "Noto Sans", Arial, sans-serif; text-rendering: optimizeLegibility; }
   :root { --bg: #ffffff; --ink: #1f1f1f; --muted: #7a7a7a; --line: #e4e4e4; --soft: #f1f1f1; --me: #dfeaf7; --me-ink: #12365e; --peak: #b8741a; --paws: #3f6288; --ring: #3f6288; }
   @media (prefers-color-scheme: dark) { :root { --bg: #242424; --ink: #ececec; --muted: #9a9a9a; --line: #3a3a3a; --soft: #333333; --me: #1f3a5c; --me-ink: #dbe8f8; --peak: #e0a050; --paws: #8fb3d9; --ring: #8fb3d9; } }
-  .box { box-sizing: border-box; width: 100vw; height: 100vh; display: flex; flex-direction: column; background: var(--bg); color: var(--ink); border: 1px solid var(--line); border-radius: 14px; overflow: hidden; }
-  header { display: flex; align-items: center; gap: 8px; padding: 9px 10px; border-bottom: 1px solid var(--line); }
-  .who { display: flex; gap: 6px; flex: 1; flex-wrap: wrap; }
-  .chip { display: flex; align-items: center; gap: 6px; padding: 3px 10px 3px 4px; border-radius: 999px; border: 1px solid var(--line); background: transparent; color: inherit; font: inherit; cursor: default; }
-  .chip.away .av img { filter: grayscale(1); opacity: 0.6; }
-  .pin:focus-visible, .send:focus-visible { outline: 2px solid var(--ring); outline-offset: 1px; }
-  .av { position: relative; display: inline-flex; width: 24px; height: 24px; border-radius: 50%; flex: none; background: var(--soft); }
-  .av img { width: 100%; height: 100%; border-radius: 50%; object-fit: cover; }
-  .av.peak img { transform: scale(1.18); }
-  .av.paws img { object-position: 50% 25%; transform: scale(1.35); transform-origin: 50% 35%; }
-  .av.small { width: 28px; height: 28px; }
-  .dot { position: absolute; right: -1px; bottom: -1px; width: 8px; height: 8px; border-radius: 50%; border: 1.5px solid var(--bg); background: transparent; }
-  .dot.out { background: #3b8a2e; }
-  .pin { border: 0; background: transparent; color: var(--muted); cursor: pointer; padding: 4px; border-radius: 6px; }
-  .pin.on { color: var(--ring); background: var(--soft); }
-  .log { flex: 1; overflow-y: auto; padding: 10px 12px; display: flex; flex-direction: column; gap: 8px; }
-  .time { align-self: center; font-size: 11px; color: var(--muted); }
-  .row { display: flex; gap: 8px; align-items: flex-end; }
-  .row.me { justify-content: flex-end; }
-  .lines { display: flex; flex-direction: column; gap: 2px; max-width: 78%; }
-  .row.me .lines { align-items: flex-end; }
-  .name { font-size: 11px; margin: 0 0 1px 3px; }
-  .name.peak { color: var(--peak); } .name.paws { color: var(--paws); }
-  .msg { padding: 6px 11px; word-break: break-word; white-space: pre-wrap; }
-  .msg.me { background: var(--me); color: var(--me-ink); border-radius: 15px 15px 4px 15px; }
-  .msg.pet { background: var(--soft); border-radius: 15px 15px 15px 4px; }
+  .overlay { position: relative; box-sizing: border-box; width: 100vw; height: 100vh; display: flex; flex-direction: column; justify-content: flex-end; color: var(--ink); overflow: hidden; }
+  /* the scrim: dense at the bottom, clear at the top, and soft at the left edge, so that the messages read on any background and no panel shows */
+  /* dark in both themes (tried on a white, a dark and a busy background: a light scrim is a glare on a dark window; a dark one reads on all three) */
+  .scrim { position: absolute; inset: 0; pointer-events: none; background: linear-gradient(to top, rgba(14, 14, 20, 0.96) 0%, rgba(14, 14, 20, 0.9) 40%, rgba(14, 14, 20, 0.62) 72%, rgba(14, 14, 20, 0.2) 90%, transparent 100%);
+    -webkit-mask-image: linear-gradient(to right, transparent 0%, black 30%); mask-image: linear-gradient(to right, transparent 0%, black 30%); }
+  .inner { position: relative; display: flex; flex-direction: column; gap: 6px; padding: 8px; }
+  .col { display: flex; flex-direction: column; align-items: flex-end; gap: 6px; -webkit-mask-image: linear-gradient(to top, black 55%, rgba(0, 0, 0, 0.25) 88%, transparent 100%); mask-image: linear-gradient(to top, black 55%, rgba(0, 0, 0, 0.25) 88%, transparent 100%); }
+  .col.scroll { max-height: calc(var(--maxh) - 64px); overflow-y: auto; scrollbar-width: none; }
+  .col.scroll::-webkit-scrollbar { display: none; }
+  .arow { display: flex; align-items: flex-end; justify-content: flex-end; gap: 8px; max-width: 100%; }
+  .alines { display: flex; flex-direction: column; align-items: flex-end; gap: 3px; max-width: 270px; }
+  .name { font-size: 11px; margin: 0 4px 0 0; }
+  .name.peak { color: #f0b050; } .name.paws { color: #9cc0ea; } /* on the dark scrim */
+  .pill { padding: 6px 12px; border-radius: 15px; word-break: break-word; white-space: pre-wrap; transition: opacity 0.4s linear; animation: rise 0.16s ease-out; }
+  .pill.me { background: var(--me); color: var(--me-ink); }
+  .pill.pet { background: var(--soft); color: var(--ink); } /* solid: the text behind never shows through */
+  @keyframes rise { from { transform: translateY(10px); opacity: 0; } }
+  .pill.resting { color: var(--muted); font-size: 12px; }
+  /* a round avatar: the circle clips (overflow), the picture sits a little larger inside it; no transform on a rounded image, which cut the right side of Paws */
+  .av { position: relative; display: inline-block; width: 22px; height: 22px; border-radius: 50%; overflow: hidden; flex: none; background: var(--soft); }
+  .av img { position: absolute; width: 108%; height: 108%; left: -4%; top: -2%; }
   .typing { display: inline-flex; gap: 4px; padding: 10px 12px; }
   .typing i { width: 6px; height: 6px; border-radius: 50%; background: var(--muted); animation: blink 1.2s infinite ease-in-out; }
   .typing i:nth-child(2) { animation-delay: 0.2s; } .typing i:nth-child(3) { animation-delay: 0.4s; }
   @keyframes blink { 0%, 80%, 100% { opacity: 0.25; } 40% { opacity: 1; } }
-  @media (prefers-reduced-motion: reduce) { .typing i { animation: none; opacity: 0.6; } }
-  .resting { padding: 5px 12px; font-size: 12px; color: var(--muted); text-align: center; border-top: 1px solid var(--line); }
-  .hint { margin-top: 10px; font-size: 12px; }
-  .hint code { font: 11px/1.6 ui-monospace, Consolas, monospace; background: var(--soft); padding: 0 4px; border-radius: 4px; }
-  .empty { margin: auto; text-align: center; color: var(--muted); padding: 0 24px; }
-  footer { position: relative; display: flex; gap: 8px; align-items: center; padding: 8px 10px; border-top: 1px solid var(--line); }
-  footer textarea { flex: 1; font: inherit; color: inherit; background: transparent; border: 1px solid var(--line); border-radius: 18px; padding: 7px 12px; outline: none; resize: none; overflow-y: auto; max-height: 88px; line-height: 1.4; }
+  @media (prefers-reduced-motion: reduce) { .typing i { animation: none; opacity: 0.6; } .pill { transition: none; animation: none; } }
+  footer { position: relative; display: flex; gap: 6px; align-items: center; }
+  footer textarea { flex: 1; font: inherit; color: var(--ink); background: color-mix(in srgb, var(--bg) 96%, transparent); border: 1px solid var(--line); border-radius: 18px; padding: 7px 12px; outline: none; resize: none; overflow-y: auto; max-height: 88px; line-height: 1.4; }
   footer textarea:focus { border-color: var(--ring); }
-  .slash { position: absolute; left: 10px; right: 10px; bottom: calc(100% - 2px); margin: 0; padding: 4px; list-style: none; background: var(--bg); border: 1px solid var(--line); border-radius: 12px; box-shadow: 0 2px 10px rgba(0, 0, 0, 0.14); }
+  .slash { position: absolute; left: 0; right: 0; bottom: calc(100% + 4px); margin: 0; padding: 4px; list-style: none; background: var(--bg); border: 1px solid var(--line); border-radius: 12px; box-shadow: 0 2px 10px rgba(0, 0, 0, 0.14); }
   .slash button { all: unset; box-sizing: border-box; display: flex; justify-content: space-between; gap: 10px; width: 100%; padding: 6px 9px; border-radius: 8px; cursor: pointer; }
   .slash li.sel button, .slash button:hover { background: var(--soft); }
   .slash code { color: var(--muted); font: 11px/1.6 ui-monospace, Consolas, monospace; }
-  .send { border: 0; background: transparent; color: var(--ring); cursor: pointer; padding: 4px; border-radius: 6px; }
+  .send { border: 0; background: transparent; color: var(--ring); cursor: pointer; padding: 7px; border-radius: 999px; line-height: 0; }
   .send:disabled { color: var(--muted); cursor: default; }
+  .send:focus-visible { outline: 2px solid var(--ring); outline-offset: 1px; }
 </style>

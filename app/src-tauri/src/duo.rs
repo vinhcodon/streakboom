@@ -653,12 +653,21 @@ mod tests {
 const BOX_LABEL: &str = "chatbox";
 const BOX_W: f64 = 340.0;
 const BOX_H: f64 = 460.0;
-const BOX_MARGIN: f64 = 16.0;
+const BOX_MARGIN: f64 = 0.0; // flush with the work area (the stack has its own 8 px inside); 16 was the gap of the old floating card (ADR-0147)
 const CLICK_WAIT: Duration = Duration::from_millis(300); // a single click waits this long to be told from the first half of a double click
 const BLUR_GRACE_MS: u64 = 600; // a blur this soon after the box was shown is the box taking focus, not the person leaving
 const BLUR_TOGGLE_MS: u64 = 900; // a tray click this soon after a blur-hide is the click that took the focus away: it must not show the box again
 
-static BOX_PINNED: AtomicBool = AtomicBool::new(false);
+// Two modes (ADR-0147): AMBIENT (transparent, click-through, no focus: only the pills of the recent messages) and ENGAGED (solid, with the field, the
+// keyboard). Pinned (the default) keeps the ambient window between messages; unpinned, the page hides it when no message is alive.
+static BOX_PINNED: AtomicBool = AtomicBool::new(true);
+static BOX_ENGAGED: AtomicBool = AtomicBool::new(false);
+static BOX_CUR_H: AtomicU64 = AtomicU64::new(120); // the height the page asked for (logical px): the window is as tall as the stack
+static BOX_DRAFT_EMPTY: AtomicBool = AtomicBool::new(true); // the page tells: the field is empty (the pointer leaving may then take the box back to reading)
+static BOX_HAS_CONTENT: AtomicBool = AtomicBool::new(false); // the page tells: something is showing (the pointer resting on an empty window engages nothing)
+const HOVER_IN_MS: u64 = 250; // the pointer must rest this long on the box to engage it (ADR-0147)
+const HOVER_OUT_MS: u64 = 800; // and be away this long, with an empty field, to give it back
+const HOVER_MARGIN: f64 = 8.0; // logical px around the box that still count as on it
 static BOX_SHOWN_AT: AtomicU64 = AtomicU64::new(0);
 static BOX_BLUR_HID_AT: AtomicU64 = AtomicU64::new(0);
 static TRAY_GEN: AtomicU64 = AtomicU64::new(0);
@@ -698,17 +707,33 @@ fn dismiss_tray_flyout() {
 
 fn box_position(app: &AppHandle) -> (i32, i32) {
     let s = scale(app);
-    let (w, h, m) = ((BOX_W * s).round() as i32, (BOX_H * s).round() as i32, (BOX_MARGIN * s).round() as i32);
+    let (w, h, m) = ((BOX_W * s).round() as i32, (BOX_CUR_H.load(Ordering::SeqCst) as f64 * s).round() as i32, (BOX_MARGIN * s).round() as i32);
     match monitors(app).first() {
         Some(mon) => (mon.x + mon.w - w - m, mon.y + mon.h - h - m),
         None => (100, 100),
     }
 }
 
+/// The box as the ambient log: transparent to the mouse, no focus, shown without taking the keyboard from the program that has it.
+fn show_ambient(app: &AppHandle, win: &tauri::WebviewWindow) {
+    let (x, y) = box_position(app);
+    let _ = win.set_position(PhysicalPosition::new(x, y));
+    BOX_ENGAGED.store(false, Ordering::SeqCst);
+    let _ = win.set_focusable(false);
+    let _ = win.set_ignore_cursor_events(true);
+    crate::show_without_focus(win);
+    let _ = app.emit_to(BOX_LABEL, "chatbox-mode", false);
+}
+
+/// Engaged: solid, takes clicks and the keyboard (the tray, the shortcut and a double click on a pet open it).
 fn show_box(app: &AppHandle, win: &tauri::WebviewWindow) {
     let (x, y) = box_position(app);
     let _ = win.set_position(PhysicalPosition::new(x, y));
     BOX_SHOWN_AT.store(now_ms(), Ordering::SeqCst);
+    BOX_ENGAGED.store(true, Ordering::SeqCst);
+    let _ = win.set_focusable(true);
+    let _ = win.set_ignore_cursor_events(false);
+    let _ = app.emit_to(BOX_LABEL, "chatbox-mode", true);
     let _ = win.show();
     let _ = win.set_focus();
     take_foreground(win);
@@ -746,18 +771,119 @@ fn take_foreground(win: &tauri::WebviewWindow) {
 /// Show the box, or hide it if it is showing. The window is made the first time and kept after that.
 pub fn chatbox_toggle(app: &AppHandle) {
     if let Some(win) = app.get_webview_window(BOX_LABEL) {
-        if win.is_visible().unwrap_or(false) {
-            let _ = win.hide();
+        if win.is_visible().unwrap_or(false) && BOX_ENGAGED.load(Ordering::SeqCst) && has_keyboard(&win) {
+            hide_box(&win); // the person is writing in it and asks again: off the screen. Showing and hiding are all there is
+        } else if win.is_visible().unwrap_or(false) {
+            // showing but the mouse goes through it: the shortcut gives it the keyboard; but a click on the tray that has just taken the keyboard away from it asks to hide it
+            if now_ms().saturating_sub(BOX_BLUR_HID_AT.load(Ordering::SeqCst)) <= BLUR_TOGGLE_MS { hide_box(&win); } else { show_box(app, &win); }
         } else if now_ms().saturating_sub(BOX_BLUR_HID_AT.load(Ordering::SeqCst)) > BLUR_TOGGLE_MS {
             show_box(app, &win);
         }
         return;
     }
-    make_box(app);
+    make_box(app, true);
 }
 
-/// Make the window of the box (hidden), set its blur rule, and show it. Called when it does not exist yet.
-fn make_box(app: &AppHandle) {
+/// The pointer rests on the reading log: the same window starts to take clicks and keys (the scroll, the field) without taking the keyboard from the program
+/// in front; a click in the field then gives it the focus. No move, no `set_focus`.
+fn hover_engage(app: &AppHandle, win: &tauri::WebviewWindow) {
+    log(app, "hover_engage");
+    BOX_ENGAGED.store(true, Ordering::SeqCst);
+    let _ = win.set_focusable(true);
+    let _ = win.set_ignore_cursor_events(false);
+    crate::show_without_focus(win); // changing the focusable style takes the window off the screen: it is shown again, still without taking the keyboard (found with the real mouse)
+    let _ = app.emit_to(BOX_LABEL, "chatbox-mode", true);
+}
+
+/// Whether the window is the one in front, that has the keyboard (`is_focused` also says yes for the window that is merely the last one of this program to have been active).
+fn has_keyboard(win: &tauri::WebviewWindow) -> bool {
+    #[cfg(windows)]
+    {
+        use windows_sys::Win32::UI::WindowsAndMessaging::GetForegroundWindow;
+        if let Ok(h) = win.hwnd() { return unsafe { GetForegroundWindow() } == h.0 as isize as _; }
+    }
+    win.is_focused().unwrap_or(false)
+}
+
+#[cfg(windows)]
+fn cursor_pos() -> Option<(i32, i32)> {
+    use windows_sys::Win32::{Foundation::POINT, UI::WindowsAndMessaging::GetCursorPos};
+    let mut p = POINT { x: 0, y: 0 };
+    if unsafe { GetCursorPos(&mut p) } != 0 { Some((p.x, p.y)) } else { None }
+}
+#[cfg(not(windows))]
+fn cursor_pos() -> Option<(i32, i32)> { None }
+
+/// The pointer watcher of the box: the reading log lets the mouse through, so it cannot hear the pointer; this reads where it is every 100 ms (as the
+/// hit test of the pets does) and, with a delay and a margin so that it does not flicker, engages the box when the pointer rests on it and gives it back
+/// when the pointer has gone, the field is empty and the box does not have the keyboard.
+fn spawn_hover(app: AppHandle) {
+    std::thread::spawn(move || {
+        let (mut inside_since, mut outside_since): (Option<u64>, Option<u64>) = (None, None);
+        loop {
+            std::thread::sleep(Duration::from_millis(100));
+            let Some(win) = app.get_webview_window(BOX_LABEL) else { continue };
+            if !win.is_visible().unwrap_or(false) { inside_since = None; outside_since = None; continue; }
+            let (Some((px, py)), Ok(pos), Ok(size)) = (cursor_pos(), win.outer_position(), win.outer_size()) else { continue };
+            let m = (HOVER_MARGIN * scale(&app)).round() as i32;
+            let inside = px >= pos.x - m && px <= pos.x + size.width as i32 + m && py >= pos.y - m && py <= pos.y + size.height as i32 + m;
+            let now = now_ms();
+            if !BOX_ENGAGED.load(Ordering::SeqCst) {
+                outside_since = None;
+                if inside && BOX_HAS_CONTENT.load(Ordering::SeqCst) {
+                    let since = *inside_since.get_or_insert(now);
+                    if now.saturating_sub(since) >= HOVER_IN_MS { hover_engage(&app, &win); inside_since = None; }
+                } else { inside_since = None; }
+            } else {
+                inside_since = None;
+                if !inside && BOX_DRAFT_EMPTY.load(Ordering::SeqCst) && !has_keyboard(&win) {
+                    let since = *outside_since.get_or_insert(now);
+                    if now.saturating_sub(since) >= HOVER_OUT_MS { leave_engaged(&app, &win); outside_since = None; }
+                } else { outside_since = None; }
+            }
+        }
+    });
+}
+
+/// The page says how tall the stack is: the window takes that height (within a part of the screen) and stays at the bottom right.
+#[tauri::command]
+pub fn chatbox_fit(app: AppHandle, h: f64) {
+    let s = scale(&app);
+    let cap = monitors(&app).first().map(|m| (m.h as f64 * 0.6 / s).round()).unwrap_or(600.0);
+    let h = h.clamp(48.0, cap.max(120.0));
+    BOX_CUR_H.store(h.round() as u64, Ordering::SeqCst);
+    if let Some(win) = app.get_webview_window(BOX_LABEL) {
+        let _ = win.set_size(tauri::LogicalSize::new(BOX_W, h));
+        let (x, y) = box_position(&app);
+        let _ = win.set_position(PhysicalPosition::new(x, y));
+    }
+}
+
+/// What the page knows that the pointer watcher needs: whether the field is empty and whether anything is showing.
+#[tauri::command]
+pub fn chatbox_state(empty: bool, content: bool) {
+    BOX_DRAFT_EMPTY.store(empty, Ordering::SeqCst);
+    BOX_HAS_CONTENT.store(content, Ordering::SeqCst);
+}
+
+/// The box goes off the screen (the shortcut, the tray, Esc): the only thing besides showing it.
+fn hide_box(win: &tauri::WebviewWindow) {
+    BOX_ENGAGED.store(false, Ordering::SeqCst);
+    let _ = win.hide();
+}
+
+/// The box loses the keyboard or the pointer has left it: it looks the same, lets the mouse through (pinned, the default), or goes off the screen (not pinned).
+/// If it is still the window in front, it is shown again without the focus so that the keyboard goes back to the program the person was in.
+fn leave_engaged(app: &AppHandle, win: &tauri::WebviewWindow) {
+    log(app, "leave_engaged");
+    if !BOX_PINNED.load(Ordering::SeqCst) { hide_box(win); return; }
+    let front = has_keyboard(win);
+    if front { let _ = win.hide(); }
+    show_ambient(app, win);
+}
+
+/// Make the window of the box (hidden), set its blur rule, and show it (`engaged`: for the person to write in; else as the ambient log). Called when it does not exist yet.
+fn make_box(app: &AppHandle, engaged: bool) {
     let built = WebviewWindowBuilder::new(app, BOX_LABEL, WebviewUrl::App("chatbox".into()))
         .title("Streakboom chat")
         .inner_size(BOX_W, BOX_H)
@@ -766,18 +892,20 @@ fn make_box(app: &AppHandle) {
         .additional_browser_args(BROWSER_ARGS)
         .build();
     let Ok(win) = built else { return };
+    static WATCHER: std::sync::Once = std::sync::Once::new();
+    WATCHER.call_once(|| spawn_hover(app.clone()));
     let app2 = app.clone();
     win.on_window_event(move |e| {
         if let tauri::WindowEvent::Focused(false) = e {
             let recently = now_ms().saturating_sub(BOX_SHOWN_AT.load(Ordering::SeqCst)) < BLUR_GRACE_MS;
-            if !BOX_PINNED.load(Ordering::SeqCst) && !recently {
+            if BOX_ENGAGED.load(Ordering::SeqCst) && !recently {
                 if let Some(w) = app2.get_webview_window(BOX_LABEL) {
-                    if w.is_visible().unwrap_or(false) { BOX_BLUR_HID_AT.store(now_ms(), Ordering::SeqCst); let _ = w.hide(); }
+                    if w.is_visible().unwrap_or(false) { BOX_BLUR_HID_AT.store(now_ms(), Ordering::SeqCst); leave_engaged(&app2, &w); }
                 }
             }
         }
     });
-    show_box(app, &win);
+    if engaged { show_box(app, &win); } else { show_ambient(app, &win); }
 }
 
 /// A double click on Peak or Paws (ADR-0145): the box is shown if it was not, takes the keyboard, and the pet that was clicked is kept for the page,
@@ -791,10 +919,23 @@ pub fn duo_open_box(app: AppHandle, pet: String) {
         if let Some(win) = app.get_webview_window(BOX_LABEL) {
             show_box(&app, &win); // also when it is showing: it takes the keyboard and the page reads the pet
         } else {
-            make_box(&app);
+            make_box(&app, true);
         }
     });
 }
+
+/// A message arrived (the main page asks) or is still alive: the ambient log is shown if the box is not showing. Never takes the focus, never leaves engaged.
+#[tauri::command]
+pub fn duo_box_ambient(app: AppHandle) {
+    match app.get_webview_window(BOX_LABEL) {
+        Some(win) => { if !win.is_visible().unwrap_or(false) { show_ambient(&app, &win); } }
+        None => make_box(&app, false),
+    }
+}
+
+/// Whether the box is engaged now (the page asks when it starts; it is also told by `chatbox-mode`).
+#[tauri::command]
+pub fn chatbox_mode() -> bool { BOX_ENGAGED.load(Ordering::SeqCst) }
 
 /// The page of the box takes the pet that was double clicked (once).
 #[tauri::command]
@@ -804,7 +945,9 @@ static BOX_PREFILL: Mutex<Option<String>> = Mutex::new(None);
 
 /// The box asks to hide (Esc, or its own button).
 #[tauri::command]
-pub fn chatbox_hide(app: AppHandle) { if let Some(w) = app.get_webview_window(BOX_LABEL) { let _ = w.hide(); } }
+pub fn chatbox_hide(app: AppHandle) {
+    if let Some(w) = app.get_webview_window(BOX_LABEL) { hide_box(&w); }
+}
 
 /// The pin of the box: pinned, it stays when it loses focus.
 #[tauri::command]
