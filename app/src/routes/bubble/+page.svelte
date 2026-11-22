@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { docLang } from "$lib/clip";
   // The speech-bubble window. A pure view: the pet window sends what to show ("bubble-view")
   // and the Rust side places this window next to the pet ("bubble-place"). One bubble morphs
   // between plain speech, the ask/consent cards and the chat (compose -> thinking -> answer).
@@ -15,7 +16,7 @@
   // the bubble only gets text, so the document language is read from it: kana only occur in Japanese, and the language
   // decides which font variants the web view picks for the kanji
   $effect(() => {
-    document.documentElement.lang = /[぀-ヿ]/.test(JSON.stringify(view)) ? "ja" : "en";
+    document.documentElement.lang = docLang(JSON.stringify(view));
   });
   let side = $state<Side>("above");
   let tailAt = $state(60); // distance along the bubble edge to the pet's center (px)

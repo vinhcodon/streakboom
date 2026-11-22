@@ -118,6 +118,7 @@
   import { endReaction, mayReact, newGate, startReaction } from "$lib/reactions";
   import { desktopShare, ledges, summary, type GroundKind, type GroundMap } from "$lib/groundmap";
   import { surfacesBelow, surfaces, wallFor, type Wall } from "$lib/terrain";
+  import { clipReply, nfc } from "$lib/clip";
   import { analyse, edgeSpots, fuseSpots, hasRoom, reachability, standSpots, type StandSpot } from "$lib/picture";
   import { SETTLE, boxCoverage, chooseSettle, settleAllowed } from "$lib/settle";
   import { believe, responseFor, startBelief, type Belief } from "$lib/perception";
@@ -137,7 +138,10 @@
   const WALK_TICK_MS = 66;
   const DRAG_START_PX = 5; // pointer travel before a press becomes a drag
   const MIN = 60_000;
-  const MAX_REPLY_CHARS = 240;
+  // What is shown of a long reply (docs/plans/chat-box-issues-and-overlay-proposal.md, part 2): cut at the end of a sentence, not in the middle of one.
+  const MAX_REPLY_CHARS = 600; // the reply to the person in the chat panel
+  const MAX_REMARK_CHARS = 160; // a remark in a bubble the person did not ask for: short
+  const MAX_TEST_CHARS = 400; // the reply shown by the model test of Settings
 
   type Panel = null | "chat" | "ask" | "consent" | "update" | "input" | "choice" | "tour" | "dailyconsent";
   type Turn = { role: "user" | "model"; text: string };
@@ -226,7 +230,7 @@
   ];
 
   const rand = (a: number, b: number) => a + Math.random() * (b - a);
-  const clip = (s: string) => (s.length > MAX_REPLY_CHARS ? s.slice(0, MAX_REPLY_CHARS - 1).trimEnd() + "…" : s);
+  const clip = (s: string, max = MAX_REPLY_CHARS) => clipReply(s, max);
 
   // ------------------------------------------------------------ persistence
   function scheduleSave() {
@@ -1777,7 +1781,7 @@
         return;
       }
       note("remark shown");
-      showBubble(clip(out.text), 5000);
+      showBubble(clip(out.text, MAX_REMARK_CHARS), 5000);
     } catch (e) {
       const k = errKind(e);
       if (k === "invalid_key") brainBad = true;
@@ -2838,7 +2842,8 @@
       }
       if (asked && pendingDay === asked) pendingDay = null; // the model had its one turn with the question; it is not kept open for a stray "uh" later
       replyMood = out.mood;
-      history = [...history, { role: "model" as const, text: reply }].slice(-8);
+      // the model gets its own whole words back, not the cut ones, unless Peak said something else in their place
+      history = [...history, { role: "model" as const, text: reply === clip(out.text) ? nfc(out.text) : reply }].slice(-8);
       chatReply = reply;
       void maybeRemember();
     } catch (e) {
@@ -3067,7 +3072,7 @@
       if (panel === "ask") closePanel();
       stopTimers();
       enter("happy");
-      showBubble(`${clip(c.reply)}\n· ${c.model}`, 6000);
+      showBubble(`${clip(c.reply, MAX_TEST_CHARS)}\n· ${c.model}`, 6000);
       track("key_valid");
       track("first_ai_message");
     } else if (c.type === "switched") {
@@ -3186,7 +3191,7 @@
         gentle: data.settings.gentle,
         history: [{ role: "user" as const, text: prompt }],
       });
-      const reply = clip(out.text);
+      const reply = clip(out.text, MAX_REMARK_CHARS);
       const fo = await probeFocus(); // the user may have started typing while the model was answering
       if (quiet || panel !== null || bubbleOn || pose === "held" || isDozing(pose) || !fo.speakAllowed) return false;
       enter(moodBeat(out.mood, data.settings.gentle).steps[0].pose);

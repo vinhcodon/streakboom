@@ -836,7 +836,7 @@ mod tests {
     fn the_persona_is_made_of_layer_files_and_its_words_did_not_change() {
         // RX-5 moved the persona into persona/*.md; this fingerprint is the persona as it was before (every language, tier
         // and tone). Changing a persona file is a decision: change this number with it. Changed by ADR-0059 (spec 12 section 3).
-        assert_eq!(persona_fingerprint(), 11250909298575782921);
+        assert_eq!(persona_fingerprint(), 16302003773380845509); // the voice layer gives a budget of characters (ADR-0146)
     }
 
     #[test]
@@ -1111,7 +1111,7 @@ mod tests {
         assert!(!key_ok(&"a".repeat(500)));
         assert!(persona("vi", 3, true).contains("Vietnamese"));
         assert!(persona("en", 1, true).contains("no sarcasm"));
-        assert!(persona("en", 1, false).contains("under 2 sentences"));
+        assert!(persona("en", 1, false).contains("at most two short sentences"));
     }
 
     // ---------------------------------------------------------------- S4: the skill tag (spec 14, ADR-0097)
