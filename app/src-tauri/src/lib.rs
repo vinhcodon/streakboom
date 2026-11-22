@@ -906,6 +906,26 @@ fn run_generate(state: &AppState, key: &str, system: &str, turns: &[Turn]) -> Re
     }
 }
 
+/// Paws on a provider that is not the active one (prototype): the provider's default model; if the key is refused that model, the models it is
+/// offered are tried in turn (at most four). Returns the answer and the model that gave it.
+fn generate_other(p: brain::Provider, key: &str, system: &str, turns: &[Turn]) -> (Result<String, AiError>, String) {
+    let model = p.default_model().to_string();
+    match brain::generate_for(p, key, &model, system, turns) {
+        Err(e) if e.kind == Kind::Model => {
+            let others: Vec<String> = brain::models_for(p, key).unwrap_or_default().into_iter().filter(|n| *n != model).take(4).collect();
+            let mut last = e;
+            for m in others {
+                match brain::generate_for(p, key, &m, system, turns) {
+                    Ok(t) => return (Ok(t), m),
+                    Err(e2) => last = e2,
+                }
+            }
+            (Err(last), model)
+        }
+        other => (other, model),
+    }
+}
+
 fn task_failed() -> AiError {
     AiError::new(Kind::Unknown, "task failed")
 }
@@ -1135,9 +1155,14 @@ async fn brain_chat(
         let state = app.state::<AppState>();
         if pet.as_deref() == Some("paws") {
             // Paws (ADR-0140): its own persona, its own key if it has one else the shared one; no notes about the person, no skills.
-            let key = brain::load_key_for_paws(active(&state)).ok_or_else(|| AiError::new(Kind::InvalidKey, "no key"))?;
+            // Developer flag of the prototype: STREAKBOOM_PAWS_PROVIDER=groq gives Paws another brain than Peak's (no Settings control yet).
+            let p = std::env::var("STREAKBOOM_PAWS_PROVIDER").ok().and_then(|v| brain::Provider::parse(&v)).unwrap_or_else(|| active(&state));
+            let key = brain::load_key_for_paws(p).ok_or_else(|| AiError::new(Kind::InvalidKey, "no key"))?;
             let system = brain::with_situation(brain::with_clock(brain::persona_paws(&lang, gentle), clock.as_deref()), situation.as_deref());
-            let raw = run_generate(&state, &key, &system, &history)?;
+            let started = std::time::Instant::now();
+            let (raw, model) = if p == active(&state) { (run_generate(&state, &key, &system, &history), current_model(&state)) } else { generate_other(p, &key, &system, &history) };
+            duo::log(&app, &format!("brain paws provider={} model={} ok={} err={} ms={}", p.id(), model, raw.is_ok(), raw.as_ref().err().map(|e| format!("{:?}", e.kind)).unwrap_or_default(), started.elapsed().as_millis()));
+            let raw = raw?;
             if duo.unwrap_or(false) { return Ok(ChatReply { text: raw, mood: String::new(), skill: None, skill_args: None }); } // the page reads the tags ([pass], [to:..]) of the talk
             let r = brain::split_reply(&raw);
             return Ok(ChatReply { text: r.text, mood: r.mood, skill: None, skill_args: None });
@@ -1154,7 +1179,10 @@ async fn brain_chat(
         // the days the person asked it to keep, so that it can answer about them; never in a remark after a reflex (that path has its own card)
         let system = if event.is_none() { brain::with_kept_days(system, kept_days.as_deref().unwrap_or(&[])) } else { system };
         let system = brain::with_situation(system, situation.as_deref());
-        let raw = run_generate(&state, &key, &system, &history)?;
+        let started = std::time::Instant::now();
+        let raw = run_generate(&state, &key, &system, &history);
+        if duo.unwrap_or(false) { duo::log(&app, &format!("brain peak provider={} ok={} ms={}", active(&state).id(), raw.is_ok(), started.elapsed().as_millis())); }
+        let raw = raw?;
         if duo.unwrap_or(false) { return Ok(ChatReply { text: raw, mood: String::new(), skill: None, skill_args: None }); }
         let r = brain::split_reply(&raw);
         // Without the skills layer the model was not told about the tag: a tag it still wrote is ignored, never acted on.

@@ -487,7 +487,9 @@ pub fn scene_cleanup(app: &AppHandle) {
 
 /// A line for `duo-log.txt` in the data folder (why a scene did not start, when it ended): the prototype's own trace, read by the test script.
 #[tauri::command]
-pub fn duo_log(app: AppHandle, line: String) {
+pub fn duo_log(app: AppHandle, line: String) { log(&app, &line); }
+
+pub fn log(app: &AppHandle, line: &str) {
     use std::io::Write;
     let Ok(dir) = app.path().app_data_dir() else { return };
     if let Ok(mut f) = std::fs::OpenOptions::new().create(true).append(true).open(dir.join("duo-log.txt")) {

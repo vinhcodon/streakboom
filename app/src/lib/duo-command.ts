@@ -54,6 +54,12 @@ export function addressees(raw: string, lastSpoken: PetId, pawsOut: boolean): Pe
   if (!pawsOut) return ["peak"];
   const text = raw.toLowerCase();
   const names = text.includes("paws") && text.includes("peak");
+  // a message that opens with one name ("Peak, what do you think of Paws?") is for that pet, unless the next words name the other one too
+  const lead = /^\s*(peak|paws)/.exec(text);
+  if (lead && names) {
+    const other = lead[1] === "peak" ? "paws" : "peak";
+    if (!new RegExp(String.raw`^\s*${lead[1]}[\s,&]*(và|and|với|と)?[\s,]*${other}`).test(text)) return [lead[1] as PetId];
+  }
   if (names || BOTH.some((r) => r.test(text))) return ["peak", "paws"];
   return [addressedPet(raw, lastSpoken, pawsOut)];
 }

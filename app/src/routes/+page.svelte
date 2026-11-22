@@ -2384,6 +2384,9 @@
           pet,
           duo: true,
           situation: situation(pet, role, both),
+        }).catch((e) => {
+          void invoke("duo_log", { line: `brain_failed ${pet} ${errKind(e)}` }).catch(() => {});
+          throw e;
         });
         return out.text;
       },
