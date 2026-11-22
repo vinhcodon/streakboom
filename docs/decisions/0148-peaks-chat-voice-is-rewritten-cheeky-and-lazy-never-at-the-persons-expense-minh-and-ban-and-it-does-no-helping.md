@@ -1,6 +1,6 @@
 # ADR-0148: Peak's chat voice is rewritten: cheeky and lazy, never at the person's expense, "mình" and "bạn", and it does no helping
 
-- **Status:** accepted on 2026-11-22 for Peak on `main`. The author tried a test build with the new voice and said: "Peak nói chuyện ổn rồi, chốt v5". The voice of **Paws is not decided here**: its text is handed to the duo session (`docs/handoff/paws-voice-v5-for-duo-session.md`) and the author has not heard it yet.
+- **Status:** (the voice text refined by ADR-0151) accepted on 2026-11-22 for Peak on `main`. The author tried a test build with the new voice and said: "Peak nói chuyện ổn rồi, chốt v5". The voice of **Paws is not decided here**: its text is handed to the duo session (`docs/handoff/paws-voice-v5-for-duo-session.md`) and the author has not heard it yet.
 - **Date:** 2026-11-22
 - **Decided by:** Vinh (author), recorded by Claude (the app session)
 

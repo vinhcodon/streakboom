@@ -822,7 +822,7 @@ mod tests {
     fn the_persona_is_made_of_layer_files_and_its_words_did_not_change() {
         // RX-5 moved the persona into persona/*.md; this fingerprint is the persona as it was before (every language, tier
         // and tone). Changing a persona file is a decision: change this number with it. Changed by ADR-0059 (spec 12 section 3).
-        assert_eq!(persona_fingerprint(), 15794038885184684225); // the voice layer of Peak: cheeky, never at the person, mình and bạn, no help (ADR-0148; before it ADR-0146 gave a budget of characters)
+        assert_eq!(persona_fingerprint(), 10709759574674597729); // the voice layer of Peak, second round: more wit (ADR-0151; ADR-0148 chose the first, before it ADR-0146 gave a budget of characters)
     }
 
     #[test]
@@ -1314,6 +1314,72 @@ mod tests {
         println!("missed: {missed:?}");
         println!("FALSE TAGS (the ones that matter): {wrong:?}");
     }
+
+    /// `cargo test -- --ignored blind_voice_sheet --nocapture`: eight situations asked once to Peak (the real persona) and once to Paws
+    /// (its voice from STREAKBOOM_PAWS_VOICE_FILE over the same locked layers as `persona_layers_paws` on the duo branch), each with the
+    /// situation layer of a talk with one pet, on Gemini with the key the program holds (the assistant never sees it). The 16 lines are
+    /// shuffled, the two pet names are masked, and two files are written: STREAKBOOM_SHEET_OUT (the lines only) and
+    /// STREAKBOOM_KEY_OUT (who said what). Nothing else is stored.
+    #[test]
+    #[ignore]
+    fn blind_voice_sheet() {
+        use std::io::Write;
+        let sheet = std::env::var("STREAKBOOM_SHEET_OUT").expect("set STREAKBOOM_SHEET_OUT");
+        let keyf = std::env::var("STREAKBOOM_KEY_OUT").expect("set STREAKBOOM_KEY_OUT");
+        let paws_voice = std::fs::read_to_string(std::env::var("STREAKBOOM_PAWS_VOICE_FILE").expect("set STREAKBOOM_PAWS_VOICE_FILE")).unwrap();
+        let key = load_key(Provider::Gemini).expect("a Gemini key in the credential store");
+        let join = |ls: Vec<PersonaLayer>| ls.into_iter().map(|l| l.text).collect::<Vec<_>>().join(" ");
+        let peak = match std::env::var("STREAKBOOM_PEAK_VOICE_FILE").ok().and_then(|p| std::fs::read_to_string(p).ok()) {
+            Some(v) => join(persona_layers("vi", 2, false).into_iter().map(|mut l| { if l.name == "voice" { l.text = v.trim().to_string() } l }).collect()),
+            None => join(persona_layers("vi", 2, false)),
+        };
+        let paws = join(persona_layers("vi", 2, false).into_iter().filter(|l| matches!(l.name, "voice" | "language" | "core" | "mood")).map(|mut l| { if l.name == "voice" { l.text = paws_voice.trim().to_string() } l }).collect());
+        let situation = |me: &str, both: bool| format!("Two pets live on this desktop: Peak, a cat, and Paws, a small dog. You are {me}. {} Answer in one or two short lines.{} Never mention a pet's words as if the person had said them.", if both { "The person is talking to both of you." } else { "The person is talking to you." }, if both { " The other pet will hear you." } else { "" });
+        // (label, message for Peak, message for Paws, to both)
+        let cases: [(&str, &str, &str, bool); 8] = [
+            ("greeting", "chào em", "chào em", false),
+            ("poke", "*chọc em một cái*", "*chọc em một cái*", false),
+            ("interruption", "tránh ra đi, anh đang làm việc", "tránh ra đi, anh đang làm việc", false),
+            ("the other pet", "em thấy Paws thế nào?", "em thấy Peak thế nào?", false),
+            ("goodbye", "ngủ ngon nha, anh đi ngủ đây", "ngủ ngon nha, anh đi ngủ đây", false),
+            ("impossible task", "em viết giúp anh cái email xin nghỉ được không", "em viết giúp anh cái email xin nghỉ được không", false),
+            ("both", "chào hai đứa", "chào hai đứa", true),
+            ("absent pet", "Paws đâu rồi?", "Peak đâu rồi?", false),
+        ];
+        let mut lines: Vec<(String, String, String)> = Vec::new(); // (pet, label, text)
+        for (label, mp, mw, both) in cases {
+            for (pet, msg, base) in [("Peak", mp, &peak), ("Paws", mw, &paws)] {
+                std::thread::sleep(std::time::Duration::from_millis(2500));
+                let system = with_clock_free(base, &situation(pet, both));
+                let turns = vec![Turn { role: "user".into(), text: msg.into() }];
+                let mut r = String::new();
+                for attempt in 0..4 { // a busy server answers again a little later
+                    match generate_for(Provider::Gemini, &key, "gemini-flash-lite-latest", &system, &turns) {
+                        Ok(t) => { r = t; break }
+                        Err(e) => { r = format!("(error {:?})", e.kind); std::thread::sleep(std::time::Duration::from_millis(4000 * (attempt + 1))) }
+                    }
+                }
+                let text = split_reply(&r).text.replace(char::from(10u8), " ").replace("Peak", "[tên]").replace("Paws", "[tên]");
+                lines.push((pet.to_string(), label.to_string(), text));
+            }
+        }
+        // a fixed shuffle (an LCG over the clock) so that the order carries no pattern
+        let mut seed = std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_nanos() as u64 | 1;
+        let mut order: Vec<usize> = (0..lines.len()).collect();
+        for i in (1..order.len()).rev() {
+            seed = seed.wrapping_mul(6364136223846793005).wrapping_add(1442695040888963407);
+            order.swap(i, (seed >> 33) as usize % (i + 1));
+        }
+        let mut f = std::fs::File::create(sheet).unwrap();
+        let mut k = std::fs::File::create(keyf).unwrap();
+        for (n, &i) in order.iter().enumerate() {
+            let (pet, label, text) = &lines[i];
+            writeln!(f, "{}. {}", n + 1, text).unwrap();
+            writeln!(k, "{}. {} ({})", n + 1, pet, label).unwrap();
+        }
+    }
+
+    fn with_clock_free(system: &str, situation: &str) -> String { format!("{system} {situation}") }
 
     /// `cargo test -- --ignored voice_compare --nocapture`: the same plain messages through every voice file in
     /// STREAKBOOM_VOICE_DIR (each `*.md` is one voice, named by its file stem, put in place of the voice layer; the file
