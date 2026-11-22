@@ -2,6 +2,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { Conversation, addTurn, heard, newRoom, parseUtterance, plan, type Deps, type Line } from "./conversation.ts";
 import type { PetId } from "./duo.ts";
+import { readFileSync } from "node:fs";
 
 /** A scripted model: a reply per pet (or a function), every call recorded, a fake clock that only moves when asked to sleep. */
 function rig(script: Partial<Record<PetId, string | (() => Promise<string>)>>, over: Partial<Deps> = {}) {
@@ -271,4 +272,62 @@ test("a mood tag is a known mood or neutral; a misspelling keeps its mood; a str
   assert.deepEqual(parseUtterance('"[happy] Hello there." [sad]').text, 'Hello there."');
   assert.equal(parseUtterance("**[warm]** Hi").text, "Hi");
   assert.equal(parseUtterance("Hi [sad] there").text, "Hi there");
+});
+
+// ---- issue 4, Codex's Quiet defect: Quiet turned on while a call is pending, or while a line waits to be shown ----
+
+test("Quiet turned on while a call is pending: the late reply is a gesture, never a line (person)", async () => {
+  let quiet = false;
+  let release: (s: string) => void = () => {};
+  const slow = new Promise<string>((r) => { release = r; });
+  const { talk, lines } = rig({ peak: () => slow }, { quiet: () => quiet });
+  const run = talk.person("hello", ["peak"], ["peak"]);
+  await Promise.resolve();
+  quiet = true;
+  release("[happy] reply after Quiet");
+  await run;
+  assert.deepEqual(lines.map((l) => [l.act, l.text]), [["gesture", ""]]);
+});
+
+test("Quiet turned on while the first of two calls is pending: neither pet speaks", async () => {
+  let quiet = false;
+  let release: (s: string) => void = () => {};
+  const slow = new Promise<string>((r) => { release = r; });
+  const { talk, lines, calls } = rig({ peak: () => slow, paws: "Splendid." }, { quiet: () => quiet });
+  const run = talk.person("both?", ["peak", "paws"], ["peak", "paws"]);
+  await Promise.resolve();
+  quiet = true;
+  release("Fine.");
+  await run;
+  assert.ok(lines.every((l) => l.act !== "say"), "no line is said in Quiet");
+  assert.equal(calls.length, 1, "the second pet is not even asked");
+});
+
+test("Quiet turned on while a relayed answer is pending: a gesture, not a line", async () => {
+  let quiet = false;
+  let release: (s: string) => void = () => {};
+  const slow = new Promise<string>((r) => { release = r; });
+  const { talk, lines } = rig({ peak: "x", paws: () => slow }, { quiet: () => quiet });
+  const run = talk.relay("ask Paws", "peak", "paws", ["peak", "paws"]);
+  await Promise.resolve(); await Promise.resolve();
+  quiet = true;
+  release("Splendid.");
+  await run;
+  assert.ok(lines.every((l) => l.act !== "say"), "no line is said in Quiet");
+});
+
+import { presentable } from "./conversation.ts";
+
+test("a line that waited in the queue is not shown if Quiet came meanwhile; a gesture still is", () => {
+  const say: Line = { pet: "peak", act: "say", text: "hi", mood: "neutral", to: ["person"], turnId: 1 };
+  const nod: Line = { pet: "peak", act: "gesture", text: "", mood: "neutral", to: ["person"], turnId: 2 };
+  assert.equal(presentable(say, true), null);
+  assert.equal(presentable(say, false), say);
+  assert.equal(presentable(nod, true), nod);
+});
+
+test("the page drops the pending turn when Quiet comes, and checks Quiet again before a queued line is shown", () => {
+  const page = readFileSync(new URL("../routes/+page.svelte", import.meta.url), "utf8");
+  assert.ok(/if \(quiet && duoOn\) \{[\s\S]{0,220}cancelTalk\(\)/.test(page), "the quiet-changed handler cancels the talk");
+  assert.ok(/presentable\(l, quiet \|\| away\)/.test(page), "the presentation checks Quiet again");
 });

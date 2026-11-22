@@ -16,7 +16,7 @@
   import { seatFraction, seatMove, seatWalkMs } from "$lib/seat";
   import { addressees, parseDuoCommand, parseRelay } from "$lib/duo-command";
   import { parseCallMe } from "$lib/callme";
-  import { Conversation, addTurn, newRoom, situation, toHistory, type Line } from "$lib/conversation";
+  import { Conversation, addTurn, newRoom, presentable, situation, toHistory, type Line } from "$lib/conversation";
   import type { BoxAction, BoxView } from "$lib/chatbox";
   import type { PetId } from "$lib/duo";
   import { LEAVE_PACE_PX_S, RETRY_SECS, isLeaveCommand, leaveDeadlineMs, mayLeave, nearerEdge } from "$lib/farewell";
@@ -2471,6 +2471,7 @@
   let lineChain: Promise<void> = Promise.resolve();
   const pause = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));
   async function sayAs(pet: PetId, text: string) {
+    void invoke("duo_log", { line: `shown ${pet} ${text.length}` }).catch(() => {});
     await invoke("duo_bubble_to", { pet, ms: 4000 + text.length * 60 + 1500 }).catch(() => {}); // the bubble stands beside the speaker
     showBubble(text);
     bubbleWho = pet;
@@ -2487,6 +2488,7 @@
           void invoke("duo_face", { listener: other, speaker: l.pet }).catch(() => {});
           await pause(500);
           if (g !== lineGen) return;
+          if (!presentable(l, quiet || away)) { void invoke("duo_log", { line: `quiet: a queued line of ${l.pet} is dropped` }).catch(() => {}); return; } // Quiet came while the line waited
           await sayAs(l.pet, clipReply(l.text, 160)); // the bubble shows the head of a long reply cut at the end of a sentence; the talk and the box keep the whole (ADR-0146)
           await pause(Math.min(9000, 1500 + l.text.length * 55)); // the time to read it, before the next speaker
         } else if (l.act === "turn") {
@@ -3531,6 +3533,7 @@
           quiet = e.payload;
           if (quiet) count("quiet");
           stopTimers();
+          if (quiet && duoOn) { void invoke("duo_log", { line: "quiet: the talk is cancelled" }).catch(() => {}); cancelTalk(); } // a call that is pending or a line that waits in the queue must not speak in Quiet (issue 4), as a touch drops them
           if (quiet) {
             bubbleOn = false;
             closePanel();

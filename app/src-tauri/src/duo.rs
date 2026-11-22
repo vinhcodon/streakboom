@@ -213,6 +213,8 @@ fn spawn_dev_commands(app: AppHandle, dir: PathBuf) {
                 "cancel" => scene_cleanup(&app),
                 // a message typed to the pets without the box: `type:<text>` (the page routes it like the chat box does)
                 l if l.starts_with("type:") => { let _ = app.emit_to("main", "duo-type", l[5..].to_string()); }
+                // Quiet on or off as the page hears it, without the tray menu (the page handler only; the saved preference is not touched): `quiet:on`, `quiet:off`
+                l if l.starts_with("quiet:") => { let _ = app.emit_to("main", "quiet-changed", &l[6..] == "on"); }
                 // a line in the bubble of a pet without the model: `say:paws:text`
                 l if l.starts_with("say:") => {
                     let mut p = l[4..].splitn(2, ':');
@@ -954,10 +956,14 @@ pub fn duo_open_box(app: AppHandle, pet: String) {
 /// A message arrived (the main page asks) or is still alive: the ambient log is shown if the box is not showing. Never takes the focus, never leaves engaged.
 #[tauri::command]
 pub fn duo_box_ambient(app: AppHandle) {
-    match app.get_webview_window(BOX_LABEL) {
-        Some(win) => { BOX_IDLE_SINCE.store(0, Ordering::SeqCst); emit_fade(&app, 1000); if !win.is_visible().unwrap_or(false) { show_ambient(&app, &win); } } // a new message: the box matters again
-        None => make_box(&app, false),
-    }
+    // on a thread of its own: making a window from a synchronous command takes the main thread that has to run it, and the program hangs (found when a message
+    // arrived before the box had ever been made: nothing answered any more)
+    std::thread::spawn(move || {
+        match app.get_webview_window(BOX_LABEL) {
+            Some(win) => { BOX_IDLE_SINCE.store(0, Ordering::SeqCst); emit_fade(&app, 1000); if !win.is_visible().unwrap_or(false) { show_ambient(&app, &win); } } // a new message: the box matters again
+            None => make_box(&app, false),
+        }
+    });
 }
 
 /// Whether the box is engaged now (the page asks when it starts; it is also told by `chatbox-mode`).

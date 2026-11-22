@@ -70,6 +70,11 @@ function clip(text: string, maxWords: number): string {
   return w.length <= maxWords ? text : w.slice(0, maxWords).join(" ");
 }
 
+/** A line as it may still be shown: one that waited in the queue is dropped when Quiet came meanwhile (a gesture is a nod and stays). */
+export function presentable(l: Line, quietNow: boolean): Line | null {
+  return quietNow && l.act === "say" ? null : l;
+}
+
 export interface Line { pet: PetId; act: Act; text: string; mood: string; to: Party[]; turnId: number }
 
 export interface Deps {
@@ -154,6 +159,7 @@ export class Conversation {
       let raw: string;
       try { raw = await this.ask(pet, role); } catch { if (my === this.token && !this.gone.has(pet)) this.gesture(pet); continue; }
       if (my !== this.token || this.gone.has(pet)) return; // the turn was cancelled or the pet went in while it was being written
+      if (this.deps.quiet()) { this.gesture(pet); break; } // Quiet turned on while the call was pending: no line, and the next pet is not asked (the cost of the call already made is not undone)
       const u = parseUtterance(raw);
       const text = clip(u.text, prof.maxWords);
       const mayPass = role === "second" && prof.mayPass;
@@ -184,6 +190,7 @@ export class Conversation {
     let raw: string;
     try { raw = await this.ask(target, "relayed"); } catch { if (my === this.token && !this.gone.has(target)) this.gesture(target); return; }
     if (my !== this.token || this.gone.has(target)) return;
+    if (this.deps.quiet()) { this.gesture(target); return; } // Quiet turned on while the call was pending
     const u = parseUtterance(raw);
     const line = clip(u.text, prof.maxWords);
     if (!line) { this.gesture(target); return; } // the pet asked must answer: an empty line is a gesture, never a pass
