@@ -660,7 +660,11 @@ const BLUR_TOGGLE_MS: u64 = 900; // a tray click this soon after a blur-hide is 
 
 // Two modes (ADR-0147): AMBIENT (transparent, click-through, no focus: only the pills of the recent messages) and ENGAGED (solid, with the field, the
 // keyboard). Pinned (the default) keeps the ambient window between messages; unpinned, the page hides it when no message is alive.
-static BOX_PINNED: AtomicBool = AtomicBool::new(true);
+static BOX_PINNED: AtomicBool = AtomicBool::new(false); // pinned: the box never fades away (`/pin`); not pinned (the default): it fades after the person has been elsewhere for a while
+static BOX_IDLE_SINCE: AtomicU64 = AtomicU64::new(0); // since when nothing has made the box matter (0: it matters now): no keyboard, no pointer on it, no draft, no new message
+static BOX_FADE_PERMILLE: AtomicU64 = AtomicU64::new(1000); // the opacity the page was last told (1000 = whole)
+const FADE_AFTER_MS: u64 = 20_000; // the person has been in another program this long: the box begins to fade (not sooner: it must not go while it may still be read)
+const FADE_MS: u64 = 4_000; // and goes slowly, so that it is never a jolt; the pointer on it, a new message or the keyboard brings it back at once
 static BOX_ENGAGED: AtomicBool = AtomicBool::new(false);
 static BOX_CUR_H: AtomicU64 = AtomicU64::new(120); // the height the page asked for (logical px): the window is as tall as the stack
 static BOX_DRAFT_EMPTY: AtomicBool = AtomicBool::new(true); // the page tells: the field is empty (the pointer leaving may then take the box back to reading)
@@ -715,7 +719,13 @@ fn box_position(app: &AppHandle) -> (i32, i32) {
 }
 
 /// The box as the ambient log: transparent to the mouse, no focus, shown without taking the keyboard from the program that has it.
+/// Tell the page how opaque to be (it fades by itself with this), only when the figure changed.
+fn emit_fade(app: &AppHandle, permille: u64) {
+    if BOX_FADE_PERMILLE.swap(permille, Ordering::SeqCst) != permille { let _ = app.emit_to(BOX_LABEL, "chatbox-fade", permille as f64 / 1000.0); }
+}
+
 fn show_ambient(app: &AppHandle, win: &tauri::WebviewWindow) {
+    BOX_IDLE_SINCE.store(0, Ordering::SeqCst); emit_fade(app, 1000);
     let (x, y) = box_position(app);
     let _ = win.set_position(PhysicalPosition::new(x, y));
     BOX_ENGAGED.store(false, Ordering::SeqCst);
@@ -727,6 +737,7 @@ fn show_ambient(app: &AppHandle, win: &tauri::WebviewWindow) {
 
 /// Engaged: solid, takes clicks and the keyboard (the tray, the shortcut and a double click on a pet open it).
 fn show_box(app: &AppHandle, win: &tauri::WebviewWindow) {
+    BOX_IDLE_SINCE.store(0, Ordering::SeqCst); emit_fade(app, 1000);
     let (x, y) = box_position(app);
     let _ = win.set_position(PhysicalPosition::new(x, y));
     BOX_SHOWN_AT.store(now_ms(), Ordering::SeqCst);
@@ -823,11 +834,28 @@ fn spawn_hover(app: AppHandle) {
         loop {
             std::thread::sleep(Duration::from_millis(100));
             let Some(win) = app.get_webview_window(BOX_LABEL) else { continue };
-            if !win.is_visible().unwrap_or(false) { inside_since = None; outside_since = None; continue; }
+            if !win.is_visible().unwrap_or(false) { inside_since = None; outside_since = None; BOX_IDLE_SINCE.store(0, Ordering::SeqCst); continue; }
             let (Some((px, py)), Ok(pos), Ok(size)) = (cursor_pos(), win.outer_position(), win.outer_size()) else { continue };
             let m = (HOVER_MARGIN * scale(&app)).round() as i32;
             let inside = px >= pos.x - m && px <= pos.x + size.width as i32 + m && py >= pos.y - m && py <= pos.y + size.height as i32 + m;
             let now = now_ms();
+            // the fade: nothing has made the box matter for a while (the keyboard is elsewhere, the pointer is not on it, no draft, not pinned): it fades slowly and goes
+            let matters = inside || has_keyboard(&win) || !BOX_DRAFT_EMPTY.load(Ordering::SeqCst) || BOX_PINNED.load(Ordering::SeqCst);
+            static LAST_MATTERS: AtomicBool = AtomicBool::new(true);
+            if LAST_MATTERS.swap(matters, Ordering::SeqCst) != matters { log(&app, &format!("box matters={matters} inside={inside} keyboard={} draft_empty={} pinned={} cursor=({px},{py}) box=({},{} {}x{})", has_keyboard(&win), BOX_DRAFT_EMPTY.load(Ordering::SeqCst), BOX_PINNED.load(Ordering::SeqCst), pos.x, pos.y, size.width, size.height)); }
+            if matters {
+                BOX_IDLE_SINCE.store(0, Ordering::SeqCst);
+                emit_fade(&app, 1000);
+            } else {
+                let mut since = BOX_IDLE_SINCE.load(Ordering::SeqCst);
+                if since == 0 { since = now; BOX_IDLE_SINCE.store(now, Ordering::SeqCst); }
+                let idle = now.saturating_sub(since);
+                if idle > FADE_AFTER_MS {
+                    let p = ((idle - FADE_AFTER_MS) as f64 / FADE_MS as f64).min(1.0);
+                    emit_fade(&app, ((1.0 - p) * 1000.0).round() as u64);
+                    if p >= 1.0 { hide_box(&win); BOX_IDLE_SINCE.store(0, Ordering::SeqCst); emit_fade(&app, 1000); log(&app, "box faded away"); continue; }
+                }
+            }
             if !BOX_ENGAGED.load(Ordering::SeqCst) {
                 outside_since = None;
                 if inside && BOX_HAS_CONTENT.load(Ordering::SeqCst) {
@@ -876,7 +904,6 @@ fn hide_box(win: &tauri::WebviewWindow) {
 /// If it is still the window in front, it is shown again without the focus so that the keyboard goes back to the program the person was in.
 fn leave_engaged(app: &AppHandle, win: &tauri::WebviewWindow) {
     log(app, "leave_engaged");
-    if !BOX_PINNED.load(Ordering::SeqCst) { hide_box(win); return; }
     let front = has_keyboard(win);
     if front { let _ = win.hide(); }
     show_ambient(app, win);
@@ -928,7 +955,7 @@ pub fn duo_open_box(app: AppHandle, pet: String) {
 #[tauri::command]
 pub fn duo_box_ambient(app: AppHandle) {
     match app.get_webview_window(BOX_LABEL) {
-        Some(win) => { if !win.is_visible().unwrap_or(false) { show_ambient(&app, &win); } }
+        Some(win) => { BOX_IDLE_SINCE.store(0, Ordering::SeqCst); emit_fade(&app, 1000); if !win.is_visible().unwrap_or(false) { show_ambient(&app, &win); } } // a new message: the box matters again
         None => make_box(&app, false),
     }
 }
@@ -951,7 +978,7 @@ pub fn chatbox_hide(app: AppHandle) {
 
 /// The pin of the box: pinned, it stays when it loses focus.
 #[tauri::command]
-pub fn chatbox_pin(on: bool) { BOX_PINNED.store(on, Ordering::SeqCst); }
+pub fn chatbox_pin(on: bool) { BOX_PINNED.store(on, Ordering::SeqCst); BOX_IDLE_SINCE.store(0, Ordering::SeqCst); }
 
 /// Who is out now, for the dots of the box.
 #[tauri::command]

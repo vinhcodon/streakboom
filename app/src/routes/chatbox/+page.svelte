@@ -12,7 +12,8 @@
 
   let view = $state<BoxView>(EMPTY_VIEW);
   let presence = $state({ peak: true, paws: false });
-  let pinned = $state(true); // by default (ADR-0147): the box stays shown when it loses the focus; it is hidden by the shortcut, the tray, Esc or /pin off
+  let pinned = $state(false); // not pinned (the default): the box fades away after the person has been in another program for a while; pinned (`/pin`): it stays until hidden (ADR-0147)
+  let fade = $state(1); // the opacity the program asks for while the box fades away; the pointer on it brings it back
   let engaged = $state(false); // the box takes clicks and keys (shortcut, tray, double click, or the pointer resting on it); else the same box lets the mouse through. The layout never changes between the two
   let draft = $state("");
   let input = $state<HTMLTextAreaElement | null>(null);
@@ -139,6 +140,7 @@
     void (async () => {
       offs.push(await listen<BoxView>("chatbox-view", (e) => { view = e.payload; void refreshPresence(); }));
       offs.push(await listen<boolean>("chatbox-mode", (e) => { engaged = e.payload; }));
+      offs.push(await listen<number>("chatbox-fade", (e) => { fade = e.payload; }));
       engaged = await invoke<boolean>("chatbox_mode").catch(() => false);
       void invoke("chatbox_pin", { on: pinned });
       offs.push(await listen("chatbox-open", () => { void refreshPresence(); setTimeout(() => input?.focus(), 30); void takePrefill(); }));
@@ -159,7 +161,7 @@
 <!-- One overlay (ADR-0147): the stack of the talk at the bottom right, on a scrim that is dense at the bottom and clear at the top; each message on a light pill, a pet with its small
      avatar, the person in a colour; the old ones fade by age and by place. Reading: click-through, only the recent messages. Writing (the shortcut, the tray, a double click
      on a pet, or the pointer resting on it): the whole talk (it scrolls, without a bar) and a slim field at the bottom. The window is as tall as the stack. -->
-<div class="overlay" style:--maxh="{maxH}px">
+<div class="overlay" style:--maxh="{maxH}px" style:opacity={fade}>
   {#if allItems.length > 0 || typingWho}<div class="scrim" aria-hidden="true"></div>{/if}
   <div class="inner" bind:this={inner}>
     <div class="col scroll" bind:this={scroller}>
@@ -207,7 +209,7 @@
   :global(html), :global(body) { margin: 0; background: transparent; overflow: hidden; font: 14px/1.45 "Segoe UI", "Segoe UI Variable Text", "Noto Sans", Arial, sans-serif; text-rendering: optimizeLegibility; }
   :root { --bg: #ffffff; --ink: #1f1f1f; --muted: #7a7a7a; --line: #e4e4e4; --soft: #f1f1f1; --me: #dfeaf7; --me-ink: #12365e; --peak: #b8741a; --paws: #3f6288; --ring: #3f6288; }
   @media (prefers-color-scheme: dark) { :root { --bg: #242424; --ink: #ececec; --muted: #9a9a9a; --line: #3a3a3a; --soft: #333333; --me: #1f3a5c; --me-ink: #dbe8f8; --peak: #e0a050; --paws: #8fb3d9; --ring: #8fb3d9; } }
-  .overlay { position: relative; box-sizing: border-box; width: 100vw; height: 100vh; display: flex; flex-direction: column; justify-content: flex-end; color: var(--ink); overflow: hidden; }
+  .overlay { transition: opacity 0.3s linear; position: relative; box-sizing: border-box; width: 100vw; height: 100vh; display: flex; flex-direction: column; justify-content: flex-end; color: var(--ink); overflow: hidden; }
   /* the scrim: dense at the bottom, clear at the top, and soft at the left edge, so that the messages read on any background and no panel shows */
   /* dark in both themes (tried on a white, a dark and a busy background: a light scrim is a glare on a dark window; a dark one reads on all three) */
   .scrim { position: absolute; inset: 0; pointer-events: none; background: linear-gradient(to top, rgba(14, 14, 20, 0.96) 0%, rgba(14, 14, 20, 0.9) 40%, rgba(14, 14, 20, 0.62) 72%, rgba(14, 14, 20, 0.2) 90%, transparent 100%);
@@ -232,7 +234,7 @@
   .typing i { width: 6px; height: 6px; border-radius: 50%; background: var(--muted); animation: blink 1.2s infinite ease-in-out; }
   .typing i:nth-child(2) { animation-delay: 0.2s; } .typing i:nth-child(3) { animation-delay: 0.4s; }
   @keyframes blink { 0%, 80%, 100% { opacity: 0.25; } 40% { opacity: 1; } }
-  @media (prefers-reduced-motion: reduce) { .typing i { animation: none; opacity: 0.6; } .pill { transition: none; animation: none; } }
+  @media (prefers-reduced-motion: reduce) { .typing i { animation: none; opacity: 0.6; } .pill { transition: none; animation: none; } .overlay { transition: none; } }
   footer { position: relative; display: flex; gap: 6px; align-items: center; }
   footer textarea { flex: 1; font: inherit; color: var(--ink); background: color-mix(in srgb, var(--bg) 96%, transparent); border: 1px solid var(--line); border-radius: 18px; padding: 7px 12px; outline: none; resize: none; overflow-y: auto; max-height: 88px; line-height: 1.4; }
   footer textarea:focus { border-color: var(--ring); }
