@@ -1419,6 +1419,29 @@ mod tests {
         println!("FALSE TAGS (the ones that matter): {wrong:?}");
     }
 
+    /// `cargo test -- --ignored paws_voice_check --nocapture`: Paws's real persona with the situation layer of a talk with one pet
+    /// (as `situation("paws", "first", false)` builds it), each message of STREAKBOOM_VOICE_MSGS asked once on Gemini with the key the
+    /// program holds (the assistant never sees it). Writes only the replies to STREAKBOOM_VOICE_OUT.
+    #[test]
+    #[ignore]
+    fn paws_voice_check() {
+        use std::io::Write;
+        const SITUATION: &str = "Two pets live on this desktop: Peak, a cat, and Paws, a small dog. You are Paws. The person is talking to you. Answer in one or two short lines. Never mention a pet's words as if the person had said them.";
+        let out = std::env::var("STREAKBOOM_VOICE_OUT").expect("set STREAKBOOM_VOICE_OUT");
+        let msgs: Vec<String> = std::fs::read_to_string(std::env::var("STREAKBOOM_VOICE_MSGS").expect("set STREAKBOOM_VOICE_MSGS")).unwrap().lines().map(|l| l.trim().to_string()).filter(|l| !l.is_empty()).collect();
+        let key = load_key_for_paws(Provider::Gemini).expect("a Gemini key in the credential store");
+        let system = with_situation(persona_paws("vi", false), Some(SITUATION));
+        let pause: u64 = std::env::var("STREAKBOOM_VOICE_PAUSE_MS").ok().and_then(|v| v.parse().ok()).unwrap_or(1500);
+        let mut f = std::fs::File::create(out).unwrap();
+        for m in &msgs {
+            std::thread::sleep(std::time::Duration::from_millis(pause));
+            let turns = vec![Turn { role: "user".into(), text: m.clone() }];
+            let r = match generate_for(Provider::Gemini, &key, "gemini-flash-lite-latest", &system, &turns) { Ok(t) => t.replace(char::from(10u8), " "), Err(e) => format!("(error {:?})", e.kind) };
+            writeln!(f, "- {m} => {r}").unwrap();
+            f.flush().unwrap();
+        }
+    }
+
     /// `cargo test -- --ignored voice_compare --nocapture`: the same plain messages through every voice file in
     /// STREAKBOOM_VOICE_DIR (each `*.md` is one voice, named by its file stem, put in place of the voice layer; the file
     /// `peak-current` is not needed, the current voice is always run too) on each provider that has a key in the credential store

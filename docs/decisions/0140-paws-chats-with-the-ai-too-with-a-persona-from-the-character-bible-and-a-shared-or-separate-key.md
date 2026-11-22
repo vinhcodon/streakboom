@@ -1,6 +1,6 @@
 # ADR-0140: Paws chats with the AI too, with a persona from the character bible, and a shared or a separate key
 
-- **Status:** accepted on 2026-11-22 for the prototype and as the direction for the spec; nothing ships (see ADR-0139). The author's words: Paws has its own character as the living spec describes, so Paws answers through the AI chat; the chat keeps using the person's own key, with an option to give both pets the same key or each its own.
+- **Status:** (the voice of Paws amended by ADR-0149) accepted on 2026-11-22 for the prototype and as the direction for the spec; nothing ships (see ADR-0139). The author's words: Paws has its own character as the living spec describes, so Paws answers through the AI chat; the chat keeps using the person's own key, with an option to give both pets the same key or each its own.
 - **Date:** 2026-11-22
 - **Decided by:** Vinh (author)
 - **Built on the branch, 2026-11-22:** the Paws persona, the answers through the AI and the second key entry in Rust (no Settings control; another provider only by the developer flag `STREAKBOOM_PAWS_PROVIDER`); run once with the author's Gemini (Peak) and Groq (Paws) keys; see `docs/plans/duo-prototype-notes.md` and V-180.
