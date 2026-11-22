@@ -1,6 +1,6 @@
-# Proposal: a new voice layer for Peak and Paws (not adopted)
+# Proposal: a new voice layer for Peak and Paws (Peak adopted: ADR-0148; Paws not adopted)
 
-Status: proposal, 2026-11-22. Nothing here is in the app. Adopting it is a decision (ADR, new persona fingerprint, the author hears a test first, rule 8). Paws's file belongs to the duo branch.
+Status: 2026-11-22. **Peak's voice below was adopted by the author after trying a test build (ADR-0148).** Paws's voice is handed to the duo session (`docs/handoff/paws-voice-v5-for-duo-session.md`) and is not adopted. Adopting it is a decision (ADR, new persona fingerprint, the author hears a test first, rule 8). Paws's file belongs to the duo branch.
 
 ## Why
 A run of ten plain Vietnamese messages through the shipped voice (Gemini `gemini-flash-lite-latest`) showed Peak calling the person "sếp", "cậu", "chủ nhân", mixing "tôi", "tớ", "tui", teasing the person, giving health advice and offering to write an email. The line factory of Stable (`linefactory.ts`) and the hand-written lines say the opposite: "mình" and "bạn", tease the situation, never the person, no assistant talk. Paws on Groq `openai/gpt-oss-20b` was incoherent Vietnamese even with a good voice; on Gemini it is coherent. Sources: character bible (`docs/handoff/peak-paws-living-spec-v0.2.md` section 6), the charter (articles 1, 3, 5; manners), Stable's lines.
