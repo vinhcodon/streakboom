@@ -92,3 +92,22 @@ test("/name takes the name after the verb and keeps its case; the list then offe
   assert.deepEqual(slashItems("name Vinh", both).map((i) => [i.id, i.act]), [["name", { kind: "name", value: "Vinh" }]]);
   assert.ok(!slashItems("", both).some((i) => i.id === "name")); // not in the plain list: it needs a name
 });
+
+import { readFileSync } from "node:fs";
+import { settled } from "./chatbox.ts";
+
+test("while a word is composed the list and the height follow the last settled text; afterwards the field", () => {
+  assert.equal(settled("/ou", "/ouu", true), "/ou");
+  assert.equal(settled("/ou", "/out", false), "/out");
+  assert.equal(settled("", "chào", true), "");
+});
+
+test("the box page names its language, has a full font stack, shows text after nfc, and leaves the field alone between composition start and end", () => {
+  const page = readFileSync(new URL("../routes/chatbox/+page.svelte", import.meta.url), "utf8");
+  assert.ok(/document\.documentElement\.lang\s*=\s*view\.lang/.test(page), "lang is set from the chosen language");
+  assert.ok(page.includes('"Segoe UI", "Segoe UI Variable Text", "Noto Sans", Arial, sans-serif'), "the font stack");
+  assert.ok(page.includes("nfc(l.text)"), "every line is shown after nfc");
+  assert.ok(page.includes("oncompositionstart") && page.includes("oncompositionend"), "composition is handled");
+  assert.ok(/function grow\(\) \{\s*if \(!input \|\| composing\) return;/.test(page), "the height is not touched while composing");
+  assert.ok(page.includes("settled(settledDraft, draft, composing)"), "the list follows the settled draft");
+});

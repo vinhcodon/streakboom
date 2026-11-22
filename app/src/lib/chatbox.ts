@@ -124,6 +124,11 @@ export function withMention(draft: string, pet: PetKey, out: Presence): string {
   return `@${pet === "paws" ? "Paws" : "Peak"} ${draft}`;
 }
 
+/** The text the list of commands and the height of the field follow: it keeps the last settled text while a typing program is composing a word (Vietnamese Telex or VNI send back-spaces and new letters for one word), and follows the field otherwise. */
+export function settled(previous: string, now: string, composing: boolean): string {
+  return composing ? previous : now;
+}
+
 /** A key combination pressed in the Settings field, as the text the program registers ("Ctrl+Alt+P"), or null when it cannot be a global shortcut:
  *  it needs Ctrl, Alt or Win (Shift alone would take a letter away from typing) and one key: a letter, a digit, F1 to F12 or Space. */
 export function comboFromEvent(e: { ctrlKey: boolean; altKey: boolean; shiftKey: boolean; metaKey: boolean; code: string }): string | null {

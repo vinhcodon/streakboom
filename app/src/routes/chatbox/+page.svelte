@@ -5,9 +5,10 @@
   import { invoke } from "@tauri-apps/api/core";
   import { listen, emitTo } from "@tauri-apps/api/event";
   import { boxStrings, slashLabel } from "$lib/chatbox-ui";
+  import { nfc } from "$lib/clip";
   import { parseCallMe } from "$lib/callme";
   import { parseDuoCommand } from "$lib/duo-command";
-  import { EMPTY_VIEW, groupTurns, recallStep, slashItems, timeLabel, withMention, type BoxAction, type BoxView, type PetKey, type SlashItem } from "$lib/chatbox";
+  import { EMPTY_VIEW, groupTurns, recallStep, settled, slashItems, timeLabel, withMention, type BoxAction, type BoxView, type PetKey, type SlashItem } from "$lib/chatbox";
 
   let view = $state<BoxView>(EMPTY_VIEW);
   let presence = $state({ peak: true, paws: false });
@@ -16,6 +17,8 @@
   let input = $state<HTMLTextAreaElement | null>(null);
   let recallIdx = -1; // arrow up and down: where in the messages sent before (-1: not browsing)
   let slashSel = $state(0);
+  let composing = $state(false); // a word is being composed by a typing program (Telex, VNI, a Japanese IME): the field is left alone until it is done
+  let settledDraft = $state(""); // the draft as the list of commands sees it: it does not move while a word is composed (ADR-0147)
   let slashOff = $state(false); // Esc closed the list: it stays closed until the field changes
   let scroller = $state<HTMLDivElement | null>(null);
 
@@ -29,8 +32,10 @@
   const placeholder = $derived(!view.canChat ? t.noBrain : !anyOut ? t.bothResting : presence.peak && presence.paws ? t.messageBoth : presence.paws ? t.messagePaws : t.messagePeak);
 
   const sent = $derived(view.turns.filter((t) => t.who === "person").map((t) => t.text).slice(-30));
-  const slash = $derived<SlashItem[]>(!slashOff && draft.startsWith("/") && !draft.includes(String.fromCharCode(10)) ? slashItems(draft.slice(1), presence) : []);
-  $effect(() => { void draft; slashSel = 0; });
+  const slash = $derived<SlashItem[]>(!slashOff && settledDraft.startsWith("/") && !settledDraft.includes(String.fromCharCode(10)) ? slashItems(settledDraft.slice(1), presence) : []);
+  $effect(() => { void settledDraft; slashSel = 0; });
+  // the page names its language (the default of the page is English, which makes a Vietnamese text use the wrong font and shaping)
+  $effect(() => { document.documentElement.lang = view.lang; });
 
   function act(a: BoxAction) {
     void emitTo("main", "chatbox-action", a).catch(() => {});
@@ -42,17 +47,19 @@
     if (!anyOut && !parseDuoCommand(text) && !parseCallMe(text)) return;
     act({ type: "send", text });
     draft = "";
+    settledDraft = "";
     recallIdx = -1;
     grow();
   }
   /** The field grows with what is written, up to four lines. */
   function grow() {
-    if (!input) return;
+    if (!input || composing) return;
     input.style.height = "auto";
     input.style.height = `${Math.min(input.scrollHeight, 88)}px`;
   }
   function runSlash(it: SlashItem) {
     draft = "";
+    settledDraft = "";
     recallIdx = -1;
     grow();
     if (it.act.kind === "pin") togglePin();
@@ -71,10 +78,10 @@
       if (e.key === "Escape") { e.preventDefault(); slashOff = true; return; }
     }
     if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); send(); return; } // Shift+Enter breaks the line
-    if (e.key === "Escape") { e.preventDefault(); if (draft) { draft = ""; recallIdx = -1; grow(); } else void invoke("chatbox_hide"); return; }
+    if (e.key === "Escape") { e.preventDefault(); if (draft) { draft = ""; settledDraft = ""; recallIdx = -1; grow(); } else void invoke("chatbox_hide"); return; }
     if ((e.key === "ArrowUp" || e.key === "ArrowDown") && !e.shiftKey && (draft === "" || recallIdx !== -1)) {
       const r = recallStep(sent, recallIdx, e.key === "ArrowUp" ? -1 : 1);
-      if (r.text !== null) { e.preventDefault(); recallIdx = r.idx; draft = r.text; queueMicrotask(grow); }
+      if (r.text !== null) { e.preventDefault(); recallIdx = r.idx; draft = r.text; settledDraft = r.text; queueMicrotask(grow); }
       return;
     }
   }
@@ -91,6 +98,7 @@
     if (!pet) return;
     await refreshPresence();
     draft = withMention(draft, pet === "paws" ? "paws" : "peak", presence);
+    settledDraft = draft;
     await tick();
     grow();
     input?.focus();
@@ -147,7 +155,7 @@
       {:else if it.who === "person"}
         <div class="row me">
           <div class="lines">
-            {#each it.lines as l (l.id)}<div class="msg me">{l.text}</div>{/each}
+            {#each it.lines as l (l.id)}<div class="msg me">{nfc(l.text)}</div>{/each}
           </div>
         </div>
       {:else}
@@ -155,7 +163,7 @@
           <span class="av small {it.who}"><img src={it.who === "paws" ? "/paws/paws-front.svg" : "/peak-avatar.png"} alt={NAME[it.who]} /></span>
           <div class="lines">
             <div class="name {it.who}">{NAME[it.who]}</div>
-            {#each it.lines as l (l.id)}<div class="msg pet">{l.text}</div>{/each}
+            {#each it.lines as l (l.id)}<div class="msg pet">{nfc(l.text)}</div>{/each}
           </div>
         </div>
       {/if}
@@ -183,7 +191,7 @@
         {/each}
       </ul>
     {/if}
-    <textarea bind:this={input} bind:value={draft} rows="1" {placeholder} maxlength="300" autocomplete="off" oninput={() => { slashOff = false; recallIdx = -1; grow(); }} onkeydown={onKey} aria-label={placeholder}></textarea>
+    <textarea bind:this={input} bind:value={draft} rows="1" {placeholder} maxlength="300" autocomplete="off" oninput={() => { settledDraft = settled(settledDraft, draft, composing); if (!composing) { slashOff = false; recallIdx = -1; grow(); } }} oncompositionstart={() => { composing = true; }} oncompositionend={() => { composing = false; settledDraft = draft; slashOff = false; recallIdx = -1; grow(); }} onkeydown={onKey} aria-label={placeholder}></textarea>
     <button class="send" aria-label={t.send} disabled={!draft.trim()} onclick={send}>
       <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12l14-7-5 14-2-6-7-1z"/></svg>
     </button>
@@ -191,7 +199,7 @@
 </div>
 
 <style>
-  :global(html), :global(body) { margin: 0; background: transparent; overflow: hidden; font: 13px/1.45 "Segoe UI", system-ui, sans-serif; }
+  :global(html), :global(body) { margin: 0; background: transparent; overflow: hidden; font: 13px/1.45 "Segoe UI", "Segoe UI Variable Text", "Noto Sans", Arial, sans-serif; }
   :root { --bg: #ffffff; --ink: #1f1f1f; --muted: #7a7a7a; --line: #e4e4e4; --soft: #f1f1f1; --me: #dfeaf7; --me-ink: #12365e; --peak: #b8741a; --paws: #3f6288; --ring: #3f6288; }
   @media (prefers-color-scheme: dark) { :root { --bg: #242424; --ink: #ececec; --muted: #9a9a9a; --line: #3a3a3a; --soft: #333333; --me: #1f3a5c; --me-ink: #dbe8f8; --peak: #e0a050; --paws: #8fb3d9; --ring: #8fb3d9; } }
   .box { box-sizing: border-box; width: 100vw; height: 100vh; display: flex; flex-direction: column; background: var(--bg); color: var(--ink); border: 1px solid var(--line); border-radius: 14px; overflow: hidden; }

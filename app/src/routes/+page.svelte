@@ -2484,7 +2484,7 @@
           void invoke("duo_face", { listener: other, speaker: l.pet }).catch(() => {});
           await pause(500);
           if (g !== lineGen) return;
-          await sayAs(l.pet, l.text);
+          await sayAs(l.pet, clipReply(l.text, 160)); // the bubble shows the head of a long reply cut at the end of a sentence; the talk and the box keep the whole (ADR-0146)
           await pause(Math.min(9000, 1500 + l.text.length * 55)); // the time to read it, before the next speaker
         } else if (l.act === "turn") {
           void invoke("duo_face", { listener: l.pet, speaker: l.to[0] }).catch(() => {}); // it turns to the one it was asked to ask
