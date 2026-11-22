@@ -1,5 +1,7 @@
 # The duo (a hard-working dog beside Peak): what it would touch in the charter and in the documents
 
+> **Superseded in part, 2026-11-22:** the line "no AI chat for Paws" and "the dog is off by default and does not act while Peak acts" were settled differently by the author for the prototype: Paws may be on the screen with Peak when the two play with each other (ADR-0139) and Paws answers through the AI (ADR-0140). The charter itself is unchanged; articles 2, 5 and 7 are the checklist the prototype is read against (`duo-conversation-design.md` section 6).
+
 **Status:** an analysis written 2026-11-15 for the handoff `docs/handoff/duo-characters-hypothesis.md`; **nothing is changed and nothing is proposed for the app.** It says where "one Peak" is really written, and what a second pet in the app would have to change. The sticker test (spec 19) touches none of this.
 
 ## 1. Where "one Peak" is actually written

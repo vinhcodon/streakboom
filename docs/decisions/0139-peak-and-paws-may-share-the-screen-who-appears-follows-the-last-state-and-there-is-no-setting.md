@@ -2,7 +2,8 @@
 
 - **Status:** accepted on 2026-11-22 for the prototype (job C of `docs/handoff/duo-prototype-and-cross-review.md`) and as the direction for the spec. Nothing ships: the work is on `exp/duo-prototype`, Preview only, behind a developer flag that is off by default. The product decision to ship a second pet is still the author's and is not made here.
 - **Date:** 2026-11-22
-- **Decided by:** Vinh (author), answering four multiple-choice questions; the appearance rule is his own wording
+- **Decided by:** Vinh (author)
+- **Amended by:** ADR-0142 (2026-11-22): the tray single click now shows or hides the chat box and the **double click** is the click described below (everyone in, or the pet tucked last out); ADR-0143: the pet is no longer named by the person., answering four multiple-choice questions; the appearance rule is his own wording
 
 ## Decision
 1. **Paws may be on the screen at the same time as Peak, but only when the two are playing with each other.** Charter article 2 is protected: no bubble in a duo scene, no scene aimed at the person, one scene of at most two pets, a touch from the person cancels the scene cleanly, and the scenes spend the existing attention budget (`attention.ts`, `reactions.ts`), never a second one. Supersedes the "not while Peak is active" proposal of `docs/plans/duo-charter-impact.md`.

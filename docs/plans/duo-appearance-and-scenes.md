@@ -1,5 +1,7 @@
 # Duo: who appears, and the scenarios the rule still lacks
 
+> **Amended 2026-11-22 by ADR-0142:** in the prototype the **single click** of the tray icon now shows or hides the chat box, and the **double click** does what the click did here (everyone in, or the pet tucked last out). Where this note says "tray click" read "tray double click". The scenes and the rest of the rule stand.
+
 2026-11-22. Source: ADR-0139 (the author's rule), `docs/handoff/duo-prototype-and-cross-review.md`. A design note for the prototype on `exp/duo-prototype`; nothing here is built or shipped.
 
 ## The rule (ADR-0139)
