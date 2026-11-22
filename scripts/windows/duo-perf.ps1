@@ -33,7 +33,7 @@ function Phase($name, [scriptblock]$during) {
   }
 }
 Remove-Item "$data\duo-log.txt", "$data\duo.json" -ErrorAction SilentlyContinue
-$env:STREAKBOOM_DUO = "1"; $env:STREAKBOOM_DUO_FAKE = "1"; Remove-Item Env:STREAKBOOM_PAWS_PROVIDER -ErrorAction SilentlyContinue
+$env:STREAKBOOM_DUO = "1"; $env:STREAKBOOM_DUO_FAKE = "1"
 [void][PM]::SetCursorPos(50, 50)  # the pointer away from where the box shows, so that nothing engages it
 $p = Start-Process $Exe -PassThru; $script:rootPid = $p.Id
 $latency = New-Object System.Collections.Generic.List[string]

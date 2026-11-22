@@ -58,7 +58,7 @@ function Crop($name) { $b = Rect4 (Dump) "chatbox"; if (-not ($b -and $b.v)) { N
 function Lines { Get-Content "$data\duo-log.txt" -ErrorAction SilentlyContinue | Where-Object { $_ -match " line " } | ForEach-Object { $_ -replace '^\d+ ','' } }
 if (Get-Process streakboom -ErrorAction SilentlyContinue) { throw "a streakboom.exe is already running: not touching it" }
 Remove-Item "$data\duo-log.txt", "$data\duo.json" -ErrorAction SilentlyContinue   # a state of its own: Peak out, Paws in
-$env:STREAKBOOM_DUO = "1"; $env:STREAKBOOM_DUO_FAKE = "1"; Remove-Item Env:STREAKBOOM_PAWS_PROVIDER -ErrorAction SilentlyContinue
+$env:STREAKBOOM_DUO = "1"; $env:STREAKBOOM_DUO_FAKE = "1"
 $p = Start-Process $Exe -PassThru; Start-Sleep 7
 try {
   Cmd "call"; Start-Sleep 3

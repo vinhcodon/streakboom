@@ -1,8 +1,7 @@
 # A live check of the duo talk with the real brains the person plugged in (exp/duo-prototype only). The keys stay in the operating system's credential
-# store and are used by the program itself: this script never reads, prints or passes a key. Peak speaks with the active provider, Paws with the one named in
-# -PawsProvider (the developer flag STREAKBOOM_PAWS_PROVIDER). The messages are short test lines typed through the developer channel (duo-cmd.txt, ASCII).
+# store and are used by the program itself: this script never reads, prints or passes a key. Peak and Paws speak with the active provider (the developer flag that gave Paws another brain went with Groq, ADR-0150). The messages are short test lines typed through the developer channel (duo-cmd.txt, ASCII).
 # The program is left running at the end so the person can try it; the pictures and the trace go to -Out.
-param([string]$Out = "$env:TEMP\duo-live", [string]$PawsProvider = "groq", [string]$Exe = "D:\Claude\projects\streakboom-duo\app\src-tauri\target\release\streakboom.exe")
+param([string]$Out = "$env:TEMP\duo-live", [string]$Exe = "D:\Claude\projects\streakboom-duo\app\src-tauri\target\release\streakboom.exe")
 $ErrorActionPreference = "Stop"
 Add-Type -AssemblyName System.Drawing, System.Windows.Forms
 Add-Type -TypeDefinition 'using System.Runtime.InteropServices; public class Dpi { [DllImport("user32.dll")] public static extern bool SetProcessDPIAware(); }'
@@ -18,7 +17,7 @@ function Shot($name) {
 }
 if (Get-Process streakboom -ErrorAction SilentlyContinue) { throw "a streakboom.exe is already running: not touching it" }
 Remove-Item "$data\duo-log.txt" -ErrorAction SilentlyContinue
-$env:STREAKBOOM_DUO = "1"; $env:STREAKBOOM_PAWS_PROVIDER = $PawsProvider
+$env:STREAKBOOM_DUO = "1"
 Remove-Item Env:STREAKBOOM_DUO_FAKE -ErrorAction SilentlyContinue
 $p = Start-Process $Exe -PassThru
 Start-Sleep 7

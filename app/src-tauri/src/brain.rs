@@ -19,7 +19,10 @@ pub const API_BASE: &str = "https://generativelanguage.googleapis.com/v1beta";
 pub const DEFAULT_MODEL: &str = "gemini-3.1-flash-lite";
 const KEY_SERVICE: &str = "streakboom";
 const KEY_USER_GEMINI: &str = "gemini-api-key";
-const KEY_USER_GROQ: &str = "groq-api-key";
+/// Groq was offered as a brain from 0.3 and retired by ADR-0150; its stored key is forgotten at every start (nothing to do when there is none).
+const KEY_USER_GROQ_RETIRED: &str = "groq-api-key";
+/// The second key of Paws that the duo prototype stored for Groq (the same name with `-paws`): forgotten with it.
+const KEY_USER_GROQ_PAWS_RETIRED: &str = "groq-api-key-paws";
 const KEY_USER_CLAUDE: &str = "claude-api-key";
 const KEY_USER_OPENAI: &str = "openai-api-key";
 const MAX_OUTPUT_TOKENS: u32 = 512;
@@ -49,18 +52,16 @@ pub enum Kind {
 pub enum Provider {
     #[default]
     Gemini,
-    Groq,
     Claude,
     OpenAI,
 }
 
 impl Provider {
     /// In the order they are offered, and the order a brain is picked when the one in use is forgotten (ADR-0037).
-    pub const ALL: [Provider; 4] = [Provider::Gemini, Provider::Groq, Provider::Claude, Provider::OpenAI];
+    pub const ALL: [Provider; 3] = [Provider::Gemini, Provider::Claude, Provider::OpenAI];
     pub fn parse(s: &str) -> Option<Provider> {
         match s {
             "gemini" => Some(Provider::Gemini),
-            "groq" => Some(Provider::Groq),
             "claude" => Some(Provider::Claude),
             "openai" => Some(Provider::OpenAI),
             _ => None,
@@ -69,7 +70,6 @@ impl Provider {
     pub fn id(self) -> &'static str {
         match self {
             Provider::Gemini => "gemini",
-            Provider::Groq => "groq",
             Provider::Claude => "claude",
             Provider::OpenAI => "openai",
         }
@@ -77,7 +77,6 @@ impl Provider {
     pub fn default_model(self) -> &'static str {
         match self {
             Provider::Gemini => DEFAULT_MODEL,
-            Provider::Groq => crate::groq::DEFAULT_MODEL,
             Provider::Claude => crate::claude::DEFAULT_MODEL,
             Provider::OpenAI => crate::openai::DEFAULT_MODEL,
         }
@@ -85,7 +84,6 @@ impl Provider {
     fn key_user(self) -> &'static str {
         match self {
             Provider::Gemini => KEY_USER_GEMINI,
-            Provider::Groq => KEY_USER_GROQ,
             Provider::Claude => KEY_USER_CLAUDE,
             Provider::OpenAI => KEY_USER_OPENAI,
         }
@@ -94,7 +92,6 @@ impl Provider {
     pub fn key_page(self) -> &'static str {
         match self {
             Provider::Gemini => "https://aistudio.google.com/apikey",
-            Provider::Groq => "https://console.groq.com/keys",
             Provider::Claude => "https://console.anthropic.com/settings/keys",
             Provider::OpenAI => "https://platform.openai.com/api-keys",
         }
@@ -105,7 +102,6 @@ impl Provider {
 pub fn generate_for(p: Provider, key: &str, model: &str, system: &str, turns: &[Turn]) -> Result<String, AiError> {
     match p {
         Provider::Gemini => generate(API_BASE, key, model, system, turns),
-        Provider::Groq => crate::groq::generate(crate::groq::API_BASE, key, model, system, turns),
         Provider::Claude => crate::claude::generate(crate::claude::API_BASE, key, model, system, turns),
         Provider::OpenAI => crate::openai::generate(crate::openai::API_BASE, key, model, system, turns),
     }
@@ -115,7 +111,6 @@ pub fn generate_for(p: Provider, key: &str, model: &str, system: &str, turns: &[
 pub fn models_for(p: Provider, key: &str) -> Result<Vec<String>, AiError> {
     match p {
         Provider::Gemini => Ok(chat_models(&list_models(API_BASE, key)?)),
-        Provider::Groq => Ok(crate::groq::chat_models(&crate::groq::list_models(crate::groq::API_BASE, key)?)),
         Provider::Claude => Ok(crate::claude::chat_models(&crate::claude::list_models(crate::claude::API_BASE, key)?)),
         Provider::OpenAI => Ok(crate::openai::chat_models(&crate::openai::list_models(crate::openai::API_BASE, key)?)),
     }
@@ -702,21 +697,6 @@ pub fn model_ok(name: &str) -> bool {
     (1..=80).contains(&name.len()) && name.chars().all(|c| c.is_ascii_alphanumeric() || matches!(c, '-' | '.' | '_'))
 }
 
-/// The same check for the model of a given provider. Groq's model names carry the maker in front ("openai/gpt-oss-20b"),
-/// so a single '/' between two plain parts is fine there; it is never a way to build a path (no empty or dotted parts).
-pub fn model_ok_for(p: Provider, name: &str) -> bool {
-    if p != Provider::Groq {
-        return model_ok(name);
-    }
-    let mut parts = name.split('/');
-    let (a, b, rest) = (parts.next(), parts.next(), parts.next());
-    match (a, b, rest) {
-        (Some(a), None, None) => model_ok(a),
-        (Some(a), Some(b), None) => model_ok(a) && model_ok(b) && !a.contains("..") && !b.contains(".."),
-        _ => false,
-    }
-}
-
 /// Every text-capable Flash model in a `models.list` response, best first
 /// (lite before full Flash, newest version first within each group).
 pub fn chat_models(list: &Value) -> Vec<String> {
@@ -806,6 +786,16 @@ pub fn store_key(p: Provider, key: &str) -> Result<(), AiError> {
     keyring::Entry::new(KEY_SERVICE, p.key_user())
         .and_then(|e| e.set_password(key.trim()))
         .map_err(|_| AiError::new(Kind::Storage, "credential store"))
+}
+
+/// Forget the key of a brain that is no longer offered (Groq, ADR-0150). The key was stored by this app, so the app removes it; the
+/// person can also revoke it in Groq's console. Silent when there is none.
+pub fn forget_retired_keys() {
+    for user in [KEY_USER_GROQ_RETIRED, KEY_USER_GROQ_PAWS_RETIRED] {
+        if let Ok(e) = keyring::Entry::new(KEY_SERVICE, user) {
+            let _ = e.delete_credential();
+        }
+    }
 }
 
 pub fn load_key(p: Provider) -> Option<String> {
@@ -1153,17 +1143,14 @@ mod tests {
         assert!(parse_facts(&"x".repeat(200), &[]).is_empty());
     }
     #[test]
-    fn model_names_may_have_a_slash_only_for_groq_and_never_build_a_path() {
-        assert!(model_ok_for(Provider::Gemini, "gemini-3.1-flash-lite"));
-        assert!(!model_ok_for(Provider::Gemini, "a/b"));
-        assert!(!model_ok_for(Provider::OpenAI, "openai/gpt-oss-20b"));
-        assert!(model_ok_for(Provider::Groq, "openai/gpt-oss-20b"));
-        assert!(model_ok_for(Provider::Groq, "llama-3.3-70b-versatile"));
-        for bad in ["../secret", "a//b", "/leading", "trailing/", "a/b/c", "sp ace", "", "x?key=1", "a/.."] {
-            assert!(!model_ok_for(Provider::Groq, bad), "{bad}");
+    fn model_names_never_build_a_path_and_groq_is_gone() {
+        assert!(model_ok("gemini-3.1-flash-lite"));
+        for bad in ["a/b", "../secret", "a//b", "/leading", "trailing/", "sp ace", "", "x?key=1", "openai/gpt-oss-20b"] {
+            assert!(!model_ok(bad), "{bad}");
         }
+        assert_eq!(Provider::parse("groq"), None); // a saved "groq" falls back to Gemini (ADR-0150)
+        assert_eq!(Provider::ALL.len(), 3);
     }
-
     #[test]
     fn japanese_has_its_own_language_greeting_and_voice() {
         assert_eq!(language_name("ja"), "Japanese");
@@ -1378,7 +1365,7 @@ mod tests {
     ];
 
     /// `cargo test -- --ignored skill_harness --nocapture` with the author's own key in the environment (the assistant never sees it):
-    ///   STREAKBOOM_HARNESS_PROVIDER = gemini | groq | claude | openai      STREAKBOOM_HARNESS_KEY = the key
+    ///   STREAKBOOM_HARNESS_PROVIDER = gemini | claude | openai      STREAKBOOM_HARNESS_KEY = the key
     ///   STREAKBOOM_HARNESS_MODEL = a model name (optional: the first model the key lists is used)
     /// It asks the model each message with the real persona and the skills layer, reads the tag the way the app does, and prints
     /// the misses and, above all, the false tags, with the rates. It sends nothing else and stores nothing.
@@ -1465,7 +1452,7 @@ mod tests {
             sets.push((name, with_voice(&std::fs::read_to_string(&p).unwrap())));
         }
         let mut f = std::fs::File::create(out_path).unwrap();
-        for p in [Provider::Gemini, Provider::Groq].into_iter().filter(|p| std::env::var("STREAKBOOM_VOICE_ONLY").map_or(true, |o| o == p.id())) {
+        for p in [Provider::Gemini, Provider::Claude, Provider::OpenAI].into_iter().filter(|p| std::env::var("STREAKBOOM_VOICE_ONLY").map_or(true, |o| o == p.id())) {
             let Some(key) = load_key(p) else { writeln!(f, "== {} has no key, skipped", p.id()).unwrap(); continue };
             let model = if p == Provider::Gemini { "gemini-flash-lite-latest".to_string() } else { models_for(p, &key).ok().and_then(|v| v.into_iter().next()).unwrap_or_else(|| p.default_model().to_string()) };
             for (label, system) in &sets {
@@ -1526,7 +1513,7 @@ mod tests {
     ];
 
     /// How reliably a real model keeps a told day, and with the right date, and does not keep what is not a day. Run by the author:
-    ///   STREAKBOOM_HARNESS_PROVIDER = gemini | groq | claude | openai      STREAKBOOM_HARNESS_KEY = the key
+    ///   STREAKBOOM_HARNESS_PROVIDER = gemini | claude | openai      STREAKBOOM_HARNESS_KEY = the key
     ///   cargo test -- --ignored remind_harness --nocapture
     /// It prints how many told days were tagged, how many with exactly the right date, and the false tags (the ones that matter).
     #[test]

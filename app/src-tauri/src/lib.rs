@@ -6,7 +6,6 @@ mod platform;
 mod spike; // the duo render spike (exp/duo-prototype only)
 mod duo;
 mod duo_keys; // the duo prototype, behind STREAKBOOM_DUO=1 (exp/duo-prototype only)
-mod groq;
 mod openai;
 mod picture;
 mod layout;
@@ -58,7 +57,9 @@ struct Prefs {
     claude_model: Option<String>,
     #[serde(default)]
     openai_model: Option<String>,
+    /// Retired with Groq (ADR-0150): still read so an old file loads, never used.
     #[serde(default)]
+    #[allow(dead_code)]
     groq_model: Option<String>,
 }
 
@@ -867,7 +868,6 @@ fn active(state: &AppState) -> brain::Provider {
 fn prefs_model(prefs: &Prefs, p: brain::Provider) -> Option<String> {
     match p {
         brain::Provider::Gemini => prefs.model.clone(),
-        brain::Provider::Groq => prefs.groq_model.clone(),
         brain::Provider::Claude => prefs.claude_model.clone(),
         brain::Provider::OpenAI => prefs.openai_model.clone(),
     }
@@ -876,7 +876,6 @@ fn prefs_model(prefs: &Prefs, p: brain::Provider) -> Option<String> {
 fn set_prefs_model(prefs: &mut Prefs, p: brain::Provider, model: Option<String>) {
     match p {
         brain::Provider::Gemini => prefs.model = model,
-        brain::Provider::Groq => prefs.groq_model = model,
         brain::Provider::Claude => prefs.claude_model = model,
         brain::Provider::OpenAI => prefs.openai_model = model,
     }
@@ -922,26 +921,6 @@ fn run_generate(state: &AppState, key: &str, system: &str, turns: &[Turn]) -> Re
     }
 }
 
-/// Paws on a provider that is not the active one (prototype): the provider's default model; if the key is refused that model, the models it is
-/// offered are tried in turn (at most four). Returns the answer and the model that gave it.
-fn generate_other(p: brain::Provider, key: &str, system: &str, turns: &[Turn]) -> (Result<String, AiError>, String) {
-    let model = p.default_model().to_string();
-    match brain::generate_for(p, key, &model, system, turns) {
-        Err(e) if e.kind == Kind::Model => {
-            let others: Vec<String> = brain::models_for(p, key).unwrap_or_default().into_iter().filter(|n| *n != model).take(4).collect();
-            let mut last = e;
-            for m in others {
-                match brain::generate_for(p, key, &m, system, turns) {
-                    Ok(t) => return (Ok(t), m),
-                    Err(e2) => last = e2,
-                }
-            }
-            (Err(last), model)
-        }
-        other => (other, model),
-    }
-}
-
 fn task_failed() -> AiError {
     AiError::new(Kind::Unknown, "task failed")
 }
@@ -951,7 +930,6 @@ fn task_failed() -> AiError {
 struct ProviderInfo {
     active: String,
     gemini: bool,
-    groq: bool,
     claude: bool,
     openai: bool,
 }
@@ -960,7 +938,6 @@ fn provider_info(state: &AppState) -> ProviderInfo {
     ProviderInfo {
         active: active(state).id().to_string(),
         gemini: brain::load_key(brain::Provider::Gemini).is_some(),
-        groq: brain::load_key(brain::Provider::Groq).is_some(),
         claude: brain::load_key(brain::Provider::Claude).is_some(),
         openai: brain::load_key(brain::Provider::OpenAI).is_some(),
     }
@@ -976,7 +953,7 @@ fn provider_or_active(state: &AppState, provider: Option<String>) -> Result<brai
 /// Make `p` the active provider: its own chosen model (or automatic) is loaded.
 fn switch_provider(state: &AppState, p: brain::Provider) {
     *state.provider.lock().unwrap() = p;
-    let model = prefs_model(&state.prefs.lock().unwrap(), p).filter(|m| brain::model_ok_for(p, m));
+    let model = prefs_model(&state.prefs.lock().unwrap(), p).filter(|m| brain::model_ok(m));
     *state.model.lock().unwrap() = model;
     state.prefs.lock().unwrap().provider = Some(p.id().to_string());
     state.dirty.store(true, Ordering::Relaxed);
@@ -986,7 +963,7 @@ fn switch_provider(state: &AppState, p: brain::Provider) {
 async fn brain_provider(app: AppHandle) -> ProviderInfo {
     tauri::async_runtime::spawn_blocking(move || provider_info(&app.state::<AppState>()))
         .await
-        .unwrap_or(ProviderInfo { active: "gemini".into(), gemini: false, groq: false, claude: false, openai: false })
+        .unwrap_or(ProviderInfo { active: "gemini".into(), gemini: false, claude: false, openai: false })
 }
 
 /// Choose which provider answers. Its key must already be stored.
@@ -1042,7 +1019,7 @@ async fn brain_connect(
     tauri::async_runtime::spawn_blocking(move || {
         let state = app.state::<AppState>();
         let p = provider_or_active(&state, provider)?;
-        if model.as_deref().is_some_and(|m| !brain::model_ok_for(p, m)) {
+        if model.as_deref().is_some_and(|m| !brain::model_ok(m)) {
             return Err(AiError::new(Kind::Model, "bad model name"));
         }
         // A fresh connection starts from the user's choice, or from the automatic default.
@@ -1125,7 +1102,7 @@ fn brain_model(state: State<AppState>) -> ModelInfo {
 fn brain_set_model(state: State<AppState>, model: Option<String>) -> Result<String, AiError> {
     let model = model.filter(|m| !m.is_empty());
     let p = active(&state);
-    if model.as_deref().is_some_and(|m| !brain::model_ok_for(p, m)) {
+    if model.as_deref().is_some_and(|m| !brain::model_ok(m)) {
         return Err(AiError::new(Kind::Model, "bad model name"));
     }
     *state.model.lock().unwrap() = model.clone();
@@ -1171,12 +1148,11 @@ async fn brain_chat(
         let state = app.state::<AppState>();
         if pet.as_deref() == Some("paws") {
             // Paws (ADR-0140): its own persona, its own key if it has one else the shared one; no notes about the person, no skills.
-            // Developer flag of the prototype: STREAKBOOM_PAWS_PROVIDER=groq gives Paws another brain than Peak's (no Settings control yet).
-            let p = std::env::var("STREAKBOOM_PAWS_PROVIDER").ok().and_then(|v| brain::Provider::parse(&v)).unwrap_or_else(|| active(&state));
+            let p = active(&state); // the same brain as Peak (the developer flag that gave Paws another one went with Groq, ADR-0150)
             let key = brain::load_key_for_paws(p).ok_or_else(|| AiError::new(Kind::InvalidKey, "no key"))?;
             let system = brain::with_situation(brain::with_clock(brain::persona_paws(&lang, gentle), clock.as_deref()), situation.as_deref());
             let started = std::time::Instant::now();
-            let (raw, model) = if p == active(&state) { (run_generate(&state, &key, &system, &history), current_model(&state)) } else { generate_other(p, &key, &system, &history) };
+            let (raw, model) = (run_generate(&state, &key, &system, &history), current_model(&state));
             duo::log(&app, &format!("brain paws provider={} model={} ok={} err={} ms={}", p.id(), model, raw.is_ok(), raw.as_ref().err().map(|e| format!("{:?}", e.kind)).unwrap_or_default(), started.elapsed().as_millis()));
             let raw = raw?;
             if duo.unwrap_or(false) { return Ok(ChatReply { text: raw, mood: String::new(), skill: None, skill_args: None }); } // the page reads the tags ([pass], [to:..]) of the talk
@@ -1925,6 +1901,7 @@ pub fn run() {
         .plugin(tauri_plugin_autostart::init(tauri_plugin_autostart::MacosLauncher::LaunchAgent, None))
         .manage(updater::PendingUpdate::default())
         .setup(|app| {
+            brain::forget_retired_keys(); // Groq is retired (ADR-0150); its stored key goes with it
             if let Some(m) = spike::mode() {
                 return spike::setup(app, &m); // a measurement scenario, not the pet
             }
@@ -1941,7 +1918,7 @@ pub fn run() {
                 memory_path: dir.join("memory.json"),
                 model: Mutex::new({
                     let p = prefs.provider.as_deref().and_then(brain::Provider::parse).unwrap_or_default();
-                    prefs_model(&prefs, p).filter(|m| brain::model_ok_for(p, m))
+                    prefs_model(&prefs, p).filter(|m| brain::model_ok(m))
                 }),
                 provider: Mutex::new(prefs.provider.as_deref().and_then(brain::Provider::parse).unwrap_or_default()),
                 path,

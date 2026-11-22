@@ -3,7 +3,7 @@
 - **Status:** (the voice of Paws amended by ADR-0149) accepted on 2026-11-22 for the prototype and as the direction for the spec; nothing ships (see ADR-0139). The author's words: Paws has its own character as the living spec describes, so Paws answers through the AI chat; the chat keeps using the person's own key, with an option to give both pets the same key or each its own.
 - **Date:** 2026-11-22
 - **Decided by:** Vinh (author)
-- **Built on the branch, 2026-11-22:** the Paws persona, the answers through the AI and the second key entry in Rust (no Settings control; another provider only by the developer flag `STREAKBOOM_PAWS_PROVIDER`); run once with the author's Gemini (Peak) and Groq (Paws) keys; see `docs/plans/duo-prototype-notes.md` and V-180.
+- **Built on the branch, 2026-11-22:** the Paws persona, the answers through the AI and the second key entry in Rust (no Settings control; a developer flag `STREAKBOOM_PAWS_PROVIDER` gave Paws another provider for the first runs, with the author's Gemini (Peak) and Groq (Paws) keys; **the flag and the Groq path were removed on 2026-11-23 when Groq was retired, ADR-0150: Paws now uses the active brain**, and the second key entry is for that provider); see `docs/plans/duo-prototype-notes.md` and V-180.
 
 ## Decision
 1. **Paws answers through the AI chat**, on the person's own key (ADR-0001: the app hosts no inference). This supersedes the line "no AI chat for Paws" of `docs/handoff/duo-prototype-and-cross-review.md` (section 1) and of the charter-impact note; the charter itself is not changed.

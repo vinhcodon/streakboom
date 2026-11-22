@@ -49,7 +49,7 @@ function CallMe { $m = Get-Content "$data\memory.json" -Raw -ErrorAction Silentl
 $log = @(); function Note($t) { $script:log += $t }
 if (Get-Process streakboom -ErrorAction SilentlyContinue) { throw "a streakboom.exe is already running: not touching it" }
 Remove-Item "$data\duo-log.txt" -ErrorAction SilentlyContinue
-$env:STREAKBOOM_DUO = "1"; $env:STREAKBOOM_DUO_FAKE = "1"; Remove-Item Env:STREAKBOOM_PAWS_PROVIDER -ErrorAction SilentlyContinue
+$env:STREAKBOOM_DUO = "1"; $env:STREAKBOOM_DUO_FAKE = "1"
 $p = Start-Process $Exe -PassThru; Start-Sleep 7
 try {
   # a name known before the run is cleared so that the hint shows; the program rewrites memory.json when it saves

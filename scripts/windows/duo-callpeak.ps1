@@ -49,7 +49,7 @@ $log = @(); function Note($t) { $script:log += $t }
 if (Get-Process streakboom -ErrorAction SilentlyContinue) { throw "a streakboom.exe is already running: not touching it" }
 Remove-Item "$data\duo-log.txt" -ErrorAction SilentlyContinue
 Set-Content "$data\duo.json" '{"v":1,"pets":{"peak":{"out":false,"tuckedAt":1,"entrance":null},"paws":{"out":true,"tuckedAt":0,"entrance":null}}}' -Encoding ascii   # Paws out, Peak in
-$env:STREAKBOOM_DUO = "1"; $env:STREAKBOOM_DUO_FAKE = "1"; Remove-Item Env:STREAKBOOM_PAWS_PROVIDER -ErrorAction SilentlyContinue
+$env:STREAKBOOM_DUO = "1"; $env:STREAKBOOM_DUO_FAKE = "1"
 $p = Start-Process $Exe -PassThru; Start-Sleep 7
 try {
   Cmd "pinbox"; Note "C0 start: Paws out, Peak in"; Note (Dump | Where-Object { $_ -match "^(main|paws)" })

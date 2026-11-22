@@ -72,7 +72,7 @@ function CropBox($name) { $b = @{ v = $true; x = 1475; y = 435; w = 425; h = 575
 $log = @(); function Note($t) { $script:log += $t }
 if (Get-Process streakboom -ErrorAction SilentlyContinue) { throw "a streakboom.exe is already running: not touching it" }
 Remove-Item "$data\duo-log.txt", "$data\duo.json" -ErrorAction SilentlyContinue
-$env:STREAKBOOM_DUO = "1"; $env:STREAKBOOM_DUO_FAKE = "1"; Remove-Item Env:STREAKBOOM_PAWS_PROVIDER -ErrorAction SilentlyContinue
+$env:STREAKBOOM_DUO = "1"; $env:STREAKBOOM_DUO_FAKE = "1"
 $p = Start-Process $Exe -PassThru; Start-Sleep 7
 function BoxStyle { $h = [W2]::Find($p.Id, "Streakboom chat"); if ($h -eq [IntPtr]::Zero) { return "no window" }; $e = [X]::GetWindowLong($h, -20); "transparent(click-through)=$(($e -band 0x20) -ne 0) noactivate=$(($e -band 0x08000000) -ne 0)" }
 try {

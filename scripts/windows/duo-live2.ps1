@@ -1,8 +1,7 @@
 # The whole talk with the real brains the person plugged in, driven by the real mouse and keyboard (exp/duo-prototype only). The keys stay in the operating system's
-# credential store and are used by the program itself; this script never reads, prints or passes a key. Peak speaks with the active provider, Paws with
-# -PawsProvider (the developer flag STREAKBOOM_PAWS_PROVIDER). Text is pasted (the clipboard is saved and restored), so a typing mode such as Telex cannot change it,
+# credential store and are used by the program itself; this script never reads, prints or passes a key. Peak and Paws speak with the active provider (the developer flag that gave Paws another brain went with Groq, ADR-0150). Text is pasted (the clipboard is saved and restored), so a typing mode such as Telex cannot change it,
 # and it is pasted only when the program under test has the keyboard: never into another window. Pictures, strips of frames and the trace go to -Out.
-param([string]$Out = "$env:TEMP\duo-live2", [string]$PawsProvider = "groq", [switch]$KeepRunning, [string[]]$Steps = @("s1", "s2", "s3", "s4"),
+param([string]$Out = "$env:TEMP\duo-live2", [switch]$KeepRunning, [string[]]$Steps = @("s1", "s2", "s3", "s4"),
       [string]$Exe = "D:\Claude\projects\streakboom-duo\app\src-tauri\target\release\streakboom.exe")
 $ErrorActionPreference = "Stop"
 Add-Type -AssemblyName System.Drawing, System.Windows.Forms
@@ -73,7 +72,7 @@ function Say($step, $pet, $chip, $text, $watch) {
 }
 if (Get-Process streakboom -ErrorAction SilentlyContinue) { throw "a streakboom.exe is already running: not touching it" }
 Remove-Item "$data\duo-log.txt" -ErrorAction SilentlyContinue
-$env:STREAKBOOM_DUO = "1"; $env:STREAKBOOM_PAWS_PROVIDER = $PawsProvider; Remove-Item Env:STREAKBOOM_DUO_FAKE -ErrorAction SilentlyContinue
+$env:STREAKBOOM_DUO = "1"; Remove-Item Env:STREAKBOOM_DUO_FAKE -ErrorAction SilentlyContinue
 $p = Start-Process $Exe -PassThru; Start-Sleep 7
 if ((Get-Content "$data\duo.json" -ErrorAction SilentlyContinue) -notmatch '"paws":\{"out":true') { Cmd "call"; Start-Sleep 3 }
 Shot "0-start"

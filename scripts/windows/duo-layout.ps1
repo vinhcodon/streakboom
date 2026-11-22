@@ -72,7 +72,7 @@ function CropBox($name) { $b = Rect4 (Dump) "chatbox"; if (-not ($b -and $b.v)) 
 $log = @(); function Note($t) { $script:log += $t }
 if (Get-Process streakboom -ErrorAction SilentlyContinue | Where-Object { $_.Path -eq $Exe }) { throw "a streakboom.exe is already running: not touching it" }
 Remove-Item "$data\duo-log.txt", "$data\duo.json" -ErrorAction SilentlyContinue
-$env:STREAKBOOM_DUO = "1"; $env:STREAKBOOM_DUO_FAKE = "1"; Remove-Item Env:STREAKBOOM_PAWS_PROVIDER -ErrorAction SilentlyContinue
+$env:STREAKBOOM_DUO = "1"; $env:STREAKBOOM_DUO_FAKE = "1"
 $p = Start-Process $Exe -PassThru; Start-Sleep 7
 function BoxStyle { $h = [W2]::Find($p.Id, "Streakboom chat"); if ($h -eq [IntPtr]::Zero) { return "no window" }; $e = [X]::GetWindowLong($h, -20); "transparent(click-through)=$(($e -band 0x20) -ne 0) noactivate=$(($e -band 0x08000000) -ne 0)" }
 function Zoom($name, $b) { $sc = [System.Windows.Forms.Screen]::PrimaryScreen.Bounds; $bmp = New-Object System.Drawing.Bitmap $sc.Width, $sc.Height; $g = [System.Drawing.Graphics]::FromImage($bmp); $g.CopyFromScreen($sc.Location, [System.Drawing.Point]::Empty, $sc.Size); $g.Dispose(); $x0 = [math]::Max(0, $b.x - 10); $y0 = [math]::Max(0, $b.y - 60); $x1 = [math]::Min($sc.Width, $b.x + $b.w + 10); $y1 = [math]::Min($sc.Height, $b.y + $b.h + 10); $c = $bmp.Clone((New-Object System.Drawing.Rectangle $x0, $y0, ($x1 - $x0), ($y1 - $y0)), $bmp.PixelFormat); $c.Save("$Out\$name.png"); $c.Dispose(); $bmp.Dispose() }
