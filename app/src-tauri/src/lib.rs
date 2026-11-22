@@ -3,7 +3,6 @@ mod claude;
 mod fastpass;
 mod ground;
 mod platform;
-mod groq;
 mod openai;
 mod picture;
 mod layout;
@@ -55,7 +54,9 @@ struct Prefs {
     claude_model: Option<String>,
     #[serde(default)]
     openai_model: Option<String>,
+    /// Retired with Groq (ADR-0150): still read so an old file loads, never used.
     #[serde(default)]
+    #[allow(dead_code)]
     groq_model: Option<String>,
 }
 
@@ -845,7 +846,6 @@ fn active(state: &AppState) -> brain::Provider {
 fn prefs_model(prefs: &Prefs, p: brain::Provider) -> Option<String> {
     match p {
         brain::Provider::Gemini => prefs.model.clone(),
-        brain::Provider::Groq => prefs.groq_model.clone(),
         brain::Provider::Claude => prefs.claude_model.clone(),
         brain::Provider::OpenAI => prefs.openai_model.clone(),
     }
@@ -854,7 +854,6 @@ fn prefs_model(prefs: &Prefs, p: brain::Provider) -> Option<String> {
 fn set_prefs_model(prefs: &mut Prefs, p: brain::Provider, model: Option<String>) {
     match p {
         brain::Provider::Gemini => prefs.model = model,
-        brain::Provider::Groq => prefs.groq_model = model,
         brain::Provider::Claude => prefs.claude_model = model,
         brain::Provider::OpenAI => prefs.openai_model = model,
     }
@@ -909,7 +908,6 @@ fn task_failed() -> AiError {
 struct ProviderInfo {
     active: String,
     gemini: bool,
-    groq: bool,
     claude: bool,
     openai: bool,
 }
@@ -918,7 +916,6 @@ fn provider_info(state: &AppState) -> ProviderInfo {
     ProviderInfo {
         active: active(state).id().to_string(),
         gemini: brain::load_key(brain::Provider::Gemini).is_some(),
-        groq: brain::load_key(brain::Provider::Groq).is_some(),
         claude: brain::load_key(brain::Provider::Claude).is_some(),
         openai: brain::load_key(brain::Provider::OpenAI).is_some(),
     }
@@ -934,7 +931,7 @@ fn provider_or_active(state: &AppState, provider: Option<String>) -> Result<brai
 /// Make `p` the active provider: its own chosen model (or automatic) is loaded.
 fn switch_provider(state: &AppState, p: brain::Provider) {
     *state.provider.lock().unwrap() = p;
-    let model = prefs_model(&state.prefs.lock().unwrap(), p).filter(|m| brain::model_ok_for(p, m));
+    let model = prefs_model(&state.prefs.lock().unwrap(), p).filter(|m| brain::model_ok(m));
     *state.model.lock().unwrap() = model;
     state.prefs.lock().unwrap().provider = Some(p.id().to_string());
     state.dirty.store(true, Ordering::Relaxed);
@@ -944,7 +941,7 @@ fn switch_provider(state: &AppState, p: brain::Provider) {
 async fn brain_provider(app: AppHandle) -> ProviderInfo {
     tauri::async_runtime::spawn_blocking(move || provider_info(&app.state::<AppState>()))
         .await
-        .unwrap_or(ProviderInfo { active: "gemini".into(), gemini: false, groq: false, claude: false, openai: false })
+        .unwrap_or(ProviderInfo { active: "gemini".into(), gemini: false, claude: false, openai: false })
 }
 
 /// Choose which provider answers. Its key must already be stored.
@@ -1000,7 +997,7 @@ async fn brain_connect(
     tauri::async_runtime::spawn_blocking(move || {
         let state = app.state::<AppState>();
         let p = provider_or_active(&state, provider)?;
-        if model.as_deref().is_some_and(|m| !brain::model_ok_for(p, m)) {
+        if model.as_deref().is_some_and(|m| !brain::model_ok(m)) {
             return Err(AiError::new(Kind::Model, "bad model name"));
         }
         // A fresh connection starts from the user's choice, or from the automatic default.
@@ -1083,7 +1080,7 @@ fn brain_model(state: State<AppState>) -> ModelInfo {
 fn brain_set_model(state: State<AppState>, model: Option<String>) -> Result<String, AiError> {
     let model = model.filter(|m| !m.is_empty());
     let p = active(&state);
-    if model.as_deref().is_some_and(|m| !brain::model_ok_for(p, m)) {
+    if model.as_deref().is_some_and(|m| !brain::model_ok(m)) {
         return Err(AiError::new(Kind::Model, "bad model name"));
     }
     *state.model.lock().unwrap() = model.clone();
@@ -1836,6 +1833,7 @@ pub fn run() {
         .plugin(tauri_plugin_autostart::init(tauri_plugin_autostart::MacosLauncher::LaunchAgent, None))
         .manage(updater::PendingUpdate::default())
         .setup(|app| {
+            brain::forget_retired_keys(); // Groq is retired (ADR-0150); its stored key goes with it
             let dir = app.path().app_data_dir()?;
             let _ = fs::create_dir_all(&dir);
             let path = dir.join("state.json");
@@ -1849,7 +1847,7 @@ pub fn run() {
                 memory_path: dir.join("memory.json"),
                 model: Mutex::new({
                     let p = prefs.provider.as_deref().and_then(brain::Provider::parse).unwrap_or_default();
-                    prefs_model(&prefs, p).filter(|m| brain::model_ok_for(p, m))
+                    prefs_model(&prefs, p).filter(|m| brain::model_ok(m))
                 }),
                 provider: Mutex::new(prefs.provider.as_deref().and_then(brain::Provider::parse).unwrap_or_default()),
                 path,

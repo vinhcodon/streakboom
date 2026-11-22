@@ -62,7 +62,7 @@ The short version of [`docs/charter.md`](docs/charter.md), which ranks what Peak
 - **Alive without any AI.** A mood and closeness model and 265 hand-written lines per language, with stages when you keep poking it, a sleepy night (23:00 to 07:00 it dozes and says nothing on its own), and "gentle tone" for those who prefer no sarcasm.
 - **Gestures, not buttons.** Sweep the cursor over its head to scratch it, over its belly to rub it (usually bliss, sometimes a trap), click to poke, drag to carry it, right-click to push it, double right-click (or type xê ra, move over, どいて) to ask it to step aside, double-click to chat.
 - **It lives on your desktop.** It wanders, hops between rows, hops onto and climbs the edges of your windows, looks over an edge, falls to the window below if its seat goes away, and gets out from under the Start menu.
-- **Bring your own brain.** Gemini and Groq have free tiers (with limits); Claude and OpenAI are paid. Daily caps keep it frugal; it answers in the language you write in.
+- **Bring your own brain.** Gemini has a free tier (with limits); Claude and OpenAI are paid. Daily caps keep it frugal; it answers in the language you write in.
 - **It remembers a little, and you control it.** Settings, Memory shows everything and can forget any part.
 - **Light on your computer.** About 100 to 120 MB of memory across its processes. Processor use, measured on one machine so far: about 4 to 6% of one core while it stands still and a median of about 9 to 11% in normal use; getting it lower is an open item.
 - **Free and open source.** MIT licensed. Updates are signed; you choose to install automatically, to be asked (the default), or never.

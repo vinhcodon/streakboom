@@ -30,9 +30,9 @@ test("placeholders such as {v}, {n} and {company} are kept in every language", (
   }
 });
 
-test("all four brains are described in every language, in the offered order", () => {
+test("all three brains are described in every language, in the offered order", () => {
   for (const lang of LANGS) {
-    assert.deepEqual(Object.keys(UI[lang].providers), ["gemini", "groq", "claude", "openai"], lang);
+    assert.deepEqual(Object.keys(UI[lang].providers), ["gemini", "claude", "openai"], lang);
     for (const p of Object.values(UI[lang].providers)) for (const v of Object.values(p)) assert.ok(v.length > 0);
   }
 });
