@@ -515,3 +515,14 @@ The dog is **not** to be put in the app; this is a sticker test, and the decisio
 | FB-5 | A clip under 10 seconds of Peak and a chat screenshot for posts 1 and 5 | S | proposed; the author records them |
 | FB-6 | Claim `@streakboom` and put the readable address in the handoff and the README | S | done 2026-11-17: the author set it, the address opens the Page, the handoff and the ADR carry it; the README carries a Facebook link in its first row of links (2026-11-17) |
 | FB-7 | Measure what the Page brings: a short link per post on the download page, read after four weeks, then keep, change or stop the Page | M | proposed |
+
+## E35: The chat box, revised (`docs/plans/chat-box-issues-and-overlay-proposal.md`, ADR-0146; the overlay is for the duo branch)
+
+| ID | Story | Size | State |
+|---|---|---|---|
+| CB-1 | A long reply is cut at the end of a sentence, limits by use, the talk keeps the whole reply, a budget for the model (ADR-0146) | S | built on `main` 2026-11-22; the model's behaviour not verified (V-188) |
+| CB-2 | The Vietnamese text of the box: `lang`, the font stack, NFC, the composition guard; find the cause with the author's screenshot and typing program | S | the bubble `lang` done; the box part is for the duo session (`docs/handoff/chat-overlay-for-duo-session.md`); the cause is not established |
+| CB-3 | The overlay, step 1: the ambient log with pills, fading and the pin (no hover) | M | proposed (the duo branch; the author's choices are in the handoff) |
+| CB-4 | The overlay, step 2: hover with a delay and a margin, the engaged mode (solid, input, history) | M | proposed |
+| CB-5 | The head of a reply in the bubble and the whole in the box (the duo box) | S | proposed (after ADR-0146 is on the branch) |
+
