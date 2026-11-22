@@ -1,0 +1,10 @@
+{
+  "id": "peak",
+  "name": "Peak",
+  "species": "a cat",
+  "speaksToPerson": true,
+  "speaksToPet": true,
+  "mayPass": true,
+  "maxWords": 40,
+  "note": ""
+}

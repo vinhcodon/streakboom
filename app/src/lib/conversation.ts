@@ -5,6 +5,7 @@
 // One room log holds every turn; a pet is shown only the turns it heard (it spoke them, or they were said to it, or to both).
 
 import { PETS, type PetId } from "./duo.ts";
+import { loadProfiles, type Profiles } from "./pets.ts";
 
 export type Party = "person" | PetId;
 export type Act = "say" | "pass" | "gesture";
@@ -84,12 +85,12 @@ export class Conversation {
 
   private deps: Deps;
   private emit: (l: Line) => void;
-  private maxWords: number;
+  private profiles: Profiles;
 
-  constructor(deps: Deps, emit: (l: Line) => void, maxWords = 40) {
+  constructor(deps: Deps, emit: (l: Line) => void, profiles: Profiles = loadProfiles()) {
     this.deps = deps;
     this.emit = emit;
-    this.maxWords = maxWords;
+    this.profiles = profiles;
   }
 
   /** The person drops everything: a touch, a new message or the program closing. Lines still waiting for a model are thrown away. */
@@ -115,16 +116,18 @@ export class Conversation {
       if (i > 0) { await this.deps.sleep(this.deps.beat()); if (my !== this.token) return; }
       if (my !== this.token || this.gone.has(pet)) return;
       const role = i === 0 ? "first" : "second";
-      if (this.deps.quiet() || !this.deps.allow(pet)) { this.gesture(pet); continue; }
+      const prof = this.profiles[pet];
+      if (!prof.speaksToPerson || this.deps.quiet() || !this.deps.allow(pet)) { this.gesture(pet); continue; } // a pet that never speaks, Quiet, or the gate: a gesture
       let raw: string;
       try { raw = await this.deps.model(pet, heard(this.room, pet), role); } catch { if (my === this.token && !this.gone.has(pet)) this.gesture(pet); continue; }
       if (my !== this.token || this.gone.has(pet)) return; // the turn was cancelled or the pet went in while it was being written
       const u = parseUtterance(raw);
-      const text = clip(u.text, this.maxWords);
-      if (!text || (u.pass && role === "second")) { this.pass(pet, role === "second" && u.pass); continue; }
+      const text = clip(u.text, prof.maxWords);
+      const mayPass = role === "second" && prof.mayPass;
+      if (!text || (u.pass && mayPass)) { this.pass(pet, mayPass && u.pass); continue; }
       // an aside to the other pet: only the second speaker of a turn to both, one line, addressed to the other; anything else goes to the person
       const other = pet === "peak" ? "paws" : "peak";
-      const aside = both && role === "second" && u.to.includes(other);
+      const aside = both && role === "second" && prof.speaksToPet && u.to.includes(other);
       // in a turn to both the first line is said in the room: the other pet hears it (and may pass or answer); in a turn to one pet nothing is overheard
       const first = both && role === "first";
       this.say(pet, text, u.mood, aside ? [other] : first ? ["person", other] : ["person"]);
@@ -147,17 +150,16 @@ export class Conversation {
   private gesture(pet: PetId) { this.pass(pet, false); }
 }
 
-const NAME: Record<PetId, string> = { peak: "Peak", paws: "Paws" };
 export interface HistoryTurn { role: "user" | "model"; text: string }
 
 /** What a pet heard, as the turns a model is given: its own lines are the model's, the person's are the user's, and what the other pet said is
  *  told to it as heard in the room. Neighbours of one role are joined; the first turn is always the user's. */
-export function toHistory(view: Turn[], pet: PetId): HistoryTurn[] {
+export function toHistory(view: Turn[], pet: PetId, profiles: Profiles = loadProfiles()): HistoryTurn[] {
   const out: HistoryTurn[] = [];
   for (const t of view) {
     if (t.act !== "say") continue;
     const role: "user" | "model" = t.from === pet ? "model" : "user";
-    const text = t.from === pet || t.from === "person" ? t.text : `(${NAME[t.from]} said: ${t.text})`;
+    const text = t.from === pet || t.from === "person" ? t.text : `(${profiles[t.from].name} said: ${t.text})`;
     const last = out[out.length - 1];
     if (last && last.role === role) last.text += `\n${text}`;
     else out.push({ role, text });
@@ -167,17 +169,22 @@ export function toHistory(view: Turn[], pet: PetId): HistoryTurn[] {
 }
 
 /** The situation layer (L3) for one call: who is present, who was spoken to, and what this pet may do now. Built by the code each time. */
-export function situation(pet: PetId, role: "first" | "second", both: boolean): string {
-  const other = pet === "peak" ? "paws" : "peak";
+export function situation(pet: PetId, role: "first" | "second", both: boolean, profiles: Profiles = loadProfiles()): string {
+  const me = profiles[pet];
+  const other = profiles[pet === "peak" ? "paws" : "peak"];
   const parts = [
-    `Two pets live on this desktop: Peak, a cat, and Paws, a small dog. You are ${NAME[pet]}.`,
+    `Two pets live on this desktop: ${profiles.peak.name}, ${profiles.peak.species}, and ${profiles.paws.name}, ${profiles.paws.species}. You are ${me.name}.`,
     both ? "The person is talking to both of you." : "The person is talking to you.",
   ];
   if (!both) parts.push("Answer in one or two short lines.");
   else if (role === "first") parts.push("Answer in one or two short lines; the other pet will hear you.");
-  else parts.push(
-    `${NAME[other]} has just answered in the room (you see it as a line in brackets). Add something of your own in one or two short lines, or answer only [pass] if you have nothing to add. To speak to ${NAME[other]} instead of the person, start your line with [to:${other}].`,
-  );
+  else {
+    const say = `${other.name} has just answered in the room (you see it as a line in brackets). Add something of your own in one or two short lines`;
+    const pass = me.mayPass ? ", or answer only [pass] if you have nothing to add" : "";
+    const aside = me.speaksToPet ? `. To speak to ${other.name} instead of the person, start your line with [to:${other.id}]` : "";
+    parts.push(`${say}${pass}${aside}.`);
+  }
   parts.push("Never mention a pet's words as if the person had said them.");
+  if (me.note) parts.push(me.note);
   return parts.join(" ");
 }
