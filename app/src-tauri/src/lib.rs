@@ -1869,13 +1869,15 @@ fn build_tray(app: &AppHandle, quiet: bool) -> tauri::Result<()> {
             _ => {}
         })
         .on_tray_icon_event(|tray, event| {
-            if let TrayIconEvent::Click {
-                button: MouseButton::Left,
-                button_state: MouseButtonState::Up,
-                ..
-            } = event
-            {
-                if duo::enabled() { duo::tray(tray.app_handle()); } else { toggle_visibility(tray.app_handle()); }
+            match event {
+                TrayIconEvent::Click { button: MouseButton::Left, button_state: MouseButtonState::Up, .. } => {
+                    // with the duo flag (ADR-0142) a single click shows or hides the chat box; without it, as before
+                    if duo::enabled() { duo::tray_single(tray.app_handle()); } else { toggle_visibility(tray.app_handle()); }
+                }
+                TrayIconEvent::DoubleClick { button: MouseButton::Left, .. } => {
+                    if duo::enabled() { duo::tray_double(tray.app_handle()); }
+                }
+                _ => {}
             }
         });
     if let Some(icon) = app.default_window_icon() {
@@ -2025,6 +2027,9 @@ pub fn run() {
             duo::duo_command,
             duo::duo_bubble_to,
             duo::duo_paws_out,
+            duo::chatbox_hide,
+            duo::chatbox_pin,
+            duo::duo_presence,
             duo::duo_touch,
             duo::duo_open_chat,
             duo::duo_fake,

@@ -16,6 +16,7 @@
   import { seatFraction, seatMove, seatWalkMs } from "$lib/seat";
   import { addressees, parseDuoCommand, parseRelay } from "$lib/duo-command";
   import { Conversation, addTurn, situation, toHistory, type Line } from "$lib/conversation";
+  import type { BoxAction, BoxView } from "$lib/chatbox";
   import type { PetId } from "$lib/duo";
   import { LEAVE_PACE_PX_S, RETRY_SECS, isLeaveCommand, leaveDeadlineMs, mayLeave, nearerEdge } from "$lib/farewell";
   import { matchIntent, shortEnoughForSkill } from "$lib/intents";
@@ -2394,6 +2395,8 @@
     return said.includes("pass") ? "[pass]" : said.includes("aside") ? "[to:peak] Shall I fetch the ball?" : "[happy] Splendid, as always.";
   }
   let bubbleWho = $state<PetId | null>(null);
+  let modelTyping = $state<PetId | null>(null); // the pet whose model call is running: the three dots of the chat box
+  let boxTurns = $state<{ id: number; who: "person" | PetId; text: string; at: number }[]>([]); // the whole talk, for the chat box (ADR-0142)
   let talkLog = $state<{ who: "person" | PetId; text: string }[]>([]);
   const talk = new Conversation(
     {
@@ -2424,11 +2427,28 @@
       sleep: (ms) => new Promise((r) => setTimeout(r, ms)),
       beat: () => 600 + Math.random() * 600,
       now: () => Date.now(),
+      writing: (p) => (modelTyping = p),
     },
     (l) => enqueueLine(l),
   );
+  // The chat box: what it shows is pushed to its window whenever it changes; what is written in it comes back as an action.
+  let lastBox = "";
+  function pushBox(force = false) {
+    const v = $state.snapshot({ turns: boxTurns, typing: chatPhase === "thinking" ? "peak" : modelTyping, recipient, canChat: canChat || duoFake }) as BoxView;
+    if (!duoOn) return;
+    const s = JSON.stringify(v);
+    if (!force && s === lastBox) return;
+    lastBox = s;
+    void emitTo("chatbox", "chatbox-view", v).catch(() => {});
+  }
+  $effect(() => pushBox());
+  function onBoxAction(a: BoxAction) {
+    if (a.type === "recipient") { recipient = a.to; return; }
+    if (a.type === "send") { recipient = a.to; void sendChat(a.text); }
+  }
   function syncLog() {
     talkLog = talk.room.turns.filter((t) => t.act === "say").slice(-6).map((t) => ({ who: t.from, text: t.text }));
+    boxTurns = talk.room.turns.filter((t) => t.act === "say").map((t) => ({ id: t.id, who: t.from, text: t.text, at: t.at }));
   }
   let lineGen = 0;
   let lineChain: Promise<void> = Promise.resolve();
@@ -2470,9 +2490,8 @@
   }
   function mirrorPeak(user: string, reply: string) {
     if (!duoOn) return;
-    let r = addTurn(talk.room, { from: "person", to: ["peak"], text: user, at: Date.now(), act: "say" }).room;
-    r = addTurn(r, { from: "peak", to: ["person"], text: reply, at: Date.now(), act: "say" }).room;
-    talk.room = r;
+    // the person's turn was put in the room when it was sent (sendChat); only the answer of Peak is added here
+    talk.room = addTurn(talk.room, { from: "peak", to: ["person"], text: reply, at: Date.now(), act: "say" }).room;
     talk.lastSpoken = "peak";
     syncLog();
   }
@@ -2928,6 +2947,13 @@
   async function sendChat(raw: string) {
     const text = raw.trim();
     if (!text) return;
+    if (duoOn) {
+      // the message is in the talk at once, so that the chat box shows it before any pet answers (ADR-0142)
+      await refreshPawsOut();
+      const rel = pawsOutNow ? parseRelay(text) : null;
+      talk.notePerson(text, rel ? [rel.via, rel.target] : addressees(text, recipient, pawsOutNow));
+      syncLog();
+    }
     // A plain command to go away is Peak's own business, not a message to the model: no key, no chat turn counted (spec 14, A5).
     if (!busy && (await tryDuoFromChat(text))) return;
     if (!busy && (await tryTalkFromChat(text))) return;
@@ -3023,6 +3049,7 @@
       history = [...history, { role: "model" as const, text: reply }].slice(-8);
       chatReply = reply;
       mirrorPeak(text, reply);
+      if (duoOn && panel !== "chat") void sayAs("peak", reply); // the chat box is not the bubble: Peak's answer is said above Peak
       void maybeRemember();
     } catch (e) {
       const k = errKind(e);
@@ -3030,6 +3057,7 @@
       if (k === "invalid_key") brainBad = true;
       if (k === "rate_limit") data = coolDown(data, Date.now());
       chatReply = ui.err[k];
+      if (duoOn && panel !== "chat") showBubble(ui.err[k]);
       replyMood = "none";
     } finally {
       clearTimeout(slowTimer);
@@ -3506,6 +3534,8 @@
       cleanups.push(await win.listen("duo-touch", () => { if (duoOn) cancelTalk(); })); // a touch on Paws ends the talk, as a touch on Peak does
       cleanups.push(await win.listen<PetId>("duo-open-chat", (e) => void openChatFor(e.payload)));
       void initDuo();
+      cleanups.push(await win.listen("chatbox-ready", () => pushBox(true)));
+      cleanups.push(await win.listen<BoxAction>("chatbox-action", (e) => onBoxAction(e.payload)));
       cleanups.push(await win.listen<string>("duo-type", (e) => void sendChat(e.payload))); // developer channel: a message typed without the box
       cleanups.push(await win.listen<{ dir: 1 | -1 }>("duo-face", (e) => { if (pose === "idle") dir = e.payload.dir; })); // the talk: the head turns toward the speaker
       cleanups.push(await win.listen<{ pet: PetId; text: string }>("duo-say", (e) => void sayAs(e.payload.pet, e.payload.text))); // developer channel: a line in Paws' bubble without the model

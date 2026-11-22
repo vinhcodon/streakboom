@@ -75,6 +75,8 @@ export interface Deps {
   /** The beat between the first line and the second (a short random range in the program, fixed in a test). */
   beat(): number;
   now(): number;
+  /** A pet starts or stops writing (for the three dots of the box); null when none is. Optional. */
+  writing?(pet: PetId | null): void;
 }
 
 export class Conversation {
@@ -82,6 +84,8 @@ export class Conversation {
   lastSpoken: PetId | null = null;
   private token = 0;
   private gone = new Set<PetId>();
+  /** The text of a person turn already put in the room the moment it was sent (so the box shows it at once); the turn that follows does not add it again. */
+  private noted: string | null = null;
 
   private deps: Deps;
   private emit: (l: Line) => void;
@@ -91,6 +95,24 @@ export class Conversation {
     this.deps = deps;
     this.emit = emit;
     this.profiles = profiles;
+  }
+
+  /** The person's message goes into the room at once, before any pet answers; `person` or `relay` with the same text then does not add it a second time. */
+  notePerson(text: string, to: PetId[]) {
+    this.room = addTurn(this.room, { from: "person", to, text, at: this.deps.now(), act: "say" }).room;
+    this.noted = text;
+  }
+
+  /** One model call for one pet, with the "writing" signal on while it lasts. */
+  private async ask(pet: PetId, role: "first" | "second" | "relayed"): Promise<string> {
+    this.deps.writing?.(pet);
+    try { return await this.deps.model(pet, heard(this.room, pet), role); } finally { this.deps.writing?.(null); }
+  }
+
+  private takeNote(text: string): boolean {
+    if (this.noted !== text) return false;
+    this.noted = null;
+    return true;
   }
 
   /** The person drops everything: a touch, a new message or the program closing. Lines still waiting for a model are thrown away. */
@@ -103,7 +125,7 @@ export class Conversation {
   async person(text: string, to: PetId[], present: PetId[]): Promise<void> {
     const my = ++this.token;
     this.gone = new Set();
-    this.room = addTurn(this.room, { from: "person", to, text, at: this.deps.now(), act: "say" }).room;
+    if (!this.takeNote(text)) this.room = addTurn(this.room, { from: "person", to, text, at: this.deps.now(), act: "say" }).room;
     const p = plan(to, present, this.lastSpoken);
     const both = p.speakers.length === 2;
     if (p.speakers.length === 0 && present.length > 0) {
@@ -119,7 +141,7 @@ export class Conversation {
       const prof = this.profiles[pet];
       if (!prof.speaksToPerson || this.deps.quiet() || !this.deps.allow(pet)) { this.gesture(pet); continue; } // a pet that never speaks, Quiet, or the gate: a gesture
       let raw: string;
-      try { raw = await this.deps.model(pet, heard(this.room, pet), role); } catch { if (my === this.token && !this.gone.has(pet)) this.gesture(pet); continue; }
+      try { raw = await this.ask(pet, role); } catch { if (my === this.token && !this.gone.has(pet)) this.gesture(pet); continue; }
       if (my !== this.token || this.gone.has(pet)) return; // the turn was cancelled or the pet went in while it was being written
       const u = parseUtterance(raw);
       const text = clip(u.text, prof.maxWords);
@@ -140,7 +162,7 @@ export class Conversation {
     if (!present.includes(via) || !present.includes(target) || !this.profiles[via].relays) return this.person(text, [via], present.filter((p) => p === via || p === target));
     const my = ++this.token;
     this.gone = new Set();
-    this.room = addTurn(this.room, { from: "person", to: [via, target], text, at: this.deps.now(), act: "say" }).room;
+    if (!this.takeNote(text)) this.room = addTurn(this.room, { from: "person", to: [via, target], text, at: this.deps.now(), act: "say" }).room;
     const t = addTurn(this.room, { from: via, to: [target], text: "", at: this.deps.now(), act: "turn" });
     this.room = t.room;
     this.emit({ pet: via, act: "turn", text: "", mood: "neutral", to: [target], turnId: t.turn.id });
@@ -149,7 +171,7 @@ export class Conversation {
     const prof = this.profiles[target];
     if (!prof.speaksToPerson || this.deps.quiet() || !this.deps.allow(target)) { this.gesture(target); return; }
     let raw: string;
-    try { raw = await this.deps.model(target, heard(this.room, target), "relayed"); } catch { if (my === this.token && !this.gone.has(target)) this.gesture(target); return; }
+    try { raw = await this.ask(target, "relayed"); } catch { if (my === this.token && !this.gone.has(target)) this.gesture(target); return; }
     if (my !== this.token || this.gone.has(target)) return;
     const u = parseUtterance(raw);
     const line = clip(u.text, prof.maxWords);

@@ -70,3 +70,16 @@ test("the prompt for a relayed question says who asked", () => {
   assert.match(s, /asked Peak to ask you something, and Peak has turned to you/);
   assert.doesNotMatch(s, /\[pass\]/);
 });
+
+test("a message noted when it was sent is not added a second time by the turn that follows, and the writing signal goes on and off", async () => {
+  const writing: (PetId | null)[] = [];
+  const { talk, lines } = rig({ peak: "Fine.", paws: "Splendid." }, { writing: (p) => writing.push(p) });
+  talk.notePerson("how are you both", ["peak", "paws"]);
+  assert.equal(talk.room.turns.filter((t) => t.from === "person").length, 1); // there at once
+  await talk.person("how are you both", ["peak", "paws"], ["peak", "paws"]);
+  assert.equal(talk.room.turns.filter((t) => t.from === "person").length, 1); // still one
+  assert.deepEqual(writing, ["peak", null, "paws", null]);
+  assert.equal(lines.length, 2);
+  await talk.person("again", ["peak", "paws"], ["peak", "paws"]); // a message that was not noted is added
+  assert.equal(talk.room.turns.filter((t) => t.from === "person").length, 2);
+});

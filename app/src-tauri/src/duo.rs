@@ -179,6 +179,8 @@ fn spawn_dev_commands(app: AppHandle, dir: PathBuf) {
                 "scene" => scene_start(&app, ""),
                 l if l.starts_with("scene:") => scene_start(&app, &l[6..]),
                 "tray" => tray(&app),
+                "traysingle" => tray_single(&app), // the tray clicks without the mouse (the real tray is for the person to try)
+                "traydouble" => tray_double(&app),
                 "cancel" => scene_cleanup(&app),
                 // a message typed to the pets without the box: `type:<text>` (the page routes it like the chat box does)
                 l if l.starts_with("type:") => { let _ = app.emit_to("main", "duo-type", l[5..].to_string()); }
@@ -204,7 +206,7 @@ fn spawn_dev_commands(app: AppHandle, dir: PathBuf) {
 
 fn dump(app: &AppHandle, dir: &PathBuf) {
     let mut o = String::new();
-    for l in ["main", "paws", "ball", "bubble"] {
+    for l in ["main", "paws", "ball", "bubble", "chatbox"] {
         match app.get_webview_window(l) {
             Some(w) => {
                 let (p, s) = (w.outer_position().ok(), w.outer_size().ok());
@@ -593,4 +595,103 @@ mod tests {
         let e = nearest_entrance(500, 820, 250, &[m1()]).unwrap();
         assert_eq!(e.edge, Edge::Bottom);
     }
+}
+
+// ------------------------------------------------------------------ the chat box (ADR-0142)
+// One floating box for the person, at the bottom right of the work area. The tray: one click shows or hides it, a double click sends everyone in
+// or brings the last one out. The box hides when it loses focus unless pinned; it never opens itself.
+
+const BOX_LABEL: &str = "chatbox";
+const BOX_W: f64 = 340.0;
+const BOX_H: f64 = 460.0;
+const BOX_MARGIN: f64 = 16.0;
+const CLICK_WAIT: Duration = Duration::from_millis(300); // a single click waits this long to be told from the first half of a double click
+const BLUR_GRACE_MS: u64 = 600; // a blur this soon after the box was shown is the box taking focus, not the person leaving
+const BLUR_TOGGLE_MS: u64 = 900; // a tray click this soon after a blur-hide is the click that took the focus away: it must not show the box again
+
+static BOX_PINNED: AtomicBool = AtomicBool::new(false);
+static BOX_SHOWN_AT: AtomicU64 = AtomicU64::new(0);
+static BOX_BLUR_HID_AT: AtomicU64 = AtomicU64::new(0);
+static TRAY_GEN: AtomicU64 = AtomicU64::new(0);
+
+/// A single click on the tray (with the flag): after the wait, if no second click came, the box is shown or hidden.
+pub fn tray_single(app: &AppHandle) {
+    let g = TRAY_GEN.fetch_add(1, Ordering::SeqCst) + 1;
+    let app = app.clone();
+    std::thread::spawn(move || {
+        std::thread::sleep(CLICK_WAIT);
+        if TRAY_GEN.load(Ordering::SeqCst) == g { chatbox_toggle(&app); }
+    });
+}
+
+/// A double click on the tray (with the flag): it cancels the single click that came with it, then everyone goes in or the last one comes out.
+pub fn tray_double(app: &AppHandle) {
+    TRAY_GEN.fetch_add(1, Ordering::SeqCst);
+    tray(app);
+}
+
+fn box_position(app: &AppHandle) -> (i32, i32) {
+    let s = scale(app);
+    let (w, h, m) = ((BOX_W * s).round() as i32, (BOX_H * s).round() as i32, (BOX_MARGIN * s).round() as i32);
+    match monitors(app).first() {
+        Some(mon) => (mon.x + mon.w - w - m, mon.y + mon.h - h - m),
+        None => (100, 100),
+    }
+}
+
+fn show_box(app: &AppHandle, win: &tauri::WebviewWindow) {
+    let (x, y) = box_position(app);
+    let _ = win.set_position(PhysicalPosition::new(x, y));
+    BOX_SHOWN_AT.store(now_ms(), Ordering::SeqCst);
+    let _ = win.show();
+    let _ = win.set_focus();
+    let _ = app.emit_to(BOX_LABEL, "chatbox-open", ());
+}
+
+/// Show the box, or hide it if it is showing. The window is made the first time and kept after that.
+pub fn chatbox_toggle(app: &AppHandle) {
+    if let Some(win) = app.get_webview_window(BOX_LABEL) {
+        if win.is_visible().unwrap_or(false) {
+            let _ = win.hide();
+        } else if now_ms().saturating_sub(BOX_BLUR_HID_AT.load(Ordering::SeqCst)) > BLUR_TOGGLE_MS {
+            show_box(app, &win);
+        }
+        return;
+    }
+    let built = WebviewWindowBuilder::new(app, BOX_LABEL, WebviewUrl::App("chatbox".into()))
+        .title("Streakboom chat")
+        .inner_size(BOX_W, BOX_H)
+        .decorations(false).transparent(true).always_on_top(true).skip_taskbar(true).resizable(false).shadow(false)
+        .visible(false)
+        .additional_browser_args(BROWSER_ARGS)
+        .build();
+    let Ok(win) = built else { return };
+    let app2 = app.clone();
+    win.on_window_event(move |e| {
+        if let tauri::WindowEvent::Focused(false) = e {
+            let recently = now_ms().saturating_sub(BOX_SHOWN_AT.load(Ordering::SeqCst)) < BLUR_GRACE_MS;
+            if !BOX_PINNED.load(Ordering::SeqCst) && !recently {
+                if let Some(w) = app2.get_webview_window(BOX_LABEL) {
+                    if w.is_visible().unwrap_or(false) { BOX_BLUR_HID_AT.store(now_ms(), Ordering::SeqCst); let _ = w.hide(); }
+                }
+            }
+        }
+    });
+    show_box(app, &win);
+}
+
+/// The box asks to hide (Esc, or its own button).
+#[tauri::command]
+pub fn chatbox_hide(app: AppHandle) { if let Some(w) = app.get_webview_window(BOX_LABEL) { let _ = w.hide(); } }
+
+/// The pin of the box: pinned, it stays when it loses focus.
+#[tauri::command]
+pub fn chatbox_pin(on: bool) { BOX_PINNED.store(on, Ordering::SeqCst); }
+
+/// Who is out now, for the dots of the box.
+#[tauri::command]
+pub fn duo_presence(app: AppHandle) -> serde_json::Value {
+    let Some(d) = app.try_state::<Duo>() else { return serde_json::json!({ "peak": true, "paws": false }) };
+    let s = d.state.lock().unwrap();
+    serde_json::json!({ "peak": s.pets.peak.out, "paws": s.pets.paws.out })
 }
