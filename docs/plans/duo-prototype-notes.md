@@ -17,6 +17,8 @@
 
 - **Pet profiles (ADR-0141 layer L2, step 5 of its build order):** `app/src/lib/pets/<pet>.profile.json` (speaks to the person, may pass, speaks to the other pet, longest line, one note sentence for the prompt); `pets.ts` reads it with bounds (a number is clamped, a wrong type is the default, an unknown key is ignored, the id is the pet's own); `Conversation` obeys it (a silent pet only gestures and costs no call, no pass, no aside, a word cap for each pet) and the prompt layer of the situation is built from it. Peak and Paws have the same values for now, so nothing changed on screen (T9 gives the same lines). Tested only by unit tests with a scripted model; no profile with other values has been shown to the author.
 
+- **Relay (ADR-0141, situation 8):** "hỏi Paws xem...", "ask Peak...", "Pawsに聞いて" (short messages, local, decided by the code): the other pet turns to the one named (head turn, no words, no call), the one named answers the person (one call, role `relayed`, shown the question); one hop only; if the asker may not relay (profile flag `relays`) or the other pet is away it answers for itself; under Quiet the turn is shown and the answer is a gesture. Checked with canned replies (T10: `line peak turn to=paws`, then `line paws say to=person`, and the reverse) and by unit tests; not with a real brain.
+
 ## Checked by me, with the real program (script `scripts/windows/duo-test.ps1`, release build, identifier `com.streakboom.duospike`)
 Tests: 427 TS tests, 6 Rust tests of `duo.rs`, `svelte-check` clean. On a 1920x1080 screen at 125 percent:
 - Paws stands on the work area, on the same floor as Peak (the first build put it behind the taskbar: fixed).
