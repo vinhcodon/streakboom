@@ -3,7 +3,7 @@
 - **Status:** accepted on 2026-11-22 for the prototype and as the direction to try; nothing ships (see ADR-0139). It amends ADR-0141 (how the person types) and the tray rule of ADR-0139. The author proposed the box; each point below was chosen from options.
 - **Date:** 2026-11-22
 - **Decided by:** Vinh (author)
-- **Amended by:** ADR-0145 (2026-11-22): the recipient avatars at the top of the box became two avatars with a coloured dot (who is out), the keys Tab, Shift+Tab and Ctrl+1/2/3 are gone, and a double click on a pet opens the box for it (points 2 and 6 below).
+- **Amended by:** ADR-0145 (2026-11-22): the recipient avatars at the top of the box became two avatars with a coloured dot (who is out), the keys Tab, Shift+Tab and Ctrl+1/2/3 are gone, and a double click on a pet opens the box for it (points 2 and 6 below). ADR-0147 (2026-11-22): the box is one overlay of the talk, shown or hidden, with no header, no recipient avatars, no pin button, no hiding by itself when pinned (the default), a scrim and pills, flush with the work area (points 1 to 4 above).
 
 ## Decision
 1. **Where the person types: one floating chat box**, by default at the bottom right of the work area. The pets' words stay in bubbles above them (ADR-0141 option D, the bubble part); the box is the person's input and the log of the talk. It replaces the box beside a pet and the chips of ADR-0141; a double click on a pet only opens the box addressed to it.
