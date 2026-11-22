@@ -4,6 +4,7 @@
   import { onMount, tick } from "svelte";
   import { invoke } from "@tauri-apps/api/core";
   import { listen, emitTo } from "@tauri-apps/api/event";
+  import { boxStrings, slashLabel } from "$lib/chatbox-ui";
   import { EMPTY_VIEW, groupTurns, nextRecipient, recallStep, recipientByNumber, slashItems, timeLabel, type BoxAction, type BoxView, type Recipient, type SlashItem } from "$lib/chatbox";
 
   let view = $state<BoxView>(EMPTY_VIEW);
@@ -17,12 +18,11 @@
   let scroller = $state<HTMLDivElement | null>(null);
 
   const items = $derived(groupTurns(view.turns));
-  const locale = typeof navigator !== "undefined" ? navigator.language : "en";
+  const t = $derived(boxStrings(view.lang));
+  const locale = $derived(t.locale);
   const PETS = ["peak", "paws"] as const;
-  const NAME = { peak: "Peak", paws: "Paws", person: "You" } as const;
-  const placeholder = $derived(
-    !view.canChat ? "No brain connected: commands only" : view.recipient === "both" ? "Message Peak and Paws" : `Message ${NAME[view.recipient]}`,
-  );
+  const NAME = $derived({ peak: "Peak", paws: "Paws", person: t.you } as const);
+  const placeholder = $derived(!view.canChat ? t.noBrain : view.recipient === "both" ? t.messageBoth : view.recipient === "paws" ? t.messagePaws : t.messagePeak);
 
   const sent = $derived(view.turns.filter((t) => t.who === "person").map((t) => t.text).slice(-30));
   const slash = $derived<SlashItem[]>(!slashOff && draft.startsWith("/") && !draft.includes(String.fromCharCode(10)) ? slashItems(draft.slice(1), presence) : []);
@@ -122,15 +122,15 @@
 
 <div class="box">
   <header>
-    <div class="who" role="group" aria-label="Send to">
+    <div class="who" role="group" aria-label={t.sendTo}>
       {#each PETS as p (p)}
         <button class="chip" class:on={view.recipient === p} class:away={!presence[p]} aria-pressed={view.recipient === p} onclick={() => pick(p)}>
           <span class="av {p}"><img src={p === "paws" ? "/paws/paws-front.svg" : "/peak-avatar.png"} alt="" /><i class="dot" class:out={presence[p]}></i></span>{NAME[p]}
         </button>
       {/each}
-      <button class="chip both" class:on={view.recipient === "both"} aria-pressed={view.recipient === "both"} onclick={() => pick("both")}>Both</button>
+      <button class="chip both" class:on={view.recipient === "both"} aria-pressed={view.recipient === "both"} onclick={() => pick("both")}>{t.both}</button>
     </div>
-    <button class="pin" class:on={pinned} aria-pressed={pinned} aria-label="Keep open" title="Keep open" onclick={togglePin}>
+    <button class="pin" class:on={pinned} aria-pressed={pinned} aria-label={t.keepOpen} title={t.keepOpen} onclick={togglePin}>
       <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 4h6l-1 6 3 3v1H7v-1l3-3-1-6z"/><path d="M12 14v6"/></svg>
     </button>
   </header>
@@ -138,7 +138,7 @@
   <div class="log" bind:this={scroller}>
     {#each items as it, i (i)}
       {#if it.kind === "time"}
-        <div class="time">{timeLabel(it.at, Date.now(), locale, "Today")}</div>
+        <div class="time">{timeLabel(it.at, Date.now(), locale, t.today)}</div>
       {:else if it.who === "person"}
         <div class="row me">
           <div class="lines">
@@ -158,27 +158,27 @@
     {#if view.typing}
       <div class="row pet">
         <span class="av small {view.typing}"><img src={view.typing === "paws" ? "/paws/paws-front.svg" : "/peak-avatar.png"} alt={NAME[view.typing]} /></span>
-        <div class="lines"><div class="msg pet typing" aria-label="{NAME[view.typing]} is writing"><i></i><i></i><i></i></div></div>
+        <div class="lines"><div class="msg pet typing" aria-label={t.writing.replace("{name}", NAME[view.typing])}><i></i><i></i><i></i></div></div>
       </div>
     {/if}
     {#if items.length === 0 && !view.typing}
       <div class="empty">
-        <div>{view.canChat ? "Say something to Peak or Paws." : "No brain is connected. Commands such as “call Paws out” still work."}</div>
-        {#if !view.callMe}<div class="hint">Tell Peak and Paws what to call you: type <code>/name</code> and your name.</div>{/if}
+        <div>{view.canChat ? t.empty : t.emptyNoBrain}</div>
+        {#if !view.callMe}<div class="hint">{t.hintName} <code>/name</code> {t.hintNameAfter}</div>{/if}
       </div>
     {/if}
   </div>
 
   <footer>
     {#if slash.length > 0}
-      <ul class="slash" role="listbox" aria-label="Commands">
+      <ul class="slash" role="listbox" aria-label={t.commands}>
         {#each slash as it, i (it.id)}
-          <li role="option" aria-selected={i === slashSel} class:sel={i === slashSel}><button tabindex="-1" onmousedown={(e) => { e.preventDefault(); runSlash(it); }}><span>{it.label}</span><code>{it.hint}</code></button></li>
+          <li role="option" aria-selected={i === slashSel} class:sel={i === slashSel}><button tabindex="-1" onmousedown={(e) => { e.preventDefault(); runSlash(it); }}><span>{slashLabel(t, it)}</span><code>{it.hint}</code></button></li>
         {/each}
       </ul>
     {/if}
     <textarea bind:this={input} bind:value={draft} rows="1" {placeholder} maxlength="300" autocomplete="off" oninput={() => { slashOff = false; recallIdx = -1; grow(); }} onkeydown={onKey} aria-label={placeholder}></textarea>
-    <button class="send" aria-label="Send" disabled={!draft.trim()} onclick={send}>
+    <button class="send" aria-label={t.send} disabled={!draft.trim()} onclick={send}>
       <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12l14-7-5 14-2-6-7-1z"/></svg>
     </button>
   </footer>

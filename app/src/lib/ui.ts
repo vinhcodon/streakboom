@@ -65,6 +65,15 @@ export interface UiStrings {
   memIntro: string;
   memLearn: string;
   memCallMe: string;
+  shortcutsTitle: string;
+  shortcutsIntro: string;
+  shortcutBox: string;
+  shortcutAll: string;
+  shortcutPress: string;
+  shortcutReset: string;
+  shortcutInBox: string;
+  shortcutNeeds: string;
+  shortcutNotActive: string;
   memNone: string;
   memSave: string;
   memDays: string;
@@ -258,6 +267,15 @@ export const UI: Record<Lang, UiStrings> = {
     memIntro: "Everything the pet knows about you is here, and only here, on this computer. Nothing of it is sent anywhere.",
     memLearn: "Remember my habits (when I show up, how often I touch it)",
     memCallMe: "Call me",
+    shortcutsTitle: "Shortcuts",
+    shortcutsIntro: "Two shortcuts work from any program while Streakboom runs. Streakboom learns only that one of these two combinations was pressed, never any other key. Press the keys to change one; Esc cancels.",
+    shortcutBox: "Show or hide the chat box",
+    shortcutAll: "Send everyone in or bring them out",
+    shortcutPress: "Press the keys…",
+    shortcutReset: "Back to the defaults",
+    shortcutInBox: "In the chat box: Enter sends, Shift+Enter breaks the line, Esc clears the field and then hides the box, the up arrow brings back the last message, Tab or Ctrl+1, 2, 3 change who it is for, and / opens the commands.",
+    shortcutNeeds: "Hold Ctrl, Alt or Win and press a letter, a digit, F1 to F12 or Space.",
+    shortcutNotActive: "is not active",
     memNone: "(not set)",
     memSave: "Save",
     memDays: "Days together",
@@ -516,6 +534,15 @@ export const UI: Record<Lang, UiStrings> = {
     memIntro: "Mọi điều pet biết về bạn nằm ở đây và chỉ ở trên máy này. Không có gì được gửi đi đâu.",
     memLearn: "Nhớ thói quen của tôi (giờ tôi hay mở, số lần chạm)",
     memCallMe: "Hãy gọi tôi là",
+    shortcutsTitle: "Phím tắt",
+    shortcutsIntro: "Hai phím tắt hoạt động từ mọi chương trình khi Streakboom đang chạy. Streakboom chỉ biết hai tổ hợp này vừa được bấm, không biết phím nào khác. Nhấn tổ hợp mới để đổi; Esc để hủy.",
+    shortcutBox: "Mở hoặc ẩn hộp chat",
+    shortcutAll: "Cho cả hai vào hoặc gọi ra",
+    shortcutPress: "Nhấn tổ hợp phím…",
+    shortcutReset: "Về mặc định",
+    shortcutInBox: "Trong hộp chat: Enter để gửi, Shift+Enter xuống dòng, Esc xóa ô rồi ẩn hộp, mũi tên lên gọi lại câu trước, Tab hoặc Ctrl+1, 2, 3 đổi người nhận, và / mở danh sách lệnh.",
+    shortcutNeeds: "Giữ Ctrl, Alt hoặc Win rồi nhấn một chữ cái, một chữ số, F1 đến F12 hoặc Space.",
+    shortcutNotActive: "chưa hoạt động",
     memNone: "(chưa đặt)",
     memSave: "Lưu",
     memDays: "Số ngày bên nhau",
@@ -774,6 +801,15 @@ export const UI: Record<Lang, UiStrings> = {
     memIntro: "ペットがあなたについて知っていることは、すべてここにあって、このパソコンの中だけにあるよ。どこにも送られないよ。",
     memLearn: "習慣を覚える（いつ来るか、どのくらいさわるか）",
     memCallMe: "わたしの呼び方",
+    shortcutsTitle: "ショートカット",
+    shortcutsIntro: "Streakboomの実行中は、どのプログラムからでも使える2つのショートカットがあります。Streakboomが知るのはこの2つの組み合わせが押されたことだけで、ほかのキーは一切見ません。変えるにはキーを押してください。Escで取り消し。",
+    shortcutBox: "チャットボックスを開く／閉じる",
+    shortcutAll: "ふたりを戻す／呼び出す",
+    shortcutPress: "キーを押してください…",
+    shortcutReset: "初期設定に戻す",
+    shortcutInBox: "チャットボックス内：Enterで送信、Shift+Enterで改行、Escで入力欄を消し、もう一度で閉じる、↑で直前のメッセージ、TabまたはCtrl+1・2・3で宛先を変更、/でコマンド一覧。",
+    shortcutNeeds: "Ctrl、Alt、Winのいずれかを押しながら、英字・数字・F1〜F12・Spaceを押してください。",
+    shortcutNotActive: "は無効です",
     memNone: "（未設定）",
     memSave: "保存",
     memDays: "一緒にいた日数",

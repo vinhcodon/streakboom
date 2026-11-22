@@ -6,6 +6,8 @@ export type Recipient = "peak" | "paws" | "both";
 
 export interface BoxTurn { id: number; who: BoxWho; text: string; at: number }
 export interface BoxView {
+  /** The language chosen in Settings ("vi", "en", "ja"): the box speaks it. */
+  lang: string;
   /** What the pets call the person ("" when unknown): the empty box tells how to set it (ADR-0144). */
   callMe: string;
   turns: BoxTurn[];
@@ -16,7 +18,7 @@ export interface BoxView {
   canChat: boolean;
 }
 
-export const EMPTY_VIEW: BoxView = { callMe: "", turns: [], typing: null, recipient: "peak", canChat: false };
+export const EMPTY_VIEW: BoxView = { lang: "en", callMe: "", turns: [], typing: null, recipient: "peak", canChat: false };
 
 /** A time is shown between turns more than this far apart (and before the first one). */
 export const TIME_GAP_MS = 10 * 60 * 1000;

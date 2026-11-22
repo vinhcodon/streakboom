@@ -437,7 +437,7 @@
     e.preventDefault();
     if (e.key === "Escape") { capturing = null; keyMsg = ""; return; }
     const combo = comboFromEvent(e);
-    if (!combo) { keyMsg = "Hold Ctrl, Alt or Win and press a letter, a digit, F1 to F12 or Space."; return; }
+    if (!combo) { keyMsg = ui.shortcutNeeds; return; }
     const which = capturing;
     capturing = null;
     invoke<{ box: KeyView; all: KeyView }>("duo_keys_set", { which, combo }).then((v) => { keys = v; keyMsg = ""; }).catch((err) => { keyMsg = `${combo}: ${err}`; });
@@ -520,19 +520,19 @@
 
     {#if page === "general" && duoOn && keys}
     <section id="sec-shortcuts" class="card">
-      <h2>Shortcuts</h2>
-      <p class="muted">Two shortcuts work from any program while Streakboom runs. Streakboom learns only that one of these two combinations was pressed, never any other key. Press the keys to change one; Esc cancels.</p>
-      {#each [["box", "Show or hide the chat box"], ["all", "Send everyone in or bring them out"]] as [id, label] (id)}
+      <h2>{ui.shortcutsTitle}</h2>
+      <p class="muted">{ui.shortcutsIntro}</p>
+      {#each [["box", ui.shortcutBox], ["all", ui.shortcutAll]] as [id, label] (id)}
         {@const k = id === "box" ? keys.box : keys.all}
         <div class="row">
           <span class="lbl">{label}</span>
-          <button class="seg" onkeydown={captureKey} onclick={() => { capturing = id === "box" ? "box" : "all"; keyMsg = ""; }} onblur={() => { if (capturing === id) capturing = null; }}>{capturing === id ? "Press the keys…" : k.combo}</button>
+          <button class="seg" onkeydown={captureKey} onclick={() => { capturing = id === "box" ? "box" : "all"; keyMsg = ""; }} onblur={() => { if (capturing === id) capturing = null; }}>{capturing === id ? ui.shortcutPress : k.combo}</button>
         </div>
-        {#if !k.ok}<p class="muted help">{k.combo} is not active: {k.error}</p>{/if}
+        {#if !k.ok}<p class="muted help">{k.combo} {ui.shortcutNotActive}: {k.error}</p>{/if}
       {/each}
       {#if keyMsg}<p class="muted help">{keyMsg}</p>{/if}
-      <div class="row"><button class="seg" onclick={resetKeys}>Back to the defaults</button></div>
-      <p class="muted">In the chat box: Enter sends, Shift+Enter breaks the line, Esc clears the field and then hides the box, the up arrow brings back the last message, Tab or Ctrl+1, 2, 3 change who it is for, and / opens the commands.</p>
+      <div class="row"><button class="seg" onclick={resetKeys}>{ui.shortcutReset}</button></div>
+      <p class="muted">{ui.shortcutInBox}</p>
     </section>
     {/if}
 

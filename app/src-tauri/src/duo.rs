@@ -631,6 +631,7 @@ static TRAY_GEN: AtomicU64 = AtomicU64::new(0);
 
 /// A single click on the tray (with the flag): after the wait, if no second click came, the box is shown or hidden.
 pub fn tray_single(app: &AppHandle) {
+    dismiss_tray_flyout();
     let g = TRAY_GEN.fetch_add(1, Ordering::SeqCst) + 1;
     let app = app.clone();
     std::thread::spawn(move || {
@@ -641,8 +642,24 @@ pub fn tray_single(app: &AppHandle) {
 
 /// A double click on the tray (with the flag): it cancels the single click that came with it, then everyone goes in or the last one comes out.
 pub fn tray_double(app: &AppHandle) {
+    dismiss_tray_flyout();
     TRAY_GEN.fetch_add(1, Ordering::SeqCst);
     tray(app);
+}
+
+/// The hidden-icons flyout of the taskbar stays open when a program clicked in it opens a window of its own (the author saw it stay behind the chat box;
+/// reproduced: the box had the foreground and the flyout stayed visible). The click on our icon is the person's way of saying they are done with the
+/// flyout, so it is hidden, as the shell would do for a click elsewhere. Windows 10 and 11 name it differently; nothing happens when it is not showing.
+fn dismiss_tray_flyout() {
+    #[cfg(windows)]
+    unsafe {
+        use windows_sys::Win32::UI::WindowsAndMessaging::{FindWindowW, IsWindowVisible, ShowWindow, SW_HIDE};
+        for class in ["NotifyIconOverflowWindow", "TopLevelWindowForOverflowXamlIsland"] {
+            let w: Vec<u16> = class.encode_utf16().chain(std::iter::once(0)).collect();
+            let h = FindWindowW(w.as_ptr(), std::ptr::null());
+            if !h.is_null() && IsWindowVisible(h) != 0 { ShowWindow(h, SW_HIDE); }
+        }
+    }
 }
 
 fn box_position(app: &AppHandle) -> (i32, i32) {

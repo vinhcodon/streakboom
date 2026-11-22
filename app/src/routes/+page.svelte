@@ -2439,7 +2439,7 @@
   // The chat box: what it shows is pushed to its window whenever it changes; what is written in it comes back as an action.
   let lastBox = "";
   function pushBox(force = false) {
-    const v = $state.snapshot({ callMe: mem.callMe, turns: boxTurns, typing: chatPhase === "thinking" ? "peak" : modelTyping, recipient, canChat: canChat || duoFake }) as BoxView;
+    const v = $state.snapshot({ lang, callMe: mem.callMe, turns: boxTurns, typing: chatPhase === "thinking" ? "peak" : modelTyping, recipient, canChat: canChat || duoFake }) as BoxView;
     if (!duoOn) return;
     const s = JSON.stringify(v);
     if (!force && s === lastBox) return;
