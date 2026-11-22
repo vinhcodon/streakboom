@@ -9,7 +9,7 @@
 use serde::{Deserialize, Serialize};
 use std::{
     path::PathBuf,
-    sync::{atomic::{AtomicBool, Ordering}, Mutex},
+    sync::{atomic::{AtomicBool, AtomicU64, Ordering}, Mutex},
     time::{Duration, Instant, SystemTime, UNIX_EPOCH},
 };
 use tauri::{AppHandle, Emitter, Manager, PhysicalPosition, PhysicalSize, WebviewUrl, WebviewWindowBuilder};
@@ -265,13 +265,44 @@ pub fn duo_bubble_to(app: AppHandle, pet: String, ms: u64) {
     let state = app.state::<crate::AppState>();
     let label = if pet == "paws" && app.get_webview_window(PAWS_LABEL).is_some() { PAWS_LABEL } else { "main" };
     *state.bubble_anchor.lock().unwrap() = label.to_string();
+    crate::place_bubble(&app); // a bubble already on the screen moves to the pet it now belongs to
+    let stamp = BUBBLE_GEN.fetch_add(1, Ordering::SeqCst) + 1;
     if label == PAWS_LABEL {
         let app2 = app.clone();
         std::thread::spawn(move || {
             std::thread::sleep(Duration::from_millis(ms));
-            *app2.state::<crate::AppState>().bubble_anchor.lock().unwrap() = "main".to_string();
+            if BUBBLE_GEN.load(Ordering::SeqCst) == stamp { *app2.state::<crate::AppState>().bubble_anchor.lock().unwrap() = "main".to_string(); } // a later call keeps its own anchor
         });
     }
+}
+
+static BUBBLE_GEN: AtomicU64 = AtomicU64::new(0);
+
+/// A touch on Paws (its window is click-through except over the pet, see `spawn_paws_hit_test`): a scene ends, the talk is cancelled (the page of Peak does it).
+#[tauri::command]
+pub fn duo_touch(app: AppHandle, pet: String) {
+    scene_cleanup(&app);
+    let _ = app.emit_to("main", "duo-touch", pet);
+}
+
+/// A double click on Paws opens the chat for it (ADR-0141, I2): the chat box is the page of Peak, which is told whose box it is.
+#[tauri::command]
+pub fn duo_open_chat(app: AppHandle, pet: String) { let _ = app.emit_to("main", "duo-open-chat", pet); }
+
+/// The hit test of the Paws window: the window takes the pointer only while it is over the pet, as Peak's does, and lets it through elsewhere.
+fn spawn_paws_hit_test(app: AppHandle) {
+    std::thread::spawn(move || {
+        let mut ignoring: Option<bool> = None;
+        loop {
+            std::thread::sleep(Duration::from_millis(30));
+            let Some(win) = app.get_webview_window(PAWS_LABEL) else { return }; // the window exists only while Paws is out
+            let (Ok(cur), Ok(pos), Ok(scale)) = (win.cursor_position(), win.outer_position(), win.scale_factor()) else { continue };
+            let (lx, ly) = ((cur.x - pos.x as f64) / scale, (cur.y - pos.y as f64) / scale);
+            // the art: 100 px wide, bottom-aligned in the 140 px window (10 px padding)
+            let inside = lx >= 20.0 && lx <= 120.0 && ly >= 30.0 && ly <= 130.0;
+            if ignoring != Some(!inside) { let _ = win.set_ignore_cursor_events(!inside); ignoring = Some(!inside); }
+        }
+    });
 }
 
 /// The chat command (step 4), said to the pet on the screen (Peak's chat): `act` "out" has Peak call `target` out, "in" sends `target` in.
@@ -390,7 +421,8 @@ fn paws_come_out(app: &AppHandle, quiet: bool) {
     let Ok(win) = built else { return };
     let _ = win.set_size(PhysicalSize::new(size as u32, size as u32));
     let _ = win.set_position(PhysicalPosition::new(from.0, from.1));
-    let _ = win.set_ignore_cursor_events(true); // the hit test of this window is step 3
+    let _ = win.set_ignore_cursor_events(true); // opened by the hit test thread only over the pet
+    spawn_paws_hit_test(app.clone());
     if !quiet { slide(&win, from, at); }
     let mut s = d.state.lock().unwrap();
     s.pets.paws.entrance = Some(e);

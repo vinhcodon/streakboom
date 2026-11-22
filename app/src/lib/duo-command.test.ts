@@ -59,4 +59,7 @@ test("who a message is for: both when both are named or a word for both is used,
   assert.deepEqual(addressees("Paws và Peak nghĩ sao?", "peak", true), ["peak", "paws"]);
   assert.deepEqual(addressees("hôm nay thế nào", "paws", true), ["paws"]);
   assert.deepEqual(addressees("hai đứa đang làm gì đấy", "peak", false), ["peak"]);
+  assert.deepEqual(addressees("hôm nay thế nào", "both", true), ["peak", "paws"]); // the Both chip
+  assert.deepEqual(addressees("Paws ơi", "both", true), ["paws"]); // a name in the text overrides the chip
+  assert.deepEqual(addressees("hôm nay thế nào", "both", false), ["peak"]); // nobody else is out
 });

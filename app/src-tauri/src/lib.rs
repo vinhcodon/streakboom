@@ -683,7 +683,7 @@ struct BubblePlace {
 
 /// Put the bubble window next to the pet: above if it fits, else below, right or left, always
 /// inside the work area. Called whenever the bubble resizes or the pet moves.
-fn place_bubble(app: &AppHandle) {
+pub(crate) fn place_bubble(app: &AppHandle) {
     let state = app.state::<AppState>();
     let b = *state.bubble.lock().unwrap();
     if !b.visible {
@@ -2025,6 +2025,8 @@ pub fn run() {
             duo::duo_command,
             duo::duo_bubble_to,
             duo::duo_paws_out,
+            duo::duo_touch,
+            duo::duo_open_chat,
             duo::duo_fake,
             duo::duo_face,
             duo::duo_nod,

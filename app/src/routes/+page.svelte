@@ -1915,6 +1915,7 @@
     resetMenuTimer();
   }
   function closePanel() {
+    if (panel === "chat" && duoOn) void invoke("duo_bubble_to", { pet: "peak", ms: 0 }).catch(() => {}); // the bubble goes back to Peak
     panel = null;
     clearTimeout(menuTimer);
     clearTimeout(slowTimer);
@@ -1973,6 +1974,7 @@
     clearTimeout(clickTimer);
     if (quiet || suppressClick) return;
     if (panel) return closePanel();
+    if (duoOn) { recipient = "peak"; void refreshPawsOut(); } // a double click on Peak: the box is for Peak
     engage(); // answering the pet's line by opening the chat (a typed message never counts)
     data = { ...data, brain: { ...data.brain, menuOpens: data.brain.menuOpens + 1 } };
     track("first_interaction");
@@ -2344,20 +2346,46 @@
   // Prototype (branch only, developer flag): "gọi Paws ra", "Paws go in" are Peak's business, not a message to the model (ADR-0139).
   let duoOn: boolean | null = null;
   async function tryDuoFromChat(text: string): Promise<boolean> {
-    if (duoOn === null) { duoOn = await invoke<boolean>("duo_enabled").catch(() => false); duoFake = duoOn && (await invoke<boolean>("duo_fake").catch(() => false)); }
+    await initDuo();
     if (!duoOn) return false;
     const c = parseDuoCommand(text);
     if (!c) return false;
     const ok = await invoke<boolean>("duo_command", { target: c.target, act: c.act }).catch(() => false);
     lt(`command_duo target=${c.target} act=${c.act} ok=${ok}`);
     if (ok && c.act === "in") talk.tucked(c.target);
+    void refreshPawsOut();
     if (ok && c.target === "paws") { closePanel(); enter("nod"); }
     return true; // recognised: no model call and no chat turn, even when it changed nothing
   }
 
   // The talk among the person, Peak and Paws (ADR-0141; branch only): one room log, the lines shown one at a time as a bubble beside the
   // speaker, the listener turning its head first, a nod for a pass. The words come from the model; who speaks, when, and what is dropped is the code's.
-  let lastChatPet: PetId = "peak";
+  let recipient = $state<PetId | "both">("peak"); // who the box is for: a double click on a pet, a chip, or the last one spoken to (ADR-0141, I2 and I3)
+  let pawsOutNow = $state(false);
+  async function refreshPawsOut() {
+    pawsOutNow = !!duoOn && (await invoke<boolean>("duo_paws_out").catch(() => false));
+    if (!pawsOutNow && recipient !== "peak") recipient = "peak";
+  }
+  async function initDuo() {
+    if (duoOn === null) { duoOn = await invoke<boolean>("duo_enabled").catch(() => false); duoFake = duoOn && (await invoke<boolean>("duo_fake").catch(() => false)); }
+  }
+  /** A double click on Paws: the chat opens for it, beside it. */
+  async function openChatFor(pet: PetId) {
+    await initDuo();
+    if (!duoOn || quiet) return;
+    await refreshPawsOut();
+    recipient = pawsOutNow ? pet : "peak";
+    if (panel === "chat") return; // already open: only the recipient changed
+    engage();
+    if (shouldAskBrain(data, Date.now(), hasKey)) showAsk();
+    else openChat();
+  }
+  $effect(() => {
+    // the chat box of a pet stands beside that pet
+    const open = panel === "chat"; // read first: duoOn is a plain variable, and an effect only follows what it reads
+    const to = recipient;
+    if (duoOn && open) void invoke("duo_bubble_to", { pet: to === "paws" ? "paws" : "peak", ms: 300000 }).catch(() => {});
+  });
   let duoFake = false; // developer channel: canned replies instead of the model, so the talk can be checked without a key
   function fakeReply(pet: PetId, role: "first" | "second", said: string): string {
     if (pet === "peak") return "[neutral] Fine, as usual.";
@@ -2447,9 +2475,9 @@
   async function tryTalkFromChat(text: string): Promise<boolean> {
     if (!duoOn || !(canChat || duoFake)) return false;
     const pawsOut = await invoke<boolean>("duo_paws_out").catch(() => false);
-    const to = addressees(text, lastChatPet, pawsOut);
-    if (to.length === 1 && to[0] === "peak") { lastChatPet = "peak"; return false; } // Peak alone: its own chat, as before
-    if (to.length === 1) lastChatPet = to[0];
+    const to = addressees(text, recipient, pawsOut);
+    recipient = to.length === 2 ? "both" : to[0]; // the next message goes to the same ones unless it names others
+    if (to.length === 1 && to[0] === "peak") return false; // Peak alone: its own chat, as before
     busy = true;
     closePanel();
     void invoke("duo_scene_cancel").catch(() => {});
@@ -2461,7 +2489,6 @@
     } finally {
       busy = false;
     }
-    if (talk.lastSpoken) lastChatPet = talk.lastSpoken;
     return true;
   }
 
@@ -3028,6 +3055,10 @@
 
   function onBubbleAction(a: BubbleAction) {
     switch (a.type) {
+      case "recipient":
+        recipient = a.to;
+        resetMenuTimer();
+        break;
       case "chat-send":
         void sendChat(a.text);
         break;
@@ -3350,6 +3381,7 @@
         thinking: ui.thinking,
         slow: chatSlow ? ui.slowChat : "",
         log: talkLog.length > 0 ? talkLog : undefined,
+        chips: pawsOutNow ? { on: recipient, options: [{ id: "peak", label: "Peak" }, { id: "paws", label: "Paws" }, { id: "both", label: "Both" }] } : undefined,
       };
     }
     if (panel === "input") {
@@ -3450,6 +3482,9 @@
         if (e.payload.hold) { dir = e.payload.dir; pose = e.payload.pose; poseTick++; }
         else { if (pose === "walk" || pose === "look" || pose === "sleep") pose = "idle"; scheduleNext(); }
       }));
+      cleanups.push(await win.listen("duo-touch", () => { if (duoOn) cancelTalk(); })); // a touch on Paws ends the talk, as a touch on Peak does
+      cleanups.push(await win.listen<PetId>("duo-open-chat", (e) => void openChatFor(e.payload)));
+      void initDuo();
       cleanups.push(await win.listen<string>("duo-type", (e) => void sendChat(e.payload))); // developer channel: a message typed without the box
       cleanups.push(await win.listen<{ dir: 1 | -1 }>("duo-face", (e) => { if (pose === "idle") dir = e.payload.dir; })); // the talk: the head turns toward the speaker
       cleanups.push(await win.listen<{ pet: PetId; text: string }>("duo-say", (e) => void sayAs(e.payload.pet, e.payload.text))); // developer channel: a line in Paws' bubble without the model

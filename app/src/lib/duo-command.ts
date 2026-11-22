@@ -50,7 +50,7 @@ export function addressedPet(raw: string, lastSpoken: PetId, pawsOut: boolean): 
 const BOTH = [/cả hai/, /hai đứa/, /hai bạn/, /hai đứa bây/, /\bboth\b/, /\byou two\b/, /二人/, /ふたり/, /両方/];
 
 /** Who a message is for: both pets (both names, or a word for both) while Paws is out; else the one pet `addressedPet` picks. */
-export function addressees(raw: string, lastSpoken: PetId, pawsOut: boolean): PetId[] {
+export function addressees(raw: string, fallback: PetId | "both", pawsOut: boolean): PetId[] {
   if (!pawsOut) return ["peak"];
   const text = raw.toLowerCase();
   const names = text.includes("paws") && text.includes("peak");
@@ -61,5 +61,7 @@ export function addressees(raw: string, lastSpoken: PetId, pawsOut: boolean): Pe
     if (!new RegExp(String.raw`^\s*${lead[1]}[\s,&]*(và|and|với|と)?[\s,]*${other}`).test(text)) return [lead[1] as PetId];
   }
   if (names || BOTH.some((r) => r.test(text))) return ["peak", "paws"];
-  return [addressedPet(raw, lastSpoken, pawsOut)];
+  if (text.includes("paws") !== text.includes("peak")) return [text.includes("paws") ? "paws" : "peak"]; // one name in the text beats the chip
+  if (fallback === "both") return ["peak", "paws"];
+  return [addressedPet(raw, fallback, pawsOut)];
 }
