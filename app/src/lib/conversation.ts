@@ -214,7 +214,7 @@ export function toHistory(view: Turn[], pet: PetId, profiles: Profiles = loadPro
 }
 
 /** The situation layer (L3) for one call: who is present, who was spoken to, and what this pet may do now. Built by the code each time. */
-export function situation(pet: PetId, role: "first" | "second" | "relayed", both: boolean, profiles: Profiles = loadProfiles()): string {
+export function situation(pet: PetId, role: "first" | "second" | "relayed", both: boolean, profiles: Profiles = loadProfiles(), callMe = ""): string {
   const me = profiles[pet];
   const other = profiles[pet === "peak" ? "paws" : "peak"];
   const parts = [
@@ -231,6 +231,7 @@ export function situation(pet: PetId, role: "first" | "second" | "relayed", both
     parts.push(`${say}${pass}${aside}.`);
   }
   parts.push("Never mention a pet's words as if the person had said them.");
+  if (callMe) parts.push(`The person likes to be called ${callMe}; both of you call them that.`);
   if (me.note) parts.push(me.note);
   return parts.join(" ");
 }

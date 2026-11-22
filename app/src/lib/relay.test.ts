@@ -83,3 +83,8 @@ test("a message noted when it was sent is not added a second time by the turn th
   await talk.person("again", ["peak", "paws"], ["peak", "paws"]); // a message that was not noted is added
   assert.equal(talk.room.turns.filter((t) => t.from === "person").length, 2);
 });
+
+test("the situation layer tells a pet what to call the person, when it is known", () => {
+  assert.match(situation("paws", "first", false, undefined, "Vinh"), /likes to be called Vinh; both of you call them that/);
+  assert.doesNotMatch(situation("paws", "first", false), /likes to be called/);
+});

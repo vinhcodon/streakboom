@@ -83,3 +83,15 @@ test("a pressed combination becomes the text of a global shortcut, or nothing wh
   assert.equal(comboFromEvent(ev("Enter", { ctrlKey: true })), null); // a key that is not allowed
   assert.equal(comboFromEvent(ev("F13", { ctrlKey: true })), null);
 });
+
+import { nameFromSlash } from "./chatbox.ts";
+
+test("/name takes the name after the verb and keeps its case; the list then offers that one command", () => {
+  assert.equal(nameFromSlash("name Vinh"), "Vinh");
+  assert.equal(nameFromSlash("tên Vinh Codon"), "Vinh Codon");
+  assert.equal(nameFromSlash("name"), null);
+  assert.equal(nameFromSlash("pin"), null);
+  const both = { peak: true, paws: true };
+  assert.deepEqual(slashItems("name Vinh", both).map((i) => [i.id, i.act]), [["name", { kind: "name", value: "Vinh" }]]);
+  assert.ok(!slashItems("", both).some((i) => i.id === "name")); // not in the plain list: it needs a name
+});

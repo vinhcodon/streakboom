@@ -15,6 +15,7 @@
   import { ASIDE_SKILL, LEAVE_SKILL, SEAT_HERE_SKILL, SEAT_SKILL } from "$lib/skills";
   import { seatFraction, seatMove, seatWalkMs } from "$lib/seat";
   import { addressees, parseDuoCommand, parseRelay } from "$lib/duo-command";
+  import { parseCallMe } from "$lib/callme";
   import { Conversation, addTurn, newRoom, situation, toHistory, type Line } from "$lib/conversation";
   import type { BoxAction, BoxView } from "$lib/chatbox";
   import type { PetId } from "$lib/duo";
@@ -49,6 +50,7 @@
     recordSession,
     recordTouch,
     sayKind,
+    cleanName,
     setName,
     shareMark,
     shouldAsk,
@@ -2349,6 +2351,9 @@
   async function tryDuoFromChat(text: string): Promise<boolean> {
     await initDuo();
     if (!duoOn) return false;
+    // "call me Vinh": what the pets call the person, understood on the device (ADR-0144); both pets use it
+    const callMe = parseCallMe(text);
+    if (callMe) { lt("command_call_me"); answerInput("callMe", callMe); return true; }
     const c = parseDuoCommand(text);
     if (!c) return false;
     const ok = await invoke<boolean>("duo_command", { target: c.target, act: c.act }).catch(() => false);
@@ -2415,7 +2420,7 @@
           clock: clockLine(new Date()),
           pet,
           duo: true,
-          situation: situation(pet, role, both),
+          situation: situation(pet, role, both, undefined, mem.callMe),
         }).catch((e) => {
           void invoke("duo_log", { line: `brain_failed ${pet} ${errKind(e)}` }).catch(() => {});
           throw e;
@@ -2434,7 +2439,7 @@
   // The chat box: what it shows is pushed to its window whenever it changes; what is written in it comes back as an action.
   let lastBox = "";
   function pushBox(force = false) {
-    const v = $state.snapshot({ turns: boxTurns, typing: chatPhase === "thinking" ? "peak" : modelTyping, recipient, canChat: canChat || duoFake }) as BoxView;
+    const v = $state.snapshot({ callMe: mem.callMe, turns: boxTurns, typing: chatPhase === "thinking" ? "peak" : modelTyping, recipient, canChat: canChat || duoFake }) as BoxView;
     if (!duoOn) return;
     const s = JSON.stringify(v);
     if (!force && s === lastBox) return;
@@ -2445,6 +2450,7 @@
   function onBoxAction(a: BoxAction) {
     if (a.type === "recipient") { recipient = a.to; return; }
     if (a.type === "send") { recipient = a.to; void sendChat(a.text); return; }
+    if (a.type === "name") { const n = cleanName(a.value); if (n) answerInput("callMe", n); return; } // `/name Vinh`
     if (a.type === "clear") {
       // "clear this chat": the talk is forgotten by the box and by the pets, and the lines waiting to be said are dropped
       cancelTalk();
@@ -3024,7 +3030,7 @@
         remind: !away && !leaving, // a day told in a chat is told in a chat, so the model is offered this one in a conversation too (ADR-0115)
         banter: talking, // in a conversation a "go away" is a tease: stay and answer in kind (ADR-0108)
         clock: clockLine(new Date()), // the local time, the weekday and the part of the day, so the model does not guess them (ADR-0105)
-        situation: duoOn && pawsOutNow ? situation("peak", "first", false) : undefined, // Paws is out: Peak knows it is its housemate, not a name it never heard (duo prototype)
+        situation: duoOn && pawsOutNow ? situation("peak", "first", false, undefined, mem.callMe) : undefined, // Paws is out: Peak knows it is its housemate, not a name it never heard (duo prototype)
       });
       // The model's own word is checked again here: the name is on the closed list, the message is short and not a question,
       // and the same gates as for the table (Preview, not Quiet, not carried, not in the air). Its words are not shown: Peak says
@@ -3349,7 +3355,7 @@
     const t = Date.now();
     // Questions first (a typed answer, never a guess), then a shared milestone.
     const ageDays = Math.floor((t - data.firstSeen) / DAY_MS);
-    for (const [f, field] of [["callMe", "callMe"]] as const) { // the pet is no longer named by the person (ADR-0143)
+    for (const [f, field] of duoOn ? [] : ([["callMe", "callMe"]] as const)) { // the pet is no longer named by the person (ADR-0143); with the chat box the name is set there, not asked by a pop-up (ADR-0144)
       if (shouldAsk(mem, f, t, ageDays, tierOf(data.closeness))) {
         askInput(field);
         return scheduleProactive();

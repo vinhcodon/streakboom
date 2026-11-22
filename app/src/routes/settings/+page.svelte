@@ -493,6 +493,11 @@
     <section id="sec-general" class="card">
       <h2>{ui.sectionGeneral}</h2>
       <div class="row">
+        <span class="lbl">{ui.memCallMe}</span>
+        <input class="txt" maxlength="20" placeholder={ui.memNone} bind:value={meDraft} onkeydown={(e) => e.key === "Enter" && saveName("callMe", meDraft)} />
+        <button class="seg" disabled={meDraft.trim() === (snap?.memory.callMe ?? "")} onclick={() => saveName("callMe", meDraft)}>{ui.memSave}</button>
+      </div>
+      <div class="row">
         <span class="lbl">{ui.language}</span>
         {#each [["auto", ui.auto], ["vi", "Tiếng Việt"], ["en", "English"], ["ja", "日本語 (beta)"]] as [v, label]}
           <button class="seg" class:on={s.lang === v} onclick={() => patch("lang", v as Settings["lang"])}>{label}</button>
@@ -645,11 +650,6 @@
         <input type="checkbox" checked={snap.memory.learn} onchange={(e) => setLearn(e.currentTarget.checked)} />
         {ui.memLearn}
       </label>
-      <div class="row">
-        <span class="lbl">{ui.memCallMe}</span>
-        <input class="txt" maxlength="20" placeholder={ui.memNone} bind:value={meDraft} onkeydown={(e) => e.key === "Enter" && saveName("callMe", meDraft)} />
-        <button class="seg" disabled={meDraft.trim() === snap.memory.callMe} onclick={() => saveName("callMe", meDraft)}>{ui.memSave}</button>
-      </div>
       {#if snap.memory.days > 0 || snap.memory.marks.length > 0}
         <div class="row"><span class="lbl">{ui.memDays}</span><b>{snap.memory.days}</b></div>
         {#if snap.memory.usualPart}

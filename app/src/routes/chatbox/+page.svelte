@@ -56,6 +56,7 @@
     grow();
     if (it.act.kind === "pin") togglePin();
     else if (it.act.kind === "clear") act({ type: "clear" });
+    else if (it.act.kind === "name") act({ type: "name", value: it.act.value });
     else act({ type: "command", act: it.act.kind, target: it.act.target });
     input?.focus();
   }
@@ -161,7 +162,10 @@
       </div>
     {/if}
     {#if items.length === 0 && !view.typing}
-      <div class="empty">{view.canChat ? "Say something to Peak or Paws." : "No brain is connected. Commands such as “call Paws out” still work."}</div>
+      <div class="empty">
+        <div>{view.canChat ? "Say something to Peak or Paws." : "No brain is connected. Commands such as “call Paws out” still work."}</div>
+        {#if !view.callMe}<div class="hint">Tell Peak and Paws what to call you: type <code>/name</code> and your name.</div>{/if}
+      </div>
     {/if}
   </div>
 
@@ -217,6 +221,8 @@
   .typing i:nth-child(2) { animation-delay: 0.2s; } .typing i:nth-child(3) { animation-delay: 0.4s; }
   @keyframes blink { 0%, 80%, 100% { opacity: 0.25; } 40% { opacity: 1; } }
   @media (prefers-reduced-motion: reduce) { .typing i { animation: none; opacity: 0.6; } }
+  .hint { margin-top: 10px; font-size: 12px; }
+  .hint code { font: 11px/1.6 ui-monospace, Consolas, monospace; background: var(--soft); padding: 0 4px; border-radius: 4px; }
   .empty { margin: auto; text-align: center; color: var(--muted); padding: 0 24px; }
   footer { position: relative; display: flex; gap: 8px; align-items: center; padding: 8px 10px; border-top: 1px solid var(--line); }
   footer textarea { flex: 1; font: inherit; color: inherit; background: transparent; border: 1px solid var(--line); border-radius: 18px; padding: 7px 12px; outline: none; resize: none; overflow-y: auto; max-height: 88px; line-height: 1.4; }

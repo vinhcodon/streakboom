@@ -6,6 +6,8 @@ export type Recipient = "peak" | "paws" | "both";
 
 export interface BoxTurn { id: number; who: BoxWho; text: string; at: number }
 export interface BoxView {
+  /** What the pets call the person ("" when unknown): the empty box tells how to set it (ADR-0144). */
+  callMe: string;
   turns: BoxTurn[];
   /** The pet that is writing now (three dots), or null. */
   typing: "peak" | "paws" | null;
@@ -14,7 +16,7 @@ export interface BoxView {
   canChat: boolean;
 }
 
-export const EMPTY_VIEW: BoxView = { turns: [], typing: null, recipient: "peak", canChat: false };
+export const EMPTY_VIEW: BoxView = { callMe: "", turns: [], typing: null, recipient: "peak", canChat: false };
 
 /** A time is shown between turns more than this far apart (and before the first one). */
 export const TIME_GAP_MS = 10 * 60 * 1000;
@@ -50,7 +52,8 @@ export type BoxAction =
   | { type: "send"; text: string; to: Recipient }
   | { type: "recipient"; to: Recipient }
   | { type: "command"; act: "out" | "in"; target: "peak" | "paws" } // a command of the slash list: bring a pet out or send it in (local, no model)
-  | { type: "clear" }; // clear this chat: the talk is forgotten, by the box and by the pets
+  | { type: "clear" } // clear this chat: the talk is forgotten, by the box and by the pets
+  | { type: "name"; value: string }; // `/name Vinh`: what the pets call the person (the main page cleans it again)
 
 // ------------------------------------------------------------------ keys of the box (ADR-0142, step 2)
 
@@ -58,7 +61,7 @@ export type PetKey = "peak" | "paws";
 export interface Presence { peak: boolean; paws: boolean }
 
 /** A command of the list that opens when the field starts with a slash. */
-export type SlashAct = { kind: "out"; target: PetKey } | { kind: "in"; target: PetKey } | { kind: "pin" } | { kind: "clear" };
+export type SlashAct = { kind: "out"; target: PetKey } | { kind: "in"; target: PetKey } | { kind: "pin" } | { kind: "clear" } | { kind: "name"; value: string };
 export interface SlashItem { id: string; label: string; hint: string; act: SlashAct }
 
 const ALIASES: Record<"out" | "in" | "pin" | "clear", string[]> = {
@@ -88,9 +91,13 @@ export function slashItems(query: string, presence: Presence): SlashItem[] {
   all.push({ id: "pin", label: "Keep the box open", hint: "/pin", act: { kind: "pin" } });
   all.push({ id: "clear", label: "Clear this chat", hint: "/clear", act: { kind: "clear" } });
   if (!verbQ) return all;
+  // `/name Vinh`: tell the pets what to call the person (ADR-0144); offered as soon as a name follows the verb
+  const nm = nameFromSlash(query);
+  if (nm) return [{ id: "name", label: `Call me ${nm}`, hint: "/name", act: { kind: "name", value: nm } }];
   const kindOf = (a: SlashAct) => a.kind;
   return all.filter((it) => {
-    const verbs = ALIASES[kindOf(it.act)];
+    if (it.act.kind === "name") return false;
+    const verbs = ALIASES[kindOf(it.act) as "out" | "in" | "pin" | "clear"];
     if (!verbs.some((v) => plain(v).startsWith(verbQ) || verbQ.startsWith(plain(v)) && plain(v).length >= 2)) return false;
     if (petQ && "target" in it.act) return it.act.target.startsWith(petQ);
     return true;
@@ -136,4 +143,10 @@ export function comboFromEvent(e: { ctrlKey: boolean; altKey: boolean; shiftKey:
   else if (e.code === "Space") key = "Space";
   if (!key) return null;
   return [e.ctrlKey && "Ctrl", e.altKey && "Alt", e.shiftKey && "Shift", e.metaKey && "Win", key].filter(Boolean).join("+");
+}
+
+/** The `/name Vinh` command of the slash list: the name typed after the verb, with its case kept (the rest of the query, not the lowered one). */
+export function nameFromSlash(query: string): string | null {
+  const m = /^\s*(?:name|ten|tên|名前)\s+(\S.*)$/iu.exec(query);
+  return m ? m[1].trim() : null;
 }
