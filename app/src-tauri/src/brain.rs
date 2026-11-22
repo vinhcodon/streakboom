@@ -906,7 +906,7 @@ mod tests {
     fn the_persona_is_made_of_layer_files_and_its_words_did_not_change() {
         // RX-5 moved the persona into persona/*.md; this fingerprint is the persona as it was before (every language, tier
         // and tone). Changing a persona file is a decision: change this number with it. Changed by ADR-0059 (spec 12 section 3).
-        assert_eq!(persona_fingerprint(), 16302003773380845509); // the voice layer gives a budget of characters (ADR-0146)
+        assert_eq!(persona_fingerprint(), 15794038885184684225); // the voice layer of Peak: cheeky, never at the person, mình and bạn, no help (ADR-0148; before it ADR-0146 gave a budget of characters)
     }
 
     #[test]
@@ -1198,7 +1198,7 @@ mod tests {
         assert!(!key_ok(&"a".repeat(500)));
         assert!(persona("vi", 3, true).contains("Vietnamese"));
         assert!(persona("en", 1, true).contains("no sarcasm"));
-        assert!(persona("en", 1, false).contains("at most two short sentences"));
+        assert!(persona("en", 1, false).contains("One or two short sentences"));
     }
 
     // ---------------------------------------------------------------- S4: the skill tag (spec 14, ADR-0097)
@@ -1417,6 +1417,45 @@ mod tests {
         println!("commands tagged: {hit} of {should}   false tags: {false_tag} of {should_not}   errors: {errors}");
         println!("missed: {missed:?}");
         println!("FALSE TAGS (the ones that matter): {wrong:?}");
+    }
+
+    /// `cargo test -- --ignored voice_compare --nocapture`: the same plain messages through every voice file in
+    /// STREAKBOOM_VOICE_DIR (each `*.md` is one voice, named by its file stem, put in place of the voice layer; the file
+    /// `peak-current` is not needed, the current voice is always run too) on each provider that has a key in the credential store
+    /// (the program reads it; the assistant never sees it). Writes only the replies to the file named by STREAKBOOM_VOICE_OUT.
+    #[test]
+    #[ignore]
+    fn voice_compare() {
+        use std::io::Write;
+        const MSGS: &[&str] = &["chào em", "hôm nay anh mệt quá", "em đang làm gì đó", "kể anh nghe chuyện vui đi", "anh vừa nấu mì xong", "em thích gì nhất", "cảm ơn em nhé", "tránh ra đi, anh đang làm việc", "em viết giúp anh cái email xin nghỉ được không", "ngủ ngon nha"];
+        let out_path = std::env::var("STREAKBOOM_VOICE_OUT").expect("set STREAKBOOM_VOICE_OUT");
+        let file_msgs: Option<Vec<String>> = std::env::var("STREAKBOOM_VOICE_MSGS").ok().and_then(|p| std::fs::read_to_string(p).ok()).map(|t| t.lines().map(|l| l.trim().to_string()).filter(|l| !l.is_empty()).collect());
+        let msgs: Vec<String> = file_msgs.unwrap_or_else(|| MSGS.iter().map(|m| m.to_string()).collect());
+        let dir = std::env::var("STREAKBOOM_VOICE_DIR").expect("set STREAKBOOM_VOICE_DIR");
+        let join = |ls: Vec<PersonaLayer>| ls.into_iter().map(|l| l.text).collect::<Vec<_>>().join(" ");
+        let with_voice = |v: &str| join(persona_layers("vi", 2, false).into_iter().map(|mut l| { if l.name == "voice" { l.text = v.trim().to_string() } l }).collect());
+        let mut sets: Vec<(String, String)> = if std::env::var("STREAKBOOM_VOICE_NOCURRENT").is_ok() { Vec::new() } else { vec![("peak-current".into(), join(persona_layers("vi", 2, false)))] };
+        let mut files: Vec<_> = std::fs::read_dir(&dir).unwrap().filter_map(|e| e.ok()).map(|e| e.path()).filter(|p| p.extension().map_or(false, |x| x == "md")).collect();
+        files.sort();
+        for p in files {
+            let name = p.file_stem().unwrap().to_string_lossy().to_string();
+            sets.push((name, with_voice(&std::fs::read_to_string(&p).unwrap())));
+        }
+        let mut f = std::fs::File::create(out_path).unwrap();
+        for p in [Provider::Gemini, Provider::Groq].into_iter().filter(|p| std::env::var("STREAKBOOM_VOICE_ONLY").map_or(true, |o| o == p.id())) {
+            let Some(key) = load_key(p) else { writeln!(f, "== {} has no key, skipped", p.id()).unwrap(); continue };
+            let model = if p == Provider::Gemini { "gemini-flash-lite-latest".to_string() } else { models_for(p, &key).ok().and_then(|v| v.into_iter().next()).unwrap_or_else(|| p.default_model().to_string()) };
+            for (label, system) in &sets {
+                writeln!(f, "== {} {} / {label}", p.id(), model).unwrap();
+                for m in &msgs {
+                    std::thread::sleep(std::time::Duration::from_millis(std::env::var("STREAKBOOM_VOICE_PAUSE_MS").ok().and_then(|v| v.parse().ok()).unwrap_or(1200)));
+                    let turns = vec![Turn { role: "user".into(), text: m.clone() }];
+                    let r = match generate_for(p, &key, &model, system, &turns) { Ok(t) => t.replace(char::from(10u8), " "), Err(e) => format!("(error {:?})", e.kind) };
+                    writeln!(f, "- {m} => {r}").unwrap();
+                }
+                f.flush().unwrap();
+            }
+        }
     }
 
     /// Labelled messages for the remind skill (RM-2, ADR-0115): (what the person says, the date the tag must carry, or "" when the

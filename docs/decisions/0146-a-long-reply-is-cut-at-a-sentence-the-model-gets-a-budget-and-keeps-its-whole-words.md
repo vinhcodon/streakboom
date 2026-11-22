@@ -1,6 +1,6 @@
 # ADR-0146: A long reply is cut at the end of a sentence, the model is given a budget of characters, and it keeps its whole words in the talk
 
-- **Status:** accepted on 2026-11-22 (the author chose "B + D" from the options of `docs/plans/chat-box-issues-and-overlay-proposal.md`, part 2). **The code is on `main`; the model's behaviour with the new voice line is not verified** (V-188). Amends the voice layer of the persona (`persona/voice.md`, not a locked layer).
+- **Status:** accepted on 2026-11-22 (the author chose "B + D" from the options of `docs/plans/chat-box-issues-and-overlay-proposal.md`, part 2). **The code is on `main`; the model's behaviour with the new voice line is not verified** (V-193). Amends the voice layer of the persona (`persona/voice.md`, not a locked layer).
 - **Date:** 2026-11-22
 - **Decided by:** Vinh (author), recorded by Claude (the app session)
 
@@ -15,7 +15,7 @@ Every reply was cut at 239 characters, in the middle of a sentence, with "…" (
 5. **The bubble shows the head and the box keeps the whole** (the author's option B) is for the duo chat box, which has a log; it is carried out there (the duo branch), not here: the single-pet chat has no log, and its panel shows up to 600 characters.
 
 ## Not done and not verified
-The duo chat box log and the bubble head (the duo branch); whether a real model keeps to the budget in Vietnamese and in Japanese (the voice file for Japanese is separate and was not changed); the placement of a tall bubble near the top of the screen. V-188.
+The duo chat box log and the bubble head (the duo branch); whether a real model keeps to the budget in Vietnamese and in Japanese (the voice file for Japanese is separate and was not changed); the placement of a tall bubble near the top of the screen. V-193.
 
 ## Charter check
 Article 2: a remark nobody asked for stays short (160); the person's own conversation may be longer. Article 5: a companion keeps to a few words; the budget says so.
