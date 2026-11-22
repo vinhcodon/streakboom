@@ -659,6 +659,7 @@ fn create_bubble(app: &AppHandle) -> tauri::Result<()> {
         .shadow(false)
         .visible(false)
         .focusable(false)
+        .focused(false) // a window made while the person is typing elsewhere must not take the keyboard when it is first shown (seen after the bubble was destroyed and made again)
         .additional_browser_args(BROWSER_ARGS)
         .build()?;
     Ok(())
@@ -728,7 +729,8 @@ fn bubble_fit(app: AppHandle, state: State<AppState>, w: f64, h: f64, interactiv
     let _ = bubble.set_size(LogicalSize::new(w.ceil(), h.ceil()));
     place_bubble(&app);
     if !was_visible {
-        let _ = bubble.show();
+        // Plain speech is shown without taking the keyboard from the window the person is typing in; only a bubble that is asked to take focus does.
+        if interactive { let _ = bubble.show(); } else { show_without_activating(&bubble); }
     }
     if focus && interactive {
         let _ = bubble.set_focus();
