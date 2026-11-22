@@ -664,6 +664,7 @@ fn create_bubble(app: &AppHandle) -> tauri::Result<()> {
         .shadow(false)
         .visible(false)
         .focusable(false)
+        .focused(false) // a window made while the person is typing elsewhere must not take the keyboard when it is first shown (issue 5: seen after the bubble was destroyed and made again)
         .additional_browser_args(BROWSER_ARGS)
         .build()?;
     Ok(())
