@@ -18,6 +18,8 @@ export interface PetProfile {
   speaksToPet: boolean;
   /** false: the pet may not answer with a pass (a nod) when it speaks second. */
   mayPass: boolean;
+  /** false: the pet does not pass a question on to the other pet when the person asks it to (it answers for itself). */
+  relays: boolean;
   /** The longest line, in words. Clamped to 8..60. */
   maxWords: number;
   /** One more sentence for the prompt about how this pet takes part in a talk; at most 300 characters, never code. */
@@ -44,13 +46,14 @@ export function parseProfile(raw: unknown, id: PetId, fallback: PetProfile = def
     speaksToPerson: bool("speaksToPerson", fallback.speaksToPerson),
     speaksToPet: bool("speaksToPet", fallback.speaksToPet),
     mayPass: bool("mayPass", fallback.mayPass),
+    relays: bool("relays", fallback.relays),
     maxWords: Math.min(MAX_WORDS_MAX, Math.max(MAX_WORDS_MIN, words)),
     note: typeof o.note === "string" ? o.note.trim().slice(0, NOTE_MAX) : fallback.note,
   };
 }
 
 export function defaultProfile(id: PetId): PetProfile {
-  return { id, name: id === "paws" ? "Paws" : "Peak", species: id === "paws" ? "a small dog" : "a cat", speaksToPerson: true, speaksToPet: true, mayPass: true, maxWords: 40, note: "" };
+  return { id, name: id === "paws" ? "Paws" : "Peak", species: id === "paws" ? "a small dog" : "a cat", speaksToPerson: true, speaksToPet: true, mayPass: true, relays: true, maxWords: 40, note: "" };
 }
 
 export type Profiles = Record<PetId, PetProfile>;

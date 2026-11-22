@@ -5,6 +5,7 @@
   "speaksToPerson": true,
   "speaksToPet": true,
   "mayPass": true,
+  "relays": true,
   "maxWords": 40,
   "note": ""
 }

@@ -14,7 +14,7 @@
   import { gatesPass, pickLine as pickFromPool, runSteps, type Host } from "$lib/skill-run";
   import { ASIDE_SKILL, LEAVE_SKILL, SEAT_HERE_SKILL, SEAT_SKILL } from "$lib/skills";
   import { seatFraction, seatMove, seatWalkMs } from "$lib/seat";
-  import { addressees, parseDuoCommand } from "$lib/duo-command";
+  import { addressees, parseDuoCommand, parseRelay } from "$lib/duo-command";
   import { Conversation, addTurn, situation, toHistory, type Line } from "$lib/conversation";
   import type { PetId } from "$lib/duo";
   import { LEAVE_PACE_PX_S, RETRY_SECS, isLeaveCommand, leaveDeadlineMs, mayLeave, nearerEdge } from "$lib/farewell";
@@ -2387,7 +2387,8 @@
     if (duoOn && open) void invoke("duo_bubble_to", { pet: to === "paws" ? "paws" : "peak", ms: 300000 }).catch(() => {});
   });
   let duoFake = false; // developer channel: canned replies instead of the model, so the talk can be checked without a key
-  function fakeReply(pet: PetId, role: "first" | "second", said: string): string {
+  function fakeReply(pet: PetId, role: "first" | "second" | "relayed", said: string): string {
+    if (role === "relayed") return pet === "paws" ? "[happy] The cushion is in perfect order, as asked." : "[neutral] Fine, as usual, since you ask.";
     if (pet === "peak") return "[neutral] Fine, as usual.";
     if (role === "first") return "[happy] Duty is done, and the cushion is in perfect order.";
     return said.includes("pass") ? "[pass]" : said.includes("aside") ? "[to:peak] Shall I fetch the ball?" : "[happy] Splendid, as always.";
@@ -2451,6 +2452,9 @@
           if (g !== lineGen) return;
           await sayAs(l.pet, l.text);
           await pause(Math.min(9000, 1500 + l.text.length * 55)); // the time to read it, before the next speaker
+        } else if (l.act === "turn") {
+          void invoke("duo_face", { listener: l.pet, speaker: l.to[0] }).catch(() => {}); // it turns to the one it was asked to ask
+          await pause(900);
         } else {
           if (l.pet === "peak") enter("nod");
           else await invoke("duo_nod", { pet: "paws" }).catch(() => {});
@@ -2475,6 +2479,22 @@
   async function tryTalkFromChat(text: string): Promise<boolean> {
     if (!duoOn || !(canChat || duoFake)) return false;
     const pawsOut = await invoke<boolean>("duo_paws_out").catch(() => false);
+    const rel = pawsOut ? parseRelay(text) : null; // "ask Paws ...": one pet turns to the other, which answers (ADR-0141, situation 8)
+    if (rel) {
+      busy = true;
+      closePanel();
+      void invoke("duo_scene_cancel").catch(() => {});
+      lineGen++;
+      try {
+        await talk.relay(text, rel.via, rel.target, ["peak", "paws"]);
+      } catch (e) {
+        lt(`talk_failed ${errKind(e)}`);
+      } finally {
+        busy = false;
+      }
+      recipient = rel.via;
+      return true;
+    }
     const to = addressees(text, recipient, pawsOut);
     recipient = to.length === 2 ? "both" : to[0]; // the next message goes to the same ones unless it names others
     if (to.length === 1 && to[0] === "peak") return false; // Peak alone: its own chat, as before

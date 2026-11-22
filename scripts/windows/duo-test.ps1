@@ -84,6 +84,9 @@ Talk "to-both" "how are you both" 6
 Talk "both-pass" "how are you both pass" 6
 Talk "both-aside" "how are you both aside" 6
 Talk "to-peak" "Peak, and you?" 2
+# T10: a relay: one pet turns to the other, which answers the person (one call, no line for the asker)
+Talk "relay-paws" "ask Paws what he did today" 5
+Talk "relay-peak" "ask Peak how he feels" 5
 Stop-Process -Id $p.Id -Force
 $log += "duo-log.txt"; $log += (Get-Content "$data\duo-log.txt" -ErrorAction SilentlyContinue)
 $log | Set-Content "$Out\duo-test-log.txt"

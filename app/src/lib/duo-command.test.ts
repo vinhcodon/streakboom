@@ -63,3 +63,13 @@ test("who a message is for: both when both are named or a word for both is used,
   assert.deepEqual(addressees("Paws ơi", "both", true), ["paws"]); // a name in the text overrides the chip
   assert.deepEqual(addressees("hôm nay thế nào", "both", false), ["peak"]); // nobody else is out
 });
+
+import { parseRelay } from "./duo-command.ts";
+
+test("a relay: the person asks one pet to ask the other", () => {
+  assert.deepEqual(parseRelay("Peak, hỏi Paws xem hôm nay nó làm gì"), { target: "paws", via: "peak" });
+  assert.deepEqual(parseRelay("ask Peak what he thinks"), { target: "peak", via: "paws" });
+  assert.deepEqual(parseRelay("Pawsに聞いてみて"), { target: "paws", via: "peak" });
+  assert.equal(parseRelay("hôm nay thế nào"), null);
+  assert.equal(parseRelay("I asked Paws about it yesterday and he never answered me at all, which was rude of him, honestly, as a matter of fact"), null);
+});

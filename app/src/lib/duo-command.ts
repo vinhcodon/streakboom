@@ -65,3 +65,20 @@ export function addressees(raw: string, fallback: PetId | "both", pawsOut: boole
   if (fallback === "both") return ["peak", "paws"];
   return [addressedPet(raw, fallback, pawsOut)];
 }
+
+const RELAY = [/\bhỏi\s+(paws|peak)\b/, /\bask\s+(paws|peak)\b/, /(paws|peak)\s*に\s*(聞い|きい|尋ね|たずね)/];
+
+/** "Hỏi Paws xem...", "ask Peak what...", "Pawsに聞いて": the person asks one pet to ask the other (ADR-0141, situation 8). Short messages only; the pet
+ *  named is the one that answers, the other pet is the one that turns to it. One hop, decided here, never by the model. */
+export function parseRelay(raw: string): { target: PetId; via: PetId } | null {
+  const text = raw.toLowerCase().replace(/\s+/g, " ").trim();
+  if (!text || [...text].length > 100) return null;
+  for (const r of RELAY) {
+    const m = r.exec(text);
+    if (m) {
+      const target = m[1] as PetId;
+      return { target, via: target === "paws" ? "peak" : "paws" };
+    }
+  }
+  return null;
+}

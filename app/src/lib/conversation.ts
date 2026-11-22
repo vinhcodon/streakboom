@@ -8,7 +8,7 @@ import { PETS, type PetId } from "./duo.ts";
 import { loadProfiles, type Profiles } from "./pets.ts";
 
 export type Party = "person" | PetId;
-export type Act = "say" | "pass" | "gesture";
+export type Act = "say" | "pass" | "gesture" | "turn"; // turn: a pet turns to the other (a relay)
 
 export interface Turn { id: number; from: Party; to: Party[]; text: string; at: number; act: Act }
 export interface Room { turns: Turn[]; nextId: number }
@@ -66,7 +66,7 @@ export interface Line { pet: PetId; act: Act; text: string; mood: string; to: Pa
 
 export interface Deps {
   /** One model call for one pet: the turns it heard, and whether it speaks first or second. Rejects on any failure. */
-  model(pet: PetId, view: Turn[], role: "first" | "second"): Promise<string>;
+  model(pet: PetId, view: Turn[], role: "first" | "second" | "relayed"): Promise<string>;
   /** The gate of quota and attention for one more call by this pet; false makes the line a gesture. */
   allow(pet: PetId): boolean;
   /** Quiet or no words wanted: gestures only, no call. */
@@ -134,6 +134,29 @@ export class Conversation {
     }
   }
 
+  /** The person asks `via` to ask `target` (situation 8, one hop): `via` turns to `target` (one line of its own is not written: no call), then `target` answers the
+   *  person. Both must be present and `via` must relay; otherwise it is an ordinary message to `via`. */
+  async relay(text: string, via: PetId, target: PetId, present: PetId[]): Promise<void> {
+    if (!present.includes(via) || !present.includes(target) || !this.profiles[via].relays) return this.person(text, [via], present.filter((p) => p === via || p === target));
+    const my = ++this.token;
+    this.gone = new Set();
+    this.room = addTurn(this.room, { from: "person", to: [via, target], text, at: this.deps.now(), act: "say" }).room;
+    const t = addTurn(this.room, { from: via, to: [target], text: "", at: this.deps.now(), act: "turn" });
+    this.room = t.room;
+    this.emit({ pet: via, act: "turn", text: "", mood: "neutral", to: [target], turnId: t.turn.id });
+    await this.deps.sleep(this.deps.beat());
+    if (my !== this.token || this.gone.has(target) || this.gone.has(via)) return;
+    const prof = this.profiles[target];
+    if (!prof.speaksToPerson || this.deps.quiet() || !this.deps.allow(target)) { this.gesture(target); return; }
+    let raw: string;
+    try { raw = await this.deps.model(target, heard(this.room, target), "relayed"); } catch { if (my === this.token && !this.gone.has(target)) this.gesture(target); return; }
+    if (my !== this.token || this.gone.has(target)) return;
+    const u = parseUtterance(raw);
+    const line = clip(u.text, prof.maxWords);
+    if (!line) { this.gesture(target); return; } // the pet asked must answer: an empty line is a gesture, never a pass
+    this.say(target, line, u.mood, ["person"]);
+  }
+
   private say(pet: PetId, text: string, mood: string, to: Party[]) {
     const r = addTurn(this.room, { from: pet, to, text, at: this.deps.now(), act: "say" });
     this.room = r.room;
@@ -169,14 +192,15 @@ export function toHistory(view: Turn[], pet: PetId, profiles: Profiles = loadPro
 }
 
 /** The situation layer (L3) for one call: who is present, who was spoken to, and what this pet may do now. Built by the code each time. */
-export function situation(pet: PetId, role: "first" | "second", both: boolean, profiles: Profiles = loadProfiles()): string {
+export function situation(pet: PetId, role: "first" | "second" | "relayed", both: boolean, profiles: Profiles = loadProfiles()): string {
   const me = profiles[pet];
   const other = profiles[pet === "peak" ? "paws" : "peak"];
   const parts = [
     `Two pets live on this desktop: ${profiles.peak.name}, ${profiles.peak.species}, and ${profiles.paws.name}, ${profiles.paws.species}. You are ${me.name}.`,
     both ? "The person is talking to both of you." : "The person is talking to you.",
   ];
-  if (!both) parts.push("Answer in one or two short lines.");
+  if (role === "relayed") parts.splice(1, 1, `The person asked ${other.name} to ask you something, and ${other.name} has turned to you.`, "Answer the person's question as yourself, in one or two short lines.");
+  else if (!both) parts.push("Answer in one or two short lines.");
   else if (role === "first") parts.push("Answer in one or two short lines; the other pet will hear you.");
   else {
     const say = `${other.name} has just answered in the room (you see it as a line in brackets). Add something of your own in one or two short lines`;
