@@ -206,11 +206,10 @@ export const MAX_ASKS = 2;
 /** Should the pet ask the user to name it / say how to address them? Only after a day, politely, twice at most. */
 export function shouldAsk(m: Memory, field: "name" | "callMe", now: number, ageDays: number, tier: number): boolean {
   if (ageDays < 1) return false;
-  if (field === "name") {
-    return m.petName === "" && m.asks.name < MAX_ASKS && now - m.asks.nameAt >= NAME_ASK_GAP && (ageDays >= 2 || tier >= 2);
-  }
-  // ask how to address the user only once the pet has been named or has been around a while
-  return m.callMe === "" && m.asks.callMe < MAX_ASKS && now - m.asks.callMeAt >= NAME_ASK_GAP && (m.petName !== "" || ageDays >= 3);
+  // The pet is no longer named by the person (ADR-0143): Peak is Peak, Paws is Paws. The field `name` stays in the type so that an older caller still compiles; it never asks.
+  if (field === "name") return false;
+  // ask how to address the user once the pet has been around a while
+  return m.callMe === "" && m.asks.callMe < MAX_ASKS && now - m.asks.callMeAt >= NAME_ASK_GAP && ageDays >= 3;
 }
 export const recordAsked = (m: Memory, field: "name" | "callMe", now: number): Memory =>
   field === "name"
@@ -219,6 +218,7 @@ export const recordAsked = (m: Memory, field: "name" | "callMe", now: number): M
 
 /** Setting a name also ends the asking for it. Empty clears it. */
 export function setName(m: Memory, field: "petName" | "callMe", raw: string): Memory {
+  if (field === "petName") return m; // ADR-0143: nobody renames the pet; the field is kept in memory.json (Stable and Preview share the file) and never changed
   const v = cleanName(raw);
   return { ...m, [field]: v };
 }
@@ -301,9 +301,7 @@ export function knownFor(m: Memory, lang: Lang): string[] {
   const out: string[] = [];
   // short notes for the model, in the app's language (the model is told to use them in the language it replies in)
   const call = { vi: `gọi người dùng là ${m.callMe}`, en: `call the user ${m.callMe}`, ja: `ユーザーを「${m.callMe}」と呼ぶ` };
-  const own = { vi: `tên của bạn (thú cưng) là ${m.petName}`, en: `your own name is ${m.petName}`, ja: `あなた（ペット）の名前は「${m.petName}」` };
   if (m.callMe) out.push(call[lang]);
-  if (m.petName) out.push(own[lang]);
   if (m.aiLearn) out.push(...m.facts.map((f) => f.text));
   return out;
 }

@@ -64,7 +64,6 @@ export interface UiStrings {
   sectionMemory: string;
   memIntro: string;
   memLearn: string;
-  memPetName: string;
   memCallMe: string;
   memNone: string;
   memSave: string;
@@ -258,7 +257,6 @@ export const UI: Record<Lang, UiStrings> = {
     sectionMemory: "What the pet remembers",
     memIntro: "Everything the pet knows about you is here, and only here, on this computer. Nothing of it is sent anywhere.",
     memLearn: "Remember my habits (when I show up, how often I touch it)",
-    memPetName: "Pet's name",
     memCallMe: "It calls me",
     memNone: "(not set)",
     memSave: "Save",
@@ -517,7 +515,6 @@ export const UI: Record<Lang, UiStrings> = {
     sectionMemory: "Pet nhớ gì",
     memIntro: "Mọi điều pet biết về bạn nằm ở đây và chỉ ở trên máy này. Không có gì được gửi đi đâu.",
     memLearn: "Nhớ thói quen của tôi (giờ tôi hay mở, số lần chạm)",
-    memPetName: "Tên của pet",
     memCallMe: "Pet gọi tôi là",
     memNone: "(chưa đặt)",
     memSave: "Lưu",
@@ -776,7 +773,6 @@ export const UI: Record<Lang, UiStrings> = {
     sectionMemory: "ペットの記憶",
     memIntro: "ペットがあなたについて知っていることは、すべてここにあって、このパソコンの中だけにあるよ。どこにも送られないよ。",
     memLearn: "習慣を覚える（いつ来るか、どのくらいさわるか）",
-    memPetName: "ペットの名前",
     memCallMe: "わたしの呼び方",
     memNone: "（未設定）",
     memSave: "保存",

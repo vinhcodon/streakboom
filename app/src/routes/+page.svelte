@@ -161,7 +161,7 @@
   let lastFarewell: string | null = null;
   let data = $state<PetData>(defaultData(Date.now()));
   let mem = $state<Memory>(defaultMemory()); // what the pet remembers (its own file, memory.json)
-  let inputField = $state<MemField>("petName");
+  let inputField = $state<MemField>("callMe");
 
   // What the bubble window shows: a plain speech line, or one of the panels.
   let panel = $state<Panel>(null);
@@ -2550,7 +2550,7 @@
   }
 
   async function tryLeaveFromChat(text: string): Promise<boolean> {
-    const m = matchIntent(text, [mem.petName]);
+    const m = matchIntent(text, []);
     if (m?.skill === "seat" && m.kind === "exact") return startSeat("command");
     if (m?.skill === "seat_here" && m.kind === "exact") {
       // "sit here from now on": the place where Peak stands along the floor becomes its usual place (ADR-0117)
@@ -2568,7 +2568,7 @@
       void startAside(null);
       return true;
     }
-    if (!isLeaveCommand(text, [mem.petName])) return false; // "peak" and the name the person gave it may stand around the command
+    if (!isLeaveCommand(text, [])) return false; // "peak" may stand around the command
     if (!mayLeave({ quiet, held: pose === "held", flying, away, leaving })) {
       lt(`command_refused quiet=${quiet} held=${pose === "held"} flying=${flying} away=${away} leaving=${leaving}`);
       return false;
@@ -3349,7 +3349,7 @@
     const t = Date.now();
     // Questions first (a typed answer, never a guess), then a shared milestone.
     const ageDays = Math.floor((t - data.firstSeen) / DAY_MS);
-    for (const [f, field] of [["name", "petName"], ["callMe", "callMe"]] as const) {
+    for (const [f, field] of [["callMe", "callMe"]] as const) { // the pet is no longer named by the person (ADR-0143)
       if (shouldAsk(mem, f, t, ageDays, tierOf(data.closeness))) {
         askInput(field);
         return scheduleProactive();

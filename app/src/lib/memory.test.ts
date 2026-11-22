@@ -29,7 +29,8 @@ function sessions(m: Memory, hours: number[]): Memory {
 test("names are cleaned and bounded", () => {
   assert.equal(cleanName("  Mochi\n<b> "), "Mochi b");
   assert.equal(cleanName("x".repeat(50)).length, 20);
-  assert.equal(setName(defaultMemory(), "petName", "  Bông ").petName, "Bông");
+  assert.equal(setName(defaultMemory(), "callMe", "  Bông ").callMe, "Bông");
+  assert.equal(setName(defaultMemory(), "petName", "  Bông ").petName, ""); // nobody renames the pet (ADR-0143)
 });
 
 test("a damaged file falls back to defaults", () => {
@@ -81,10 +82,10 @@ test("habit lines only appear at that time of day, and never invent a memory", (
 });
 
 test("lines use the stored names and never leave a placeholder behind", () => {
-  let m = setName(setName(defaultMemory(), "petName", "Bông"), "callMe", "Vinh");
+  let m = setName(defaultMemory(), "callMe", "Vinh");
   const t = memLine("greet", m, ctx(), () => 0)!;
   assert.ok(t.includes("Vinh"));
-  assert.ok(memLine("named", m, ctx(), () => 0)!.includes("Bông"));
+  assert.equal(memLine("named", m, ctx(), () => 0), null); // there is no naming any more: no line for it
   for (const lang of ["en", "vi", "ja"] as const)
     for (const k of memKeys(lang)) {
       const kind = (k === "greet" || k === "away" || k === "named" || k === "calledMe" || k === "pet" || k.startsWith("mark.") ? k : "habit") as never;
@@ -132,29 +133,31 @@ test("milestones come once, in order, and only when reached", () => {
   assert.equal(nextMark(m), "touch.100");
 });
 
-test("asking for a name is polite: not on day one, twice at most, spaced out", () => {
+test("the pet is never asked to be named (ADR-0143), and how to call the person is asked politely: not on day one, twice at most, spaced out", () => {
   const now = at(2026, 11, 10, 12);
+  assert.equal(shouldAsk(defaultMemory(), "name", now, 9, 4), false); // never
   let m = defaultMemory();
-  assert.equal(shouldAsk(m, "name", now, 0, 3), false);
-  assert.equal(shouldAsk(m, "name", now, 2, 1), true);
-  m = recordAsked(m, "name", now);
-  assert.equal(shouldAsk(m, "name", now + 3_600_000, 2, 1), false); // too soon
-  assert.equal(shouldAsk(m, "name", now + 3 * 86_400_000, 5, 1), true);
-  m = recordAsked(m, "name", now + 3 * 86_400_000);
-  assert.equal(shouldAsk(m, "name", now + 30 * 86_400_000, 40, 4), false); // twice is enough
-  assert.equal(shouldAsk(setName(defaultMemory(), "petName", "A"), "name", now, 9, 4), false);
+  assert.equal(shouldAsk(m, "callMe", now, 0, 3), false);
+  assert.equal(shouldAsk(m, "callMe", now, 3, 1), true);
+  m = recordAsked(m, "callMe", now);
+  assert.equal(shouldAsk(m, "callMe", now + 3_600_000, 3, 1), false); // too soon
+  assert.equal(shouldAsk(m, "callMe", now + 3 * 86_400_000, 6, 1), true);
+  m = recordAsked(m, "callMe", now + 3 * 86_400_000);
+  assert.equal(shouldAsk(m, "callMe", now + 30 * 86_400_000, 40, 4), false); // twice is enough
 });
 
-test("how to address the user is asked after the pet is named", () => {
+test("how to address the user is asked once Peak has been around a while, whatever name an older file holds for the pet", () => {
   const now = at(2026, 11, 10, 12);
-  assert.equal(shouldAsk(defaultMemory(), "callMe", now, 2, 1), false);
-  assert.equal(shouldAsk(setName(defaultMemory(), "petName", "Bông"), "callMe", now, 2, 1), true);
-  assert.equal(shouldAsk(defaultMemory(), "callMe", now, 3, 1), true);
+  const old = parseMemory(JSON.stringify({ petName: "Bông" })); // a file written when naming was allowed
+  assert.equal(old.petName, "Bông"); // kept (Stable and Preview share the file) ...
+  assert.equal(shouldAsk(old, "callMe", now, 2, 1), false); // ... but it opens nothing any more
+  assert.equal(shouldAsk(old, "callMe", now, 3, 1), true);
 });
 
 test("forgetting", () => {
   let m = sessions(defaultMemory(), [20, 20, 20]);
-  m = setName(setName(m, "petName", "Bông"), "callMe", "Vinh");
+  m = setName(m, "callMe", "Vinh");
+  m = { ...m, petName: "Bông" }; // a name from an older file
   m = recordTouch(m, "poke");
   const h = forgetHabits(m);
   assert.equal(h.sessions, 0);
@@ -199,11 +202,11 @@ test("facts are looked for every few messages, and never when switched off", () 
 });
 
 test("only what the model may know is sent: names and, when on, the facts", () => {
-  const m = addFacts(setName(setName(defaultMemory(), "callMe", "Vinh"), "petName", "Bông"), ["Likes jazz"], 1, nid);
-  assert.deepEqual(knownFor(m, "en"), ["call the user Vinh", "your own name is Bông", "Likes jazz"]);
-  assert.deepEqual(knownFor({ ...m, aiLearn: false }, "en"), ["call the user Vinh", "your own name is Bông"]);
+  const m = addFacts({ ...setName(defaultMemory(), "callMe", "Vinh"), petName: "Bông" }, ["Likes jazz"], 1, nid); // an older file may still hold a name for the pet
+  assert.deepEqual(knownFor(m, "en"), ["call the user Vinh", "Likes jazz"]); // the model is never told another name for the pet (ADR-0143)
+  assert.deepEqual(knownFor({ ...m, aiLearn: false }, "en"), ["call the user Vinh"]);
   assert.deepEqual(knownFor(defaultMemory(), "vi"), []);
-  assert.deepEqual(knownFor({ ...m, aiLearn: false }, "ja"), ["ユーザーを「Vinh」と呼ぶ", "あなた（ペット）の名前は「Bông」"]);
+  assert.deepEqual(knownFor({ ...m, aiLearn: false }, "ja"), ["ユーザーを「Vinh」と呼ぶ"]);
 });
 
 test("forgetting habits keeps facts; forgetting everything removes them", () => {

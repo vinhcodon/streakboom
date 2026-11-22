@@ -91,7 +91,7 @@ export interface MemCtx {
 }
 
 function fill(t: string, m: Memory, ctx: MemCtx): string {
-  return t.replace(/\{me\}/g, m.callMe).replace(/\{pet\}/g, m.petName).replace(/\{n\}/g, String(ctx.n ?? ctx.absentDays ?? ""));
+  return t.replace(/\{me\}/g, m.callMe).replace(/\{pet\}/g, "Peak").replace(/\{n\}/g, String(ctx.n ?? ctx.absentDays ?? ""));
 }
 
 /** A line for this kind, or null if the memory behind it does not exist. */
