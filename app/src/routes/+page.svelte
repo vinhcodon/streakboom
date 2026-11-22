@@ -2980,6 +2980,7 @@
         remind: !away && !leaving, // a day told in a chat is told in a chat, so the model is offered this one in a conversation too (ADR-0115)
         banter: talking, // in a conversation a "go away" is a tease: stay and answer in kind (ADR-0108)
         clock: clockLine(new Date()), // the local time, the weekday and the part of the day, so the model does not guess them (ADR-0105)
+        situation: duoOn && pawsOutNow ? situation("peak", "first", false) : undefined, // Paws is out: Peak knows it is its housemate, not a name it never heard (duo prototype)
       });
       // The model's own word is checked again here: the name is on the closed list, the message is short and not a question,
       // and the same gates as for the table (Preview, not Quiet, not carried, not in the air). Its words are not shown: Peak says
