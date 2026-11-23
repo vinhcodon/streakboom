@@ -10,6 +10,8 @@
 // Nothing here runs in the visitor's browser. The build calls it only when STREAKBOOM_DOWNLOADS=live (the Pages workflow);
 // local builds, the preview server and the tests use no network and show no number.
 import { existsSync, readFileSync } from "node:fs";
+import { dirname, join } from "node:path";
+import { fileURLToPath } from "node:url";
 import { ORIGIN, REPO } from "./facts.mjs";
 
 /** The installer asset of a release: `Streakboom_<version>_x64-setup.exe` (not `latest.json`). */
@@ -26,13 +28,40 @@ export function installerCounts(releases) {
   return out;
 }
 
-/** The daily history: one {date, total} per day, dates rising, totals never falling. A ledger from before the history has none. */
+/** The channel of a version: an even middle number is a Stable, an odd one a Preview (ADR-0090); null for a tag that is not a version. */
+export function channelOf(tag) {
+  const m = /^v?(\d+)\.(\d+)\.(\d+)/.exec(String(tag));
+  return m ? (Number(m[2]) % 2 === 0 ? "stable" : "preview") : null;
+}
+/** The downloads of the two channels from the counts per tag, or null when a tag is not a version (then the history keeps only the total). */
+export function channelTotals(perTag) {
+  let stable = 0, preview = 0;
+  for (const [tag, n] of Object.entries(perTag)) {
+    const c = channelOf(tag);
+    if (!c) return null;
+    if (c === "stable") stable += n; else preview += n;
+  }
+  return { stable, preview };
+}
+/** The days before the ledger kept the split, rebuilt once from the copies Actions kept (ADR-0163): { "2026-11-11": { stable, preview }, ... }. */
+export function loadChannelBackfill(file = join(dirname(fileURLToPath(import.meta.url)), "catalog", "downloads-channel-backfill.json")) {
+  try { return JSON.parse(readFileSync(file, "utf8")).days || {}; } catch { return {}; }
+}
+
+/** The daily history: one {date, total} per day, dates rising, totals never falling; an entry may also carry the cumulative downloads of the two
+ *  channels ({date, total, stable, preview}: whole numbers that add up to the total and never fall from one entry that has them to the next).
+ *  A ledger from before the history has none. */
 export function historyOk(history) {
   if (!Array.isArray(history)) return false;
-  let last = null;
+  let last = null, lastSplit = null;
   for (const h of history) {
     if (!h || !/^\d{4}-\d\d-\d\d$/.test(h.date || "") || !Number.isInteger(h.total) || h.total < 0) return false;
     if (last && (h.date <= last.date || h.total < last.total)) return false;
+    if (h.stable !== undefined || h.preview !== undefined) {
+      if (!Number.isInteger(h.stable) || !Number.isInteger(h.preview) || h.stable < 0 || h.preview < 0 || h.stable + h.preview !== h.total) return false;
+      if (lastSplit && (h.stable < lastSplit.stable || h.preview < lastSplit.preview)) return false;
+      lastSplit = h;
+    }
     last = h;
   }
   return true;
@@ -49,7 +78,7 @@ export function checkLedger(ledger) {
 }
 
 /** Merge the previous ledger (or null at the very first run) with the current counts: per tag the larger one. */
-export function mergeLedger(previous, current, today) {
+export function mergeLedger(previous, current, today, backfill = {}) {
   const perTag = {};
   for (const [tag, n] of Object.entries(previous ? previous.perTag : {})) perTag[tag] = n;
   for (const [tag, n] of Object.entries(current)) perTag[tag] = Math.max(perTag[tag] || 0, n);
@@ -58,7 +87,13 @@ export function mergeLedger(previous, current, today) {
   const before = previous ? Object.values(previous.perTag).reduce((sum, n) => sum + n, 0) : 0;
   if (total < before) throw new Error(`downloads: the new total ${total} is lower than the previous ${before}`);
   // one entry per day: today's replaces an earlier one of the same day; the last 400 days are kept
-  const history = [...((previous && previous.history) || []).filter((h) => h.date !== today), { date: today, total }].slice(-HISTORY_DAYS);
+  // an earlier day without the split gets it from the backfill when the two add up to that day's total; today's entry carries it from the counts
+  const fill = (h) => {
+    const b = backfill[h.date];
+    return h.stable === undefined && b && Number.isInteger(b.stable) && Number.isInteger(b.preview) && b.stable + b.preview === h.total ? { ...h, stable: b.stable, preview: b.preview } : h;
+  };
+  const split = channelTotals(sorted);
+  const history = [...((previous && previous.history) || []).filter((h) => h.date !== today).map(fill), { date: today, total, ...(split || {}) }].slice(-HISTORY_DAYS);
   if (!historyOk(history)) throw new Error("downloads: the history would not be in order (a date went back or a total fell)");
   return { updated: today, total, perTag: sorted, history };
 }
@@ -114,7 +149,7 @@ export function assertInstaller(releases, version, exe) {
 /** What a live build reads from GitHub: the new ledger (the live site's previous one merged with the current counts) and the releases. */
 export async function liveData({ today, token = "", fetchFn = fetch } = {}) {
   const [releases, previous] = await Promise.all([listReleases({ token, fetchFn }), previousLedger({ fetchFn })]);
-  return { ledger: mergeLedger(previous, installerCounts(releases), today), releases };
+  return { ledger: mergeLedger(previous, installerCounts(releases), today, loadChannelBackfill()), releases };
 }
 
 /** The new ledger only. */

@@ -5,6 +5,7 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { ROOT } from "./facts.mjs";
+import { channelTotals, loadChannelBackfill } from "./downloads.mjs";
 
 export const LEDGER_URL = "https://streakboom.com/downloads.json";
 export const REPO_API = "https://api.github.com/repos/vinhcodon/streakboom";
@@ -28,6 +29,21 @@ const toCsv = (columns, rows) => columns.join(",") + "\n" + rows.map((r) => colu
 export function dailyCsv(ledger) {
   if (!Array.isArray(ledger?.history) || !ledger.history.length) throw new Error("the ledger has no daily history");
   return toCsv(["date", "total"], ledger.history.map((h) => ({ date: h.date, total: h.total })));
+}
+/** The cumulative downloads of each day with the two channels (ADR-0163): the history of the ledger, a day without the split taking it from the backfill
+ *  (the days before the ledger kept it) and the day of the ledger from its counts per version. A day that cannot be split has empty cells. */
+export function channelCsv(ledger, backfill = loadChannelBackfill()) {
+  if (!Array.isArray(ledger?.history) || !ledger.history.length) throw new Error("the ledger has no daily history");
+  const rows = ledger.history.map((h) => {
+    let { stable, preview } = h;
+    if (stable === undefined) {
+      const b = backfill[h.date];
+      if (b && b.stable + b.preview === h.total) ({ stable, preview } = b);
+      else if (h.date === ledger.updated && h.total === ledger.total) ({ stable, preview } = channelTotals(ledger.perTag) || {});
+    }
+    return { date: h.date, total: h.total, stable, preview };
+  });
+  return toCsv(["date", "total", "stable", "preview"], rows);
 }
 /** The downloads of each version, with its channel. */
 export function versionsCsv(ledger) {
@@ -70,7 +86,7 @@ export async function collect({ fetchFn = fetch, read = (p) => (existsSync(p) ? 
   if (bad.length) throw new Error("docs/metrics/weekly.csv: " + bad.join("; "));
   const history = repoHistoryCsv(read(join(dir, "repo-history.csv")), today, repo);
   return {
-    files: { "downloads_daily.csv": dailyCsv(ledger), "downloads_by_version.csv": versionsCsv(ledger), "repo.csv": history, "weekly.csv": weekly },
+    files: { "downloads_daily.csv": dailyCsv(ledger), "downloads_by_version.csv": versionsCsv(ledger), "downloads_channel.csv": channelCsv(ledger), "repo.csv": history, "weekly.csv": weekly },
     history,
     summary: { ledgerUpdated: ledger.updated, total: ledger.total, versions: Object.keys(ledger.perTag).length, stars: repo.stargazers_count, issues: repo.open_issues_count, weeks: parseCsv(weekly).rows.length },
   };
