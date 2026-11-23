@@ -3,6 +3,7 @@
 - **Status:** accepted on 2026-11-22 for the prototype on `exp/duo-prototype`; nothing ships (ADR-0139). The author ordered it ("Chỉnh giọng Paws trên nhánh duo") after choosing Peak's voice (ADR-0148) and after reading the lines Paws gave in the tests; he has **not yet heard Paws in a build**. Amends the voice part of ADR-0140.
 - **Date:** 2026-11-22
 - **Decided by:** Vinh (author), recorded by Claude (the app session, working in the duo worktree at his order)
+- **Amended by:** ADR-0153 (2026-11-23): the voice text of this ADR is replaced by the second-round text (Paws v6); the rest stands.
 
 ## Context
 Paws's voice was one paragraph from the character bible. In the first real run (ADR-0140, Paws on Groq `openai/gpt-oss-20b`) it was muddled; on Gemini it was coherent but long, called the person "ngài" and "thần" in places, spoke of Peak in every reply, repeated the tail gag, put cat words on a dog, and said "tôi buồn lắm" when called silly (a pet that needs the person) and "go and rest" to a tired person (advice). Peak's voice was rewritten by the same method (ADR-0148, `docs/plans/persona-voice-proposal.md`).
