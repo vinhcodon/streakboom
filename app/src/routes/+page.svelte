@@ -3001,6 +3001,7 @@
       chatUser = text;
       chatReply = gate === "cap" ? ui.capHit[Math.floor(Math.random() * ui.capHit.length)] : ui.err.rate_limit;
       chatPhase = "reply";
+      if (duoOn) { mirrorPeak(text, chatReply); void sayAs("peak", chatReply); } // the old chat bubble is not shown with the box: Peak says so in the box and above itself, not nothing
       resetMenuTimer();
       return;
     }
