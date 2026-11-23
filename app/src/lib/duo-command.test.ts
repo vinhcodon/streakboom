@@ -69,3 +69,11 @@ test("a relay: the person asks one pet to ask the other", () => {
   assert.equal(parseRelay("hôm nay thế nào"), null);
   assert.equal(parseRelay("I asked Paws about it yesterday and he never answered me at all, which was rude of him, honestly, as a matter of fact"), null);
 });
+
+test("@everyone, @all and @both keep every pet that is out, as the words for both do", () => {
+  const both = { peak: true, paws: true };
+  assert.deepEqual(addressees("@everyone hello", both), ["peak", "paws"]);
+  assert.deepEqual(addressees("@all what time is it", both), ["peak", "paws"]);
+  assert.deepEqual(addressees("@both hi", both), ["peak", "paws"]);
+  assert.deepEqual(addressees("@Paws hi", both), ["paws"]);
+});

@@ -254,6 +254,10 @@ test("AI usage: daily caps, cooldown after a rate limit, reset next day", () => 
   assert.equal(aiGate(d, "proactive", T0 + DAY), "ok"); // new day
   for (let i = 0; i < AI_CHAT_DAILY_CAP; i++) d = recordAi(d, "chat", T0);
   assert.equal(aiGate(d, "chat", T0), "cap");
+  assert.equal(aiGate(d, "chat", T0, 2), "ok"); // the duo prototype counts two calls for a message to both: its limit is twice as high (ADR-0152)
+  let d2 = d;
+  for (let i = 0; i < AI_CHAT_DAILY_CAP; i++) d2 = recordAi(d2, "chat", T0);
+  assert.equal(aiGate(d2, "chat", T0, 2), "cap");
   // fact-noting requests have their own counter and never use up the chat cap
   let n = defaultData(T0);
   for (let i = 0; i < AI_NOTE_DAILY_CAP; i++) n = recordAi(n, "note", T0);

@@ -116,12 +116,61 @@ export function recallStep(list: readonly string[], idx: number, dir: -1 | 1): {
   return n >= list.length ? { idx: -1, text: "" } : { idx: n, text: list[n] };
 }
 
-/** The text the field gets when a pet is double clicked (ADR-0145): `@Peak ` or `@Paws ` in front of what is there, only when both pets are out (with one out
- *  there is nobody to pick) and when the field does not already begin with a mention. Plain text: the person may delete it. */
+/** The mentions a message may open with: a pet, or everyone (`@everyone`, `@all`, `@both`, as in common chat applications). */
+const LEADING_MENTIONS = /^\s*(?:@(?:peak|paws|everyone|all|both)\b[ \t,]*)+/i;
+
+/** The text the field gets when a pet is double clicked (ADR-0145, amended by ADR-0152): `@Peak ` or `@Paws ` in front of what is there, only when both pets
+ *  are out (with one out there is nobody to pick). A mention already at the start (of the other pet, or of everyone) is replaced by the one of the pet clicked,
+ *  and what the person typed after it is kept: a click on a pet says who they want to speak to. Plain text: the person may delete it. */
 export function withMention(draft: string, pet: PetKey, out: Presence): string {
   if (!(out.peak && out.paws)) return draft;
-  if (/^\s*@(peak|paws)\b/i.test(draft)) return draft;
-  return `@${pet === "paws" ? "Paws" : "Peak"} ${draft}`;
+  const name = pet === "paws" ? "Paws" : "Peak";
+  const rest = draft.replace(LEADING_MENTIONS, "");
+  return `@${name} ${rest}`;
+}
+
+/** Where a mention is being typed (ADR-0152): the `@` just before the caret, at the start or after a space, and the letters after it. Null when the caret is not in one. */
+export function mentionToken(draft: string, caret: number): { start: number; query: string } | null {
+  const before = draft.slice(0, caret);
+  const m = /(^|\s)@([^\s@]*)$/u.exec(before);
+  return m ? { start: before.length - m[2].length - 1, query: m[2] } : null;
+}
+
+export interface MentionItem { id: "peak" | "paws" | "everyone"; text: string; resting: boolean }
+
+/** The mentions already in a message, except the one being typed (`token`): who is named by `@Peak`, `@Paws`, or everyone (`@everyone`, `@all`, `@both`). */
+export function mentionsIn(draft: string, token?: { start: number; query: string } | null): Set<"peak" | "paws" | "everyone"> {
+  const text = token ? draft.slice(0, token.start) + " " + draft.slice(token.start + 1 + token.query.length) : draft;
+  const out = new Set<"peak" | "paws" | "everyone">();
+  for (const m of text.matchAll(/(?:^|\s)@(peak|paws|everyone|all|both)(?![\p{L}\p{N}_])/giu)) {
+    const w = m[1].toLowerCase();
+    out.add(w === "peak" ? "peak" : w === "paws" ? "paws" : "everyone");
+  }
+  return out;
+}
+
+/** The names offered after an `@`, those that begin with what is typed (letters of Peak, Paws, everyone; "all" and "both" find everyone). A pet that is in is
+ *  offered too, marked as resting (a message goes to whoever is out, ADR-0145). A name already in the message is not offered again, and once the message names
+ *  anyone `@everyone` is not offered (it would add nothing); once it names everyone nothing is offered. */
+export function mentionItems(query: string, out: Presence, taken: Set<"peak" | "paws" | "everyone"> = new Set()): MentionItem[] {
+  const q = query.toLowerCase();
+  if (taken.has("everyone")) return [];
+  const all: (MentionItem & { keys: string[] })[] = [
+    { id: "peak", text: "@Peak", resting: !out.peak, keys: ["peak"] },
+    { id: "paws", text: "@Paws", resting: !out.paws, keys: ["paws"] },
+    { id: "everyone", text: "@everyone", resting: false, keys: ["everyone", "all", "both"] },
+  ];
+  return all
+    .filter((i) => !taken.has(i.id) && !(i.id === "everyone" && taken.size > 0))
+    .filter((i) => i.keys.some((k) => k.startsWith(q)))
+    .map(({ id, text, resting }) => ({ id, text, resting }));
+}
+
+/** The draft with the token typed so far replaced by the chosen mention and a space; the caret goes after it. */
+export function applyMention(draft: string, caret: number, token: { start: number; query: string }, item: MentionItem): { text: string; caret: number } {
+  const head = draft.slice(0, token.start) + item.text + " ";
+  const tail = draft.slice(caret).replace(/^ /, "");
+  return { text: head + tail, caret: head.length };
 }
 
 /** The text the list of commands and the height of the field follow: it keeps the last settled text while a typing program is composing a word (Vietnamese Telex or VNI send back-spaces and new letters for one word), and follows the field otherwise. */

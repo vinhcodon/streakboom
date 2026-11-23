@@ -11,6 +11,8 @@ export interface BoxStrings {
   keepOpen: string;
   send: string;
   commands: string;
+  everyoneNote: string; // beside @everyone in the list of mentions
+  restingNote: string; // beside a pet that is in
   say: string; // the placeholder of the field: one line, whoever is out (ADR-0147; who hears is shown by the pets on the screen)
   bothResting: string; // both pets are in: a message that is not a command is not sent
   noBrain: string;
@@ -25,7 +27,7 @@ export interface BoxStrings {
 
 export const BOX_UI: Record<BoxLang, BoxStrings> = {
   en: {
-    today: "Today", you: "You", keepOpen: "Keep open", send: "Send", commands: "Commands",
+    today: "Today", you: "You", keepOpen: "Keep open", send: "Send", everyoneNote: "everyone who is out", restingNote: "resting", commands: "Commands",
     say: "Say something…", bothResting: "Both are resting: type / to call one out",
     noBrain: "No brain connected: commands only",
     empty: "Say something to Peak or Paws.",
@@ -35,7 +37,7 @@ export const BOX_UI: Record<BoxLang, BoxStrings> = {
     slash: { outPaws: "Call Paws out", outPeak: "Call Peak out", inPaws: "Send Paws in", inPeak: "Send Peak in", pin: "Keep the box open", clear: "Clear this chat", callMe: "Call me {name}" },
   },
   vi: {
-    today: "Hôm nay", you: "Bạn", keepOpen: "Giữ hộp luôn mở", send: "Gửi", commands: "Lệnh",
+    today: "Hôm nay", you: "Bạn", keepOpen: "Giữ hộp luôn mở", send: "Gửi", everyoneNote: "tất cả đang ở ngoài", restingNote: "đang nghỉ", commands: "Lệnh",
     say: "Nói gì đó đi…", bothResting: "Cả hai đang nghỉ: gõ / để gọi ra",
     noBrain: "Chưa có bộ não: chỉ dùng được lệnh",
     empty: "Nói gì đó với Peak hoặc Paws đi.",
@@ -45,7 +47,7 @@ export const BOX_UI: Record<BoxLang, BoxStrings> = {
     slash: { outPaws: "Gọi Paws ra", outPeak: "Gọi Peak ra", inPaws: "Cho Paws vào", inPeak: "Cho Peak vào", pin: "Giữ hộp luôn mở", clear: "Xóa cuộc trò chuyện này", callMe: "Hãy gọi tôi là {name}" },
   },
   ja: {
-    today: "今日", you: "あなた", keepOpen: "開いたままにする", send: "送信", commands: "コマンド",
+    today: "今日", you: "あなた", keepOpen: "開いたままにする", send: "送信", everyoneNote: "外にいる全員", restingNote: "お休み中", commands: "コマンド",
     say: "なにか話しかけてね…", bothResting: "ふたりとも休み中：/ で呼び出せます",
     noBrain: "ブレインが未接続です：コマンドのみ",
     empty: "PeakかPawsに話しかけてみよう。",

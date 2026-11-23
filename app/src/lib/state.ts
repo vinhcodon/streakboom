@@ -47,10 +47,10 @@ const DEV_BUILD = (import.meta as unknown as { env?: { DEV?: boolean } }).env?.D
 const CAPS: Record<AiKind, number> = { chat: DEV_BUILD ? 100_000 : AI_CHAT_DAILY_CAP, proactive: AI_PROACTIVE_DAILY_CAP, note: AI_NOTE_DAILY_CAP };
 
 /** "ok", or why not: "cooldown" (recent rate limit) / "cap" (daily limit reached). */
-export function aiGate(d: PetData, kind: AiKind, now: number): "ok" | "cooldown" | "cap" {
+export function aiGate(d: PetData, kind: AiKind, now: number, capScale = 1): "ok" | "cooldown" | "cap" {
   const a = freshAi(d.ai, now);
   if (now < a.coolUntil) return "cooldown";
-  if (a[kind] >= CAPS[kind]) return "cap";
+  if (a[kind] >= CAPS[kind] * capScale) return "cap"; // capScale 2 for the duo prototype: every message to both pets is two calls (ADR-0152)
   return "ok";
 }
 

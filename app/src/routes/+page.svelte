@@ -2418,7 +2418,7 @@
         });
         return out.text;
       },
-      allow: () => duoFake || aiGate(data, "chat", Date.now()) === "ok",
+      allow: () => duoFake || aiGate(data, "chat", Date.now(), 2) === "ok",
       quiet: () => quiet || away,
       sleep: (ms) => new Promise((r) => setTimeout(r, ms)),
       beat: () => 600 + Math.random() * 600,
@@ -2538,7 +2538,7 @@
     if (to.length === 0) return true; // nobody is out: nothing is sent
     if (to.length === 1 && to[0] === "peak") return false; // Peak alone: its own chat, as before
     // the daily limit or a cooldown: the pet says so in its own words and no call is made (it used to be a silent gesture, and the person saw nothing)
-    const gate = duoFake ? "ok" : aiGate(data, "chat", Date.now());
+    const gate = duoFake ? "ok" : aiGate(data, "chat", Date.now(), 2);
     if (gate !== "ok") {
       const line = gate === "cap" ? ui.capHit[Math.floor(Math.random() * ui.capHit.length)] : ui.err.rate_limit;
       talk.notePerson(text, to);
@@ -2887,7 +2887,7 @@
     const kind = replyKind(text);
     // With a brain, a reply the table does not know is read by the model, which knows the whole talk and can tell a yes, a no or a
     // corrected day; the open question goes with the message for this one turn (ADR-0115 addendum). Without a brain the table decides.
-    if (kind !== "yes" && kind !== "no" && canChat && aiGate(data, "chat", now) === "ok") return false;
+    if (kind !== "yes" && kind !== "no" && canChat && aiGate(data, "chat", now, duoOn ? 2 : 1) === "ok") return false;
     if (kind === "short" && pendingTries < MAX_CLARIFY) {
       // a few words that are neither yes nor no ("uh"): the model does not know there is a question and would ask it again, so Peak says
       // how to answer, keeps the question, and does not send the words on
@@ -2995,7 +2995,7 @@
     // A yes or a no to the question about a day is Peak's business too (ADR-0115): no model call, no chat turn counted.
     if (!busy && answerDay(text)) return;
     if (busy || !canChat) return;
-    const gate = aiGate(data, "chat", Date.now());
+    const gate = aiGate(data, "chat", Date.now(), duoOn ? 2 : 1); // the duo prototype counts two calls for a message to both, so its limit is twice as high (ADR-0152)
     void invoke("chat_trace", { step: `chat gate=${gate} chars=${text.length} day=${data.ai.chat}` }).catch(() => {});
     if (gate !== "ok") {
       chatUser = text;
@@ -3261,7 +3261,7 @@
       keys: { gemini: providerInfo.gemini, claude: providerInfo.claude, openai: providerInfo.openai },
       usage: {
         chat: data.ai.day === dayKey(Date.now()) ? data.ai.chat : 0,
-        chatCap: AI_CHAT_DAILY_CAP,
+        chatCap: AI_CHAT_DAILY_CAP * (duoOn ? 2 : 1),
         proactive: data.ai.day === dayKey(Date.now()) ? data.ai.proactive : 0,
         proactiveCap: AI_PROACTIVE_DAILY_CAP,
       },

@@ -27,7 +27,7 @@ test("the time label says Today for the same day", () => {
   assert.doesNotMatch(timeLabel(noon - 2 * 24 * 3600_000, noon, "en-GB", "Today"), /Today/);
 });
 
-import { recallStep, slashItems, withMention } from "./chatbox.ts";
+import { applyMention, mentionItems, mentionsIn, mentionToken, recallStep, slashItems, withMention } from "./chatbox.ts";
 
 test("the slash list offers only what can happen, and a start of a verb in English, Vietnamese or Japanese is enough", () => {
   const away = { peak: true, paws: false };
@@ -56,11 +56,14 @@ test("arrow up and down step through what was sent, and past the newest the fiel
   assert.deepEqual(recallStep([], -1, -1), { idx: -1, text: null });
 });
 
-test("a double click writes @Name in front only when both are out and no mention is there already", () => {
+test("a double click writes @Name in front when both are out, and replaces a mention that is already at the start, keeping the rest", () => {
   const both = { peak: true, paws: true };
   assert.equal(withMention("", "paws", both), "@Paws ");
   assert.equal(withMention("hello", "peak", both), "@Peak hello");
-  assert.equal(withMention("@Paws hello", "peak", both), "@Paws hello"); // already a mention: not changed
+  assert.equal(withMention("@Paws ", "peak", both), "@Peak "); // Paws then Peak: the field says Peak
+  assert.equal(withMention("@Paws hello", "peak", both), "@Peak hello");
+  assert.equal(withMention("@everyone hello @Paws", "paws", both), "@Paws hello @Paws"); // only the mentions at the start are replaced
+  assert.equal(withMention("@Paws @Peak hi", "peak", both), "@Peak hi");
   assert.equal(withMention("", "paws", { peak: true, paws: false }), ""); // one out: nobody to pick
   assert.equal(withMention("", "peak", { peak: false, paws: false }), "");
 });
@@ -110,4 +113,34 @@ test("the box page names its language, has a full font stack, shows text after n
   assert.ok(page.includes("oncompositionstart") && page.includes("oncompositionend"), "composition is handled");
   assert.ok(/function grow\(\) \{\s*if \(!input \|\| composing\) return;/.test(page), "the height is not touched while composing");
   assert.ok(page.includes("settled(settledDraft, draft, composing)"), "the list follows the settled draft");
+});
+
+test("a mention being typed: found before the caret, offered by its first letters, and replaced when chosen", () => {
+  assert.deepEqual(mentionToken("hello @pa", 9), { start: 6, query: "pa" });
+  assert.deepEqual(mentionToken("@", 1), { start: 0, query: "" });
+  assert.equal(mentionToken("mail me@pa", 10), null, "an @ inside a word is not a mention");
+  assert.equal(mentionToken("hello @Paws and", 15), null, "the caret is past the mention");
+  const both = { peak: true, paws: true };
+  assert.deepEqual(mentionItems("", both).map((i) => i.id), ["peak", "paws", "everyone"]);
+  assert.deepEqual(mentionItems("p", both).map((i) => i.id), ["peak", "paws"]);
+  assert.deepEqual(mentionItems("ev", both).map((i) => i.id), ["everyone"]);
+  assert.deepEqual(mentionItems("al", both).map((i) => i.id), ["everyone"], "all finds everyone");
+  assert.equal(mentionItems("peak", { peak: false, paws: true })[0].resting, true, "a pet that is in is marked resting");
+  const t = mentionToken("hello @pa world", 9)!;
+  assert.deepEqual(applyMention("hello @pa world", 9, t, mentionItems("pa", both)[0]), { text: "hello @Paws world", caret: 12 });
+});
+
+test("a name already in the message is not offered again; everyone is not offered once anyone is named", () => {
+  const both = { peak: true, paws: true };
+  const tok = (d: string) => mentionToken(d, d.length)!;
+  const offered = (d: string) => mentionItems(tok(d).query, both, mentionsIn(d, tok(d))).map((i) => i.id);
+  assert.deepEqual(offered("@Peak @"), ["paws"], "Peak is already there; everyone adds nothing");
+  assert.deepEqual(offered("@Peak @p"), ["paws"]);
+  assert.deepEqual(offered("@Peak @Paws @"), [], "both named: nothing left");
+  assert.deepEqual(offered("@everyone @"), [], "everyone named: nothing more");
+  assert.deepEqual(offered("hello @"), ["peak", "paws", "everyone"]);
+  assert.deepEqual(offered("@Paws hello @pe"), ["peak"], "a name earlier in the message counts");
+  assert.deepEqual([...mentionsIn("@peak and @Paws, @all", null)].sort(), ["everyone", "paws", "peak"]);
+  assert.deepEqual([...mentionsIn("mail me@peak.com", null)], [], "an @ inside a word is not a mention");
+  assert.deepEqual([...mentionsIn("@Peaks hi", null)], [], "@Peaks is not @Peak");
 });

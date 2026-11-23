@@ -36,7 +36,7 @@ export function parseDuoCommand(raw: string): DuoCommand | null {
   return null;
 }
 
-const BOTH = [/cả hai/, /hai đứa/, /hai bạn/, /hai đứa bây/, /both/, /you two/, /二人/, /ふたり/, /両方/];
+const BOTH = [/@(everyone|all|both)\b/, /cả hai/, /hai đứa/, /hai bạn/, /hai đứa bây/, /\bboth\b/, /\byou two\b/, /二人/, /ふたり/, /両方/];
 
 export interface Out { peak: boolean; paws: boolean }
 
