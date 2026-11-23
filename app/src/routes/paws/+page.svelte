@@ -6,13 +6,30 @@
   import { invoke } from "@tauri-apps/api/core";
   import { listen } from "@tauri-apps/api/event";
   import { newDirector, start, due, cancel, isLive, SCENES, type Beat, type DirectorState } from "$lib/scene";
+  import { REACTION_MS, Stroke, decideView, isDrag, type Dir } from "$lib/paws-look";
 
   const q = new URLSearchParams(location.search);
   const from = q.get("from") ?? "up"; // the way it faces when it comes in
   let dir: 1 | -1 = $state(from === "left" ? -1 : 1);
-  let front = $state(false); // standing, looking at the person
+  let front = $state(true); // standing, looking at the person (DU-11: it stands so unless something makes it look aside; see lib/paws-look.ts)
   let nodding = $state(false); // a short nod: a pass in the talk (ADR-0141)
   let walking = $state(false); // a small bob of the body while it moves (the art has no legs to move)
+
+  // ---- looking and touching (DU-11, step 1): the picture follows the direction; a poke and a stroke get a reaction; it can be carried
+  let pointerNear: { dx: number; dy: number } | null = null; // told by the program (the window lets the pointer through there)
+  let peakNear: { dx: number } | null = null;
+  let spoken: { dir: Dir; at: number } | null = null;
+  let reactionUntil = 0;
+  let reaction = $state<"" | "startle" | "happy">("");
+  let reactionT: ReturnType<typeof setTimeout> | undefined;
+  let dragging = $state(false);
+  let landed = $state(false);
+  let dragDir: Dir = 1;
+  const stroke = new Stroke();
+  function react(kind: "startle" | "happy") {
+    reaction = kind; reactionUntil = Date.now() + REACTION_MS;
+    clearTimeout(reactionT); reactionT = setTimeout(() => (reaction = ""), REACTION_MS);
+  }
 
   // ---- the director
   let director: DirectorState = newDirector();
@@ -157,7 +174,7 @@
     for (const k of Object.keys(tweens)) tweens[k] = undefined;
     heldBy.ball = null; heldBy.cushion = null;
     objShown = null;
-    front = false; walking = false;
+    walking = false; // the picture is chosen by the looker again
     void invoke("duo_ball", { show: false, kind: "ball", x: 0, y: 0 });
     void invoke("duo_peak_pose", { pose: "idle", dir: peakDir, hold: false });
   }
@@ -168,20 +185,73 @@
     if (c.wasRunning || loop) finish();
   }
 
+  // a press on Paws: a click is a poke (a start), a press that moves is a drag, the pointer moving over it is a stroke. A drag is carried by the program
+  // (the window follows the pointer while the button is down: the page does not get the pointer once the window moves under it) and the page is told where it was let go.
+  let press: { sx: number; sy: number } | null = null;
+  function onDown(e: PointerEvent) {
+    void invoke("duo_touch", { pet: "paws" }); // a scene ends, the talk is cancelled
+    (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
+    press = { sx: e.screenX, sy: e.screenY };
+  }
+  function onMove(e: PointerEvent) {
+    if (!press) {
+      const r = (e.currentTarget as HTMLElement).getBoundingClientRect();
+      if (stroke.feed(e.clientX - r.left, e.clientY - r.top, Date.now())) react("happy");
+      return;
+    }
+    if (!dragging && isDrag(e.screenX - press.sx, e.screenY - press.sy)) { dragging = true; landed = false; dragDir = e.screenX >= press.sx ? 1 : -1; void invoke("duo_paws_drag", { on: true }); }
+  }
+  function onUp(e: PointerEvent) {
+    const p = press; press = null;
+    try { (e.currentTarget as HTMLElement).releasePointerCapture(e.pointerId); } catch { /* already released */ }
+    if (!p || dragging) return; // a drag ends when the program says it was let go
+    if (!isDrag(e.screenX - p.sx, e.screenY - p.sy)) react("startle"); // a click: a poke
+  }
+  // let go: it falls to the floor under it, quickly, and stands again
+  async function dropped(to: { x: number; y: number }) {
+    press = null;
+    const floor = await invoke<number>("duo_paws_floor", { x: to.x, y: to.y }).catch(() => to.y);
+    const t0 = performance.now(), ms = Math.max(150, Math.min(450, Math.abs(floor - to.y) * 0.5));
+    await new Promise<void>((done) => {
+      const step = () => {
+        const k = Math.min(1, (performance.now() - t0) / ms);
+        void invoke("duo_pos", { label: "paws", x: to.x, y: Math.round(to.y + (floor - to.y) * k * k) });
+        if (k < 1) requestAnimationFrame(step); else done();
+      };
+      step();
+    });
+    dragging = false; landed = true; setTimeout(() => (landed = false), 500);
+    if (Math.abs(floor - to.y) > 20) react("startle"); // it lands with a start
+  }
+
   onMount(() => {
     const offs: (() => void)[] = [];
     void listen<string>("scene-start", (e) => void begin(e.payload)).then((f) => offs.push(f));
     void listen("scene-cancel", () => stop()).then((f) => offs.push(f));
+    void listen<Dir>("duo-paws-dir", (e) => { dragDir = e.payload; }).then((f) => offs.push(f));
+    void listen<{ x: number; y: number }>("duo-paws-dropped", (e) => void dropped(e.payload)).then((f) => offs.push(f));
     // the talk: turn the head toward the one who speaks (side view only), and the nod of a pass
-    void listen<{ dir: 1 | -1 }>("duo-face", (e) => { if (!front) dir = e.payload.dir; }).then((f) => offs.push(f));
+    void listen<{ dir: 1 | -1 }>("duo-face", (e) => { spoken = { dir: e.payload.dir, at: Date.now() }; }).then((f) => offs.push(f));
+    void listen<{ pointer: [number, number] | null; peak: number | null }>("duo-look", (e) => {
+      pointerNear = e.payload.pointer ? { dx: e.payload.pointer[0], dy: e.payload.pointer[1] } : null;
+      peakNear = e.payload.peak !== null ? { dx: e.payload.peak } : null;
+    }).then((f) => offs.push(f));
+    // the picture now, ten times a second (a scene decides it itself while it runs)
+    const looker = setInterval(() => {
+      const v = decideView({ now: Date.now(), sceneLive: !!loop, dragging, dragDir, reactionUntil, pointer: pointerNear, peak: peakNear, spoken, current: { front, dir } });
+      if (v.front !== front) front = v.front;
+      if (v.dir !== dir) dir = v.dir;
+    }, 100);
     let nodT: ReturnType<typeof setTimeout> | undefined;
     void listen("duo-nod", () => { nodding = true; clearTimeout(nodT); nodT = setTimeout(() => (nodding = false), 700); }).then((f) => offs.push(f));
-    return () => { stop(); offs.forEach((f) => f()); };
+    return () => { stop(); clearInterval(looker); offs.forEach((f) => f()); };
   });
 </script>
 
 <!-- svelte-ignore a11y_no_static_element_interactions -->
-<div class="stage" class:walking class:nodding onpointerdown={() => void invoke("duo_touch", { pet: "paws" })} ondblclick={() => void invoke("duo_open_box", { pet: "paws" })}>
+<div class="stage" class:walking class:nodding class:held={dragging} class:landed class:startle={reaction === "startle"} class:happy={reaction === "happy"}
+  onpointerdown={onDown} onpointermove={onMove} onpointerup={onUp} onpointercancel={onUp} onpointerleave={() => stroke.leave()}
+  ondblclick={() => void invoke("duo_open_box", { pet: "paws" })}>
   {#if front}
     <img src="/paws/paws-front.svg" alt="" />
   {:else}
@@ -198,5 +268,12 @@
   @keyframes bob { 0%, 100% { translate: 0 0; rotate: -1.5deg; } 50% { translate: 0 -5px; rotate: 1.5deg; } }
   .nodding img { animation: nod 0.7s ease-in-out 1; }
   @keyframes nod { 0%, 100% { rotate: 0deg; translate: 0 0; } 30% { rotate: 6deg; translate: 0 2px; } 60% { rotate: -2deg; translate: 0 -1px; } }
-  @media (prefers-reduced-motion: reduce) { img, .walking img, .nodding img { animation: none; } }
+  .startle img { animation: startle 0.45s ease-out 1; }
+  @keyframes startle { 0% { translate: 0 0; } 25% { translate: 0 -12px; scale: 1.06; } 60% { translate: 0 2px; } 100% { translate: 0 0; scale: 1; } }
+  .happy img { animation: wag 0.28s ease-in-out 3; }
+  @keyframes wag { 0%, 100% { rotate: -5deg; } 50% { rotate: 5deg; } }
+  .held img { animation: none; translate: 0 -10px; rotate: 8deg; transform-origin: 50% 20%; }
+  .landed img { animation: land 0.4s ease-out 1; }
+  @keyframes land { 0% { scale: 1.05 0.92; } 100% { scale: 1; } }
+  @media (prefers-reduced-motion: reduce) { img, .walking img, .nodding img, .startle img, .happy img, .landed img { animation: none; } }
 </style>

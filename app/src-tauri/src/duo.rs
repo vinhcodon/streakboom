@@ -320,10 +320,42 @@ pub fn duo_touch(app: AppHandle, pet: String) {
 }
 
 
+static PAWS_DRAGGING: AtomicBool = AtomicBool::new(false);
+
+/// The page of Paws is dragging it (DU-11): the window keeps the pointer even when the pet lags behind it.
+#[tauri::command]
+pub fn duo_paws_drag(on: bool) { PAWS_DRAGGING.store(on, Ordering::SeqCst); }
+
+/// Where the window of Paws is (physical px, top-left).
+#[tauri::command]
+pub fn duo_paws_pos(app: AppHandle) -> Option<(i32, i32)> {
+    let p = app.get_webview_window(PAWS_LABEL)?.outer_position().ok()?;
+    Some((p.x, p.y))
+}
+
+/// The top of the window of Paws when it stands on the floor of the work area under (x, y): where it falls to when it is let go.
+#[tauri::command]
+pub fn duo_paws_floor(app: AppHandle, x: i32, y: i32) -> i32 {
+    let (body, inset) = ((BODY * scale(&app)).round() as i32, (INSET * scale(&app)).round() as i32);
+    let size = body + 2 * inset;
+    let mons = monitors(&app);
+    let (cx, cy) = (x + size / 2, y + size / 2);
+    match mons.iter().find(|m| cx >= m.x && cx < m.x + m.w && cy >= m.y && cy < m.y + m.h).or(mons.first()) {
+        Some(m) => m.y + m.h - body - inset,
+        None => y,
+    }
+}
+
 /// The hit test of the Paws window: the window takes the pointer only while it is over the pet, as Peak's does, and lets it through elsewhere.
+/// It also tells the page (every 120 ms, when it changed) where the pointer is when it is near but not on the pet, and where Peak is when Peak is close,
+/// so that Paws looks at them (DU-11): the window lets the pointer through there, so the page cannot hear it.
 fn spawn_paws_hit_test(app: AppHandle) {
     std::thread::spawn(move || {
         let mut ignoring: Option<bool> = None;
+        let mut grab: Option<(f64, f64)> = None;
+        let mut last_x = i32::MIN / 2;
+        let mut tick = 0u32;
+        let mut last: (Option<(f64, f64)>, Option<f64>) = (None, None);
         loop {
             std::thread::sleep(Duration::from_millis(30));
             let Some(win) = app.get_webview_window(PAWS_LABEL) else { return }; // the window exists only while Paws is out
@@ -331,7 +363,39 @@ fn spawn_paws_hit_test(app: AppHandle) {
             let (lx, ly) = ((cur.x - pos.x as f64) / scale, (cur.y - pos.y as f64) / scale);
             // the art: 100 px wide, bottom-aligned in the 140 px window (10 px padding)
             let inside = lx >= 20.0 && lx <= 120.0 && ly >= 30.0 && ly <= 130.0;
-            if ignoring != Some(!inside) { let _ = win.set_ignore_cursor_events(!inside); ignoring = Some(!inside); }
+            let keep = inside || PAWS_DRAGGING.load(Ordering::SeqCst);
+            if ignoring != Some(!keep) { let _ = win.set_ignore_cursor_events(!keep); ignoring = Some(!keep); }
+            // carried: the window follows the pointer while the button is down (the page does not get the pointer once the window moves under it: seen with the
+            // real mouse, one move and then nothing), and when the button is up it tells the page where it was let go
+            if PAWS_DRAGGING.load(Ordering::SeqCst) {
+                let down = crate::platform::primary_button_raw() < 0;
+                if down {
+                    let (gx, gy) = *grab.get_or_insert((cur.x - pos.x as f64, cur.y - pos.y as f64));
+                    let (nx, ny) = ((cur.x - gx).round() as i32, (cur.y - gy).round() as i32);
+                    let _ = win.set_position(PhysicalPosition::new(nx, ny));
+                    if (nx - last_x).abs() > 2 { let _ = app.emit_to(PAWS_LABEL, "duo-paws-dir", if nx > last_x { 1 } else { -1 }); last_x = nx; }
+                } else {
+                    PAWS_DRAGGING.store(false, Ordering::SeqCst);
+                    grab = None;
+                    let p = win.outer_position().map(|p| (p.x, p.y)).unwrap_or((pos.x, pos.y));
+                    let _ = app.emit_to(PAWS_LABEL, "duo-paws-dropped", serde_json::json!({ "x": p.0, "y": p.1 }));
+                }
+            } else { grab = None; }
+            tick += 1;
+            if tick % 4 != 0 { continue; }
+            // the pointer, relative to the middle of the pet (70, 80 in the window), when it is near and not on the pet
+            let pointer = { let (dx, dy) = (lx - 70.0, ly - 80.0); if !inside && dx.abs() < 280.0 && dy.abs() < 220.0 { Some((dx.round(), dy.round())) } else { None } };
+            let peak = app.get_webview_window("main").filter(|m| m.is_visible().unwrap_or(false)).and_then(|m| m.outer_position().ok()).and_then(|p| {
+                let (dx, dy) = ((p.x - pos.x) as f64 / scale, (p.y - pos.y) as f64 / scale);
+                if dx.abs() < 260.0 && dy.abs() < 120.0 { Some(dx.round()) } else { None }
+            });
+            let changed = pointer.is_some() != last.0.is_some() || peak.is_some() != last.1.is_some()
+                || matches!((pointer, last.0), (Some(a), Some(b)) if (a.0 - b.0).abs() > 10.0 || (a.1 - b.1).abs() > 10.0)
+                || matches!((peak, last.1), (Some(a), Some(b)) if (a - b).abs() > 10.0);
+            if changed {
+                last = (pointer, peak);
+                let _ = app.emit_to(PAWS_LABEL, "duo-look", serde_json::json!({ "pointer": pointer, "peak": peak }));
+            }
         }
     });
 }
