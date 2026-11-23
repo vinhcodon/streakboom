@@ -43,7 +43,7 @@ The author asked for `@peak`, `@paws` and `@everyone` as in chat applications, f
 - **A script defect that hid a real test:** the guard that checks every click against the windows takes about a second; two clicks made through it were not a double click. Double clicks now check once and click twice at once (`DblClick`).
 - **The two pets must be on the same floor for a scene.** Peak often perches on a window edge; the scene is refused then (logged). Open design question: Paws climbs, or scenes run only on the floor.
 - After a scene Peak's own wandering can walk into Paws and overlap it.
-- Paws only bobs (the Mochi art has no legs); a walk cycle would be new art. Peak's head turn cannot be seen when it stands still.
+- Paws only bobs (the Mochi art has no legs); a walk cycle would be new art. **2026-11-23, DU-11 step 1 (ADR-0154): with the two pictures it has Paws now stands looking at the person, turns its head to the pointer, to Peak and to a pet that spoke, reacts to a poke and a stroke, and can be carried and put down (V-200).** Peak's head turn cannot be seen when it stands still.
 - Paws on Groq uses emoji, speaks informally and often runs past two short sentences; a stricter voice or another model is for the author to decide.
 - For *Both* the box stands beside Peak in the old bubble chat; in the new box this does not apply. The ball window cannot be narrower than 166 px (a Windows limit).
 - A Vietnamese typing mode changes letters sent by a script; the keys of the box were not tried with a typing mode on.
