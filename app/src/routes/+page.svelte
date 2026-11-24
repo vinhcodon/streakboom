@@ -2517,6 +2517,7 @@
     if (!anchored) return; // a pet with no body (Paws in the chat) never speaks above Peak (#18)
     // checked again at the moment of showing: the box may have appeared (or briefly been hidden and shown) during the await (#18, point 1)
     if (await invoke<boolean>("chatbox_showing").catch(() => false)) { void invoke("duo_log", { line: `box shows: no bubble for ${pet}` }).catch(() => {}); return; }
+    if (quiet || away) { void invoke("duo_log", { line: `quiet: the bubble of ${pet} is not shown` }).catch(() => {}); return; } // Quiet came during the await: a late callback never brings a bubble back (#11)
     void invoke("duo_log", { line: `shown ${pet} ${text.length}` }).catch(() => {});
     showBubble(text);
     bubbleWho = pet;

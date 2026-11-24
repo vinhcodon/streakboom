@@ -143,7 +143,12 @@ export class Conversation {
   }
 
   /** The person drops everything: a touch, a new message or the program closing. Lines still waiting for a model are thrown away. */
-  cancel() { this.token++; }
+  cancel() {
+    this.token++;
+    // the three dots go off at once (Quiet, a touch): a call still pending must not keep them on until it returns, and its late end must not touch them (#11)
+    this.writes++;
+    this.deps.writing?.(null);
+  }
 
   /** A pet went in: its line is dropped if it was still being written, and it speaks no more this turn. */
   tucked(pet: PetId) { this.gone.add(pet); }
