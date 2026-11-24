@@ -238,6 +238,8 @@ fn spawn_dev_commands(app: AppHandle, dir: PathBuf) {
                 // a message typed to the pets without the box: `type:<text>` (the page routes it like the chat box does)
                 l if l.starts_with("type:") => { let _ = app.emit_to("main", "duo-type", l[5..].to_string()); }
                 // Quiet on or off as the page hears it, without the tray menu (the page handler only; the saved preference is not touched): `quiet:on`, `quiet:off`
+                // a test aid: hold Peak in a pose (`peakpose:sleep`) or give it back (`peakpose:release`), to check what depends on Peak's real state (#17)
+                l if l.starts_with("peakpose:") => { let pose = &l[9..]; let hold = pose != "release"; let _ = app.emit_to("main", "duo-scene-pose", serde_json::json!({ "pose": if hold { pose } else { "idle" }, "dir": 1, "hold": hold })); }
                 l if l.starts_with("quiet:") => { let _ = app.emit_to("main", "quiet-changed", &l[6..] == "on"); }
                 // a line in the bubble of a pet without the model: `say:paws:text`
                 l if l.starts_with("say:") => {
@@ -1315,6 +1317,7 @@ fn make_box(app: &AppHandle, engaged: bool) {
         .inner_size(BOX_W, BOX_H)
         .decorations(false).transparent(true).always_on_top(true).skip_taskbar(true).resizable(false).shadow(false)
         .visible(false)
+        .focused(engaged) // made by a message that arrives (the faded log), it must not take the keyboard: it then "had the keyboard" and never faded (#17 check)
         .additional_browser_args(BROWSER_ARGS)
         .build();
     let Ok(win) = built else { return };
