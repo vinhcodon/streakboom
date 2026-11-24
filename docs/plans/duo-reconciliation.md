@@ -1,5 +1,7 @@
 # Duo: reconciling the documents (job B of `docs/handoff/duo-prototype-and-cross-review.md`)
 
+> **Superseded in part (2026-11-24, issue #8).** The statements below that the grid is "too small to read a letter from" (section 1, the second finding and the proposed wording; section 2, "What is true" and the proposed sentence) are **withdrawn**: synthetic pictures made with the app's own reduction show that text of about 24 to 32 physical px and larger can still be read (`docs/plans/screen-picture-evidence.md`). The wording now in `app/src/lib/ui.ts` and `docs/privacy.md` is the one to use: the picture is small but can still hold readable text; Peak does not recognise text. The number of cells is still not the measure (the size of a cell is), and the cap is 216 tall, not 108.
+
 **Status:** written 2026-11-21 by the app session. **Only lists and proposes; nothing public is changed** (README, the website, Settings texts, ADRs stay as they are; the website session and the author decide). Every claim below was checked by opening the file or running the code named; what could not be checked is said so. Repository state: `main` at `bdefa61` (2026-11-21).
 
 ## 1. The size of the screen picture grid: the real number and the documents that are wrong

@@ -419,7 +419,7 @@ Why: the author keeps building features and lets a few adults try them (ADR-0089
 
 | # | Story | Size | Status |
 |---|---|---|---|
-| PS-1 | Rust `screen_grid`: the monitor Peak is on, `StretchBlt` (halftone) into at most 192 x 108 grey cells, Windows only, Peak's own windows left out, nothing kept | S | built on branch `vanish` 2026-11-15, not seen |
+| PS-1 | Rust `screen_grid`: the monitor Peak is on, `StretchBlt` (halftone) into at most 192 x 108 grey cells (the cap is 192 wide and 216 tall; the grid is small but large or zoomed text can stay readable, `screen-picture-evidence.md`, issue #8), Windows only, Peak's own windows left out, nothing kept | S | built on branch `vanish` 2026-11-15, not seen |
 | PS-2 | `picture.ts` (pure, tested): gradient, relative threshold, horizontal and vertical segments, room above a ledge, empty space | M | built, not seen (tuning waits for what the author sees) |
 | PS-3 | The tray item "Screen picture (experiment)" (Preview only, off at every start) and the drawing on the overlay | S | built, not seen (V-149) |
 | PS-11 | **2a. Regions:** label the areas the borders enclose (connected calm cells, merged when tiny), with box, area, mean grey and edge density; drawn on the overlay as outlines | M | built on branch `vanish` 2026-11-15, not seen (outlines on the overlay) |
