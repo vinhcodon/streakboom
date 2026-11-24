@@ -7,7 +7,7 @@
   import { boxStrings, slashLabel } from "$lib/chatbox-ui";
   import { nfc } from "$lib/clip";
   import { parseCallMe } from "$lib/callme";
-  import { parseDuoCommand, summons } from "$lib/duo-command";
+  import { addressees, parseDuoCommand, summons } from "$lib/duo-command";
   import { EMPTY_VIEW, applyMention, groupTurns, mentionItems, mentionToken, mentionsIn, recallStep, settled, slashItems, timeLabel, withMention, type BoxAction, type BoxView, type MentionItem, type PetKey, type SlashItem } from "$lib/chatbox";
 
   let view = $state<BoxView>(EMPTY_VIEW);
@@ -124,6 +124,26 @@
   async function refreshPresence() {
     presence = await invoke<{ peak: boolean; paws: boolean }>("duo_presence").catch(() => presence);
   }
+  // #17: Paws as a member of the chat. One small group indicator beside the field: the faces of who is in this chat, the ones who will hear the next message
+  // lit and the others dimmed, and their names after "to". It is derived from the same saved state as the routing (`duo_presence`, `addressees`).
+  let pawsMode = $state("walk");
+  const nextTo = $derived.by(() => {
+    if (pawsMode !== "chat") return [] as ("peak" | "paws")[];
+    const d = settledDraft.startsWith("/") ? "" : settledDraft;
+    const eff = { ...presence };
+    for (const p of summons(d, presence)) eff[p] = true; // an @ that invites makes the pet a member before the message goes
+    return addressees(d, eff);
+  });
+  const members = $derived((["peak", "paws"] as const).filter((p) => presence[p] || nextTo.includes(p)));
+  let joinedNote = $state(""); // "Paws joined": once, when it joins
+  let wasPaws = false;
+  let joinedT: ReturnType<typeof setTimeout> | undefined;
+  $effect(() => {
+    const now = presence.paws;
+    if (pawsMode === "chat" && now && !wasPaws) { joinedNote = t.joined.replace("{name}", "Paws"); clearTimeout(joinedT); joinedT = setTimeout(() => (joinedNote = ""), 6000); }
+    if (!now) joinedNote = "";
+    wasPaws = now;
+  });
   /** A double click on a pet opened the box: the pet is waiting in Rust (the page may not have existed when it was clicked). */
   async function takePrefill() {
     const pet = await invoke<string | null>("chatbox_take_prefill").catch(() => null);
@@ -164,6 +184,8 @@
     void (async () => {
       offs.push(await listen<BoxView>("chatbox-view", (e) => { view = e.payload; void refreshPresence(); }));
       offs.push(await listen<boolean>("chatbox-mode", (e) => { engaged = e.payload; }));
+      offs.push(await listen("chatbox-members", () => void refreshPresence())); // #17: who is in the chat changed
+      pawsMode = await invoke<string>("duo_paws_mode").catch(() => "walk");
       offs.push(await listen<number>("chatbox-fade", (e) => { fade = e.payload; }));
       engaged = await invoke<boolean>("chatbox_mode").catch(() => false);
       void invoke("chatbox_pin", { on: pinned });
@@ -225,6 +247,12 @@
             {/each}
           </ul>
         {/if}
+{#if pawsMode === "chat" && members.length > 0}
+          <div class="members" role="group" aria-label="{t.members}: {members.map((p) => NAME[p]).join(', ')}">
+            <span class="faces">{#each members as p (p)}<span class="av face {p}" class:dim={!nextTo.includes(p)} title={NAME[p]}><img src={p === "paws" ? "/paws/paws-front.svg" : "/peak-avatar.png"} alt="" /></span>{/each}</span>
+            <span class="to" aria-live="polite">{#if joinedNote}{joinedNote}{:else if nextTo.length > 0}{t.nextTo} {nextTo.map((p) => NAME[p]).join(" · ")}{/if}</span>
+          </div>
+        {/if}
 <footer>
         <textarea bind:this={input} bind:value={draft} rows="1" {placeholder} maxlength="300" autocomplete="off" oninput={() => { settledDraft = settled(settledDraft, draft, composing); caret = input?.selectionStart ?? draft.length; if (!composing) { slashOff = false; mentionOff = false; recallIdx = -1; grow(); } }} onkeyup={() => { caret = input?.selectionStart ?? caret; }} onclick={() => { caret = input?.selectionStart ?? caret; }} oncompositionstart={() => { composing = true; }} oncompositionend={() => { composing = false; settledDraft = draft; slashOff = false; recallIdx = -1; grow(); }} onkeydown={onKey} aria-label={placeholder}></textarea>
         <button class="send" aria-label={t.send} disabled={!draft.trim()} onclick={send}>
@@ -270,6 +298,12 @@
   footer textarea::-webkit-scrollbar { width: 6px; } footer textarea::-webkit-scrollbar-button { display: none; } footer textarea::-webkit-scrollbar-track { background: transparent; margin: 10px 0; } footer textarea::-webkit-scrollbar-thumb { background: rgba(120, 120, 120, 0.45); border-radius: 3px; }
   footer textarea::placeholder { color: var(--muted); }
   footer textarea:focus { border-color: var(--ring); }
+  /* #17: the group indicator, small and quiet, right above the field: faces of the members, the next recipients lit */
+  .members { display: flex; align-items: center; justify-content: flex-end; gap: 6px; margin: 0 4px 2px 0; font-size: 11px; color: #e8e8ee; }
+  .members .to { background: rgba(24, 24, 30, 0.55); padding: 0 7px; border-radius: 8px; }
+  .members .faces { display: inline-flex; }
+  .members .face { width: 20px; height: 20px; margin-left: -5px; box-shadow: 0 0 0 1.5px #fff, 0 1px 4px rgba(0, 0, 0, 0.3); transition: opacity 0.2s; }
+  .members .face.dim { opacity: 0.4; }
   .slash { position: absolute; left: 0; right: 0; bottom: calc(100% + 4px); margin: 0; padding: 4px; list-style: none; background: var(--bg); border: 1px solid var(--line); border-radius: 12px; box-shadow: 0 2px 10px rgba(0, 0, 0, 0.14); }
   .slash.list { position: static; margin: 0 0 6px 0; box-shadow: none; } /* in the flow: the window is as tall as the list too */
   .slash button { all: unset; box-sizing: border-box; display: flex; justify-content: space-between; gap: 10px; width: 100%; padding: 6px 9px; border-radius: 8px; cursor: pointer; }

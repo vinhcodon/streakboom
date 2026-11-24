@@ -2381,9 +2381,11 @@
   }
   const outNow = () => ({ peak: peakOutNow, paws: pawsOutNow });
   async function initDuo() {
-    if (duoOn === null) { duoOn = await invoke<boolean>("duo_enabled").catch(() => false); duoFake = duoOn && (await invoke<boolean>("duo_fake").catch(() => false)); pawsPortrait = duoOn && (await invoke<boolean>("duo_portrait").catch(() => false)); }
+    if (duoOn === null) { duoOn = await invoke<boolean>("duo_enabled").catch(() => false); duoFake = duoOn && (await invoke<boolean>("duo_fake").catch(() => false)); pawsMode = duoOn ? await invoke<string>("duo_paws_mode").catch(() => "walk") : "walk"; noBrain = duoOn && (await invoke<boolean>("dev_flag", { name: "STREAKBOOM_DUO_NOBRAIN" }).catch(() => false)); pawsPortrait = pawsMode !== "walk"; }
   }
-  let pawsPortrait = false; // issue 15: Paws is an invited round portrait beside the chat (developer flag)
+  let pawsPortrait = false; // issue 15 or 17: Paws visits one opening of the chat (a round portrait, or a chat member with no window); Peak does not nod for it
+  let pawsMode = "walk"; // "walk", "portrait" (#15 r1) or "chat" (#17 r1)
+  let noBrain = false; // test aid: STREAKBOOM_DUO_NOBRAIN=1 runs the talk as with no key, while a key is stored (the key is never touched)
   let duoFake = false; // developer channel: canned replies instead of the model, so the talk can be checked without a key
   function fakeReply(pet: PetId, role: "first" | "second" | "relayed", said: string): string {
     if (role === "relayed") return pet === "paws" ? "[happy] The cushion is in perfect order, as asked." : "[neutral] Fine, as usual, since you ask.";
@@ -2398,6 +2400,7 @@
   const talk = new Conversation(
     {
       model: async (pet, view, role) => {
+        void invoke("duo_log", { line: `call ${pet} ${role}` }).catch(() => {}); // the record of who was asked (#17 evidence: no call for a guest that has left)
         if (duoFake) { await pause(400); return fakeReply(pet, role, [...view].reverse().find((t) => t.from === "person")?.text ?? ""); }
         data = recordAi(data, "chat", Date.now());
         const lastPerson = [...view].reverse().find((t) => t.from === "person");
@@ -2520,8 +2523,9 @@
   }
   async function tryTalkFromChat(text: string): Promise<boolean> {
     if (!duoOn) return false;
-    const brain = canChat || duoFake; // without a brain a mention still calls the pet, and Paws greets in its own authored words (issue 15, AC4)
-    if (!brain && summons(text, outNow()).length === 0) return false;
+    const brain = (canChat || duoFake) && !noBrain; // without a brain a mention still calls the pet, and Paws greets in its own authored words (issue 15, AC4; #17)
+    // without a brain: a mention still invites, and a message for Paws when it is a member gets an honest offline line (#17); anything else goes the old way
+    if (!brain && summons(text, outNow()).length === 0 && !(outNow().paws && addressees(text, outNow()).includes("paws"))) return false;
     await refreshPawsOut();
     const called: PetId[] = [];
     // an @ mention at the start calls a pet that is in out first (ADR-0157), as `/call` does; the message then goes to it. If the call changes nothing (busy), the message goes as before, to whoever is out
@@ -2548,12 +2552,23 @@
       return true;
     }
     if (!brain) {
-      // no brain: the pet that was called says one short authored line; the message itself gets no answer (issue 15, AC4)
+      if (quiet) return true; // Quiet: the membership changes, silently (#17)
+      const pick = (a: string[]) => a[Math.floor(Math.random() * a.length)];
+      const lines: string[] = [];
       if (called.includes("paws")) {
-        const line = ui.pawsHello[Math.floor(Math.random() * ui.pawsHello.length)];
+        if (pawsMode === "chat") {
+          // one small moment that shows they know each other, from what Peak is really doing (#17 r1, point 2): asleep, tucked in, or awake
+          lines.push(pick(!out.peak ? ui.pawsHi.tucked : isDozing(pose) ? ui.pawsHi.asleep : ui.pawsHi.awake));
+        } else lines.push(pick(ui.pawsHello)); // the portrait of #15 keeps its greeting
+      }
+      // a question for Paws with no brain: say so honestly, never pass a greeting off as its answer (#17 r1, point 2)
+      const rest = text.replace(/^\s*(?:@(?:peak|paws|everyone|all|both)(?![\p{L}\p{N}_])[\s,]*)+/iu, "").trim();
+      if (rest && addressees(text, out).includes("paws")) lines.push(pick(ui.pawsOffline));
+      for (const line of lines) {
         talk.room = addTurn(talk.room, { from: "paws", to: ["person"], text: line, at: Date.now(), act: "say" }).room; // the person's turn is already in the room (sendChat)
         syncLog();
         lineGen++;
+        void invoke("duo_log", { line: `line paws say to=person (authored, no brain) ${line}` }).catch(() => {});
         await sayAs("paws", line);
       }
       return true;
@@ -3035,7 +3050,7 @@
     if (!busy && (await tryLeaveFromChat(text))) return;
     // A yes or a no to the question about a day is Peak's business too (ADR-0115): no model call, no chat turn counted.
     if (!busy && answerDay(text)) return;
-    if (busy || !canChat) return;
+    if (busy || !canChat || noBrain) return; // the test aid of no brain holds here too: no model call with the stored key
     if (duoOn && duoFake) {
       // developer channel: Peak's own chat answers with a canned line too, so that a test never calls the model with the person's key
       const line = "Fine, as usual.";
@@ -3619,7 +3634,8 @@
       cleanups.push(await win.listen("chatbox-ready", () => pushBox(true)));
       cleanups.push(await win.listen<BoxAction>("chatbox-action", (e) => onBoxAction(e.payload)));
       cleanups.push(await win.listen<string>("duo-type", (e) => void sendChat(e.payload))); // developer channel: a message typed without the box
-      cleanups.push(await win.listen<PetId>("duo-tucked", (e) => { talk.tucked(e.payload); void refreshPawsOut(); })); // the portrait went with the chat (issue 15): Paws hears nothing more
+      cleanups.push(await win.listen<PetId>("duo-tucked", (e) => { talk.tucked(e.payload); void refreshPawsOut(); }));
+      cleanups.push(await win.listen("duo-visit-ended", () => { cancelTalk(); modelTyping = null; void invoke("duo_log", { line: "visit ended: the talk of the visit is dropped" }).catch(() => {}); })); // #17: nothing of a dismissed visit reaches a later one // the portrait went with the chat (issue 15): Paws hears nothing more
       cleanups.push(await win.listen<{ dir: 1 | -1 }>("duo-face", (e) => { if (pose === "idle") dir = e.payload.dir; })); // the talk: the head turns toward the speaker
       cleanups.push(await win.listen<{ pet: PetId; text: string }>("duo-say", (e) => void sayAs(e.payload.pet, e.payload.text))); // developer channel: a line in Paws' bubble without the model
       const touchEndsScene = () => { if (sceneHold) void invoke("duo_scene_cancel"); if (duoOn) cancelTalk(); };

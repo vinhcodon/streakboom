@@ -1725,7 +1725,7 @@ fn perch_trace(app: AppHandle, step: String) {
 /// being measured and are never set for a person.
 #[tauri::command]
 fn dev_flag(name: String) -> bool {
-    matches!(name.as_str(), "STREAKBOOM_NO_SETTLE") && std::env::var(&name).as_deref() == Ok("1")
+    matches!(name.as_str(), "STREAKBOOM_NO_SETTLE" | "STREAKBOOM_DUO_NOBRAIN") && std::env::var(&name).as_deref() == Ok("1")
 }
 
 /// The chat gate and the chat count (`chat-trace.log`, E28): a number of characters and the count of the day, never the words.
@@ -2038,6 +2038,7 @@ pub fn run() {
             duo::duo_presence,
             duo::duo_busy,
             duo::duo_portrait,
+            duo::duo_paws_mode,
             duo::chatbox_showing,
             duo::duo_touch,
             duo::duo_open_box,

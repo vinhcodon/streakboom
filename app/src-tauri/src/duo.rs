@@ -153,6 +153,15 @@ pub fn enabled() -> bool { std::env::var("STREAKBOOM_DUO").is_ok_and(|v| v == "1
 pub fn portrait() -> bool { enabled() && std::env::var("STREAKBOOM_PAWS_PORTRAIT").is_ok_and(|v| v == "1") }
 #[tauri::command]
 pub fn duo_portrait() -> bool { portrait() }
+
+/// Issue 17 (revision r1, option A): Paws joins the chat as a member, with no window at all; Peak stays the only pet on the desktop. A developer flag on top of
+/// the duo flag (`STREAKBOOM_PAWS_CHAT=1`); the portrait of #15 (`STREAKBOOM_PAWS_PORTRAIT=1`) stays as the reference, and with neither the walking Paws runs.
+pub fn chat_member() -> bool { enabled() && !portrait() && std::env::var("STREAKBOOM_PAWS_CHAT").is_ok_and(|v| v == "1") }
+/// A visit: Paws belongs to one opening of the chat (the portrait and the chat member both).
+pub fn visit_mode() -> bool { portrait() || chat_member() }
+/// How Paws appears: "walk" (the prototype), "portrait" (#15 r1) or "chat" (#17 r1). The pages ask it once.
+#[tauri::command]
+pub fn duo_paws_mode() -> String { (if chat_member() { "chat" } else if portrait() { "portrait" } else { "walk" }).into() }
 const PORTRAIT: f64 = 104.0; // logical px: the round frame beside the chat
 
 fn now_ms() -> u64 { SystemTime::now().duration_since(UNIX_EPOCH).map(|d| d.as_millis() as u64).unwrap_or(0) }
@@ -182,7 +191,7 @@ pub fn init(app: &AppHandle) {
     let (peak_out, paws_out) = (state.pets.peak.out, state.pets.paws.out);
     app.manage(Duo { state: Mutex::new(state), path, busy: AtomicBool::new(false) });
     if !peak_out { if let Some(w) = app.get_webview_window("main") { crate::platform::hide_window(&w); } } // the system call: the library's hide made a later hover hide Peak again
-    if paws_out && portrait() {
+    if paws_out && visit_mode() {
         // the portrait belongs to an invitation: a restart in the middle of a visit is Peak alone until a fresh one (r1, AC7)
         let d = app.state::<Duo>();
         let mut s = d.state.lock().unwrap();
@@ -421,6 +430,13 @@ fn spawn_paws_hit_test(app: AppHandle) {
 pub fn duo_command(app: AppHandle, target: String, act: String) -> bool {
     if !enabled() { return false; }
     let Some(d) = app.try_state::<Duo>() else { return false };
+    if chat_member() && target == "paws" {
+        // #17: Paws's membership of the chat is a state only (no window, no walk), so it never waits for Peak's walk (the busy flag) and needs no caller on the screen
+        let go_in = act == "in";
+        let ok = { let mut s = d.state.lock().unwrap(); let ok = if go_in { s.tuck(Id::Paws, now_ms(), None) } else if s.pets.paws.out { false } else { s.pets.paws.out = true; true }; if ok { save(&d, &s); } ok };
+        if ok { log(&app, if go_in { "paws left the chat" } else { "paws joined the chat" }); let _ = app.emit_to(BOX_LABEL, "chatbox-members", ()); }
+        return ok;
+    }
     if d.busy.swap(true, Ordering::SeqCst) { return false; }
     let id = if target == "peak" { Id::Peak } else { Id::Paws };
     let go_in = act == "in";
@@ -494,9 +510,11 @@ fn apply(app: &AppHandle, send_in: Vec<Id>, bring_out: Vec<Id>) {
             if peak_in { peak_go_in(&app2); } else if peak_work { peak_come_out(&app2); }
             if paws_work { if out { paws_come_out(&app2, false) } else { paws_go_in(&app2) } }
             app2.state::<Duo>().busy.store(false, Ordering::SeqCst);
+            let _ = app2.emit_to(BOX_LABEL, "chatbox-members", ());
         });
     } else {
         d.busy.store(false, Ordering::SeqCst);
+        let _ = app.emit_to(BOX_LABEL, "chatbox-members", ());
     }
 }
 
@@ -628,7 +646,7 @@ fn sync_windows(app: &AppHandle) {
     let look = || {
         let (peak_out, paws_out) = { let s = d.state.lock().unwrap(); (s.pets.peak.out, s.pets.paws.out) };
         let peak_vis = app.get_webview_window("main").map(|w| w.is_visible().unwrap_or(false));
-        let paws_win = app.get_webview_window(PAWS_LABEL).is_some();
+        let paws_win = if chat_member() { paws_out } else { app.get_webview_window(PAWS_LABEL).is_some() }; // a chat member has no window
         (peak_out, paws_out, peak_vis, paws_win)
     };
     let off = |t: (bool, bool, Option<bool>, bool)| t.2.is_some_and(|v| v != t.0) || t.3 != t.1;
@@ -670,6 +688,7 @@ fn slide(win: &tauri::WebviewWindow, from: (i32, i32), to: (i32, i32)) {
 /// Paws comes out through its entrance. `quiet`: at the start of the program it is simply there, no walk.
 fn paws_come_out(app: &AppHandle, quiet: bool) {
     if portrait() { portrait_open(app); return; }
+    if chat_member() { log(app, "paws joined the chat"); let _ = app.emit_to(BOX_LABEL, "chatbox-members", ()); return; } // no window: the saved state is the membership (#17)
     let Some(d) = app.try_state::<Duo>() else { return };
     let entrance = d.state.lock().unwrap().pets.paws.entrance.clone();
     let mons = monitors(app);
@@ -699,6 +718,7 @@ fn paws_come_out(app: &AppHandle, quiet: bool) {
 
 /// Paws goes in through its entrance and the window is closed: it exists only while Paws is out.
 fn paws_go_in(app: &AppHandle) {
+    if chat_member() { log(app, "paws left the chat"); let _ = app.emit_to(BOX_LABEL, "chatbox-members", ()); return; }
     let Some(win) = app.get_webview_window(PAWS_LABEL) else { return };
     if portrait() {
         // the frame fades out (its page), then the window is closed
@@ -752,12 +772,14 @@ fn portrait_open(app: &AppHandle) {
 /// The chat went away (the person hid it, or it faded): the visit is over. Paws is sent in and its frame fades with the box (r1, AC7), so the next ordinary
 /// message is Peak's alone. Nothing without the portrait flag.
 fn portrait_dismiss(app: &AppHandle) {
-    if !portrait() { return; }
+    if !visit_mode() { return; }
     let Some(d) = app.try_state::<Duo>() else { return };
     let tucked = { let mut s = d.state.lock().unwrap(); let ok = s.tuck(Id::Paws, now_ms(), None); if ok { save(&d, &s); } ok };
     if !tucked { return; }
-    log(app, "portrait dismissed with the chat");
+    log(app, "visit ended with the chat: paws is no longer a member");
     let _ = app.emit_to("main", "duo-tucked", "paws");
+    let _ = app.emit_to("main", "duo-visit-ended", ()); // the talk of the visit is dropped: a reply, a retry or a timer of it cannot reach a later visit (#17)
+    let _ = app.emit_to(BOX_LABEL, "chatbox-members", ());
     let app = app.clone();
     std::thread::spawn(move || {
         let d = app.state::<Duo>();
@@ -828,7 +850,7 @@ pub fn duo_peak_pose(app: AppHandle, pose: String, dir: i32, hold: bool) {
 
 /// Start a scene (a prototype menu item for now; the automatic start needs the attention mode of Peak's page). Needs both pets out.
 pub fn scene_start(app: &AppHandle, id: &str) {
-    if portrait() { return; } // no full-body scenes with the portrait (r1 non-goals)
+    if visit_mode() { return; } // no full-body scenes with the portrait or the chat member (non-goals of #15 and #17)
     if let Some(d) = app.try_state::<Duo>() {
         let s = d.state.lock().unwrap();
         if s.out().len() != 2 || d.busy.load(Ordering::SeqCst) { return; }
@@ -1103,6 +1125,7 @@ fn take_foreground(win: &tauri::WebviewWindow) {
         unsafe {
             let front = GetForegroundWindow();
             if front == target { return; }
+            PREV_FRONT.store(front as isize, Ordering::SeqCst); // the program the person was in: the keyboard goes back to it when the box is hidden
             let (mine, theirs) = (GetCurrentThreadId(), GetWindowThreadProcessId(front, std::ptr::null_mut()));
             let attached = theirs != 0 && theirs != mine && AttachThreadInput(mine, theirs, 1) != 0;
             BringWindowToTop(target);
@@ -1154,7 +1177,8 @@ fn has_keyboard(win: &tauri::WebviewWindow) -> bool {
     #[cfg(windows)]
     {
         use windows_sys::Win32::UI::WindowsAndMessaging::GetForegroundWindow;
-        if let Ok(h) = win.hwnd() { return unsafe { GetForegroundWindow() } == h.0 as isize as _; }
+        // a hidden box can stay the foreground window after Esc (nothing else took it): hidden, it has no keyboard (#17 check: it never faded, so the visit never ended)
+        if let Ok(h) = win.hwnd() { return win.is_visible().unwrap_or(false) && unsafe { GetForegroundWindow() } == h.0 as isize as _; }
     }
     win.is_focused().unwrap_or(false)
 }
@@ -1183,6 +1207,9 @@ fn spawn_hover(app: AppHandle) {
             let inside = px >= pos.x - m && px <= pos.x + size.width as i32 + m && py >= pos.y + (BOX_FADE_HEAD * scale(&app)).round() as i32 - m && py <= pos.y + size.height as i32 + m;
             let now = now_ms();
             // the fade: nothing has made the box matter for a while (the keyboard is elsewhere, the pointer is not on it, no draft, not pinned): it fades slowly and goes
+            // the last program in front other than the box: where the keyboard goes back when the box is hidden (the box may have been clicked into, not opened)
+            #[cfg(windows)]
+            if let Ok(h) = win.hwnd() { let f = unsafe { windows_sys::Win32::UI::WindowsAndMessaging::GetForegroundWindow() }; if !f.is_null() && f != h.0 as isize as _ { PREV_FRONT.store(f as isize, Ordering::SeqCst); } }
             let matters = inside || has_keyboard(&win) || !BOX_DRAFT_EMPTY.load(Ordering::SeqCst) || BOX_PINNED.load(Ordering::SeqCst);
             static LAST_MATTERS: AtomicBool = AtomicBool::new(true);
             if LAST_MATTERS.swap(matters, Ordering::SeqCst) != matters { log(&app, &format!("box matters={matters} inside={inside} keyboard={} draft_empty={} pinned={} cursor=({px},{py}) box=({},{} {}x{})", has_keyboard(&win), BOX_DRAFT_EMPTY.load(Ordering::SeqCst), BOX_PINNED.load(Ordering::SeqCst), pos.x, pos.y, size.width, size.height)); }
@@ -1259,8 +1286,18 @@ fn hide_box_soft(app: &AppHandle, win: &tauri::WebviewWindow) {
 
 fn hide_box(win: &tauri::WebviewWindow) {
     BOX_ENGAGED.store(false, Ordering::SeqCst);
+    let had_keyboard = has_keyboard(win);
     crate::platform::hide_window(win); // the system call: the ambient box is shown by one too (ADR-0158, the same trap as Peak's window)
+    // the keyboard goes back to the program the person was in. Left alone, a hidden box could stay the foreground window: the keys typed next went nowhere,
+    // and the box, "having the keyboard", never faded (#17 check: the visit never ended)
+    #[cfg(windows)]
+    if had_keyboard {
+        use windows_sys::Win32::UI::WindowsAndMessaging::{IsWindow, IsWindowVisible, SetForegroundWindow};
+        let prev = PREV_FRONT.swap(0, Ordering::SeqCst);
+        if prev != 0 { unsafe { if IsWindow(prev as _) != 0 && IsWindowVisible(prev as _) != 0 { SetForegroundWindow(prev as _); } } }
+    }
 }
+static PREV_FRONT: std::sync::atomic::AtomicIsize = std::sync::atomic::AtomicIsize::new(0);
 
 /// The box loses the keyboard or the pointer has left it: it looks the same, lets the mouse through (pinned, the default), or goes off the screen (not pinned).
 /// If it is still the window in front, it is shown again without the focus so that the keyboard goes back to the program the person was in.

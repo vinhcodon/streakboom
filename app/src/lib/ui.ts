@@ -51,6 +51,8 @@ export interface UiStrings {
   thinking: string;
   capHit: string[]; // in-character ways to say "enough for today"; one is picked at random
   callBusy: string[];
+  pawsHi: { awake: string[]; asleep: string[]; tucked: string[] }; // Paws joins the chat with no brain (#17): one line from what Peak is really doing
+  pawsOffline: string[]; // a question for Paws with no brain: an honest line, not a pretend answer
   pawsHello: string[]; // Paws arrives with no brain connected (issue 15): short, earnest, in its own voice (tôi in Vietnamese, ADR-0156); never asks for an answer // a pet that is out says it when a mention could not bring the other pet out (ADR-0158); no pronoun for the speaker, so that either pet can say it
   slowHint: string;
   copyStats: string;
@@ -249,6 +251,8 @@ export const UI: Record<Lang, UiStrings> = {
     removed: "Key removed. I'm back to my few words.",
     thinking: "…",
     callBusy: ["Give it a moment, they are busy right now.", "They cannot come out just yet. Try again in a moment."],
+    pawsHi: { awake: ["Hello, Peak. I am in.", "Peak, I have arrived. Ears straight."], asleep: ["Shh. Let Peak sleep.", "Peak is asleep. I will whisper."], tucked: ["Peak is resting. I will keep watch.", "Peak is off duty. I am on."] },
+    pawsOffline: ["Without a brain I can only say hello. The question is noted, with respect.", "No AI is on, so I cannot answer that. I can sit here properly."],
     pawsHello: ["Present, as requested.", "Here. Posture correct.", "Arrived. Ears in order."],
     capHit: [
       "I've talked a lot today. Let's keep the rest for tomorrow.",
@@ -504,6 +508,8 @@ export const UI: Record<Lang, UiStrings> = {
     removed: "Đã xóa key. Mình lại chỉ biết vài câu.",
     thinking: "…",
     callBusy: ["Chờ một chút nhé, bạn ấy đang bận chưa ra được.", "Bạn ấy chưa ra được lúc này. Thử lại sau một lát nhé."],
+    pawsHi: { awake: ["Chào Peak. Tôi vào rồi.", "Peak ơi, tôi đến rồi. Tai dựng thẳng."], asleep: ["Suỵt. Để Peak ngủ.", "Peak đang ngủ. Tôi nói khẽ thôi."], tucked: ["Peak đang nghỉ. Tôi trực thay.", "Peak nghỉ ca. Tôi vào ca."] },
+    pawsOffline: ["Chưa bật AI nên tôi chỉ chào được thôi. Câu hỏi tôi ghi nhận, trịnh trọng.", "Không có AI, tôi không trả lời được câu đó. Tôi ngồi ngay ngắn ở đây."],
     pawsHello: ["Tôi có mặt rồi đây.", "Tôi đến rồi, tư thế chỉnh tề.", "Có mặt. Tai đã dựng thẳng."],
     capHit: [
       "Hôm nay mình nói nhiều rồi. Phần còn lại để mai nhé.",
@@ -759,6 +765,8 @@ export const UI: Record<Lang, UiStrings> = {
     removed: "キーを削除したよ。また少ない言葉に戻るね。",
     thinking: "…",
     callBusy: ["ちょっと待ってね、いまは出てこられないみたい。", "もう少ししてからもう一度呼んでね。"],
+    pawsHi: { awake: ["Peak、こんにちは。来ました。", "Peak、到着です。耳もぴんと。"], asleep: ["しーっ。Peakを寝かせておこう。", "Peakは寝ています。小声で。"], tucked: ["Peakは休憩中。わたしが番をします。", "Peakは非番。わたしが当番です。"] },
+    pawsOffline: ["AIがないので、あいさつしかできません。質問は丁重に受け取りました。", "AIがオフなので答えられません。ここできちんと座っています。"],
     pawsHello: ["参りました。", "来ました。姿勢よし。", "到着です。耳もぴんと。"],
     capHit: [
       "今日はいっぱい話したよ。続きは明日にしようね。",
