@@ -16,7 +16,7 @@
   import { seatFraction, seatMove, seatWalkMs } from "$lib/seat";
   import { addressees, parseDuoCommand, parseRelay, summons } from "$lib/duo-command";
   import { parseCallMe } from "$lib/callme";
-  import { Conversation, addTurn, newRoom, presentable, situation, toHistory, type Line } from "$lib/conversation";
+  import { Conversation, addTurn, newRoom, shownSays, withoutTurn, presentable, situation, toHistory, type Line } from "$lib/conversation";
   import type { BoxAction, BoxView } from "$lib/chatbox";
   import type { PetId } from "$lib/duo";
   import { LEAVE_PACE_PX_S, RETRY_SECS, isLeaveCommand, leaveDeadlineMs, mayLeave, nearerEdge } from "$lib/farewell";
@@ -2441,7 +2441,7 @@
   let lastBox = "";
   let lastBoxTurns = 0;
   function pushBox(force = false) {
-    const v = $state.snapshot({ lang, callMe: mem.callMe, turns: boxTurns, typing: chatPhase === "thinking" ? "peak" : modelTyping, canChat: canChat || duoFake }) as BoxView;
+    const v = $state.snapshot({ lang, callMe: mem.callMe, turns: boxTurns, typing: chatPhase === "thinking" ? "peak" : (modelTyping ?? pendingWho), canChat: canChat || duoFake }) as BoxView;
     if (!duoOn) return;
     const s = JSON.stringify(v);
     if (!force && s === lastBox) return;
@@ -2473,9 +2473,22 @@
       })();
     }
   }
+  // a pet's line waiting to be presented: in the room (the next pet hears it at once) but not yet in the chat (#18). Its pet shows as "writing" meanwhile.
+  const unpresented = new Map<number, PetId>();
   function syncLog() {
-    talkLog = talk.room.turns.filter((t) => t.act === "say").slice(-6).map((t) => ({ who: t.from, text: t.text }));
-    boxTurns = talk.room.turns.filter((t) => t.act === "say").map((t) => ({ id: t.id, who: t.from, text: t.text, at: t.at }));
+    const seen = shownSays(talk.room, new Set(unpresented.keys()));
+    talkLog = seen.slice(-6).map((t) => ({ who: t.from, text: t.text }));
+    boxTurns = seen.map((t) => ({ id: t.id, who: t.from, text: t.text, at: t.at }));
+    pendingWho = unpresented.size > 0 ? [...unpresented.values()][0] : null;
+  }
+  let pendingWho = $state<PetId | null>(null);
+  /** A queued line that will not be presented (a newer message, Quiet, a touch, the chat dismissed): it leaves the talk and the chat, and Peak stops thinking about it. */
+  function forgetLine(l: Line, why: string) {
+    if (!unpresented.delete(l.turnId)) return;
+    talk.room = withoutTurn(talk.room, l.turnId);
+    syncLog();
+    if (l.pet === "peak" && pose === "think") enter("idle");
+    void invoke("duo_log", { line: `dropped before presentation: ${l.pet} (${why})` }).catch(() => {});
   }
   let lineGen = 0;
   let lineChain: Promise<void> = Promise.resolve();
@@ -2492,24 +2505,25 @@
     bubbleWho = pet;
   }
   function enqueueLine(l: Line) {
+    if (l.act === "say") unpresented.set(l.turnId, l.pet); // written into the talk now, shown when presented below
     syncLog();
     void invoke("duo_log", { line: `line ${l.pet} ${l.act} to=${l.to.join("+")} ${l.text}` }).catch(() => {});
     const g = lineGen;
     lineChain = lineChain
       .then(async () => {
-        if (g !== lineGen) return;
+        if (g !== lineGen) return forgetLine(l, "cancelled");
         const other: PetId = l.pet === "peak" ? "paws" : "peak";
         if (l.act === "say") {
           void invoke("duo_face", { listener: other, speaker: l.pet }).catch(() => {});
           await pause(500);
-          if (g !== lineGen) return;
-          if (!presentable(l, quiet || away)) { void invoke("duo_log", { line: `quiet: a queued line of ${l.pet} is dropped` }).catch(() => {}); if (l.pet === "peak" && pose === "think") enter("idle"); return; } // Quiet came while the line waited
-          if (l.pet === "peak") {
-            // its line appears in the box now: Peak acts out the line's own feeling (the same beat as its old chat), then settles (#18, point 3)
-            const p = moodBeat(l.mood || "neutral", data.settings.gentle).steps[0].pose;
-            void invoke("duo_log", { line: `peak says its line with ${p} (mood ${l.mood || "neutral"})` }).catch(() => {});
-            enter(p);
-          }
+          if (g !== lineGen) return forgetLine(l, "cancelled");
+          if (!presentable(l, quiet || away)) { void invoke("duo_log", { line: `quiet: a queued line of ${l.pet} is dropped` }).catch(() => {}); return forgetLine(l, "quiet"); } // Quiet came while the line waited
+          // the presentation: the row appears in the chat and, for Peak, its expression begins, on the same beat (#18)
+          unpresented.delete(l.turnId);
+          syncLog();
+          const p = l.pet === "peak" ? moodBeat(l.mood || "neutral", data.settings.gentle).steps[0].pose : null;
+          if (p) enter(p); // Peak acts out the line's own feeling (the same beat as its old chat), then settles
+          void invoke("duo_log", { line: `presented ${l.pet} row${p ? ` with ${p} (mood ${l.mood || "neutral"})` : ""}` }).catch(() => {});
           await sayAs(l.pet, clipReply(l.text, 160)); // the bubble shows the head of a long reply cut at the end of a sentence; the talk and the box keep the whole (ADR-0146)
           await pause(Math.min(9000, 1500 + l.text.length * 55)); // the time to read it, before the next speaker
         } else if (l.act === "turn") {

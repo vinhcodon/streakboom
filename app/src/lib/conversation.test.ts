@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { Conversation, addTurn, heard, newRoom, parseUtterance, plan, type Deps, type Line } from "./conversation.ts";
+import { Conversation, addTurn, heard, shownSays, withoutTurn, newRoom, parseUtterance, plan, type Deps, type Line } from "./conversation.ts";
 import type { PetId } from "./duo.ts";
 import { readFileSync } from "node:fs";
 
@@ -330,4 +330,22 @@ test("the page drops the pending turn when Quiet comes, and checks Quiet again b
   const page = readFileSync(new URL("../routes/+page.svelte", import.meta.url), "utf8");
   assert.ok(/if \(quiet && duoOn\) \{[\s\S]{0,220}cancelTalk\(\)/.test(page), "the quiet-changed handler cancels the talk");
   assert.ok(/presentable\(l, quiet \|\| away\)/.test(page), "the presentation checks Quiet again");
+});
+
+test("a line shows in the chat only once it is presented, and a cancelled one never shows nor stays in the talk (#18)", () => {
+  let room = newRoom();
+  room = addTurn(room, { from: "person", to: ["peak", "paws"], text: "both?", at: 1, act: "say" }).room;
+  const paws = addTurn(room, { from: "paws", to: ["person"], text: "A long and earnest line from Paws.", at: 2, act: "say" });
+  const peak = addTurn(paws.room, { from: "peak", to: ["person"], text: "Short.", at: 3, act: "say" });
+  room = peak.room;
+  const waiting = new Set([paws.turn.id, peak.turn.id]); // both answered, nothing presented yet
+  assert.deepEqual(shownSays(room, waiting).map((t) => t.text), ["both?"]);
+  waiting.delete(paws.turn.id); // Paws is presented first
+  assert.deepEqual(shownSays(room, waiting).map((t) => t.from), ["person", "paws"], "Peak's short answer is not shown while Paws's line is being read");
+  waiting.delete(peak.turn.id); // then Peak, on the beat of its expression
+  assert.deepEqual(shownSays(room, waiting).map((t) => t.from), ["person", "paws", "peak"]);
+  // cancelled before presentation: gone from the chat and from what the pets heard
+  const cut = withoutTurn(room, peak.turn.id);
+  assert.deepEqual(shownSays(cut, new Set()).map((t) => t.from), ["person", "paws"]);
+  assert.ok(heard(cut, "peak").every((t) => t.text !== "Short."));
 });

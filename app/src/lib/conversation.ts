@@ -21,6 +21,17 @@ export function addTurn(room: Room, t: Omit<Turn, "id">): { room: Room; turn: Tu
   return { room: { turns: [...room.turns, turn].slice(-KEEP), nextId: room.nextId + 1 }, turn };
 }
 
+/** The turns the person can see: every "say" except the ones still waiting to be presented (#18). A pet's line is written into the room when the model answers,
+ *  so the next pet hears it at once; it shows in the chat only when it is presented, on the same beat as Peak's expression for it. */
+export function shownSays(room: Room, waiting: ReadonlySet<number>): Turn[] {
+  return room.turns.filter((t) => t.act === "say" && !waiting.has(t.id));
+}
+
+/** The room without one turn: a line cancelled before it was presented is dropped from the talk, so that no pet later "remembers" saying what nobody saw (#18). */
+export function withoutTurn(room: Room, id: number): Room {
+  return { ...room, turns: room.turns.filter((t) => t.id !== id) };
+}
+
 /** What a pet heard: the turns it spoke, or that were said to it (a message to both is said to each). Gestures and passes carry no words. */
 export function heard(room: Room, pet: PetId, limit = 8): Turn[] {
   return room.turns.filter((t) => t.act === "say" && (t.from === pet || t.to.includes(pet))).slice(-limit);
