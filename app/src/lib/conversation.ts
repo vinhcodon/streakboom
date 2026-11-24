@@ -70,6 +70,16 @@ function clip(text: string, maxWords: number): string {
   return w.length <= maxWords ? text : w.slice(0, maxWords).join(" ");
 }
 
+/** The last step of showing a line (#11): the bubble window is moved to the speaker (an await), and only then is the line shown, if it is still wanted at
+ *  that moment. `stillWanted` is asked after the await, never before: a line cancelled during it (Quiet on, even if Quiet is off again by then; a touch; a new
+ *  message) stays cancelled. Resolves true when the line was shown. */
+export async function presentAfterPlacing(step: { place(): Promise<unknown>; stillWanted(): boolean; show(): void }): Promise<boolean> {
+  await step.place();
+  if (!step.stillWanted()) return false;
+  step.show();
+  return true;
+}
+
 /** A line as it may still be shown: one that waited in the queue is dropped when Quiet came meanwhile (a gesture is a nod and stays). */
 export function presentable(l: Line, quietNow: boolean): Line | null {
   return quietNow && l.act === "say" ? null : l;

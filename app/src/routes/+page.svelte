@@ -16,7 +16,7 @@
   import { seatFraction, seatMove, seatWalkMs } from "$lib/seat";
   import { addressees, parseDuoCommand, parseRelay } from "$lib/duo-command";
   import { parseCallMe } from "$lib/callme";
-  import { Conversation, addTurn, newRoom, presentable, situation, toHistory, type Line } from "$lib/conversation";
+  import { Conversation, addTurn, newRoom, presentAfterPlacing, presentable, situation, toHistory, type Line } from "$lib/conversation";
   import type { BoxAction, BoxView } from "$lib/chatbox";
   import type { PetId } from "$lib/duo";
   import { LEAVE_PACE_PX_S, RETRY_SECS, isLeaveCommand, leaveDeadlineMs, mayLeave, nearerEdge } from "$lib/farewell";
@@ -2470,12 +2470,15 @@
   let lineGen = 0;
   let lineChain: Promise<void> = Promise.resolve();
   const pause = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));
-  async function sayAs(pet: PetId, text: string) {
-    void invoke("duo_log", { line: `shown ${pet} ${text.length}` }).catch(() => {});
-    await invoke("duo_bubble_to", { pet, ms: 4000 + text.length * 60 + 1500 }).catch(() => {}); // the bubble stands beside the speaker
-    if (quiet || away) { void invoke("duo_log", { line: `quiet: the bubble of ${pet} is not shown` }).catch(() => {}); return; } // Quiet came during the await: a late callback never brings a bubble back (#11)
-    showBubble(text);
-    bubbleWho = pet;
+  /** Say a line in a pet's bubble. `wanted` is the caller's own test (a queued line passes its turn: `() => g === lineGen`); it is asked after the bubble window
+   *  has moved, with Quiet and away, so that nothing cancelled during that await comes back (#11). The log says "shown" only for a line that was shown. */
+  async function sayAs(pet: PetId, text: string, wanted: () => boolean = () => true) {
+    const shown = await presentAfterPlacing({
+      place: () => invoke("duo_bubble_to", { pet, ms: 4000 + text.length * 60 + 1500 }).catch(() => {}), // the bubble stands beside the speaker
+      stillWanted: () => wanted() && !quiet && !away,
+      show: () => { showBubble(text); bubbleWho = pet; },
+    });
+    void invoke("duo_log", { line: shown ? `shown ${pet} ${text.length}` : `not shown ${pet}: cancelled or Quiet during the move` }).catch(() => {}); // a JS decision, not proof of pixels
   }
   function enqueueLine(l: Line) {
     syncLog();
@@ -2490,7 +2493,7 @@
           await pause(500);
           if (g !== lineGen) return;
           if (!presentable(l, quiet || away)) { void invoke("duo_log", { line: `quiet: a queued line of ${l.pet} is dropped` }).catch(() => {}); return; } // Quiet came while the line waited
-          await sayAs(l.pet, clipReply(l.text, 160)); // the bubble shows the head of a long reply cut at the end of a sentence; the talk and the box keep the whole (ADR-0146)
+          await sayAs(l.pet, clipReply(l.text, 160), () => g === lineGen); // the bubble shows the head of a long reply cut at the end of a sentence; the talk and the box keep the whole (ADR-0146)
           await pause(Math.min(9000, 1500 + l.text.length * 55)); // the time to read it, before the next speaker
         } else if (l.act === "turn") {
           void invoke("duo_face", { listener: l.pet, speaker: l.to[0] }).catch(() => {}); // it turns to the one it was asked to ask

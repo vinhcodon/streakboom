@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { Conversation, addTurn, heard, newRoom, parseUtterance, plan, type Deps, type Line } from "./conversation.ts";
+import { Conversation, presentAfterPlacing, addTurn, heard, newRoom, parseUtterance, plan, type Deps, type Line } from "./conversation.ts";
 import type { PetId } from "./duo.ts";
 import { readFileSync } from "node:fs";
 
@@ -349,8 +349,32 @@ test("Quiet (a cancel) turns the three dots off at once, and the late end of the
   assert.deepEqual(typing, ["peak", null], "the late end of the call does not switch them on or off again");
 });
 
-test("the page checks Quiet again after the bubble window has moved and before the bubble is shown (#11)", () => {
+test("a line cancelled while its bubble window moves stays cancelled, also when Quiet is off again before the move ends (#11)", async () => {
+  // the page: a turn counter (cancelTalk bumps it) and Quiet; the line keeps the counter it was queued with
+  let gen = 1, quiet = false;
+  const shown: string[] = [];
+  let finish: () => void = () => {};
+  const moving = new Promise<void>((r) => { finish = r; });
+  const g = gen;
+  const run = presentAfterPlacing({ place: () => moving, stillWanted: () => g === gen && !quiet, show: () => shown.push("stale answer") });
+  quiet = true; gen++; // Quiet on: the page cancels the talk
+  quiet = false; // and off again before the window has moved
+  finish();
+  assert.equal(await run, false);
+  assert.deepEqual(shown, [], "the cancelled line is not shown");
+  // the same line with nothing cancelled is shown, after the move and not before
+  const order: string[] = [];
+  let done: () => void = () => {};
+  const ok = presentAfterPlacing({ place: () => new Promise<void>((r) => { done = () => { order.push("moved"); r(); }; }), stillWanted: () => true, show: () => order.push("shown") });
+  done();
+  assert.equal(await ok, true);
+  assert.deepEqual(order, ["moved", "shown"]);
+});
+
+test("the page passes the queued line's turn to the bubble and logs shown only after the decision (#11)", () => {
   const page = readFileSync(new URL("../routes/+page.svelte", import.meta.url), "utf8");
-  const say = page.slice(page.indexOf("async function sayAs("), page.indexOf("async function sayAs(") + 700);
-  assert.ok(/await invoke\("duo_bubble_to"[\s\S]*?if \(quiet \|\| away\)[\s\S]*?showBubble\(text\)/.test(say), "Quiet or away that came during the await stops the bubble");
+  assert.ok(page.includes("await sayAs(l.pet, clipReply(l.text, 160), () => g === lineGen)"), "a queued line keeps its turn across the move");
+  const say = page.slice(page.indexOf("async function sayAs("), page.indexOf("async function sayAs(") + 1200);
+  assert.ok(/stillWanted: \(\) => wanted\(\) && !quiet && !away/.test(say));
+  assert.ok(say.indexOf("presentAfterPlacing(") < say.indexOf("shown ? `shown"), "the shown marker comes after the decision");
 });
