@@ -749,7 +749,7 @@ fn bubble_fit(app: AppHandle, state: State<AppState>, w: f64, h: f64, interactiv
 fn bubble_hide(app: AppHandle, state: State<AppState>) {
     state.bubble.lock().unwrap().visible = false;
     if let Some(bubble) = app.get_webview_window("bubble") {
-        let _ = bubble.hide();
+        hide_window(&bubble); // the same kind of call as its show (see `hide_window`)
     }
     // Destroy the window if it stays unused, to give its memory back.
     let gen_now = state.bubble_gen.fetch_add(1, Ordering::Relaxed) + 1;
@@ -1480,7 +1480,7 @@ fn overlay_follow(app: &AppHandle, show: bool) {
         if show {
             show_without_activating(&w);
         } else {
-            let _ = w.hide();
+            hide_window(&w);
         }
     }
 }

@@ -174,7 +174,9 @@ pub fn init(app: &AppHandle) {
     let state = std::fs::read_to_string(&path).map(|r| DuoState::parse(&r)).unwrap_or_default();
     let (peak_out, paws_out) = (state.pets.peak.out, state.pets.paws.out);
     app.manage(Duo { state: Mutex::new(state), path, busy: AtomicBool::new(false) });
-    if !peak_out { if let Some(w) = app.get_webview_window("main") { let _ = w.hide(); } }
+    // the system call, never the library's hide: the library would remember "hidden" and, when the pointer later makes the window take clicks (it rewrites the
+    // window style from what it remembers), hide Peak again while it is on the screen (seen: hovering Peak made it vanish until the 3 s check showed it)
+    if !peak_out { if let Some(w) = app.get_webview_window("main") { crate::platform::hide_window(&w); } }
     if paws_out { paws_in_thread(app.clone(), true); }
     crate::duo_keys::init(app);
     spawn_dev_commands(app.clone(), dir);
@@ -1157,7 +1159,7 @@ fn hide_box(win: &tauri::WebviewWindow) {
 fn leave_engaged(app: &AppHandle, win: &tauri::WebviewWindow) {
     log(app, "leave_engaged");
     let front = has_keyboard(win);
-    if front { let _ = win.hide(); }
+    if front { crate::platform::hide_window(win); }
     show_ambient(app, win);
 }
 
