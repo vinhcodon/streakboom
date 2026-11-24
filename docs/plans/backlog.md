@@ -4,6 +4,8 @@ Status: **proposed 2026-11-08, asked by Vinh to be carried out story by story.**
 
 ## How we work with it
 
+**Delivery execution (2026-11-24):** use [Streakboom Delivery](https://github.com/users/vinhcodon/projects/1), epic #7 and the [operating guide](github-delivery.md). The legacy product backlog remains the source of future candidates; only approved slices enter iterations. The initial native task breakdown is #2 → #8; #3 → #9/#10; #4 → #11/#12; #5 → #13. #6 stays a follow-up assessment. This is organization, not evidence of completed product work.
+
 Cross-agent review progress and acceptance are tracked in [GitHub issue #1](https://github.com/vinhcodon/streakboom/issues/1) and its linked issues. This supplements the product backlog and roadmap; creating review tickets does not complete their implementation or verification. The current batch covers privacy (#2), complete duo performance (#3), conversation/input integration (#4), and the isolated bubble-focus fix (#5).
 
 1. **Size.** S = up to half a day, M = one to two days, L = more than two days (an L must be split before it starts).

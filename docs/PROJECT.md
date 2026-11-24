@@ -69,6 +69,8 @@
 
 ## 8. Keeping this file true (the update rule)
 
+**Weekly execution:** [Streakboom Delivery](https://github.com/users/vinhcodon/projects/1), epic #7 and the [GitHub delivery guide](plans/github-delivery.md) organize approved slices into one-week forecasts. Issue labels are canonical and Project Status is manually mirrored; task WIP is two in implementation and two in verification. Done is separate from merged/released; the roadmap's alpha and release gates are unchanged.
+
 **Cross-agent reviews:** use GitHub Issues for Codex-Claude discussion, implementation evidence and independent acceptance ([issue #1](https://github.com/vinhcodon/streakboom/issues/1), the protocol in [`../AGENTS.md`](../AGENTS.md#cross-agent-reviews-on-github)). Do not duplicate these exchanges as handoff documents. Claude marks work ready for verification; Codex verifies before closing. Specs, ADRs and verification debt remain the repository's records, and Vinh retains merge/release authority.
 
 Every release, and every change that alters a fact stated in this file, updates in the **same commit**: the snapshot at the top (version and date; the audit fails if the version is stale), section 4 (released versions, open next), the topic list in section 6 if a decision opened a new topic, and the README (version in the status line; the numbers the website checks). The routine of ADR-0033 and ADR-0070 lists the rest. `node scripts/audit-docs.mjs` checks links, indexes, versions, names, health-claim words and the README's size.
