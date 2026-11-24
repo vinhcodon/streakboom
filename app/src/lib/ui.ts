@@ -156,7 +156,6 @@ export interface UiStrings {
   openWebsite: string;
   /** The tray icon's menu (the only menu Peak has, ADR-0055). */
   trayShow: string;
-  trayDuo: { chat: string; peakOut: string; peakIn: string; pawsOut: string; pawsIn: string }; // the tray menu with the duo flag (ADR-0160)
   traySettings: string;
   trayQuiet: string;
   trayQuit: string;
@@ -403,7 +402,6 @@ export const UI: Record<Lang, UiStrings> = {
     sectionAbout: "About",
     openWebsite: "Open the website (streakboom.com)",
     trayShow: "Show / Hide",
-    trayDuo: { chat: "Open the chat", peakOut: "Call Peak out", peakIn: "Send Peak in", pawsOut: "Call Paws out", pawsIn: "Send Paws in" },
     traySettings: "Settings…",
     trayQuiet: "Quiet mode",
     trayQuit: "Quit",
@@ -658,7 +656,6 @@ export const UI: Record<Lang, UiStrings> = {
     sectionAbout: "Về app",
     openWebsite: "Mở trang web (streakboom.com)",
     trayShow: "Hiện / Ẩn",
-    trayDuo: { chat: "Mở hộp chat", peakOut: "Gọi Peak ra", peakIn: "Cho Peak vào", pawsOut: "Gọi Paws ra", pawsIn: "Cho Paws vào" },
     traySettings: "Cài đặt…",
     trayQuiet: "Chế độ yên lặng",
     trayQuit: "Thoát",
@@ -913,7 +910,6 @@ export const UI: Record<Lang, UiStrings> = {
     sectionAbout: "アプリ情報",
     openWebsite: "ウェブサイトを開く（streakboom.com）",
     trayShow: "表示 / 非表示",
-    trayDuo: { chat: "チャットを開く", peakOut: "Peakを呼ぶ", peakIn: "Peakを戻す", pawsOut: "Pawsを呼ぶ", pawsIn: "Pawsを戻す" },
     traySettings: "設定…",
     trayQuiet: "静かモード",
     trayQuit: "終了",

@@ -810,7 +810,7 @@ fn open_settings_async(app: &AppHandle) {
 /// The text of the tray menu in the app's language (the page sends it at start and whenever the language changes):
 /// [Show / Hide, Settings, Quiet mode, Quit]. An empty or missing entry keeps the English default.
 #[tauri::command]
-fn set_tray_labels(app: AppHandle, state: State<AppState>, labels: Vec<String>) {
+fn set_tray_labels(state: State<AppState>, labels: Vec<String>) {
     let pick = |i: usize| labels.get(i).map(|s| s.trim()).filter(|s| !s.is_empty()).map(str::to_string);
     if let Some([toggle, settings, quit]) = state.tray_items.lock().unwrap().as_ref() {
         if let Some(t) = pick(0) {
@@ -823,8 +823,6 @@ fn set_tray_labels(app: AppHandle, state: State<AppState>, labels: Vec<String>) 
             let _ = quit.set_text(t);
         }
     }
-    // with the flag, four more: call Peak out, send Peak in, call Paws out, send Paws in (ADR-0160)
-    if labels.len() >= 8 { duo::set_tray_words([&labels[4], &labels[5], &labels[6], &labels[7]].map(|s| s.trim().to_string())); duo::refresh_tray(&app); }
     if let Some(t) = pick(2) {
         if let Some(item) = state.quiet_item.lock().unwrap().as_ref() {
             let _ = item.set_text(t);
@@ -1838,15 +1836,8 @@ fn build_tray(app: &AppHandle, quiet: bool) -> tauri::Result<()> {
     let settings = MenuItem::with_id(app, "settings", "Settings…", true, None::<&str>)?;
     let quiet_item = CheckMenuItem::with_id(app, "quiet", "Quiet mode", true, quiet, None::<&str>)?;
     let quit = MenuItem::with_id(app, "quit", "Quit", true, None::<&str>)?;
-    let menu = Menu::with_items(app, &[&toggle, &settings, &quiet_item, &quit])?;
-    if duo::enabled() {
-        // ADR-0160: what each pet can do now, after "Open the chat"; the text follows who is out (`duo::refresh_tray`)
-        let peak = MenuItem::with_id(app, "duo-peak", "Send Peak in", true, None::<&str>)?;
-        let paws = MenuItem::with_id(app, "duo-paws", "Call Paws out", true, None::<&str>)?;
-        menu.insert(&peak, 1)?;
-        menu.insert(&paws, 2)?;
-        duo::set_tray_pet_items(peak, paws);
-    }
+    // with the duo flag the menu is only Quiet mode, Settings and Quit: a click on the icon opens the chat, and the pets are called in the chat (ADR-0160)
+    let menu = if duo::enabled() { Menu::with_items(app, &[&settings, &quiet_item, &quit])? } else { Menu::with_items(app, &[&toggle, &settings, &quiet_item, &quit])? };
     // a developer build and every Preview build, never a Stable one (ADR-0116): show what Peak believes about the screen
     if overlay_allowed() {
         menu.append(&MenuItem::with_id(app, "overlay", "Terrain overlay (Preview)", true, None::<&str>)?)?;
@@ -1861,9 +1852,7 @@ fn build_tray(app: &AppHandle, quiet: bool) -> tauri::Result<()> {
         .menu(&menu)
         .show_menu_on_left_click(false)
         .on_menu_event(move |app, event| match event.id.as_ref() {
-            "toggle" => { if duo::enabled() { duo::chatbox_open(app); } else { toggle_visibility(app); } } // with the flag: "Open the chat" (ADR-0160)
-            "duo-peak" => duo::menu_pet(app, "peak"),
-            "duo-paws" => duo::menu_pet(app, "paws"),
+            "toggle" => toggle_visibility(app), // not in the menu with the duo flag (ADR-0160)
             "settings" => open_settings_async(app),
             "quiet" => set_quiet(app, quiet_ref.is_checked().unwrap_or(false)),
             "quit" => quit_app(app),
