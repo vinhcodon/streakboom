@@ -31,6 +31,15 @@ export class Presenter {
     return true;
   }
 
+  /** A member was sent away (a tuck) while the chat stays open: its waiting lines leave the talk now and its writing cue goes; the other pet's lines stay.
+   *  A late presentation of them is then refused (#18, Codex's return). Returns the room without them and how many were dropped. */
+  dropPet(room: Room, pet: PetId): { room: Room; dropped: number } {
+    let r = room;
+    let n = 0;
+    for (const [id, w] of [...this.waiting]) if (w.pet === pet) { this.waiting.delete(id); r = withoutTurn(r, id); n++; }
+    return { room: r, dropped: n };
+  }
+
   /** A waiting line that will not be presented for its own reason (Quiet came): it leaves the talk. False if it was not waiting (already dropped). */
   drop(room: Room, turnId: number): { room: Room; dropped: boolean } {
     if (!this.waiting.delete(turnId)) return { room, dropped: false };

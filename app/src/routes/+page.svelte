@@ -2364,7 +2364,7 @@
     if (!c) return false;
     const ok = await invoke<boolean>("duo_command", { target: c.target, act: c.act }).catch(() => false);
     lt(`command_duo target=${c.target} act=${c.act} ok=${ok}`);
-    if (ok && c.act === "in") talk.tucked(c.target);
+    if (ok && c.act === "in") { talk.tucked(c.target); dropPetLines(c.target); }
     void refreshPawsOut();
     if (ok && c.target === "paws") { closePanel(); enter("nod"); }
     return true; // recognised: no model call and no chat turn, even when it changed nothing
@@ -2468,7 +2468,7 @@
       void (async () => {
         const ok = await invoke<boolean>("duo_command", { target: a.target, act: a.act }).catch(() => false);
         lt(`command_duo target=${a.target} act=${a.act} ok=${ok} from=box`);
-        if (ok && a.act === "in") talk.tucked(a.target);
+        if (ok && a.act === "in") { talk.tucked(a.target); dropPetLines(a.target); }
         await refreshPawsOut();
         if (ok && a.target === "paws") enter("nod");
       })();
@@ -2491,6 +2491,14 @@
     lineGen = presenter.gen;
     syncLog();
     if (before > 0) void invoke("duo_log", { line: `dropped before presentation: ${before} line(s) (${why})` }).catch(() => {});
+  }
+  /** A pet was sent away while the chat stays open: its lines that wait to be presented leave the talk and the chat now, with its writing cue; the other pet's stay (#18). */
+  function dropPetLines(pet: PetId) {
+    const r = presenter.dropPet(talk.room, pet);
+    if (r.dropped === 0) return;
+    talk.room = r.room;
+    syncLog();
+    void invoke("duo_log", { line: `dropped before presentation: ${r.dropped} line(s) of ${pet} (sent away)` }).catch(() => {});
   }
   let lineGen = 0;
   let lineChain: Promise<void> = Promise.resolve();
@@ -3689,7 +3697,7 @@
       cleanups.push(await win.listen("chatbox-ready", () => pushBox(true)));
       cleanups.push(await win.listen<BoxAction>("chatbox-action", (e) => onBoxAction(e.payload)));
       cleanups.push(await win.listen<string>("duo-type", (e) => void sendChat(e.payload))); // developer channel: a message typed without the box
-      cleanups.push(await win.listen<PetId>("duo-tucked", (e) => { talk.tucked(e.payload); void refreshPawsOut(); }));
+      cleanups.push(await win.listen<PetId>("duo-tucked", (e) => { talk.tucked(e.payload); dropPetLines(e.payload); void refreshPawsOut(); }));
       cleanups.push(await win.listen("duo-visit-ended", () => { cancelTalk(); modelTyping = null; void invoke("duo_log", { line: "visit ended: the talk of the visit is dropped" }).catch(() => {}); })); // #17: nothing of a dismissed visit reaches a later one // the portrait went with the chat (issue 15): Paws hears nothing more
       cleanups.push(await win.listen<{ dir: 1 | -1 }>("duo-face", (e) => { if (pose === "idle") dir = e.payload.dir; })); // the talk: the head turns toward the speaker
       cleanups.push(await win.listen<{ pet: PetId; text: string }>("duo-say", (e) => void sayAs(e.payload.pet, e.payload.text))); // developer channel: a line in Paws' bubble without the model
