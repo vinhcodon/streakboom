@@ -1206,6 +1206,7 @@ fn make_box(app: &AppHandle, engaged: bool) {
         .inner_size(BOX_W, BOX_H)
         .decorations(false).transparent(true).always_on_top(true).skip_taskbar(true).resizable(false).shadow(false)
         .visible(false)
+        .focused(engaged) // made by a message that arrives (the faded log), it must not take the keyboard: it then "had the keyboard" and never faded (#17 check)
         .additional_browser_args(BROWSER_ARGS)
         .build();
     let Ok(win) = built else { return };
