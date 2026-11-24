@@ -896,7 +896,7 @@ mod tests {
     fn the_persona_is_made_of_layer_files_and_its_words_did_not_change() {
         // RX-5 moved the persona into persona/*.md; this fingerprint is the persona as it was before (every language, tier
         // and tone). Changing a persona file is a decision: change this number with it. Changed by ADR-0059 (spec 12 section 3).
-        assert_eq!(persona_fingerprint(), 10709759574674597729); // the voice layer of Peak, second round: more wit (ADR-0151; ADR-0148 chose the first, before it ADR-0146 gave a budget of characters)
+        assert_eq!(persona_fingerprint(), 2247735217151151477); // how Peak and Paws call themselves in Vietnamese changes with the mood (ADR-0156); before it, the voice layer of Peak, second round: more wit (ADR-0151; ADR-0148 chose the first, before it ADR-0146 gave a budget of characters)
     }
 
     #[test]
