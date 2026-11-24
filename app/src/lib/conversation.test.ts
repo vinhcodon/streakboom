@@ -331,3 +331,26 @@ test("the page drops the pending turn when Quiet comes, and checks Quiet again b
   assert.ok(/if \(quiet && duoOn\) \{[\s\S]{0,220}cancelTalk\(\)/.test(page), "the quiet-changed handler cancels the talk");
   assert.ok(/presentable\(l, quiet \|\| away\)/.test(page), "the presentation checks Quiet again");
 });
+
+test("Quiet (a cancel) turns the three dots off at once, and the late end of the call does not touch them again (#11)", async () => {
+  const typing: (PetId | null)[] = [];
+  let release: (s: string) => void = () => {};
+  const slow = new Promise<string>((r) => { release = r; });
+  let quiet = false;
+  const { talk } = rig({ peak: () => slow }, { quiet: () => quiet, writing: (p) => typing.push(p) });
+  const run = talk.person("hello", ["peak"], ["peak"]);
+  await Promise.resolve();
+  assert.deepEqual(typing, ["peak"], "the dots are on while the call is pending");
+  quiet = true;
+  talk.cancel(); // what the page does when Quiet turns on
+  assert.deepEqual(typing, ["peak", null], "the dots go off at once, not when the call returns");
+  release("[happy] late");
+  await run;
+  assert.deepEqual(typing, ["peak", null], "the late end of the call does not switch them on or off again");
+});
+
+test("the page checks Quiet again after the bubble window has moved and before the bubble is shown (#11)", () => {
+  const page = readFileSync(new URL("../routes/+page.svelte", import.meta.url), "utf8");
+  const say = page.slice(page.indexOf("async function sayAs("), page.indexOf("async function sayAs(") + 700);
+  assert.ok(/await invoke\("duo_bubble_to"[\s\S]*?if \(quiet \|\| away\)[\s\S]*?showBubble\(text\)/.test(say), "Quiet or away that came during the await stops the bubble");
+});

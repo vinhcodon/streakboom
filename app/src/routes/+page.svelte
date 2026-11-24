@@ -2473,6 +2473,7 @@
   async function sayAs(pet: PetId, text: string) {
     void invoke("duo_log", { line: `shown ${pet} ${text.length}` }).catch(() => {});
     await invoke("duo_bubble_to", { pet, ms: 4000 + text.length * 60 + 1500 }).catch(() => {}); // the bubble stands beside the speaker
+    if (quiet || away) { void invoke("duo_log", { line: `quiet: the bubble of ${pet} is not shown` }).catch(() => {}); return; } // Quiet came during the await: a late callback never brings a bubble back (#11)
     showBubble(text);
     bubbleWho = pet;
   }
