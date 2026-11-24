@@ -12,6 +12,7 @@
 //! - `pointer_pos() -> Option<(i32, i32)>`, `window_rect_of(hwnd) -> Option<(i32, i32, i32, i32)>`: the pointer's position, and the rectangle of one of the program's own visible windows; read by the fine sampler near Peak (ADR-0135, a test build only for now).
 //! - `precise_sleep(ms)`: sleep with a timer of the calling thread that keeps a short period (8 ms) without a finer system timer for the whole program.
 //! - `show_without_activating(window)`: show a window without taking the keyboard focus.
+//! - `hide_window(window)`: hide it with the same kind of call (a window shown by the system call is hidden by the system call).
 //! - `ground_of_point(x, y) -> Ground`: the **kind** of thing at a physical point (the desktop, the taskbar, a window, the window in front, Peak itself), never what it is.
 //! - `window_id_at(x, y) -> u64`, `window_holds(id, x, y) -> bool`: an opaque number for the ordinary window at a point, and whether it is still there.
 //! - `cover_at(own, x, y) -> bool`, `raise_own(own)`: a window that sits over Peak and cannot be raised over, and raising Peak to the top of its layer.

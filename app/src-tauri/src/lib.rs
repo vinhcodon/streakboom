@@ -10,7 +10,7 @@ mod updater;
 
 use brain::{AiError, Kind, Turn};
 use layout::Area;
-use platform::{busy_now, last_input_idle_ms, pointer_pos, primary_button_raw, precise_sleep, show_without_activating, timer_period, window_rect_of};
+use platform::{busy_now, last_input_idle_ms, pointer_pos, primary_button_raw, precise_sleep, hide_window, show_without_activating, timer_period, window_rect_of};
 use serde::{Deserialize, Serialize};
 use std::{
     fs,
@@ -739,7 +739,7 @@ fn bubble_fit(app: AppHandle, state: State<AppState>, w: f64, h: f64, interactiv
 fn bubble_hide(app: AppHandle, state: State<AppState>) {
     state.bubble.lock().unwrap().visible = false;
     if let Some(bubble) = app.get_webview_window("bubble") {
-        let _ = bubble.hide();
+        hide_window(&bubble); // it may have been shown with the system call (issue 14)
     }
     // Destroy the window if it stays unused, to give its memory back.
     let gen_now = state.bubble_gen.fetch_add(1, Ordering::Relaxed) + 1;
@@ -1426,7 +1426,7 @@ fn overlay_follow(app: &AppHandle, show: bool) {
         if show {
             show_without_activating(&w);
         } else {
-            let _ = w.hide();
+            hide_window(&w);
         }
     }
 }
@@ -1580,7 +1580,7 @@ async fn screen_grid(app: AppHandle) -> Option<ScreenGrid> {
 fn toggle_visibility(app: &AppHandle) {
     if let Some(win) = app.get_webview_window("main") {
         if win.is_visible().unwrap_or(false) {
-            let _ = win.hide();
+            hide_window(&win); // after a return from Lượn đi it was shown with the system call; the library's hide did nothing (issue 14)
             // the bubble belongs to the pet: hide it too
             bubble_hide(app.clone(), app.state::<AppState>());
             overlay_follow(app, false);
@@ -1690,7 +1690,7 @@ fn pet_leave(app: AppHandle, state: State<AppState>, minutes: u32) -> bool {
     if !win.is_visible().unwrap_or(false) || state.away.swap(true, Ordering::SeqCst) {
         return false;
     }
-    let _ = win.hide();
+    hide_window(&win); // the same kind of call as the one that shows it on return (issue 14)
     bubble_hide(app.clone(), app.state::<AppState>());
     overlay_follow(&app, false);
     let secs = away_secs(std::env::var("STREAKBOOM_AWAY_SECS").ok().as_deref(), u64::from(minutes.clamp(1, 24 * 60)) * 60);
