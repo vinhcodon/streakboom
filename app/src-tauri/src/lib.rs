@@ -1585,7 +1585,7 @@ fn toggle_visibility(app: &AppHandle) {
             bubble_hide(app.clone(), app.state::<AppState>());
             overlay_follow(app, false);
         } else {
-            let _ = win.show();
+            show_without_activating(&win); // the pair of hide_window: the library's show did nothing when its own flag still said "shown" (issue 14)
             overlay_follow(app, true);
             end_away(app);
         }
@@ -1822,7 +1822,7 @@ pub fn run() {
         .plugin(tauri_plugin_single_instance::init(|app, _args, _cwd| {
             if let Some(win) = app.get_webview_window("main") {
                 if !win.is_visible().unwrap_or(true) {
-                    let _ = win.show();
+                    show_without_activating(&win); // the same kind of call as hide_window (issue 14)
                     end_away(app);
                 }
             }
