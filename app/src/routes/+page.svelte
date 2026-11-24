@@ -16,7 +16,8 @@
   import { seatFraction, seatMove, seatWalkMs } from "$lib/seat";
   import { addressees, parseDuoCommand, parseRelay, summons } from "$lib/duo-command";
   import { parseCallMe } from "$lib/callme";
-  import { Conversation, addTurn, newRoom, shownSays, withoutTurn, presentable, situation, toHistory, type Line } from "$lib/conversation";
+  import { Presenter } from "$lib/presentation";
+  import { Conversation, addTurn, newRoom, shownSays, presentable, situation, toHistory, type Line } from "$lib/conversation";
   import type { BoxAction, BoxView } from "$lib/chatbox";
   import type { PetId } from "$lib/duo";
   import { LEAVE_PACE_PX_S, RETRY_SECS, isLeaveCommand, leaveDeadlineMs, mayLeave, nearerEdge } from "$lib/farewell";
@@ -2473,22 +2474,23 @@
       })();
     }
   }
-  // a pet's line waiting to be presented: in the room (the next pet hears it at once) but not yet in the chat (#18). Its pet shows as "writing" meanwhile.
-  const unpresented = new Map<number, PetId>();
+  // a pet's line waiting to be presented: in the room (the next pet of the same turn hears it) but not yet in the chat; its pet shows as "writing" meanwhile.
+  // A cancelled or replaced turn drops its waiting lines from the talk at once, before any new turn builds what a pet hears (#18, lib/presentation.ts).
+  const presenter = new Presenter();
   function syncLog() {
-    const seen = shownSays(talk.room, new Set(unpresented.keys()));
+    const seen = shownSays(talk.room, presenter.hidden());
     talkLog = seen.slice(-6).map((t) => ({ who: t.from, text: t.text }));
     boxTurns = seen.map((t) => ({ id: t.id, who: t.from, text: t.text, at: t.at }));
-    pendingWho = unpresented.size > 0 ? [...unpresented.values()][0] : null;
+    pendingWho = presenter.writer();
   }
   let pendingWho = $state<PetId | null>(null);
-  /** A queued line that will not be presented (a newer message, Quiet, a touch, the chat dismissed): it leaves the talk and the chat, and Peak stops thinking about it. */
-  function forgetLine(l: Line, why: string) {
-    if (!unpresented.delete(l.turnId)) return;
-    talk.room = withoutTurn(talk.room, l.turnId);
+  /** A new turn or a cancelled one: the generation moves on and every line of the old turn that was not presented leaves the talk and the chat now. */
+  function supersede(why: string) {
+    const before = presenter.hidden().size;
+    talk.room = presenter.cancel(talk.room);
+    lineGen = presenter.gen;
     syncLog();
-    if (l.pet === "peak" && pose === "think") enter("idle");
-    void invoke("duo_log", { line: `dropped before presentation: ${l.pet} (${why})` }).catch(() => {});
+    if (before > 0) void invoke("duo_log", { line: `dropped before presentation: ${before} line(s) (${why})` }).catch(() => {});
   }
   let lineGen = 0;
   let lineChain: Promise<void> = Promise.resolve();
@@ -2505,21 +2507,27 @@
     bubbleWho = pet;
   }
   function enqueueLine(l: Line) {
-    if (l.act === "say") unpresented.set(l.turnId, l.pet); // written into the talk now, shown when presented below
+    if (l.act === "say") presenter.written(l.turnId, l.pet); // written into the talk now, shown when presented below
     syncLog();
     void invoke("duo_log", { line: `line ${l.pet} ${l.act} to=${l.to.join("+")} ${l.text}` }).catch(() => {});
     const g = lineGen;
     lineChain = lineChain
       .then(async () => {
-        if (g !== lineGen) return forgetLine(l, "cancelled");
+        if (g !== lineGen) return; // a step of an older turn: its line already left the talk; it touches nothing of the new turn
         const other: PetId = l.pet === "peak" ? "paws" : "peak";
         if (l.act === "say") {
           void invoke("duo_face", { listener: other, speaker: l.pet }).catch(() => {});
           await pause(500);
-          if (g !== lineGen) return forgetLine(l, "cancelled");
-          if (!presentable(l, quiet || away)) { void invoke("duo_log", { line: `quiet: a queued line of ${l.pet} is dropped` }).catch(() => {}); return forgetLine(l, "quiet"); } // Quiet came while the line waited
+          if (g !== lineGen) return;
+          if (!presentable(l, quiet || away)) {
+            // Quiet came while the line waited: it leaves the talk, and Peak stops thinking about it
+            const r = presenter.drop(talk.room, l.turnId);
+            if (r.dropped) { talk.room = r.room; syncLog(); if (l.pet === "peak" && pose === "think") enter("idle"); }
+            void invoke("duo_log", { line: `quiet: a queued line of ${l.pet} is dropped` }).catch(() => {});
+            return;
+          }
           // the presentation: the row appears in the chat and, for Peak, its expression begins, on the same beat (#18)
-          unpresented.delete(l.turnId);
+          if (!presenter.present(l.turnId, g)) return;
           syncLog();
           const p = l.pet === "peak" ? moodBeat(l.mood || "neutral", data.settings.gentle).steps[0].pose : null;
           if (p) enter(p); // Peak acts out the line's own feeling (the same beat as its old chat), then settles
@@ -2539,7 +2547,7 @@
   }
   /** A touch, or the pet going in: the lines still waiting are thrown away and a line being written is dropped. */
   function cancelTalk() {
-    lineGen++;
+    supersede("cancelled");
     talk.cancel();
     if (pose === "think" && chatPhase !== "thinking") enter("idle"); // a turn cancelled (Quiet, a touch, the chat dismissed): Peak does not keep thinking about it (#18)
   }
@@ -2576,7 +2584,7 @@
       talk.notePerson(text, present);
       talk.room = addTurn(talk.room, { from: present[0], to: ["person"], text: line, at: Date.now(), act: "say" }).room;
       syncLog();
-      lineGen++;
+      supersede("a new turn");
       await sayAs(present[0], line);
       return true;
     }
@@ -2596,7 +2604,7 @@
       for (const line of lines) {
         talk.room = addTurn(talk.room, { from: "paws", to: ["person"], text: line, at: Date.now(), act: "say" }).room; // the person's turn is already in the room (sendChat)
         syncLog();
-        lineGen++;
+        supersede("a new turn");
         void invoke("duo_log", { line: `line paws say to=person (authored, no brain) ${line}` }).catch(() => {});
         await sayAs("paws", line);
       }
@@ -2607,7 +2615,7 @@
       busy = true;
       closePanel();
       void invoke("duo_scene_cancel").catch(() => {});
-      lineGen++;
+      supersede("a new turn");
       try {
         await talk.relay(text, rel.via, rel.target, present);
       } catch (e) {
@@ -2627,14 +2635,14 @@
       talk.notePerson(text, to);
       talk.room = addTurn(talk.room, { from: to[0], to: ["person"], text: line, at: Date.now(), act: "say" }).room;
       syncLog();
-      lineGen++;
+      supersede("a new turn");
       await sayAs(to[0], line);
       return true;
     }
     busy = true;
     closePanel();
     void invoke("duo_scene_cancel").catch(() => {});
-    lineGen++; // a new message drops the lines still waiting from the one before
+    supersede("a new message"); // a new message drops the lines still waiting from the one before
     try {
       await talk.person(text, to, present);
     } catch (e) {
