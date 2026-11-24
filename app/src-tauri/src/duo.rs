@@ -908,6 +908,7 @@ fn emit_fade(app: &AppHandle, permille: u64) {
 }
 
 fn show_ambient(app: &AppHandle, win: &tauri::WebviewWindow) {
+    HIDE_GEN.fetch_add(1, Ordering::SeqCst); // a fade on the way out is called off
     BOX_IDLE_SINCE.store(0, Ordering::SeqCst); emit_fade(app, 1000);
     let (x, y) = box_position(app);
     let _ = win.set_position(PhysicalPosition::new(x, y));
@@ -920,6 +921,7 @@ fn show_ambient(app: &AppHandle, win: &tauri::WebviewWindow) {
 
 /// Engaged: solid, takes clicks and the keyboard (the tray, the shortcut and a double click on a pet open it).
 fn show_box(app: &AppHandle, win: &tauri::WebviewWindow) {
+    HIDE_GEN.fetch_add(1, Ordering::SeqCst); // a fade on the way out is called off
     BOX_IDLE_SINCE.store(0, Ordering::SeqCst); emit_fade(app, 1000);
     let (x, y) = box_position(app);
     let _ = win.set_position(PhysicalPosition::new(x, y));
@@ -962,14 +964,22 @@ fn take_foreground(win: &tauri::WebviewWindow) {
     let _ = win;
 }
 
+/// The shortcut (ADR-0159): open the box, or give it the keyboard if it is showing; never hide it (Esc, a click elsewhere and the fade do that).
+pub fn chatbox_open(app: &AppHandle) {
+    match app.get_webview_window(BOX_LABEL) {
+        Some(win) => { if !(win.is_visible().unwrap_or(false) && BOX_ENGAGED.load(Ordering::SeqCst) && has_keyboard(&win)) { show_box(app, &win); } }
+        None => make_box(app, true),
+    }
+}
+
 /// Show the box, or hide it if it is showing. The window is made the first time and kept after that.
 pub fn chatbox_toggle(app: &AppHandle) {
     if let Some(win) = app.get_webview_window(BOX_LABEL) {
         if win.is_visible().unwrap_or(false) && BOX_ENGAGED.load(Ordering::SeqCst) && has_keyboard(&win) {
-            hide_box(&win); // the person is writing in it and asks again: off the screen. Showing and hiding are all there is
+            hide_box_soft(app, &win); // the person is writing in it and asks again: off the screen. Showing and hiding are all there is
         } else if win.is_visible().unwrap_or(false) {
             // showing but the mouse goes through it: the shortcut gives it the keyboard; but a click on the tray that has just taken the keyboard away from it asks to hide it
-            if now_ms().saturating_sub(BOX_BLUR_HID_AT.load(Ordering::SeqCst)) <= BLUR_TOGGLE_MS { hide_box(&win); } else { show_box(app, &win); }
+            if now_ms().saturating_sub(BOX_BLUR_HID_AT.load(Ordering::SeqCst)) <= BLUR_TOGGLE_MS { hide_box_soft(app, &win); } else { show_box(app, &win); }
         } else if now_ms().saturating_sub(BOX_BLUR_HID_AT.load(Ordering::SeqCst)) > BLUR_TOGGLE_MS {
             show_box(app, &win);
         }
@@ -1078,9 +1088,26 @@ pub fn chatbox_state(empty: bool, content: bool) {
 }
 
 /// The box goes off the screen (the shortcut, the tray, Esc): the only thing besides showing it.
+/// The box goes after a fade (ADR-0159: a window never vanishes on the spot): the page fades (its own 0.3 s transition), then the window is hidden, unless
+/// it was shown again meanwhile. It stops taking clicks and keys at once.
+static HIDE_GEN: AtomicU64 = AtomicU64::new(0);
+fn hide_box_soft(app: &AppHandle, win: &tauri::WebviewWindow) {
+    let g = HIDE_GEN.fetch_add(1, Ordering::SeqCst) + 1;
+    BOX_ENGAGED.store(false, Ordering::SeqCst);
+    let _ = win.set_ignore_cursor_events(true);
+    emit_fade(app, 0);
+    let (app, win) = (app.clone(), win.clone());
+    std::thread::spawn(move || {
+        std::thread::sleep(Duration::from_millis(320));
+        if HIDE_GEN.load(Ordering::SeqCst) != g { return; } // shown again during the fade
+        hide_box(&win);
+        emit_fade(&app, 1000); // ready to be seen whole the next time it shows
+    });
+}
+
 fn hide_box(win: &tauri::WebviewWindow) {
     BOX_ENGAGED.store(false, Ordering::SeqCst);
-    let _ = win.hide();
+    crate::platform::hide_window(win); // the system call: the ambient box is shown by one too (ADR-0158, the same trap as Peak's window)
 }
 
 /// The box loses the keyboard or the pointer has left it: it looks the same, lets the mouse through (pinned, the default), or goes off the screen (not pinned).
@@ -1160,7 +1187,7 @@ static BOX_PREFILL: Mutex<Option<String>> = Mutex::new(None);
 /// The box asks to hide (Esc, or its own button).
 #[tauri::command]
 pub fn chatbox_hide(app: AppHandle) {
-    if let Some(w) = app.get_webview_window(BOX_LABEL) { hide_box(&w); }
+    if let Some(w) = app.get_webview_window(BOX_LABEL) { hide_box_soft(&app, &w); }
 }
 
 /// The pin of the box: pinned, it stays when it loses focus.

@@ -522,7 +522,7 @@
     <section id="sec-shortcuts" class="card">
       <h2>{ui.shortcutsTitle}</h2>
       <p class="muted">{ui.shortcutsIntro}</p>
-      {#each [["box", ui.shortcutBox], ["all", ui.shortcutAll]] as [id, label] (id)}
+      {#each [["box", ui.shortcutBox]] as [id, label] (id)} <!-- one shortcut (ADR-0159) -->
         {@const k = id === "box" ? keys.box : keys.all}
         <div class="row">
           <span class="lbl">{label}</span>

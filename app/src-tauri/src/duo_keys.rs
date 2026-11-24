@@ -1,4 +1,5 @@
-//! The two global shortcuts of the duo prototype (ADR-0142): show or hide the chat box, and send everyone in or bring them out. Only with the
+//! The global shortcut of the duo prototype (ADR-0142, ADR-0159): it opens the chat box (it never hides it). The second one of ADR-0142 (everyone in or
+//! out) was removed by ADR-0159; its field stays in the file so that an older build still reads it, and it is never registered. Only with the
 //! developer flag. They are registered with Windows (`RegisterHotKey`) on a thread of their own: the program learns only that one of these two
 //! combinations was pressed, never any other key. A combination another program already holds is reported, never taken over. The two
 //! combinations are kept in `duo-keys.json` in the data folder (its own file: the shared files of Stable and Preview are not touched).
@@ -86,7 +87,7 @@ fn register(id: i32, combo: &str) -> Result<(), String> {
 
 fn run_action(app: &AppHandle, id: i32) {
     let app = app.clone();
-    std::thread::spawn(move || if id == ID_BOX { crate::duo::chatbox_toggle(&app) } else if id == ID_ALL { crate::duo::tray(&app) });
+    std::thread::spawn(move || if id == ID_BOX { crate::duo::chatbox_open(&app) });
 }
 
 fn spawn_thread(app: AppHandle, rx: mpsc::Receiver<Cmd>) {
@@ -96,7 +97,7 @@ fn spawn_thread(app: AppHandle, rx: mpsc::Receiver<Cmd>) {
             if let Ok(Cmd::Apply(c, reply)) = rx.try_recv() {
                 unsafe { UnregisterHotKey(std::ptr::null_mut(), ID_BOX); UnregisterHotKey(std::ptr::null_mut(), ID_ALL); }
                 let e1 = register(ID_BOX, &c.r#box).err();
-                let e2 = register(ID_ALL, &c.all).err();
+                let e2: Option<String> = None; // the second shortcut is not registered any more (ADR-0159)
                 let _ = reply.send((e1, e2));
             }
             // SAFETY: the message of this thread's own queue
@@ -151,8 +152,8 @@ pub fn duo_keys_set(which: String, combo: String) -> Result<KeysView, String> {
     let mut st = m.lock().unwrap();
     let combo = normal(&combo)?;
     let mut next = st.combos.clone();
-    if which == "box" { next.r#box = combo.clone(); } else { next.all = combo.clone(); }
-    if next.r#box == next.all { return Err("the other shortcut already uses this combination".into()); }
+    if which != "box" { return Err("there is only one shortcut now".into()); }
+    next.r#box = combo.clone();
     let old = st.combos.clone();
     let r = apply(&mut st, next.clone());
     let failed = if which == "box" { r.0 } else { r.1 };
