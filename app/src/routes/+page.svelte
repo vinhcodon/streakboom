@@ -771,6 +771,7 @@
   let wakeThen: PetState | null = null; // what to do once the pet has finished waking up
 
   function enter(requested: PetState) {
+    if (sceneHold && requested !== "held" && requested !== "land") return; // the program is driving the pose (a scene, a walk through the door, stepping aside): only a touch takes over
     // anything else taking over ends the walk to its place without arriving
     if (homeGoal && requested !== "walk") {
       const g = homeGoal;
@@ -2472,6 +2473,8 @@
   let lineChain: Promise<void> = Promise.resolve();
   const pause = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));
   async function sayAs(pet: PetId, text: string) {
+    // the bubble above a pet speaks only when the chat box is hidden: while it shows, the line is in the box and a bubble would pull the eye away for a duplicate (ADR-0161)
+    if (await invoke<boolean>("chatbox_showing").catch(() => false)) { void invoke("duo_log", { line: `box shows: no bubble for ${pet}` }).catch(() => {}); return; }
     void invoke("duo_log", { line: `shown ${pet} ${text.length}` }).catch(() => {});
     await invoke("duo_bubble_to", { pet, ms: 4000 + text.length * 60 + 1500 }).catch(() => {}); // the bubble stands beside the speaker
     showBubble(text);
@@ -3606,7 +3609,9 @@
       // exp/duo-prototype (ADR-0139): a duo scene holds Peak's own wandering and shows the pose the scene gives (the director is in the page of Paws)
       cleanups.push(await win.listen<{ pose: PetState; dir: 1 | -1; hold: boolean }>("duo-scene-pose", (e) => {
         sceneHold = e.payload.hold;
-        if (e.payload.hold) { dir = e.payload.dir; pose = e.payload.pose; poseTick++; }
+        // the program drives the pose: every timer of the page's own life is stopped first, or one that was pending (the end of a nod, a wake from sleep, its own walk)
+        // would put it back to standing in the middle of a walk, and the window would slide under a still cat (seen by the author)
+        if (e.payload.hold) { clearTimeout(oneShotTimer); clearTimeout(sleepTimer); clearTimeout(nextTimer); clearInterval(walkTimer); clearTimeout(walkEndTimer); clearInterval(glideTimer); dir = e.payload.dir; pose = e.payload.pose; poseTick++; }
         else { if (pose === "walk" || pose === "look" || pose === "sleep") pose = "idle"; scheduleNext(); }
       }));
       cleanups.push(await win.listen("duo-touch", () => { if (duoOn) cancelTalk(); })); // a touch on Paws ends the talk, as a touch on Peak does

@@ -49,8 +49,8 @@ export function planFall(dist: number): Flight {
 }
 
 /** A climb or a walk along a surface: a straight line at a steady speed (logical px per second), no arc. */
-export const CLIMB_PX_PER_S = 105;
-export const WALK_TO_WALL_PX_PER_S = 110;
+export const CLIMB_PX_PER_S = 60; // one unhurried pace (ADR-0161; it was 105)
+export const WALK_TO_WALL_PX_PER_S = 60; // one unhurried pace (ADR-0161; it was 110)
 export function planCrawl(dx: number, dy: number, pxPerS: number): Flight {
   const dist = Math.hypot(dx, dy);
   return { dx, dy, durationMs: pxPerS > 0 ? (dist / pxPerS) * 1000 : 0, apex: 0, kind: "crawl" };
