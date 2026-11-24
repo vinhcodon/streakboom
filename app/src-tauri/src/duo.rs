@@ -148,6 +148,13 @@ pub struct Duo { state: Mutex<DuoState>, path: PathBuf, busy: AtomicBool }
 
 pub fn enabled() -> bool { std::env::var("STREAKBOOM_DUO").is_ok_and(|v| v == "1") }
 
+/// Issue 15 (revision r1): Paws as an invited round portrait beside the chat, instead of the walking window. A developer flag on top of the duo flag; off,
+/// the walking prototype is unchanged (the way back).
+pub fn portrait() -> bool { enabled() && std::env::var("STREAKBOOM_PAWS_PORTRAIT").is_ok_and(|v| v == "1") }
+#[tauri::command]
+pub fn duo_portrait() -> bool { portrait() }
+const PORTRAIT: f64 = 104.0; // logical px: the round frame beside the chat
+
 fn now_ms() -> u64 { SystemTime::now().duration_since(UNIX_EPOCH).map(|d| d.as_millis() as u64).unwrap_or(0) }
 
 fn monitors(app: &AppHandle) -> Vec<Mon> {
@@ -174,8 +181,14 @@ pub fn init(app: &AppHandle) {
     let state = std::fs::read_to_string(&path).map(|r| DuoState::parse(&r)).unwrap_or_default();
     let (peak_out, paws_out) = (state.pets.peak.out, state.pets.paws.out);
     app.manage(Duo { state: Mutex::new(state), path, busy: AtomicBool::new(false) });
-    if !peak_out { if let Some(w) = app.get_webview_window("main") { let _ = w.hide(); } }
-    if paws_out { paws_in_thread(app.clone(), true); }
+    if !peak_out { if let Some(w) = app.get_webview_window("main") { crate::platform::hide_window(&w); } } // the system call: the library's hide made a later hover hide Peak again
+    if paws_out && portrait() {
+        // the portrait belongs to an invitation: a restart in the middle of a visit is Peak alone until a fresh one (r1, AC7)
+        let d = app.state::<Duo>();
+        let mut s = d.state.lock().unwrap();
+        s.pets.paws.out = false;
+        save(&d, &s);
+    } else if paws_out { paws_in_thread(app.clone(), true); }
     crate::duo_keys::init(app);
     spawn_dev_commands(app.clone(), dir);
     let a = app.clone();
@@ -656,6 +669,7 @@ fn slide(win: &tauri::WebviewWindow, from: (i32, i32), to: (i32, i32)) {
 
 /// Paws comes out through its entrance. `quiet`: at the start of the program it is simply there, no walk.
 fn paws_come_out(app: &AppHandle, quiet: bool) {
+    if portrait() { portrait_open(app); return; }
     let Some(d) = app.try_state::<Duo>() else { return };
     let entrance = d.state.lock().unwrap().pets.paws.entrance.clone();
     let mons = monitors(app);
@@ -686,6 +700,13 @@ fn paws_come_out(app: &AppHandle, quiet: bool) {
 /// Paws goes in through its entrance and the window is closed: it exists only while Paws is out.
 fn paws_go_in(app: &AppHandle) {
     let Some(win) = app.get_webview_window(PAWS_LABEL) else { return };
+    if portrait() {
+        // the frame fades out (its page), then the window is closed
+        let _ = app.emit_to(PAWS_LABEL, "portrait-leave", ());
+        std::thread::sleep(Duration::from_millis(330));
+        let _ = win.destroy();
+        return;
+    }
     let Some(d) = app.try_state::<Duo>() else { return };
     let entrance = d.state.lock().unwrap().pets.paws.entrance.clone();
     if let Some((e, m)) = resolve_entrance(&entrance, &monitors(app)) {
@@ -694,6 +715,48 @@ fn paws_go_in(app: &AppHandle) {
         if let Ok(p) = win.outer_position() { slide(&win, (p.x, p.y), outside); } else { slide(&win, at, outside); }
     }
     let _ = win.destroy();
+}
+
+/// The round portrait (issue 15): the window of Paws (the same label, so the talk, the bubble and the saved presence work as before), small, beside the chat
+/// box on its left and level with its bottom, letting the mouse through and never taking the keyboard. No hit test, no walk, no scene.
+fn portrait_open(app: &AppHandle) {
+    if app.get_webview_window(PAWS_LABEL).is_some() { return; } // a repeated mention reuses the portrait that is showing
+    let s = scale(app);
+    let size = (PORTRAIT * s).round() as i32;
+    let (bx, by) = box_position(app);
+    let bh = (BOX_CUR_H.load(Ordering::SeqCst) as f64 * s).round() as i32;
+    let x = bx - size - (12.0 * s).round() as i32; // left of the box; the window is wider than the frame, which sits in its middle
+    let y = by + bh - size - (10.0 * s).round() as i32;
+    let built = WebviewWindowBuilder::new(app, PAWS_LABEL, WebviewUrl::App("pawsportrait".into()))
+        .title("Streakboom Paws")
+        .inner_size(PORTRAIT, PORTRAIT)
+        .decorations(false).transparent(true).always_on_top(true).skip_taskbar(true).resizable(false).shadow(false).focused(false)
+        .additional_browser_args(BROWSER_ARGS)
+        .build();
+    let Ok(win) = built else { return };
+    // the system keeps a window at least about 133 logical px wide: the frame is drawn square in the middle (vmin) and the rest is transparent and lets the mouse
+    // through. Resizing it here took the keyboard (found in the check: Esc went to the portrait).
+    let _ = win.set_position(PhysicalPosition::new(x, y));
+    let _ = win.set_ignore_cursor_events(true);
+    log(app, "portrait open");
+}
+
+/// The chat went away (the person hid it, or it faded): the visit is over. Paws is sent in and its frame fades with the box (r1, AC7), so the next ordinary
+/// message is Peak's alone. Nothing without the portrait flag.
+fn portrait_dismiss(app: &AppHandle) {
+    if !portrait() { return; }
+    let Some(d) = app.try_state::<Duo>() else { return };
+    let tucked = { let mut s = d.state.lock().unwrap(); let ok = s.tuck(Id::Paws, now_ms(), None); if ok { save(&d, &s); } ok };
+    if !tucked { return; }
+    log(app, "portrait dismissed with the chat");
+    let _ = app.emit_to("main", "duo-tucked", "paws");
+    let app = app.clone();
+    std::thread::spawn(move || {
+        let d = app.state::<Duo>();
+        let mine = !d.busy.swap(true, Ordering::SeqCst);
+        paws_go_in(&app);
+        if mine { d.busy.store(false, Ordering::SeqCst); }
+    });
 }
 
 // ------------------------------------------------------------------ scenes (step 3)
@@ -757,6 +820,7 @@ pub fn duo_peak_pose(app: AppHandle, pose: String, dir: i32, hold: bool) {
 
 /// Start a scene (a prototype menu item for now; the automatic start needs the attention mode of Peak's page). Needs both pets out.
 pub fn scene_start(app: &AppHandle, id: &str) {
+    if portrait() { return; } // no full-body scenes with the portrait (r1 non-goals)
     if let Some(d) = app.try_state::<Duo>() {
         let s = d.state.lock().unwrap();
         if s.out().len() != 2 || d.busy.load(Ordering::SeqCst) { return; }
@@ -1088,7 +1152,7 @@ fn spawn_hover(app: AppHandle) {
                 if idle > FADE_AFTER_MS {
                     let p = ((idle - FADE_AFTER_MS) as f64 / FADE_MS as f64).min(1.0);
                     emit_fade(&app, ((1.0 - p) * 1000.0).round() as u64);
-                    if p >= 1.0 { hide_box(&win); BOX_IDLE_SINCE.store(0, Ordering::SeqCst); emit_fade(&app, 1000); log(&app, "box faded away"); continue; }
+                    if p >= 1.0 { portrait_dismiss(&app); hide_box(&win); BOX_IDLE_SINCE.store(0, Ordering::SeqCst); emit_fade(&app, 1000); log(&app, "box faded away"); continue; }
                 }
             }
             if !BOX_ENGAGED.load(Ordering::SeqCst) {
@@ -1138,6 +1202,7 @@ fn hide_box_soft(app: &AppHandle, win: &tauri::WebviewWindow) {
     BOX_ENGAGED.store(false, Ordering::SeqCst);
     let _ = win.set_ignore_cursor_events(true);
     emit_fade(app, 0);
+    portrait_dismiss(app); // the portrait fades with the chat (issue 15)
     let (app, win) = (app.clone(), win.clone());
     std::thread::spawn(move || {
         std::thread::sleep(Duration::from_millis(320));
@@ -1157,7 +1222,7 @@ fn hide_box(win: &tauri::WebviewWindow) {
 fn leave_engaged(app: &AppHandle, win: &tauri::WebviewWindow) {
     log(app, "leave_engaged");
     let front = has_keyboard(win);
-    if front { let _ = win.hide(); }
+    if front { crate::platform::hide_window(win); }
     show_ambient(app, win);
 }
 

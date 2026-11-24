@@ -2380,8 +2380,9 @@
   }
   const outNow = () => ({ peak: peakOutNow, paws: pawsOutNow });
   async function initDuo() {
-    if (duoOn === null) { duoOn = await invoke<boolean>("duo_enabled").catch(() => false); duoFake = duoOn && (await invoke<boolean>("duo_fake").catch(() => false)); }
+    if (duoOn === null) { duoOn = await invoke<boolean>("duo_enabled").catch(() => false); duoFake = duoOn && (await invoke<boolean>("duo_fake").catch(() => false)); pawsPortrait = duoOn && (await invoke<boolean>("duo_portrait").catch(() => false)); }
   }
+  let pawsPortrait = false; // issue 15: Paws is an invited round portrait beside the chat (developer flag)
   let duoFake = false; // developer channel: canned replies instead of the model, so the talk can be checked without a key
   function fakeReply(pet: PetId, role: "first" | "second" | "relayed", said: string): string {
     if (role === "relayed") return pet === "paws" ? "[happy] The cushion is in perfect order, as asked." : "[neutral] Fine, as usual, since you ask.";
@@ -2515,8 +2516,11 @@
     syncLog();
   }
   async function tryTalkFromChat(text: string): Promise<boolean> {
-    if (!duoOn || !(canChat || duoFake)) return false;
+    if (!duoOn) return false;
+    const brain = canChat || duoFake; // without a brain a mention still calls the pet, and Paws greets in its own authored words (issue 15, AC4)
+    if (!brain && summons(text, outNow()).length === 0) return false;
     await refreshPawsOut();
+    const called: PetId[] = [];
     // an @ mention at the start calls a pet that is in out first (ADR-0157), as `/call` does; the message then goes to it. If the call changes nothing (busy), the message goes as before, to whoever is out
     let callFailed = false;
     for (const p of summons(text, outNow())) {
@@ -2525,7 +2529,8 @@
       if (!ok) { callFailed = true; continue; }
       for (let i = 0; i < 60 && (await invoke<boolean>("duo_busy").catch(() => false)); i++) await pause(100); // the pet walks in before it speaks: wait for the walk, not a fixed time (ADR-0158)
       await refreshPawsOut();
-      if (p === "paws") enter("nod");
+      called.push(p);
+      if (p === "paws" && !pawsPortrait) enter("nod"); // with the portrait, Peak only glances (its page), and a sleeping Peak stays asleep (issue 15, AC3)
     }
     const out = outNow();
     const present = (["peak", "paws"] as PetId[]).filter((p) => out[p]);
@@ -2537,6 +2542,17 @@
       syncLog();
       lineGen++;
       await sayAs(present[0], line);
+      return true;
+    }
+    if (!brain) {
+      // no brain: the pet that was called says one short authored line; the message itself gets no answer (issue 15, AC4)
+      if (called.includes("paws")) {
+        const line = ui.pawsHello[Math.floor(Math.random() * ui.pawsHello.length)];
+        talk.room = addTurn(talk.room, { from: "paws", to: ["person"], text: line, at: Date.now(), act: "say" }).room; // the person's turn is already in the room (sendChat)
+        syncLog();
+        lineGen++;
+        await sayAs("paws", line);
+      }
       return true;
     }
     const rel = out.peak && out.paws ? parseRelay(text) : null; // "ask Paws ...": one pet turns to the other, which answers (ADR-0141, situation 8)
@@ -3598,6 +3614,7 @@
       cleanups.push(await win.listen("chatbox-ready", () => pushBox(true)));
       cleanups.push(await win.listen<BoxAction>("chatbox-action", (e) => onBoxAction(e.payload)));
       cleanups.push(await win.listen<string>("duo-type", (e) => void sendChat(e.payload))); // developer channel: a message typed without the box
+      cleanups.push(await win.listen<PetId>("duo-tucked", (e) => { talk.tucked(e.payload); void refreshPawsOut(); })); // the portrait went with the chat (issue 15): Paws hears nothing more
       cleanups.push(await win.listen<{ dir: 1 | -1 }>("duo-face", (e) => { if (pose === "idle") dir = e.payload.dir; })); // the talk: the head turns toward the speaker
       cleanups.push(await win.listen<{ pet: PetId; text: string }>("duo-say", (e) => void sayAs(e.payload.pet, e.payload.text))); // developer channel: a line in Paws' bubble without the model
       const touchEndsScene = () => { if (sceneHold) void invoke("duo_scene_cancel"); if (duoOn) cancelTalk(); };

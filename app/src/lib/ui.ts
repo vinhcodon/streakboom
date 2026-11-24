@@ -50,7 +50,8 @@ export interface UiStrings {
   removed: string;
   thinking: string;
   capHit: string[]; // in-character ways to say "enough for today"; one is picked at random
-  callBusy: string[]; // a pet that is out says it when a mention could not bring the other pet out (ADR-0158); no pronoun for the speaker, so that either pet can say it
+  callBusy: string[];
+  pawsHello: string[]; // Paws arrives with no brain connected (issue 15): short, earnest, in its own voice (tôi in Vietnamese, ADR-0156); never asks for an answer // a pet that is out says it when a mention could not bring the other pet out (ADR-0158); no pronoun for the speaker, so that either pet can say it
   slowHint: string;
   copyStats: string;
   statsCopied: string;
@@ -248,6 +249,7 @@ export const UI: Record<Lang, UiStrings> = {
     removed: "Key removed. I'm back to my few words.",
     thinking: "…",
     callBusy: ["Give it a moment, they are busy right now.", "They cannot come out just yet. Try again in a moment."],
+    pawsHello: ["Present, as requested.", "Here. Posture correct.", "Arrived. Ears in order."],
     capHit: [
       "I've talked a lot today. Let's keep the rest for tomorrow.",
       "My voice is worn out for today. Come find me tomorrow?",
@@ -502,6 +504,7 @@ export const UI: Record<Lang, UiStrings> = {
     removed: "Đã xóa key. Mình lại chỉ biết vài câu.",
     thinking: "…",
     callBusy: ["Chờ một chút nhé, bạn ấy đang bận chưa ra được.", "Bạn ấy chưa ra được lúc này. Thử lại sau một lát nhé."],
+    pawsHello: ["Tôi có mặt rồi đây.", "Tôi đến rồi, tư thế chỉnh tề.", "Có mặt. Tai đã dựng thẳng."],
     capHit: [
       "Hôm nay mình nói nhiều rồi. Phần còn lại để mai nhé.",
       "Mình hết hơi rồi, mai gặp lại nhé?",
@@ -756,6 +759,7 @@ export const UI: Record<Lang, UiStrings> = {
     removed: "キーを削除したよ。また少ない言葉に戻るね。",
     thinking: "…",
     callBusy: ["ちょっと待ってね、いまは出てこられないみたい。", "もう少ししてからもう一度呼んでね。"],
+    pawsHello: ["参りました。", "来ました。姿勢よし。", "到着です。耳もぴんと。"],
     capHit: [
       "今日はいっぱい話したよ。続きは明日にしようね。",
       "今日の声はもう出ないよ。明日また会いに来てくれる？",
