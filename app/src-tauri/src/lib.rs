@@ -1639,7 +1639,8 @@ fn toggle_visibility(app: &AppHandle) {
             bubble_hide(app.clone(), app.state::<AppState>());
             overlay_follow(app, false);
         } else {
-            let _ = win.show();
+            // shown without the keyboard: calling a pet out from the chat box must not take the keyboard from it
+            show_without_activating(&win);
             overlay_follow(app, true);
             end_away(app);
         }

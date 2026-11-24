@@ -510,7 +510,7 @@ fn paws_come_out(app: &AppHandle, quiet: bool) {
     let built = WebviewWindowBuilder::new(app, PAWS_LABEL, WebviewUrl::App(url.into()))
         .title("Streakboom Paws")
         .inner_size(PET, PET)
-        .decorations(false).transparent(true).always_on_top(true).skip_taskbar(true).resizable(false).shadow(false)
+        .decorations(false).transparent(true).always_on_top(true).skip_taskbar(true).resizable(false).shadow(false).focused(false) // a pet coming out must not take the keyboard from the chat box (or from the program the person is in)
         .additional_browser_args(BROWSER_ARGS)
         .build();
     let Ok(win) = built else { return };
