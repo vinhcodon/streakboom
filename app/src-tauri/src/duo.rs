@@ -719,6 +719,7 @@ mod tests {
 const BOX_LABEL: &str = "chatbox";
 const BOX_W: f64 = 340.0;
 const BOX_H: f64 = 460.0;
+const BOX_FADE_HEAD: f64 = 0.0; // the clear strip at the top of the window where the scrim fades away: it does not count as the box for the pointer (the page has the same number)
 const BOX_MARGIN: f64 = 0.0; // flush with the work area (the stack has its own 8 px inside); 16 was the gap of the old floating card (ADR-0147)
 const CLICK_WAIT: Duration = Duration::from_millis(300); // a single click waits this long to be told from the first half of a double click
 const BLUR_GRACE_MS: u64 = 600; // a blur this soon after the box was shown is the box taking focus, not the person leaving
@@ -903,7 +904,7 @@ fn spawn_hover(app: AppHandle) {
             if !win.is_visible().unwrap_or(false) { inside_since = None; outside_since = None; BOX_IDLE_SINCE.store(0, Ordering::SeqCst); continue; }
             let (Some((px, py)), Ok(pos), Ok(size)) = (cursor_pos(), win.outer_position(), win.outer_size()) else { continue };
             let m = (HOVER_MARGIN * scale(&app)).round() as i32;
-            let inside = px >= pos.x - m && px <= pos.x + size.width as i32 + m && py >= pos.y - m && py <= pos.y + size.height as i32 + m;
+            let inside = px >= pos.x - m && px <= pos.x + size.width as i32 + m && py >= pos.y + (BOX_FADE_HEAD * scale(&app)).round() as i32 - m && py <= pos.y + size.height as i32 + m;
             let now = now_ms();
             // the fade: nothing has made the box matter for a while (the keyboard is elsewhere, the pointer is not on it, no draft, not pinned): it fades slowly and goes
             let matters = inside || has_keyboard(&win) || !BOX_DRAFT_EMPTY.load(Ordering::SeqCst) || BOX_PINNED.load(Ordering::SeqCst);

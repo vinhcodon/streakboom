@@ -72,19 +72,21 @@
     draft = "";
     settledDraft = "";
     recallIdx = -1;
-    grow();
+    void tick().then(grow); // after the field has the empty text: measured at once, it still had the old one and stayed tall
   }
   /** The field grows with what is written, up to four lines. */
   function grow() {
     if (!input || composing) return;
     input.style.height = "auto";
-    input.style.height = `${Math.min(input.scrollHeight, 88)}px`;
+    input.style.height = `${Math.min(input.scrollHeight + 2, 96)}px`; // border-box: the scroll height has the padding, the 2 is the border
   }
+  // the height follows the text whatever changed it (typing, a send, a command, Esc, a paste, the box shown again): measured after the field has the new text
+  $effect(() => { void draft; void tick().then(grow); });
   function runSlash(it: SlashItem) {
     draft = "";
     settledDraft = "";
     recallIdx = -1;
-    grow();
+    void tick().then(grow);
     if (it.act.kind === "pin") togglePin();
     else if (it.act.kind === "clear") act({ type: "clear" });
     else if (it.act.kind === "name") act({ type: "name", value: it.act.value });
@@ -108,7 +110,7 @@
       if (e.key === "Escape") { e.preventDefault(); slashOff = true; return; }
     }
     if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); send(); return; } // Shift+Enter breaks the line
-    if (e.key === "Escape") { e.preventDefault(); if (draft) { draft = ""; settledDraft = ""; recallIdx = -1; grow(); } else void invoke("chatbox_hide"); return; }
+    if (e.key === "Escape") { e.preventDefault(); if (draft) { draft = ""; settledDraft = ""; recallIdx = -1; void tick().then(grow); } else void invoke("chatbox_hide"); return; }
     if ((e.key === "ArrowUp" || e.key === "ArrowDown") && !e.shiftKey && (draft === "" || recallIdx !== -1)) {
       const r = recallStep(sent, recallIdx, e.key === "ArrowUp" ? -1 : 1);
       if (r.text !== null) { e.preventDefault(); recallIdx = r.idx; draft = r.text; settledDraft = r.text; queueMicrotask(grow); }
@@ -136,10 +138,11 @@
     input?.setSelectionRange(n, n);
   }
   /** The window is as tall as the stack (ADR-0147): the page tells the program how tall it wants to be, and the program sizes and places it at the bottom right. */
+  const FADE_HEAD = 0; // px of clear strip above the stack; none now that there is no panel behind it (ADR-0155); the same number as BOX_FADE_HEAD in duo.rs
   let lastFit = 0;
   function fit() {
     if (!inner) return;
-    const h = Math.ceil(inner.offsetHeight) + 16;
+    const h = Math.ceil(inner.offsetHeight) + 16 + FADE_HEAD;
     if (Math.abs(h - lastFit) < 2) return;
     lastFit = h;
     void invoke("chatbox_fit", { h }).catch(() => {});
@@ -179,12 +182,11 @@
 </script>
 
 
-<!-- One overlay (ADR-0147): the stack of the talk at the bottom right, on a scrim that is dense at the bottom and clear at the top; each message on a light pill, a pet with its small
+<!-- One overlay (ADR-0147): the stack of the talk at the bottom right, with no panel behind it (ADR-0155); each message on a light pill, a pet with its small
      avatar, the person in a colour; the old ones fade by age and by place. Reading: click-through, only the recent messages. Writing (the shortcut, the tray, a double click
      on a pet, or the pointer resting on it): the whole talk (it scrolls, without a bar) and a slim field at the bottom. The window is as tall as the stack. -->
 <div class="overlay" style:--maxh="{maxH}px" style:opacity={fade}>
-  {#if allItems.length > 0 || typingWho}<div class="scrim" aria-hidden="true"></div>{/if}
-  <div class="inner" bind:this={inner}>
+    <div class="inner" bind:this={inner}>
     <div class="col scroll" bind:this={scroller}>
       {#each shown as it (it.kind === "group" ? it.lines[0].id : 0)}
         {#if it.kind === "group"}
@@ -237,18 +239,17 @@
   :root { --bg: #ffffff; --ink: #1f1f1f; --muted: #7a7a7a; --line: #e4e4e4; --soft: #f1f1f1; --me: #dfeaf7; --me-ink: #12365e; --peak: #b8741a; --paws: #3f6288; --ring: #3f6288; }
   @media (prefers-color-scheme: dark) { :root { --bg: #242424; --ink: #ececec; --muted: #9a9a9a; --line: #3a3a3a; --soft: #333333; --me: #1f3a5c; --me-ink: #dbe8f8; --peak: #e0a050; --paws: #8fb3d9; --ring: #8fb3d9; } }
   .overlay { transition: opacity 0.3s linear; position: relative; box-sizing: border-box; width: 100vw; height: 100vh; display: flex; flex-direction: column; justify-content: flex-end; color: var(--ink); overflow: hidden; }
-  /* the scrim: dense at the bottom, clear at the top, and soft at the left edge, so that the messages read on any background and no panel shows */
-  /* dark in both themes (tried on a white, a dark and a busy background: a light scrim is a glare on a dark window; a dark one reads on all three) */
-  .scrim { position: absolute; inset: 0; pointer-events: none; background: linear-gradient(to top, rgba(14, 14, 20, 0.96) 0%, rgba(14, 14, 20, 0.9) 40%, rgba(14, 14, 20, 0.62) 72%, rgba(14, 14, 20, 0.2) 90%, transparent 100%);
-    -webkit-mask-image: linear-gradient(to right, transparent 0%, black 30%); mask-image: linear-gradient(to right, transparent 0%, black 30%); }
-  .inner { position: relative; display: flex; flex-direction: column; gap: 6px; padding: 8px; }
+  /* no panel behind the messages (ADR-0155): each pill and the field carries its own soft shadow, so that nothing appears as a block and nothing has an edge; the name is a small dark chip, readable on any background */
+  .pill, footer textarea { box-shadow: 0 1px 2px rgba(0, 0, 0, 0.22), 0 5px 12px rgba(0, 0, 0, 0.24); }
+  .inner { position: relative; display: flex; flex-direction: column; gap: 6px; padding: 14px; } /* 14 px all round: room for the shadows, which the window edge would cut */
   .col { display: flex; flex-direction: column; align-items: flex-end; gap: 6px; -webkit-mask-image: linear-gradient(to top, black 55%, rgba(0, 0, 0, 0.25) 88%, transparent 100%); mask-image: linear-gradient(to top, black 55%, rgba(0, 0, 0, 0.25) 88%, transparent 100%); }
-  .col.scroll { max-height: calc(var(--maxh) - 64px); overflow-y: auto; scrollbar-width: none; }
+  .col.scroll { max-height: calc(var(--maxh) - 64px); padding: 14px; margin: -14px; overflow-y: auto; /* the padding (and the margin that gives it back) lets the shadows of the pills stay inside the scroller, which would cut them straight */ scrollbar-width: none; }
   .col.scroll::-webkit-scrollbar { display: none; }
   .arow { display: flex; align-items: flex-end; justify-content: flex-end; gap: 8px; max-width: 100%; }
   .alines { display: flex; flex-direction: column; align-items: flex-end; gap: 3px; max-width: 270px; }
   .name { font-size: 11px; margin: 0 4px 0 0; }
-  .name.peak { color: #f0b050; } .name.paws { color: #9cc0ea; } /* on the dark scrim */
+  .name.peak { color: #f3c477; } .name.paws { color: #b4d0f0; }
+  .name { background: rgba(24, 24, 30, 0.62); padding: 0 7px; border-radius: 8px; }
   .pill { padding: 6px 12px; border-radius: 15px; word-break: break-word; white-space: pre-wrap; transition: opacity 0.4s linear; animation: rise 0.16s ease-out; }
   .pill.me { background: var(--me); color: var(--me-ink); }
   .pill.pet { background: var(--soft); color: var(--ink); } /* solid: the text behind never shows through */
@@ -261,16 +262,20 @@
   .typing i { width: 6px; height: 6px; border-radius: 50%; background: var(--muted); animation: blink 1.2s infinite ease-in-out; }
   .typing i:nth-child(2) { animation-delay: 0.2s; } .typing i:nth-child(3) { animation-delay: 0.4s; }
   @keyframes blink { 0%, 80%, 100% { opacity: 0.25; } 40% { opacity: 1; } }
-  @media (prefers-reduced-motion: reduce) { .typing i { animation: none; opacity: 0.6; } .pill { transition: none; animation: none; } .overlay { transition: none; } }
+  @media (prefers-reduced-motion: reduce) { .typing i { animation: none; opacity: 0.6; } .pill { transition: none; animation: none; } .overlay { transition: none; } footer textarea { animation: none; } }
   footer { position: relative; display: flex; gap: 6px; align-items: center; }
-  footer textarea { flex: 1; font: inherit; color: var(--ink); background: color-mix(in srgb, var(--bg) 96%, transparent); border: 1px solid var(--line); border-radius: 18px; padding: 7px 12px; outline: none; resize: none; overflow-y: auto; max-height: 88px; line-height: 1.4; }
+  footer textarea { box-sizing: border-box; flex: 1; font: inherit; color: var(--ink); background: color-mix(in srgb, var(--bg) 96%, transparent); border: 1px solid var(--line); border-radius: 18px; padding: 7px 38px 7px 12px; /* the right padding is room for the send button, which sits inside the field so that the field ends where the pills and avatars end */ outline: none; resize: none; overflow-y: auto; max-height: 96px; line-height: 1.4; }
+  footer textarea { animation: fieldin 0.15s ease-out; scrollbar-width: thin; scrollbar-color: rgba(120, 120, 120, 0.45) transparent; }
+  @keyframes fieldin { from { opacity: 0; } }
+  footer textarea::-webkit-scrollbar { width: 6px; } footer textarea::-webkit-scrollbar-button { display: none; } footer textarea::-webkit-scrollbar-track { background: transparent; margin: 10px 0; } footer textarea::-webkit-scrollbar-thumb { background: rgba(120, 120, 120, 0.45); border-radius: 3px; }
+  footer textarea::placeholder { color: var(--muted); }
   footer textarea:focus { border-color: var(--ring); }
   .slash { position: absolute; left: 0; right: 0; bottom: calc(100% + 4px); margin: 0; padding: 4px; list-style: none; background: var(--bg); border: 1px solid var(--line); border-radius: 12px; box-shadow: 0 2px 10px rgba(0, 0, 0, 0.14); }
   .slash.list { position: static; margin: 0 0 6px 0; box-shadow: none; } /* in the flow: the window is as tall as the list too */
   .slash button { all: unset; box-sizing: border-box; display: flex; justify-content: space-between; gap: 10px; width: 100%; padding: 6px 9px; border-radius: 8px; cursor: pointer; }
   .slash li.sel button, .slash button:hover { background: var(--soft); }
   .slash code { color: var(--muted); font: 11px/1.6 ui-monospace, Consolas, monospace; }
-  .send { border: 0; background: transparent; color: var(--ring); cursor: pointer; padding: 7px; border-radius: 999px; line-height: 0; }
+  .send { position: absolute; right: 5px; bottom: 4px; border: 0; background: transparent; color: var(--ring); cursor: pointer; padding: 6px; border-radius: 999px; line-height: 0; }
   .send:disabled { color: var(--muted); cursor: default; }
   .send:focus-visible { outline: 2px solid var(--ring); outline-offset: 1px; }
 </style>
