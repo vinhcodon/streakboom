@@ -523,7 +523,7 @@ fn peak_door(app: &AppHandle, e: &Entrance, m: &Mon) -> ((i32, i32), i32) {
 /// behaviour back. Not a slide: the page shows the steps.
 fn peak_walk(app: &AppHandle, win: &tauri::WebviewWindow, from: (i32, i32), to: (i32, i32)) {
     let dist = ((to.0 - from.0) as f64).abs().max(((to.1 - from.1) as f64).abs());
-    let speed = (230.0 * scale(app)).max(dist / 4.0); // physical px per second: a brisk walk, and never longer than 4 s across a wide screen
+    let speed = 60.0 * scale(app); // physical px per second: the one unhurried pace of every walk on purpose (ADR-0161; it was at least 230 with a 4 s cap)
     let dur = Duration::from_secs_f64((dist / speed).max(0.2));
     let dir = if to.0 >= from.0 { 1 } else { -1 };
     let _ = app.emit_to("main", "duo-scene-pose", serde_json::json!({ "pose": "walk", "dir": dir, "hold": true }));
@@ -961,6 +961,7 @@ fn show_ambient(app: &AppHandle, win: &tauri::WebviewWindow) {
     let _ = win.set_ignore_cursor_events(true);
     crate::platform::show_without_activating(win);
     let _ = app.emit_to(BOX_LABEL, "chatbox-mode", false);
+    peak_yield_to_box(app);
 }
 
 /// Engaged: solid, takes clicks and the keyboard (the tray, the shortcut and a double click on a pet open it).
@@ -978,6 +979,41 @@ fn show_box(app: &AppHandle, win: &tauri::WebviewWindow) {
     let _ = win.set_focus();
     take_foreground(win);
     let _ = app.emit_to(BOX_LABEL, "chatbox-open", ());
+    peak_yield_to_box(app);
+}
+
+/// The box has appeared over Peak (ADR-0161): Peak lifts its ears for a moment, then walks at its unhurried pace to the nearer side of the box that has room on
+/// the screen, until its body is clear. Also when it was asleep (it wakes to step aside). Nothing if Peak is in, hidden, busy, or not under the box.
+fn peak_yield_to_box(app: &AppHandle) {
+    let app = app.clone();
+    std::thread::spawn(move || {
+        std::thread::sleep(Duration::from_millis(400)); // the box has taken its place and size
+        let Some(d) = app.try_state::<Duo>() else { return };
+        if !d.state.lock().unwrap().pets.peak.out { return; }
+        let (Some(win), Some(bw)) = (app.get_webview_window("main"), app.get_webview_window(BOX_LABEL)) else { return };
+        if !win.is_visible().unwrap_or(false) || !bw.is_visible().unwrap_or(false) { return; }
+        let (Ok(p), Ok(sz), Ok(bp), Ok(bs)) = (win.outer_position(), win.outer_size(), bw.outer_position(), bw.outer_size()) else { return };
+        let (pw, ph) = (sz.width as i32, sz.height as i32);
+        let body = (p.x + pw / 4, p.y + ph / 3, p.x + pw * 3 / 4, p.y + ph); // Peak's body: the middle of its window, the lower two thirds
+        let bx = (bp.x, bp.y, bp.x + bs.width as i32, bp.y + bs.height as i32);
+        if !(body.0 < bx.2 && body.2 > bx.0 && body.1 < bx.3 && body.3 > bx.1) { return; }
+        let m = (12.0 * scale(&app)).round() as i32;
+        let mon = monitors(&app).into_iter().find(|mo| bx.0 >= mo.x && bx.0 < mo.x + mo.w).or_else(|| monitors(&app).into_iter().next());
+        let Some(mon) = mon else { return };
+        let left = bx.0 - m - pw * 3 / 4; // its body ends just left of the box
+        let right = bx.2 + m - pw / 4; // its body starts just right of the box
+        let mut options = vec![];
+        if left + pw / 4 >= mon.x { options.push(left); }
+        if right + pw * 3 / 4 <= mon.x + mon.w { options.push(right); }
+        let Some(to) = options.into_iter().min_by_key(|x| (x - p.x).abs()) else { return };
+        if d.busy.swap(true, Ordering::SeqCst) { return; }
+        log(&app, &format!("peak yields to the box: {} -> {}", p.x, to));
+        let dir = if to >= p.x { 1 } else { -1 };
+        let _ = app.emit_to("main", "duo-scene-pose", serde_json::json!({ "pose": "notice", "dir": dir, "hold": true })); // look before moving: ears up
+        std::thread::sleep(Duration::from_millis(700));
+        peak_walk(&app, &win, (p.x, p.y), (to, p.y));
+        d.busy.store(false, Ordering::SeqCst);
+    });
 }
 
 /// Make the box the window in front that has the keyboard, also when another program (the hidden-icons flyout of the taskbar, where the person just
@@ -1217,6 +1253,10 @@ pub fn duo_box_ambient(app: AppHandle) {
         }
     });
 }
+
+/// Whether the chat box is on the screen (engaged or as the faded log): the page says a pet's line in a bubble only when it is not (ADR-0161).
+#[tauri::command]
+pub fn chatbox_showing(app: AppHandle) -> bool { app.get_webview_window(BOX_LABEL).is_some_and(|w| w.is_visible().unwrap_or(false)) }
 
 /// Whether the box is engaged now (the page asks when it starts; it is also told by `chatbox-mode`).
 #[tauri::command]

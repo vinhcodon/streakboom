@@ -81,9 +81,9 @@
     "away_minutes": 20,
     "retry_secs": 300,
     "bubble_ms": 2400,
-    "pace_px_s": 110,
+    "pace_px_s": 60,
     "deadline_min_ms": 6000,
-    "deadline_max_ms": 20000
+    "deadline_max_ms": 46000
   },
   "steps": [
     {

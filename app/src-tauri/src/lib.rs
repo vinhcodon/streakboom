@@ -2037,6 +2037,7 @@ pub fn run() {
             duo::duo_box_ambient,
             duo::duo_presence,
             duo::duo_busy,
+            duo::chatbox_showing,
             duo::duo_touch,
             duo::duo_open_box,
             duo::chatbox_take_prefill,

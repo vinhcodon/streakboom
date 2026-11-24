@@ -46,8 +46,8 @@ test("a goodbye is never the one just said, and the choice follows the random nu
 test("the numbers are the ones the author chose (20 minutes, ADR-0086) and sane", () => {
   assert.equal(AWAY_MINUTES, 20);
   assert.ok(FAREWELL_BUBBLE_MS >= 1500 && FAREWELL_BUBBLE_MS <= 4000);
-  assert.ok(LEAVE_DEADLINE_MIN_MS >= 5000 && LEAVE_DEADLINE_MAX_MS <= 30_000 && LEAVE_DEADLINE_MIN_MS < LEAVE_DEADLINE_MAX_MS);
-  assert.equal(LEAVE_PACE_PX_S, 110);
+  assert.ok(LEAVE_DEADLINE_MIN_MS >= 5000 && LEAVE_DEADLINE_MAX_MS <= 50_000 /* room for the walk at the unhurried pace (ADR-0161) */ && LEAVE_DEADLINE_MIN_MS < LEAVE_DEADLINE_MAX_MS);
+  assert.equal(LEAVE_PACE_PX_S, 60); // one unhurried pace for every walk on purpose (ADR-0161; it was 110)
   assert.ok(RETRY_SECS >= 60 && RETRY_SECS <= 900);
 });
 
@@ -80,9 +80,9 @@ test("the time given to the walk to the edge comes from the distance and always 
   // the numbers, so that a change is a decision
   assert.equal(leaveDeadlineMs(0), 6000);
   assert.equal(leaveDeadlineMs(100), 6000);
-  assert.equal(leaveDeadlineMs(430), 7082);
-  assert.equal(leaveDeadlineMs(1300), 17364);
-  assert.equal(leaveDeadlineMs(5000), 20_000);
+  assert.equal(leaveDeadlineMs(430), 11317);
+  assert.equal(leaveDeadlineMs(1300), 30167);
+  assert.equal(leaveDeadlineMs(5000), 46_000);
   // a farther edge never gets a shorter time
   let last = 0;
   for (let room = 0; room <= 3000; room += 50) {
