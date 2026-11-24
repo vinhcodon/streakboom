@@ -154,3 +154,10 @@ test("the pin command shows the way that is possible now, and /unpin finds it (A
   assert.deepEqual(slashItems("bo ghim", away, true).map((i) => i.id), ["unpin"]);
   assert.equal(slashItems("", away, true).find((i) => i.id === "unpin")?.act.kind, "pin", "the same toggle behind both");
 });
+
+test("a message marked waiting keeps its mark in its group, the others have none (#19)", () => {
+  const items = groupTurns([t(1, "person", "first", 1000), t(-1, "person", "second", 1500)].map((x, i) => (i === 1 ? { ...x, waiting: true } : x)));
+  const g = items.find((i) => i.kind === "group");
+  assert.ok(g && g.kind === "group");
+  assert.deepEqual(g.lines.map((l) => [l.text, !!l.waiting]), [["first", false], ["second", true]]);
+});

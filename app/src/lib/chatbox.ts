@@ -3,7 +3,7 @@
 
 export type BoxWho = "person" | "peak" | "paws";
 
-export interface BoxTurn { id: number; who: BoxWho; text: string; at: number }
+export interface BoxTurn { id: number; who: BoxWho; text: string; at: number; waiting?: boolean } // waiting: sent while an answer is in flight, handled after it (#19)
 export interface BoxView {
   /** The language chosen in Settings ("vi", "en", "ja"): the box speaks it. */
   lang: string;
@@ -23,7 +23,7 @@ export const TIME_GAP_MS = 10 * 60 * 1000;
 
 export type Item =
   | { kind: "time"; at: number }
-  | { kind: "group"; who: BoxWho; lines: { id: number; text: string }[] };
+  | { kind: "group"; who: BoxWho; lines: { id: number; text: string; waiting?: boolean }[] };
 
 /** Turns of the same speaker in a row are one group (one avatar); a time comes first and after each long gap. */
 export function groupTurns(turns: readonly BoxTurn[]): Item[] {
@@ -32,8 +32,8 @@ export function groupTurns(turns: readonly BoxTurn[]): Item[] {
   for (const t of turns) {
     if (t.at - lastAt > TIME_GAP_MS) out.push({ kind: "time", at: t.at });
     const last = out[out.length - 1];
-    if (last && last.kind === "group" && last.who === t.who) last.lines.push({ id: t.id, text: t.text });
-    else out.push({ kind: "group", who: t.who, lines: [{ id: t.id, text: t.text }] });
+    if (last && last.kind === "group" && last.who === t.who) last.lines.push({ id: t.id, text: t.text, waiting: t.waiting });
+    else out.push({ kind: "group", who: t.who, lines: [{ id: t.id, text: t.text, waiting: t.waiting }] });
     lastAt = t.at;
   }
   return out;

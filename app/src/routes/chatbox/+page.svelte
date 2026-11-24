@@ -217,7 +217,7 @@
           {#if it.who === "person"}
             <div class="arow">
               <div class="alines">
-                {#each it.lines as l (l.id)}<div class="pill me" >{nfc(l.text)}</div>{/each}
+                {#each it.lines as l (l.id)}<div class="pill me" class:waiting={l.waiting}>{nfc(l.text)}{#if l.waiting}<span class="wait">{t.waiting}</span>{/if}</div>{/each}
               </div>
             </div>
           {:else}
@@ -283,6 +283,8 @@
   .name { background: rgba(24, 24, 30, 0.62); padding: 0 7px; border-radius: 8px; }
   .pill { padding: 6px 12px; border-radius: 15px; word-break: break-word; white-space: pre-wrap; transition: opacity 0.4s linear; animation: rise 0.16s ease-out; }
   .pill.me { background: var(--me); color: var(--me-ink); }
+  .pill.me.waiting { opacity: 0.7; } /* #19: sent while an answer is in flight; handled after it */
+  .pill .wait { display: block; font-size: 10.5px; opacity: 0.75; margin-top: 1px; }
   .pill.pet { background: var(--soft); color: var(--ink); } /* solid: the text behind never shows through */
   @keyframes rise { from { transform: translateY(10px); opacity: 0; } }
   .pill.resting { color: var(--muted); font-size: 12px; }

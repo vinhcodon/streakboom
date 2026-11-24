@@ -16,6 +16,7 @@ export interface BoxStrings {
   members: string; // #17: the label of the group indicator, for a screen reader ("In this chat")
   nextTo: string; // #17: before the names of who will hear the next message ("to")
   joined: string; // #17: "{name} joined", shown once when Paws joins
+  waiting: string; // #19: under a message sent while an answer is in flight: it is handled after it
   say: string; // the placeholder of the field: one line, whoever is out (ADR-0147; who hears is shown by the pets on the screen)
   bothResting: string; // both pets are in: a message that is not a command is not sent
   noBrain: string;
@@ -30,7 +31,7 @@ export interface BoxStrings {
 
 export const BOX_UI: Record<BoxLang, BoxStrings> = {
   en: {
-    today: "Today", you: "You", keepOpen: "Keep open", send: "Send", everyoneNote: "everyone who is out", restingNote: "comes out", members: "In this chat", nextTo: "to", joined: "{name} joined", commands: "Commands",
+    today: "Today", you: "You", keepOpen: "Keep open", send: "Send", everyoneNote: "everyone who is out", restingNote: "comes out", members: "In this chat", nextTo: "to", joined: "{name} joined", waiting: "waiting", commands: "Commands",
     say: "Say something…", bothResting: "Both are resting: type / to call one out",
     noBrain: "No brain connected: commands only",
     empty: "Say something to Peak or Paws.",
@@ -40,7 +41,7 @@ export const BOX_UI: Record<BoxLang, BoxStrings> = {
     slash: { outPaws: "Call Paws out", outPeak: "Call Peak out", inPaws: "Send Paws in", inPeak: "Send Peak in", pin: "Keep the box open", unpin: "Let the box fade away", clear: "Clear this chat", callMe: "Call me {name}" },
   },
   vi: {
-    today: "Hôm nay", you: "Bạn", keepOpen: "Giữ hộp luôn mở", send: "Gửi", everyoneNote: "tất cả đang ở ngoài", restingNote: "sẽ ra", members: "Trong cuộc trò chuyện", nextTo: "gửi tới", joined: "{name} đã vào nhóm", commands: "Lệnh",
+    today: "Hôm nay", you: "Bạn", keepOpen: "Giữ hộp luôn mở", send: "Gửi", everyoneNote: "tất cả đang ở ngoài", restingNote: "sẽ ra", members: "Trong cuộc trò chuyện", nextTo: "gửi tới", joined: "{name} đã vào nhóm", waiting: "đang chờ", commands: "Lệnh",
     say: "Nói gì đó đi…", bothResting: "Cả hai đang nghỉ: gõ / để gọi ra",
     noBrain: "Chưa có bộ não: chỉ dùng được lệnh",
     empty: "Nói gì đó với Peak hoặc Paws đi.",
@@ -50,7 +51,7 @@ export const BOX_UI: Record<BoxLang, BoxStrings> = {
     slash: { outPaws: "Gọi Paws ra", outPeak: "Gọi Peak ra", inPaws: "Cho Paws vào", inPeak: "Cho Peak vào", pin: "Giữ hộp luôn mở", unpin: "Cho hộp tự mờ đi", clear: "Xóa cuộc trò chuyện này", callMe: "Hãy gọi tôi là {name}" },
   },
   ja: {
-    today: "今日", you: "あなた", keepOpen: "開いたままにする", send: "送信", everyoneNote: "外にいる全員", restingNote: "出てくる", members: "このチャットにいる", nextTo: "宛先", joined: "{name}が参加しました", commands: "コマンド",
+    today: "今日", you: "あなた", keepOpen: "開いたままにする", send: "送信", everyoneNote: "外にいる全員", restingNote: "出てくる", members: "このチャットにいる", nextTo: "宛先", joined: "{name}が参加しました", waiting: "待機中", commands: "コマンド",
     say: "なにか話しかけてね…", bothResting: "ふたりとも休み中：/ で呼び出せます",
     noBrain: "ブレインが未接続です：コマンドのみ",
     empty: "PeakかPawsに話しかけてみよう。",

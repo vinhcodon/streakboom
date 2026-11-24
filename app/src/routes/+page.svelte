@@ -2480,7 +2480,7 @@
   function syncLog() {
     const seen = shownSays(talk.room, presenter.hidden());
     talkLog = seen.slice(-6).map((t) => ({ who: t.from, text: t.text }));
-    boxTurns = seen.map((t) => ({ id: t.id, who: t.from, text: t.text, at: t.at }));
+    boxTurns = [...seen.map((t) => ({ id: t.id, who: t.from, text: t.text, at: t.at })), ...queued.map((q) => ({ id: q.id, who: "person" as const, text: q.text, at: q.at, waiting: true }))];
     pendingWho = presenter.writer();
   }
   let pendingWho = $state<PetId | null>(null);
@@ -2621,7 +2621,7 @@
       } catch (e) {
         lt(`talk_failed ${errKind(e)}`);
       } finally {
-        busy = false;
+        busy = false; setTimeout(drainQueue, 0); // #19: a message that waited goes now
       }
       return true;
     }
@@ -2648,7 +2648,7 @@
     } catch (e) {
       lt(`talk_failed ${errKind(e)}`);
     } finally {
-      busy = false;
+      busy = false; setTimeout(drainQueue, 0); // #19: a message that waited goes now
     }
     return true;
   }
@@ -3066,9 +3066,26 @@
     }
   }
 
+  /** #19: messages sent while an answer is in flight. They show at once as the person's lines marked "waiting" (box only, not yet in the talk) and are handled in
+   *  order when the current answer is done; nothing is dropped and the current answer is not cancelled. */
+  let queued: { id: number; text: string; at: number }[] = [];
+  let queuedId = -1;
+  function drainQueue() {
+    if (busy || queued.length === 0) return;
+    const q = queued.shift()!;
+    syncLog();
+    void invoke("duo_log", { line: `dispatch queued message (${queued.length} still waiting)` }).catch(() => {});
+    void sendChat(q.text);
+  }
   async function sendChat(raw: string) {
     const text = raw.trim();
     if (!text) return;
+    if (duoOn && busy) {
+      queued.push({ id: queuedId--, text, at: Date.now() });
+      syncLog();
+      void invoke("duo_log", { line: `queued a message while an answer is in flight (${queued.length} waiting)` }).catch(() => {});
+      return;
+    }
     if (duoOn) {
       // the message is in the talk at once, so that the chat box shows it before any pet answers (ADR-0142)
       await refreshPawsOut();
@@ -3199,7 +3216,7 @@
     } finally {
       clearTimeout(slowTimer);
       chatSlow = false;
-      busy = false;
+      busy = false; setTimeout(drainQueue, 0); // #19: a message that waited goes now
       if (leftByModel) return; // startLeave closed the chat box and is saying its goodbye
       chatPhase = "reply";
       // If the chat was closed while waiting, still deliver the answer as a plain bubble. With the duo the answer went through sayAs above (the box, or a
