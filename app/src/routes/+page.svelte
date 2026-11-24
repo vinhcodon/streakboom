@@ -225,7 +225,8 @@
   // the tray icon's menu is built in Rust: tell it the words in the language that is chosen now (and again when it changes)
   $effect(() => {
     const u = ui;
-    invoke("set_tray_labels", { labels: [u.trayShow, u.traySettings, u.trayQuiet, u.trayQuit] }).catch(() => {});
+    // with the duo flag the first item is "Open the chat" and four more name what each pet can do (ADR-0160)
+    invoke("set_tray_labels", { labels: duoOn ? [u.trayDuo.chat, u.traySettings, u.trayQuiet, u.trayQuit, u.trayDuo.peakOut, u.trayDuo.peakIn, u.trayDuo.pawsOut, u.trayDuo.pawsIn] : [u.trayShow, u.traySettings, u.trayQuiet, u.trayQuit] }).catch(() => {});
   });
   const canChat = $derived(hasKey && !brainBad);
   /** The picker on the first card of the tour: each language in its own name, so that anyone can find theirs (ADR-0065). */
@@ -2351,7 +2352,7 @@
   }
 
   // Prototype (branch only, developer flag): "gọi Paws ra", "Paws go in" are Peak's business, not a message to the model (ADR-0139).
-  let duoOn: boolean | null = null;
+  let duoOn = $state<boolean | null>(null); // a state: the tray words are sent again once it is known (ADR-0160)
   async function tryDuoFromChat(text: string): Promise<boolean> {
     await initDuo();
     if (!duoOn) return false;
@@ -3597,7 +3598,8 @@
       void initDuo();
       cleanups.push(await win.listen("chatbox-ready", () => pushBox(true)));
       cleanups.push(await win.listen<BoxAction>("chatbox-action", (e) => onBoxAction(e.payload)));
-      cleanups.push(await win.listen<string>("duo-type", (e) => void sendChat(e.payload))); // developer channel: a message typed without the box
+      cleanups.push(await win.listen<string>("duo-type", (e) => void sendChat(e.payload)));
+      cleanups.push(await win.listen<PetId>("duo-tucked", (e) => { talk.tucked(e.payload); void refreshPawsOut(); })); // the tray menu sent a pet in (ADR-0160): its line is dropped // developer channel: a message typed without the box
       cleanups.push(await win.listen<{ dir: 1 | -1 }>("duo-face", (e) => { if (pose === "idle") dir = e.payload.dir; })); // the talk: the head turns toward the speaker
       cleanups.push(await win.listen<{ pet: PetId; text: string }>("duo-say", (e) => void sayAs(e.payload.pet, e.payload.text))); // developer channel: a line in Paws' bubble without the model
       const touchEndsScene = () => { if (sceneHold) void invoke("duo_scene_cancel"); if (duoOn) cancelTalk(); };

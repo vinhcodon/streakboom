@@ -810,7 +810,7 @@ fn open_settings_async(app: &AppHandle) {
 /// The text of the tray menu in the app's language (the page sends it at start and whenever the language changes):
 /// [Show / Hide, Settings, Quiet mode, Quit]. An empty or missing entry keeps the English default.
 #[tauri::command]
-fn set_tray_labels(state: State<AppState>, labels: Vec<String>) {
+fn set_tray_labels(app: AppHandle, state: State<AppState>, labels: Vec<String>) {
     let pick = |i: usize| labels.get(i).map(|s| s.trim()).filter(|s| !s.is_empty()).map(str::to_string);
     if let Some([toggle, settings, quit]) = state.tray_items.lock().unwrap().as_ref() {
         if let Some(t) = pick(0) {
@@ -823,6 +823,8 @@ fn set_tray_labels(state: State<AppState>, labels: Vec<String>) {
             let _ = quit.set_text(t);
         }
     }
+    // with the flag, four more: call Peak out, send Peak in, call Paws out, send Paws in (ADR-0160)
+    if labels.len() >= 8 { duo::set_tray_words([&labels[4], &labels[5], &labels[6], &labels[7]].map(|s| s.trim().to_string())); duo::refresh_tray(&app); }
     if let Some(t) = pick(2) {
         if let Some(item) = state.quiet_item.lock().unwrap().as_ref() {
             let _ = item.set_text(t);
@@ -1753,10 +1755,13 @@ fn pet_leave(app: AppHandle, state: State<AppState>, minutes: u32) -> bool {
     if !win.is_visible().unwrap_or(false) || state.away.swap(true, Ordering::SeqCst) {
         return false;
     }
-    hide_window(&win); // the same kind of call as the one that shows it on return
-    bubble_hide(app.clone(), app.state::<AppState>());
-    overlay_follow(&app, false);
-    duo::peak_present(&app, false); // away is a tuck: a hidden Peak is not "out" (ADR-0158)
+    if duo::enabled() {
+        duo::peak_walk_off(&app); // ADR-0160: the page walked it to the edge; it walks on through the door, then the state says it is in
+    } else {
+        hide_window(&win); // the same kind of call as the one that shows it on return
+        bubble_hide(app.clone(), app.state::<AppState>());
+        overlay_follow(&app, false);
+    }
     let secs = away_secs(std::env::var("STREAKBOOM_AWAY_SECS").ok().as_deref(), u64::from(minutes.clamp(1, 24 * 60)) * 60);
     arm_return(&app, Duration::from_secs(secs));
     true
@@ -1769,12 +1774,15 @@ fn pet_return(app: AppHandle, state: State<AppState>) -> bool {
         return false;
     }
     state.away_gen.fetch_add(1, Ordering::SeqCst);
+    if duo::enabled() {
+        duo::peak_walk_back(&app); // ADR-0160: it comes back through its door, walking in from the side it left by
+        return true;
+    }
     if let Some(win) = app.get_webview_window("main") {
         // The timer, not the person, shows it: it must not take the keyboard from the program they are typing in.
         show_without_activating(&win);
     }
     overlay_follow(&app, true);
-    duo::peak_present(&app, true);
     true
 }
 
@@ -1831,6 +1839,14 @@ fn build_tray(app: &AppHandle, quiet: bool) -> tauri::Result<()> {
     let quiet_item = CheckMenuItem::with_id(app, "quiet", "Quiet mode", true, quiet, None::<&str>)?;
     let quit = MenuItem::with_id(app, "quit", "Quit", true, None::<&str>)?;
     let menu = Menu::with_items(app, &[&toggle, &settings, &quiet_item, &quit])?;
+    if duo::enabled() {
+        // ADR-0160: what each pet can do now, after "Open the chat"; the text follows who is out (`duo::refresh_tray`)
+        let peak = MenuItem::with_id(app, "duo-peak", "Send Peak in", true, None::<&str>)?;
+        let paws = MenuItem::with_id(app, "duo-paws", "Call Paws out", true, None::<&str>)?;
+        menu.insert(&peak, 1)?;
+        menu.insert(&paws, 2)?;
+        duo::set_tray_pet_items(peak, paws);
+    }
     // a developer build and every Preview build, never a Stable one (ADR-0116): show what Peak believes about the screen
     if overlay_allowed() {
         menu.append(&MenuItem::with_id(app, "overlay", "Terrain overlay (Preview)", true, None::<&str>)?)?;
@@ -1845,7 +1861,9 @@ fn build_tray(app: &AppHandle, quiet: bool) -> tauri::Result<()> {
         .menu(&menu)
         .show_menu_on_left_click(false)
         .on_menu_event(move |app, event| match event.id.as_ref() {
-            "toggle" => { if duo::enabled() { duo::tray(app); } else { toggle_visibility(app); } }
+            "toggle" => { if duo::enabled() { duo::chatbox_open(app); } else { toggle_visibility(app); } } // with the flag: "Open the chat" (ADR-0160)
+            "duo-peak" => duo::menu_pet(app, "peak"),
+            "duo-paws" => duo::menu_pet(app, "paws"),
             "settings" => open_settings_async(app),
             "quiet" => set_quiet(app, quiet_ref.is_checked().unwrap_or(false)),
             "quit" => quit_app(app),
@@ -1862,11 +1880,8 @@ fn build_tray(app: &AppHandle, quiet: bool) -> tauri::Result<()> {
         .on_tray_icon_event(|tray, event| {
             match event {
                 TrayIconEvent::Click { button: MouseButton::Left, button_state: MouseButtonState::Up, .. } => {
-                    // with the duo flag (ADR-0142) a single click shows or hides the chat box; without it, as before
+                    // with the duo flag a click shows or hides the chat box and never a pet; there is no double click (ADR-0160); without it, as before
                     if duo::enabled() { duo::tray_single(tray.app_handle()); } else { toggle_visibility(tray.app_handle()); }
-                }
-                TrayIconEvent::DoubleClick { button: MouseButton::Left, .. } => {
-                    if duo::enabled() { duo::tray_double(tray.app_handle()); }
                 }
                 _ => {}
             }

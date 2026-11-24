@@ -180,6 +180,7 @@ pub fn init(app: &AppHandle) {
     spawn_dev_commands(app.clone(), dir);
     let a = app.clone();
     std::thread::spawn(move || loop { std::thread::sleep(Duration::from_secs(3)); sync_windows(&a); });
+    refresh_tray(app);
 }
 
 /// The developer channel of the prototype (instead of menu items): a line written to `duo-cmd.txt` in the data folder is run once and the file is
@@ -481,9 +482,11 @@ fn apply(app: &AppHandle, send_in: Vec<Id>, bring_out: Vec<Id>) {
             if peak_in { peak_go_in(&app2); } else if peak_work { peak_come_out(&app2); }
             if paws_work { if out { paws_come_out(&app2, false) } else { paws_go_in(&app2) } }
             app2.state::<Duo>().busy.store(false, Ordering::SeqCst);
+            refresh_tray(&app2);
         });
     } else {
         d.busy.store(false, Ordering::SeqCst);
+        refresh_tray(app);
     }
 }
 
@@ -512,6 +515,8 @@ fn peak_door(app: &AppHandle, e: &Entrance, m: &Mon) -> ((i32, i32), i32) {
         Edge::Left | Edge::Right => outside.0,
         Edge::Top | Edge::Bottom => if e.along < 0.5 { m.x - win } else { m.x + m.w },
     };
+    // Peak lives on the floor: an entrance learned at the top of the screen (it was on a high ledge) brings it back on the floor, not along the ceiling
+    let at = if e.edge == Edge::Top { entrance_pos(&Entrance { edge: Edge::Bottom, ..e.clone() }, m, body, inset).0 } else { at };
     (at, door_x)
 }
 
@@ -548,6 +553,70 @@ fn peak_go_in(app: &AppHandle) {
     crate::set_peak_visible(app, false);
 }
 
+/// The two items of the tray menu for the pets (ADR-0160) and their words in the app's language: call Peak out, send Peak in, call Paws out, send Paws in.
+static TRAY_PETS: Mutex<Option<(tauri::menu::MenuItem<tauri::Wry>, tauri::menu::MenuItem<tauri::Wry>)>> = Mutex::new(None);
+static TRAY_WORDS: Mutex<Option<[String; 4]>> = Mutex::new(None);
+
+pub fn set_tray_pet_items(peak: tauri::menu::MenuItem<tauri::Wry>, paws: tauri::menu::MenuItem<tauri::Wry>) { *TRAY_PETS.lock().unwrap() = Some((peak, paws)); }
+
+pub fn set_tray_words(w: [String; 4]) { if w.iter().all(|s| !s.is_empty()) { *TRAY_WORDS.lock().unwrap() = Some(w); } }
+
+/// The two items say what can be done now: the pet that is out can be sent in, the pet that is in can be called out.
+pub fn refresh_tray(app: &AppHandle) {
+    let Some(d) = app.try_state::<Duo>() else { return };
+    let (peak_out, paws_out) = { let s = d.state.lock().unwrap(); (s.pets.peak.out, s.pets.paws.out) };
+    let w = TRAY_WORDS.lock().unwrap().clone().unwrap_or_else(|| ["Call Peak out".into(), "Send Peak in".into(), "Call Paws out".into(), "Send Paws in".into()]);
+    if let Some((peak, paws)) = TRAY_PETS.lock().unwrap().as_ref() {
+        let _ = peak.set_text(if peak_out { &w[1] } else { &w[0] });
+        let _ = paws.set_text(if paws_out { &w[3] } else { &w[2] });
+    }
+}
+
+/// An item of the tray menu for a pet: the same as `/in` or `/call` (ADR-0160).
+pub fn menu_pet(app: &AppHandle, pet: &str) {
+    let out = app.try_state::<Duo>().map(|d| { let s = d.state.lock().unwrap(); if pet == "paws" { s.pets.paws.out } else { s.pets.peak.out } }).unwrap_or(false);
+    let ok = duo_command(app.clone(), pet.to_string(), if out { "in".into() } else { "out".into() });
+    log(app, &format!("menu {pet} {} ok={ok}", if out { "in" } else { "out" }));
+    if ok && out { let _ = app.emit_to("main", "duo-tucked", pet.to_string()); }
+}
+
+/// Lượn đi (ADR-0160): the page has walked Peak to the edge; it walks on through its door, out of sight, and only then is it hidden and "in".
+pub fn peak_walk_off(app: &AppHandle) {
+    let app = app.clone();
+    std::thread::spawn(move || {
+        let Some(d) = app.try_state::<Duo>() else { return };
+        let mine = !d.busy.swap(true, Ordering::SeqCst);
+        if let Some(win) = app.get_webview_window("main") {
+            if let (Ok(p), Some(e)) = (win.outer_position(), nearest_entrance_of(&app, &win)) {
+                if let Some((e, m)) = resolve_entrance(&Some(e), &monitors(&app)) {
+                    let (_, door_x) = peak_door(&app, &e, &m);
+                    peak_walk(&app, &win, (p.x, p.y), (door_x, p.y));
+                }
+            }
+        }
+        peak_present(&app, false); // saves the side it left by, before the window is hidden
+        crate::set_peak_visible(&app, false);
+        if mine { d.busy.store(false, Ordering::SeqCst); }
+    });
+}
+
+fn nearest_entrance_of(app: &AppHandle, win: &tauri::WebviewWindow) -> Option<Entrance> {
+    let p = win.outer_position().ok()?;
+    nearest_entrance(p.x, p.y, (PET * scale(app)) as i32, &monitors(app))
+}
+
+/// Lượn đi is over (ADR-0160): Peak comes back through its door, walking in from the side it left by, as when it is called out.
+pub fn peak_walk_back(app: &AppHandle) {
+    peak_present(app, true);
+    let app = app.clone();
+    std::thread::spawn(move || {
+        let Some(d) = app.try_state::<Duo>() else { return };
+        let mine = !d.busy.swap(true, Ordering::SeqCst);
+        peak_come_out(&app);
+        if mine { d.busy.store(false, Ordering::SeqCst); }
+    });
+}
+
 /// The state follows a change of Peak's window made elsewhere (the away flow hides and shows it): away is a tuck. Does nothing without the flag.
 pub fn peak_present(app: &AppHandle, out: bool) {
     if !enabled() { return; }
@@ -555,8 +624,14 @@ pub fn peak_present(app: &AppHandle, out: bool) {
     let mut s = d.state.lock().unwrap();
     if s.pets.peak.out == out { return; }
     s.pets.peak.out = out;
-    if !out { s.pets.peak.tucked_at = now_ms(); }
+    if !out {
+        s.pets.peak.tucked_at = now_ms();
+        // it left by the side it walked to: it comes back by the same one
+        if let Some(w) = app.get_webview_window("main") { if let Ok(p) = w.outer_position() { if let Some(e) = nearest_entrance(p.x, p.y, (PET * scale(app)) as i32, &monitors(app)) { s.pets.peak.entrance = Some(e); } } }
+    }
     save(&d, &s);
+    drop(s);
+    refresh_tray(app);
 }
 
 /// Whether a pet is still coming or going: the page waits for this to be false before the pet speaks (ADR-0158; it was a fixed wait).
@@ -837,7 +912,6 @@ const BOX_W: f64 = 340.0;
 const BOX_H: f64 = 460.0;
 const BOX_FADE_HEAD: f64 = 0.0; // the clear strip at the top of the window where the scrim fades away: it does not count as the box for the pointer (the page has the same number)
 const BOX_MARGIN: f64 = 0.0; // flush with the work area (the stack has its own 8 px inside); 16 was the gap of the old floating card (ADR-0147)
-const CLICK_WAIT: Duration = Duration::from_millis(300); // a single click waits this long to be told from the first half of a double click
 const BLUR_GRACE_MS: u64 = 600; // a blur this soon after the box was shown is the box taking focus, not the person leaving
 const BLUR_TOGGLE_MS: u64 = 900; // a tray click this soon after a blur-hide is the click that took the focus away: it must not show the box again
 
@@ -862,12 +936,9 @@ static TRAY_GEN: AtomicU64 = AtomicU64::new(0);
 /// A single click on the tray (with the flag): after the wait, if no second click came, the box is shown or hidden.
 pub fn tray_single(app: &AppHandle) {
     dismiss_tray_flyout();
-    let g = TRAY_GEN.fetch_add(1, Ordering::SeqCst) + 1;
+    TRAY_GEN.fetch_add(1, Ordering::SeqCst);
     let app = app.clone();
-    std::thread::spawn(move || {
-        std::thread::sleep(CLICK_WAIT);
-        if TRAY_GEN.load(Ordering::SeqCst) == g { chatbox_toggle(&app); }
-    });
+    std::thread::spawn(move || chatbox_toggle(&app)); // no double click any more (ADR-0160): no wait to tell the two apart
 }
 
 /// A double click on the tray (with the flag): it cancels the single click that came with it, then everyone goes in or the last one comes out.
