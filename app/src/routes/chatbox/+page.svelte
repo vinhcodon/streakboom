@@ -187,6 +187,7 @@
       offs.push(await listen<BoxView>("chatbox-view", (e) => { view = e.payload; void refreshPresence(); }));
       offs.push(await listen<boolean>("chatbox-mode", (e) => { engaged = e.payload; }));
       offs.push(await listen("chatbox-members", () => void refreshPresence())); // #17: who is in the chat changed
+      offs.push(await listen<string>("chatbox-restore", (e) => { draft = draft ? `${draft}${String.fromCharCode(10)}${e.payload}` : e.payload; settledDraft = draft; void tick().then(grow); })); // #19: waiting messages not sent (the visit was dismissed) come back to the field
       pawsMode = await invoke<string>("duo_paws_mode").catch(() => "walk");
       offs.push(await listen<number>("chatbox-fade", (e) => { fade = e.payload; }));
       engaged = await invoke<boolean>("chatbox_mode").catch(() => false);

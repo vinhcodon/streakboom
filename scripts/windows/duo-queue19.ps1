@@ -111,14 +111,20 @@ $env:STREAKBOOM_PAWS_CHAT = "1"
 $p = Start-Process $Exe -PassThru; Start-Sleep 8
 try {
   SetState $true $false; OpenBox; Focus; Cmd "type:@Paws vao nhom"; Start-Sleep 7
-  for ($k = 1; $k -le 3; $k++) {
+  for ($k = 1; $k -le 2; $k++) {
     $m = (LogLines).Count
     Send "tin A lan $k cho ca hai"; Start-Sleep -Milliseconds 900   # the group answer is in flight
     Send "tin B lan $k"; Start-Sleep -Milliseconds 400; if ($k -eq 1) { Corner "q1-waiting" }
-    Send "tin C lan $k"; Start-Sleep 16; if ($k -eq 1) { Corner "q2-done" }
+    Send "tin C lan $k"; Start-Sleep 40; if ($k -eq 1) { Corner "q2-done" }
     $l = Since $m
-    $persons = @($l | Where-Object { $_ -match 'queued a message|dispatch queued' } | ForEach-Object { ($_ -split ' ', 2)[1] })
-    $said = @($l | Where-Object { $_ -match ' line (peak|paws) say ' }).Count
-    Note ("round {0}: queued={1} dispatched={2} pet lines={3}" -f $k, @($l | Where-Object { $_ -match 'queued a message' }).Count, @($l | Where-Object { $_ -match 'dispatch queued' }).Count, $said)
+    $order = @($l | Where-Object { $_ -match 'line person|presented (peak|paws) row' } | ForEach-Object { ($_ -split ' ', 2)[1] })
+    Note ("round {0}: queued={1} dispatched={2} rows presented={3}" -f $k, @($l | Where-Object { $_ -match 'queued a message' }).Count, (@($l | Where-Object { $_ -match ' dispatch: ' } | ForEach-Object { ($_ -split 'dispatch: ', 2)[1] }) -join ' > '), @($l | Where-Object { $_ -match 'presented (peak|paws) row' }).Count)
   }
+  # the visit dismissed while an invite waits: a group message in flight, then "Paws go in" and "@Paws ..." queued, then Esc
+  $m = (LogLines).Count
+  Send "ca hai lan cuoi"; Start-Sleep -Milliseconds 900; Send "Paws go in"; Start-Sleep -Milliseconds 300; Send "@Paws quay lai sau"; Start-Sleep -Milliseconds 400
+  Focus; [System.Windows.Forms.SendKeys]::SendWait("{ESC}"); Start-Sleep 10
+  $l = Since $m
+  Note ("dismissed with an invite waiting: given back={0}; paws joined after={1}; member now={2}" -f (@($l | Where-Object { $_ -match 'given back' }) -join ''), @($l | Where-Object { $_ -match 'joined the chat' }).Count, (Member))
+  OpenBox; Start-Sleep 1; Corner "q3-given-back"
 } finally { $log | ForEach-Object { Write-Output $_ }; Stop-Process -Id $p.Id -Force -ErrorAction SilentlyContinue }

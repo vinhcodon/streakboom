@@ -17,6 +17,7 @@
   import { addressees, parseDuoCommand, parseRelay, summons } from "$lib/duo-command";
   import { parseCallMe } from "$lib/callme";
   import { Presenter } from "$lib/presentation";
+  import { SendQueue } from "$lib/send-queue";
   import { Conversation, addTurn, newRoom, shownSays, presentable, situation, toHistory, type Line } from "$lib/conversation";
   import type { BoxAction, BoxView } from "$lib/chatbox";
   import type { PetId } from "$lib/duo";
@@ -2477,10 +2478,16 @@
   // a pet's line waiting to be presented: in the room (the next pet of the same turn hears it) but not yet in the chat; its pet shows as "writing" meanwhile.
   // A cancelled or replaced turn drops its waiting lines from the talk at once, before any new turn builds what a pet hears (#18, lib/presentation.ts).
   const presenter = new Presenter();
+  // #19: the send queue; "settled" waits until the presentation chain is still, so a waiting message never replaces an answer not yet seen
+  const sendQueue = new SendQueue(
+    (t) => { void invoke("duo_log", { line: `dispatch: ${t.slice(0, 40)}` }).catch(() => {}); return sendChatNow(t); },
+    async () => { let c: Promise<void>; do { c = lineChain; await c; } while (c !== lineChain); },
+    () => syncLog(),
+  );
   function syncLog() {
     const seen = shownSays(talk.room, presenter.hidden());
     talkLog = seen.slice(-6).map((t) => ({ who: t.from, text: t.text }));
-    boxTurns = [...seen.map((t) => ({ id: t.id, who: t.from, text: t.text, at: t.at })), ...queued.map((q) => ({ id: q.id, who: "person" as const, text: q.text, at: q.at, waiting: true }))];
+    boxTurns = [...seen.map((t) => ({ id: t.id, who: t.from, text: t.text, at: t.at })), ...sendQueue.waiting().map((q) => ({ id: q.id, who: "person" as const, text: q.text, at: q.at, waiting: true }))];
     pendingWho = presenter.writer();
   }
   let pendingWho = $state<PetId | null>(null);
@@ -2629,7 +2636,7 @@
       } catch (e) {
         lt(`talk_failed ${errKind(e)}`);
       } finally {
-        busy = false; setTimeout(drainQueue, 0); // #19: a message that waited goes now
+        busy = false;
       }
       return true;
     }
@@ -2656,7 +2663,7 @@
     } catch (e) {
       lt(`talk_failed ${errKind(e)}`);
     } finally {
-      busy = false; setTimeout(drainQueue, 0); // #19: a message that waited goes now
+      busy = false;
     }
     return true;
   }
@@ -3074,26 +3081,18 @@
     }
   }
 
-  /** #19: messages sent while an answer is in flight. They show at once as the person's lines marked "waiting" (box only, not yet in the talk) and are handled in
-   *  order when the current answer is done; nothing is dropped and the current answer is not cancelled. */
-  let queued: { id: number; text: string; at: number }[] = [];
-  let queuedId = -1;
-  function drainQueue() {
-    if (busy || queued.length === 0) return;
-    const q = queued.shift()!;
-    syncLog();
-    void invoke("duo_log", { line: `dispatch queued message (${queued.length} still waiting)` }).catch(() => {});
-    void sendChat(q.text);
-  }
-  async function sendChat(raw: string) {
+  /** #19: a message from the person. With the duo it goes through the send queue (lib/send-queue.ts): handled now if nothing is being handled, else it shows as
+   *  "waiting" and goes after the current one has settled and its answers have been presented, in the order sent. */
+  function sendChat(raw: string) {
     const text = raw.trim();
     if (!text) return;
-    if (duoOn && busy) {
-      queued.push({ id: queuedId--, text, at: Date.now() });
-      syncLog();
-      void invoke("duo_log", { line: `queued a message while an answer is in flight (${queued.length} waiting)` }).catch(() => {});
-      return;
-    }
+    if (!duoOn) { void sendChatNow(text); return; }
+    const how = sendQueue.send(text, Date.now());
+    if (how === "queued") void invoke("duo_log", { line: `queued a message (${sendQueue.waiting().length} waiting)` }).catch(() => {});
+  }
+  async function sendChatNow(raw: string) {
+    const text = raw.trim();
+    if (!text) return;
     if (duoOn) {
       // the message is in the talk at once, so that the chat box shows it before any pet answers (ADR-0142)
       await refreshPawsOut();
@@ -3224,7 +3223,7 @@
     } finally {
       clearTimeout(slowTimer);
       chatSlow = false;
-      busy = false; setTimeout(drainQueue, 0); // #19: a message that waited goes now
+      busy = false;
       if (leftByModel) return; // startLeave closed the chat box and is saying its goodbye
       chatPhase = "reply";
       // If the chat was closed while waiting, still deliver the answer as a plain bubble. With the duo the answer went through sayAs above (the box, or a
@@ -3698,7 +3697,11 @@
       cleanups.push(await win.listen<BoxAction>("chatbox-action", (e) => onBoxAction(e.payload)));
       cleanups.push(await win.listen<string>("duo-type", (e) => void sendChat(e.payload))); // developer channel: a message typed without the box
       cleanups.push(await win.listen<PetId>("duo-tucked", (e) => { talk.tucked(e.payload); dropPetLines(e.payload); void refreshPawsOut(); }));
-      cleanups.push(await win.listen("duo-visit-ended", () => { cancelTalk(); modelTyping = null; void invoke("duo_log", { line: "visit ended: the talk of the visit is dropped" }).catch(() => {}); })); // #17: nothing of a dismissed visit reaches a later one // the portrait went with the chat (issue 15): Paws hears nothing more
+      cleanups.push(await win.listen("duo-visit-ended", () => {
+        // #19: messages still waiting are not sent after the visit is dismissed; their text goes back to the field so that nothing is lost
+        const back = sendQueue.takeAll();
+        if (back.length > 0) { void emitTo("chatbox", "chatbox-restore", back.join(String.fromCharCode(10))).catch(() => {}); void invoke("duo_log", { line: `visit ended: ${back.length} waiting message(s) given back to the field` }).catch(() => {}); }
+        cancelTalk(); modelTyping = null; void invoke("duo_log", { line: "visit ended: the talk of the visit is dropped" }).catch(() => {}); })); // #17: nothing of a dismissed visit reaches a later one // the portrait went with the chat (issue 15): Paws hears nothing more
       cleanups.push(await win.listen<{ dir: 1 | -1 }>("duo-face", (e) => { if (pose === "idle") dir = e.payload.dir; })); // the talk: the head turns toward the speaker
       cleanups.push(await win.listen<{ pet: PetId; text: string }>("duo-say", (e) => void sayAs(e.payload.pet, e.payload.text))); // developer channel: a line in Paws' bubble without the model
       const touchEndsScene = () => { if (sceneHold) void invoke("duo_scene_cancel"); if (duoOn) cancelTalk(); };
