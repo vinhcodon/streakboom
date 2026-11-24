@@ -58,3 +58,35 @@ test("the race as it was (only the generation moved on at cancel): the unpresent
   const { fresh } = await scenario(false);
   assert.deepEqual(fresh.heard, ["Both of you?", "Presented Paws", "UNPRESENTED PEAK", "Fresh question"]);
 });
+
+test("a member sent away while its answer waits: its line leaves the talk and the cue at once, a reinvite starts clean, the late callback changes nothing (#18)", async () => {
+  const inputs: { pet: PetId; heard: string[] }[] = [];
+  const answers: Record<PetId, string[]> = { paws: ["STALE PAWS", "New Paws"], peak: ["Peak stays"] };
+  let t = 1000;
+  const deps: Deps = { model: async (pet, view) => { inputs.push({ pet, heard: view.map((v) => v.text) }); return answers[pet].shift() ?? "…"; }, allow: () => true, quiet: () => false, sleep: async () => {}, beat: () => 0, now: () => (t += 10) };
+  const presenter = new Presenter();
+  const queue: { l: Line; gen: number }[] = [];
+  const talk = new Conversation(deps, (l) => { if (l.act === "say") presenter.written(l.turnId, l.pet); queue.push({ l, gen: presenter.gen }); });
+  talk.lastSpoken = "paws";
+  talk.notePerson("Both of you?", ["paws", "peak"]);
+  await talk.person("Both of you?", ["paws", "peak"], ["peak", "paws"]); // both answered; nothing presented yet (the queue is held)
+  const stalePaws = queue.find((q) => q.l.text === "STALE PAWS")!;
+  const peak = queue.find((q) => q.l.text === "Peak stays")!;
+  // `/in paws` succeeds while the chat stays open: what the page now does at that boundary
+  talk.tucked("paws");
+  const r = presenter.dropPet(talk.room, "paws");
+  talk.room = r.room;
+  assert.equal(r.dropped, 1);
+  assert.equal(presenter.writer(), "peak", "Paws's cue is gone; Peak's valid line still waits");
+  // reinvited before the old callback runs, and asked again
+  talk.notePerson("Paws again?", ["paws"]);
+  await talk.person("Paws again?", ["paws"], ["peak", "paws"]);
+  const pawsInput = inputs[inputs.length - 1];
+  assert.ok(!pawsInput.heard.includes("STALE PAWS"), "the new turn does not hear the line Paws never got to say");
+  // the old callbacks run late
+  assert.equal(presenter.present(stalePaws.l.turnId, stalePaws.gen), false, "the stale Paws line is refused");
+  assert.ok(!talk.room.turns.some((x) => x.text === "STALE PAWS"), "and it is not in the talk");
+  const fresh = queue.find((q) => q.l.text === "New Paws")!;
+  assert.equal(presenter.present(peak.l.turnId, peak.gen), true, "Peak's valid line still presents");
+  assert.equal(presenter.present(fresh.l.turnId, fresh.gen), true, "and the new Paws line presents normally");
+});
