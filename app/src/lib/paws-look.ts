@@ -4,10 +4,11 @@
 export type Dir = 1 | -1;
 export interface View { front: boolean; dir: Dir }
 
-export const SIDE_PX = 50; // the pointer this far to one side of Paws makes it turn to that side; nearer than this it looks at the person
 // The program tells where the pointer and Peak are only when that changes (and tells `null` when they are gone), so the last word stands until the next.
-export const SPOKEN_MS = 3000; // the time it keeps its head turned to a pet that spoke
+export const SPOKEN_MS = 3000; // the time its eyes stay on a pet that spoke
 export const REACTION_MS = 900; // a poke or a stroke: it looks at the person for this long
+export const EYE_X = 4; // how far the eyes drift sideways and up or down, in the units of the 120 by 120 picture (Peak's drift about as far)
+export const EYE_Y = 3;
 
 export interface LookInput {
   now: number;
@@ -21,18 +22,21 @@ export interface LookInput {
   current: View;
 }
 
-/** The picture now: a scene keeps what it set; carried, it faces the way it is going; a reaction looks at the person; the pointer near turns the head to it (or looks at
- *  the person when it is in front); a pet that spoke, or Peak close by, turns it that way for a while; otherwise it stands and looks at the person. */
+/** The picture now. Paws stands and looks at the person (the front view) and only its eyes move (see `gaze`): turning the whole body to the pointer felt wrong to the
+ *  author. The side view is for a scene (it decides) and for being carried (it faces the way it is going). */
 export function decideView(i: LookInput): View {
   if (i.sceneLive) return i.current;
   if (i.dragging) return { front: false, dir: i.dragDir };
-  if (i.now < i.reactionUntil) return { front: true, dir: i.current.dir };
-  if (i.pointer) {
-    return Math.abs(i.pointer.dx) > SIDE_PX ? { front: false, dir: i.pointer.dx > 0 ? 1 : -1 } : { front: true, dir: i.current.dir };
-  }
-  if (i.spoken && i.now - i.spoken.at < SPOKEN_MS) return { front: false, dir: i.spoken.dir };
-  if (i.peak) return { front: false, dir: i.peak.dx > 0 ? 1 : -1 };
   return { front: true, dir: i.current.dir };
+}
+
+/** Where the eyes look, each of x and y in -1..1 (null: straight ahead): the pointer when it is near, else a pet that spoke a moment ago, else Peak when it is close. */
+export function gaze(i: Pick<LookInput, "now" | "pointer" | "peak" | "spoken">): { x: number; y: number } | null {
+  const c = (n: number) => Math.max(-1, Math.min(1, n));
+  if (i.pointer) return { x: c(i.pointer.dx / 140), y: c(i.pointer.dy / 110) };
+  if (i.spoken && i.now - i.spoken.at < SPOKEN_MS) return { x: i.spoken.dir, y: 0 };
+  if (i.peak) return { x: i.peak.dx > 0 ? 0.9 : -0.9, y: 0 };
+  return null;
 }
 
 /** A stroke: the pointer moving over the pet without a button. It counts the way travelled; enough of it within a short time is one stroke, and then it rests. */

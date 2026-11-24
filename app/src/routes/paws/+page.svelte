@@ -6,7 +6,8 @@
   import { invoke } from "@tauri-apps/api/core";
   import { listen } from "@tauri-apps/api/event";
   import { newDirector, start, due, cancel, isLive, SCENES, type Beat, type DirectorState } from "$lib/scene";
-  import { REACTION_MS, Stroke, decideView, isDrag, type Dir } from "$lib/paws-look";
+  import { EYE_X, EYE_Y, REACTION_MS, Stroke, decideView, gaze, isDrag, type Dir } from "$lib/paws-look";
+  import PawsFront from "$lib/PawsFront.svelte";
 
   const q = new URLSearchParams(location.search);
   const from = q.get("from") ?? "up"; // the way it faces when it comes in
@@ -20,6 +21,8 @@
   let peakNear: { dx: number } | null = null;
   let spoken: { dir: Dir; at: number } | null = null;
   let reactionUntil = 0;
+  let eyeX = $state(0); // where the eyes are, in the units of the picture (they follow what Paws looks at, ADR-0154)
+  let eyeY = $state(0);
   let reaction = $state<"" | "startle" | "happy">("");
   let reactionT: ReturnType<typeof setTimeout> | undefined;
   let dragging = $state(false);
@@ -241,6 +244,10 @@
       const v = decideView({ now: Date.now(), sceneLive: !!loop, dragging, dragDir, reactionUntil, pointer: pointerNear, peak: peakNear, spoken, current: { front, dir } });
       if (v.front !== front) front = v.front;
       if (v.dir !== dir) dir = v.dir;
+      const g = gaze({ now: Date.now(), pointer: pointerNear, peak: peakNear, spoken });
+      const tx = g && !dragging && front ? Math.round(g.x * EYE_X * 10) / 10 : 0, ty = g && !dragging && front ? Math.round(g.y * EYE_Y * 10) / 10 : 0;
+      if (tx !== eyeX) eyeX = tx;
+      if (ty !== eyeY) eyeY = ty;
     }, 100);
     let nodT: ReturnType<typeof setTimeout> | undefined;
     void listen("duo-nod", () => { nodding = true; clearTimeout(nodT); nodT = setTimeout(() => (nodding = false), 700); }).then((f) => offs.push(f));
@@ -251,29 +258,32 @@
 <!-- svelte-ignore a11y_no_static_element_interactions -->
 <div class="stage" class:walking class:nodding class:held={dragging} class:landed class:startle={reaction === "startle"} class:happy={reaction === "happy"}
   onpointerdown={onDown} onpointermove={onMove} onpointerup={onUp} onpointercancel={onUp} onpointerleave={() => stroke.leave()}
+  ondragstart={(e) => e.preventDefault()} onselectstart={(e) => e.preventDefault()}
   ondblclick={() => void invoke("duo_open_box", { pet: "paws" })}>
   {#if front}
-    <img src="/paws/paws-front.svg" alt="" />
+    <PawsFront class="pic" gx={eyeX} gy={eyeY} />
   {:else}
-    <img src="/paws/paws-side.svg" alt="" style="transform: scaleX({dir})" />
+    <img class="pic" src="/paws/paws-side.svg" alt="" style="transform: scaleX({dir})" />
   {/if}
 </div>
 
 <style>
-  :global(html, body) { margin: 0; background: transparent; overflow: hidden; }
-  .stage { width: 140px; height: 140px; box-sizing: border-box; padding: 10px; display: flex; align-items: flex-end; justify-content: center; }
-  img { display: block; width: 100px; height: 100px; animation: breathe 3.2s ease-in-out infinite; transform-origin: 50% 100%; }
+  :global(html, body) { margin: 0; background: transparent; overflow: hidden; user-select: none; -webkit-user-select: none; }
+  :global(.pic) { -webkit-user-drag: none; user-select: none; outline: none; pointer-events: none; }
+  :global(.pic)::selection, :global(.pic *)::selection { background: transparent; }
+  .stage { outline: none; -webkit-tap-highlight-color: transparent; width: 140px; height: 140px; box-sizing: border-box; padding: 10px; display: flex; align-items: flex-end; justify-content: center; }
+  :global(.pic) { display: block; width: 100px; height: 100px; animation: breathe 3.2s ease-in-out infinite; transform-origin: 50% 100%; }
   @keyframes breathe { 0%, 100% { translate: 0 0; } 50% { translate: 0 -3px; } }
-  .walking img { animation: bob 0.34s ease-in-out infinite; }
+  .walking :global(.pic) { animation: bob 0.34s ease-in-out infinite; }
   @keyframes bob { 0%, 100% { translate: 0 0; rotate: -1.5deg; } 50% { translate: 0 -5px; rotate: 1.5deg; } }
-  .nodding img { animation: nod 0.7s ease-in-out 1; }
+  .nodding :global(.pic) { animation: nod 0.7s ease-in-out 1; }
   @keyframes nod { 0%, 100% { rotate: 0deg; translate: 0 0; } 30% { rotate: 6deg; translate: 0 2px; } 60% { rotate: -2deg; translate: 0 -1px; } }
-  .startle img { animation: startle 0.45s ease-out 1; }
+  .startle :global(.pic) { animation: startle 0.45s ease-out 1; }
   @keyframes startle { 0% { translate: 0 0; } 25% { translate: 0 -12px; scale: 1.06; } 60% { translate: 0 2px; } 100% { translate: 0 0; scale: 1; } }
-  .happy img { animation: wag 0.28s ease-in-out 3; }
+  .happy :global(.pic) { animation: wag 0.28s ease-in-out 3; }
   @keyframes wag { 0%, 100% { rotate: -5deg; } 50% { rotate: 5deg; } }
-  .held img { animation: none; translate: 0 -10px; rotate: 8deg; transform-origin: 50% 20%; }
-  .landed img { animation: land 0.4s ease-out 1; }
+  .held :global(.pic) { animation: none; translate: 0 -10px; rotate: 8deg; transform-origin: 50% 20%; }
+  .landed :global(.pic) { animation: land 0.4s ease-out 1; }
   @keyframes land { 0% { scale: 1.05 0.92; } 100% { scale: 1; } }
-  @media (prefers-reduced-motion: reduce) { img, .walking img, .nodding img, .startle img, .happy img, .landed img { animation: none; } }
+  @media (prefers-reduced-motion: reduce) { :global(.pic), .walking :global(.pic), .nodding :global(.pic), .startle :global(.pic), .happy :global(.pic), .landed :global(.pic) { animation: none; } }
 </style>
