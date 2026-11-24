@@ -60,6 +60,21 @@ export function addressees(raw: string, out: Out): PetId[] {
   return here;
 }
 
+/** The pets a message calls out (ADR-0157): the pets named by an `@` mention at the start of the message that are not out ("@Paws what do you think", "@Peak @Paws hi").
+ *  A mention is a call, as in common chat applications, and the same as `/call`. A name without the `@`, and a name in the middle of a sentence, call nobody. */
+export function summons(raw: string, out: Out): PetId[] {
+  const names: PetId[] = [];
+  let rest = raw;
+  for (;;) {
+    const m = /^\s*@(peak|paws)(?![\p{L}\p{N}_])[\s,&]*(?:và|and|với)?[\s,]*/iu.exec(rest);
+    if (!m) break;
+    const p = m[1].toLowerCase() as PetId;
+    if (!out[p] && !names.includes(p)) names.push(p);
+    rest = rest.slice(m[0].length);
+  }
+  return names;
+}
+
 const RELAY = [/\bhỏi\s+(paws|peak)\b/, /\bask\s+(paws|peak)\b/, /(paws|peak)\s*に\s*(聞い|きい|尋ね|たずね)/];
 
 /** "Hỏi Paws xem...", "ask Peak what...", "Pawsに聞いて": the person asks one pet to ask the other (ADR-0141, situation 8). Short messages only; the pet

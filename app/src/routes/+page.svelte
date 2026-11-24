@@ -14,7 +14,7 @@
   import { gatesPass, pickLine as pickFromPool, runSteps, type Host } from "$lib/skill-run";
   import { ASIDE_SKILL, LEAVE_SKILL, SEAT_HERE_SKILL, SEAT_SKILL } from "$lib/skills";
   import { seatFraction, seatMove, seatWalkMs } from "$lib/seat";
-  import { addressees, parseDuoCommand, parseRelay } from "$lib/duo-command";
+  import { addressees, parseDuoCommand, parseRelay, summons } from "$lib/duo-command";
   import { parseCallMe } from "$lib/callme";
   import { Conversation, addTurn, newRoom, presentable, situation, toHistory, type Line } from "$lib/conversation";
   import type { BoxAction, BoxView } from "$lib/chatbox";
@@ -2517,8 +2517,28 @@
   async function tryTalkFromChat(text: string): Promise<boolean> {
     if (!duoOn || !(canChat || duoFake)) return false;
     await refreshPawsOut();
+    // an @ mention at the start calls a pet that is in out first (ADR-0157), as `/call` does; the message then goes to it. If the call changes nothing (busy), the message goes as before, to whoever is out
+    let callFailed = false;
+    for (const p of summons(text, outNow())) {
+      const ok = await invoke<boolean>("duo_command", { target: p, act: "out" }).catch(() => false);
+      lt(`command_duo target=${p} act=out ok=${ok} from=mention`);
+      if (!ok) { callFailed = true; continue; }
+      for (let i = 0; i < 60 && (await invoke<boolean>("duo_busy").catch(() => false)); i++) await pause(100); // the pet walks in before it speaks: wait for the walk, not a fixed time (ADR-0158)
+      await refreshPawsOut();
+      if (p === "paws") enter("nod");
+    }
     const out = outNow();
     const present = (["peak", "paws"] as PetId[]).filter((p) => out[p]);
+    if (callFailed && present.length > 0) {
+      // the call changed nothing (busy): a pet that is out says so, in one line, instead of nothing (ADR-0158)
+      const line = ui.callBusy[Math.floor(Math.random() * ui.callBusy.length)];
+      talk.notePerson(text, present);
+      talk.room = addTurn(talk.room, { from: present[0], to: ["person"], text: line, at: Date.now(), act: "say" }).room;
+      syncLog();
+      lineGen++;
+      await sayAs(present[0], line);
+      return true;
+    }
     const rel = out.peak && out.paws ? parseRelay(text) : null; // "ask Paws ...": one pet turns to the other, which answers (ADR-0141, situation 8)
     if (rel) {
       busy = true;
@@ -2536,7 +2556,7 @@
     }
     const to = addressees(text, out); // every pet that is out, or the one the message names (ADR-0145)
     if (to.length === 0) return true; // nobody is out: nothing is sent
-    if (to.length === 1 && to[0] === "peak") return false; // Peak alone: its own chat, as before
+    if (to.length === 1 && to[0] === "peak" && !out.paws) return false; // Peak alone: its own chat, as before; with Paws out a message for Peak goes to the shared talk (ADR-0158)
     // the daily limit or a cooldown: the pet says so in its own words and no call is made (it used to be a silent gesture, and the person saw nothing)
     const gate = duoFake ? "ok" : aiGate(data, "chat", Date.now(), 2);
     if (gate !== "ok") {
@@ -2983,9 +3003,11 @@
       await refreshPawsOut();
       const out = outNow();
       // with both pets in only a local command goes on; anything else is not sent (ADR-0145)
-      if (!out.peak && !out.paws && !parseDuoCommand(text) && !parseCallMe(text)) return;
+      if (!out.peak && !out.paws && !parseDuoCommand(text) && !parseCallMe(text) && summons(text, out).length === 0) return; // an @ mention calls the pet out (ADR-0157)
       const rel = out.peak && out.paws ? parseRelay(text) : null;
-      talk.notePerson(text, rel ? [rel.via, rel.target] : addressees(text, out).length > 0 ? addressees(text, out) : ["peak"]);
+      const eff = { ...out }; // a mention calls the pet out first (ADR-0157): the turn is filed for the pet that will answer, not for whoever is out now
+      for (const p of summons(text, out)) eff[p] = true;
+      talk.notePerson(text, rel ? [rel.via, rel.target] : addressees(text, eff).length > 0 ? addressees(text, eff) : ["peak"]);
       syncLog();
     }
     // A plain command to go away is Peak's own business, not a message to the model: no key, no chat turn counted (spec 14, A5).
@@ -2995,6 +3017,14 @@
     // A yes or a no to the question about a day is Peak's business too (ADR-0115): no model call, no chat turn counted.
     if (!busy && answerDay(text)) return;
     if (busy || !canChat) return;
+    if (duoOn && duoFake) {
+      // developer channel: Peak's own chat answers with a canned line too, so that a test never calls the model with the person's key
+      const line = "Fine, as usual.";
+      mirrorPeak(text, line);
+      void invoke("duo_log", { line: `line peak say to=person ${line}` }).catch(() => {});
+      void sayAs("peak", line);
+      return;
+    }
     const gate = aiGate(data, "chat", Date.now(), duoOn ? 2 : 1); // the duo prototype counts two calls for a message to both, so its limit is twice as high (ADR-0152)
     void invoke("chat_trace", { step: `chat gate=${gate} chars=${text.length} day=${data.ai.chat}` }).catch(() => {});
     if (gate !== "ok") {

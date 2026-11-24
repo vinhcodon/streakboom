@@ -13,7 +13,7 @@ mod updater;
 
 use brain::{AiError, Kind, Turn};
 use layout::Area;
-use platform::{busy_now, last_input_idle_ms, pointer_pos, primary_button_raw, precise_sleep, show_without_activating, timer_period, window_rect_of};
+use platform::{busy_now, hide_window, last_input_idle_ms, pointer_pos, primary_button_raw, precise_sleep, show_without_activating, timer_period, window_rect_of};
 use serde::{Deserialize, Serialize};
 use std::{
     fs,
@@ -1633,17 +1633,25 @@ async fn screen_grid(app: AppHandle) -> Option<ScreenGrid> {
 
 fn toggle_visibility(app: &AppHandle) {
     if let Some(win) = app.get_webview_window("main") {
-        if win.is_visible().unwrap_or(false) {
-            let _ = win.hide();
-            // the bubble belongs to the pet: hide it too
-            bubble_hide(app.clone(), app.state::<AppState>());
-            overlay_follow(app, false);
-        } else {
-            // shown without the keyboard: calling a pet out from the chat box must not take the keyboard from it
-            show_without_activating(&win);
-            overlay_follow(app, true);
-            end_away(app);
-        }
+        set_peak_visible(app, !win.is_visible().unwrap_or(false));
+    }
+}
+
+/// Peak's window is shown or hidden to match `want`, and does nothing if it already does (ADR-0158: a window is set, never switched, so that it cannot
+/// disagree with who is out). Shown without the keyboard: calling a pet out from the chat box must not take the keyboard from it.
+pub(crate) fn set_peak_visible(app: &AppHandle, want: bool) {
+    let Some(win) = app.get_webview_window("main") else { return };
+    let now = win.is_visible().unwrap_or(false);
+    if want && !now {
+        show_without_activating(&win);
+        overlay_follow(app, true);
+        end_away(app);
+    } else if !want && now {
+        hide_window(&win);
+        // the bubble belongs to the pet: hide it too
+        bubble_hide(app.clone(), app.state::<AppState>());
+        overlay_follow(app, false);
+        if duo::enabled() { duo::log(app, &format!("peak_hide visible_after={}", win.is_visible().unwrap_or(false))); }
     }
 }
 
@@ -1745,9 +1753,10 @@ fn pet_leave(app: AppHandle, state: State<AppState>, minutes: u32) -> bool {
     if !win.is_visible().unwrap_or(false) || state.away.swap(true, Ordering::SeqCst) {
         return false;
     }
-    let _ = win.hide();
+    hide_window(&win); // the same kind of call as the one that shows it on return
     bubble_hide(app.clone(), app.state::<AppState>());
     overlay_follow(&app, false);
+    duo::peak_present(&app, false); // away is a tuck: a hidden Peak is not "out" (ADR-0158)
     let secs = away_secs(std::env::var("STREAKBOOM_AWAY_SECS").ok().as_deref(), u64::from(minutes.clamp(1, 24 * 60)) * 60);
     arm_return(&app, Duration::from_secs(secs));
     true
@@ -1765,6 +1774,7 @@ fn pet_return(app: AppHandle, state: State<AppState>) -> bool {
         show_without_activating(&win);
     }
     overlay_follow(&app, true);
+    duo::peak_present(&app, true);
     true
 }
 
@@ -2022,6 +2032,7 @@ pub fn run() {
             duo::chatbox_fit,
             duo::duo_box_ambient,
             duo::duo_presence,
+            duo::duo_busy,
             duo::duo_touch,
             duo::duo_open_box,
             duo::chatbox_take_prefill,

@@ -50,6 +50,7 @@ export interface UiStrings {
   removed: string;
   thinking: string;
   capHit: string[]; // in-character ways to say "enough for today"; one is picked at random
+  callBusy: string[]; // a pet that is out says it when a mention could not bring the other pet out (ADR-0158); no pronoun for the speaker, so that either pet can say it
   slowHint: string;
   copyStats: string;
   statsCopied: string;
@@ -247,6 +248,7 @@ export const UI: Record<Lang, UiStrings> = {
     sure: "Sure?",
     removed: "Key removed. I'm back to my few words.",
     thinking: "…",
+    callBusy: ["Give it a moment, they are busy right now.", "They cannot come out just yet. Try again in a moment."],
     capHit: [
       "I've talked a lot today. Let's keep the rest for tomorrow.",
       "My voice is worn out for today. Come find me tomorrow?",
@@ -501,6 +503,7 @@ export const UI: Record<Lang, UiStrings> = {
     sure: "Chắc chứ?",
     removed: "Đã xóa key. Mình lại chỉ biết vài câu.",
     thinking: "…",
+    callBusy: ["Chờ một chút nhé, bạn ấy đang bận chưa ra được.", "Bạn ấy chưa ra được lúc này. Thử lại sau một lát nhé."],
     capHit: [
       "Hôm nay mình nói nhiều rồi. Phần còn lại để mai nhé.",
       "Mình hết hơi rồi, mai gặp lại nhé?",
@@ -755,6 +758,7 @@ export const UI: Record<Lang, UiStrings> = {
     sure: "本当に？",
     removed: "キーを削除したよ。また少ない言葉に戻るね。",
     thinking: "…",
+    callBusy: ["ちょっと待ってね、いまは出てこられないみたい。", "もう少ししてからもう一度呼んでね。"],
     capHit: [
       "今日はいっぱい話したよ。続きは明日にしようね。",
       "今日の声はもう出ないよ。明日また会いに来てくれる？",

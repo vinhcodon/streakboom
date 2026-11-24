@@ -115,6 +115,18 @@ pub fn precise_sleep(ms: u64) {
 
 /// Show a window without making it the active one (`SW_SHOWNOACTIVATE`), so that Peak reappearing by itself never takes
 /// the keyboard focus. If the call fails, it is an ordinary `show`.
+/// Hide a window with the system call (`SW_HIDE`). A window shown by `show_without_activating` is shown behind the back of the window library, whose own
+/// flag still says hidden, so its `hide` does nothing (found in DU-12: Peak was sent in and stayed on the screen). The pair must be the same kind of call.
+pub fn hide_window(win: &WebviewWindow) {
+    use windows_sys::Win32::UI::WindowsAndMessaging::{ShowWindow, SW_HIDE};
+    if let Ok(hwnd) = win.hwnd() {
+        // SAFETY: a plain call with the window handle of our own window; no pointers are passed.
+        unsafe { ShowWindow(hwnd.0 as _, SW_HIDE) };
+        return;
+    }
+    let _ = win.hide();
+}
+
 pub fn show_without_activating(win: &WebviewWindow) {
     use windows_sys::Win32::UI::WindowsAndMessaging::{ShowWindow, SW_SHOWNOACTIVATE};
     if let Ok(hwnd) = win.hwnd() {

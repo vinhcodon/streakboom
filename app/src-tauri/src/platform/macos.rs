@@ -36,6 +36,10 @@ pub fn show_without_activating(win: &WebviewWindow) {
     let _ = win.show();
 }
 
+pub fn hide_window(win: &WebviewWindow) {
+    let _ = win.hide();
+}
+
 pub fn ground_of_point(_x: i32, _y: i32) -> Ground {
     Ground::Unknown
 }

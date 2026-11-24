@@ -7,7 +7,7 @@
   import { boxStrings, slashLabel } from "$lib/chatbox-ui";
   import { nfc } from "$lib/clip";
   import { parseCallMe } from "$lib/callme";
-  import { parseDuoCommand } from "$lib/duo-command";
+  import { parseDuoCommand, summons } from "$lib/duo-command";
   import { EMPTY_VIEW, applyMention, groupTurns, mentionItems, mentionToken, mentionsIn, recallStep, settled, slashItems, timeLabel, withMention, type BoxAction, type BoxView, type MentionItem, type PetKey, type SlashItem } from "$lib/chatbox";
 
   let view = $state<BoxView>(EMPTY_VIEW);
@@ -41,7 +41,7 @@
   const placeholder = $derived(!view.canChat ? t.noBrain : !anyOut ? t.bothResting : t.say);
 
   const sent = $derived(view.turns.filter((t) => t.who === "person").map((t) => t.text).slice(-30));
-  const slash = $derived<SlashItem[]>(!slashOff && settledDraft.startsWith("/") && !settledDraft.includes(String.fromCharCode(10)) ? slashItems(settledDraft.slice(1), presence) : []);
+  const slash = $derived<SlashItem[]>(!slashOff && settledDraft.startsWith("/") && !settledDraft.includes(String.fromCharCode(10)) ? slashItems(settledDraft.slice(1), presence, pinned) : []);
   $effect(() => { void settledDraft; slashSel = 0; });
   // a mention being typed (ADR-0152): after an @ the names that fit are offered; the arrows, Tab or Enter choose, Esc closes, a click chooses
   let caret = $state(0);
@@ -67,7 +67,7 @@
     const text = draft.trim();
     if (!text) return;
     // with both pets in only a local command goes ("call Paws out", "call me ..."): anything else stays in the field and the placeholder says why
-    if (!anyOut && !parseDuoCommand(text) && !parseCallMe(text)) return;
+    if (!anyOut && !parseDuoCommand(text) && !parseCallMe(text) && summons(text, presence).length === 0) return; // an @ mention calls the pet out (ADR-0157)
     act({ type: "send", text });
     draft = "";
     settledDraft = "";

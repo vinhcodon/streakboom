@@ -63,10 +63,11 @@ export interface Presence { peak: boolean; paws: boolean }
 export type SlashAct = { kind: "out"; target: PetKey } | { kind: "in"; target: PetKey } | { kind: "pin" } | { kind: "clear" } | { kind: "name"; value: string };
 export interface SlashItem { id: string; label: string; hint: string; act: SlashAct }
 
-const ALIASES: Record<"out" | "in" | "pin" | "clear", string[]> = {
+const ALIASES: Record<"out" | "in" | "pin" | "unpin" | "clear", string[]> = {
   out: ["call", "out", "goi", "ra", "出して", "呼"],
   in: ["in", "send", "tuck", "vao", "duoi", "戻", "入"],
   pin: ["pin", "keep", "ghim", "固定"],
+  unpin: ["unpin", "release", "fade", "unghim", "bo ghim", "tha", "外す"],
   clear: ["clear", "wipe", "xoa", "消"],
 };
 
@@ -76,7 +77,7 @@ function plain(s: string): string {
 
 /** The commands that fit what is typed after the slash. A verb in English, Vietnamese or Japanese (a start of it is enough), then perhaps a pet.
  *  Only what can happen is offered: a pet that is away can be called out, a pet that is out can be sent in. Local: no model, no key. */
-export function slashItems(query: string, presence: Presence): SlashItem[] {
+export function slashItems(query: string, presence: Presence, pinned = false): SlashItem[] {
   const [verbQ = "", petQ = ""] = plain(query).split(/\s+/);
   const all: SlashItem[] = [];
   for (const t of ["paws", "peak"] as const) {
@@ -87,7 +88,9 @@ export function slashItems(query: string, presence: Presence): SlashItem[] {
     const name = t === "paws" ? "Paws" : "Peak";
     if (presence[t]) all.push({ id: `in-${t}`, label: `Send ${name} in`, hint: `/in ${t}`, act: { kind: "in", target: t } });
   }
-  all.push({ id: "pin", label: "Keep the box open", hint: "/pin", act: { kind: "pin" } });
+  // one command for both ways (the page toggles): the list shows the one that is possible now, so the person never has to guess the state
+  if (pinned) all.push({ id: "unpin", label: "Let the box fade away", hint: "/unpin", act: { kind: "pin" } });
+  else all.push({ id: "pin", label: "Keep the box open", hint: "/pin", act: { kind: "pin" } });
   all.push({ id: "clear", label: "Clear this chat", hint: "/clear", act: { kind: "clear" } });
   if (!verbQ) return all;
   // `/name Vinh`: tell the pets what to call the person (ADR-0144); offered as soon as a name follows the verb
@@ -96,7 +99,7 @@ export function slashItems(query: string, presence: Presence): SlashItem[] {
   const kindOf = (a: SlashAct) => a.kind;
   return all.filter((it) => {
     if (it.act.kind === "name") return false;
-    const verbs = ALIASES[kindOf(it.act) as "out" | "in" | "pin" | "clear"];
+    const verbs = ALIASES[it.id === "unpin" ? "unpin" : (kindOf(it.act) as "out" | "in" | "pin" | "clear")];
     if (!verbs.some((v) => plain(v).startsWith(verbQ) || verbQ.startsWith(plain(v)) && plain(v).length >= 2)) return false;
     if (petQ && "target" in it.act) return it.act.target.startsWith(petQ);
     return true;

@@ -144,3 +144,13 @@ test("a name already in the message is not offered again; everyone is not offere
   assert.deepEqual([...mentionsIn("mail me@peak.com", null)], [], "an @ inside a word is not a mention");
   assert.deepEqual([...mentionsIn("@Peaks hi", null)], [], "@Peaks is not @Peak");
 });
+
+test("the pin command shows the way that is possible now, and /unpin finds it (ADR-0157)", () => {
+  const away = { peak: true, paws: false };
+  assert.deepEqual(slashItems("pin", away, false).map((i) => i.id), ["pin"]);
+  assert.deepEqual(slashItems("pin", away, true).map((i) => i.id), [], "pinned: the list offers the way back, not pin again");
+  assert.deepEqual(slashItems("unpin", away, true).map((i) => i.id), ["unpin"]);
+  assert.deepEqual(slashItems("unpin", away, false).map((i) => i.id), [], "not pinned: nothing to undo");
+  assert.deepEqual(slashItems("bo ghim", away, true).map((i) => i.id), ["unpin"]);
+  assert.equal(slashItems("", away, true).find((i) => i.id === "unpin")?.act.kind, "pin", "the same toggle behind both");
+});

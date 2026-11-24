@@ -22,39 +22,39 @@ export interface BoxStrings {
   hintNameAfter: string;
   writing: string; // "{name} is writing"
   locale: string;
-  slash: { outPaws: string; outPeak: string; inPaws: string; inPeak: string; pin: string; clear: string; callMe: string }; // callMe has {name}
+  slash: { outPaws: string; outPeak: string; inPaws: string; inPeak: string; pin: string; unpin: string; clear: string; callMe: string }; // callMe has {name}
 }
 
 export const BOX_UI: Record<BoxLang, BoxStrings> = {
   en: {
-    today: "Today", you: "You", keepOpen: "Keep open", send: "Send", everyoneNote: "everyone who is out", restingNote: "resting", commands: "Commands",
+    today: "Today", you: "You", keepOpen: "Keep open", send: "Send", everyoneNote: "everyone who is out", restingNote: "comes out", commands: "Commands",
     say: "Say something…", bothResting: "Both are resting: type / to call one out",
     noBrain: "No brain connected: commands only",
     empty: "Say something to Peak or Paws.",
     emptyNoBrain: "No brain is connected. Commands such as “call Paws out” still work.",
     hintName: "Tell Peak and Paws what to call you: type", hintNameAfter: "and your name.",
     writing: "{name} is writing", locale: "en-GB",
-    slash: { outPaws: "Call Paws out", outPeak: "Call Peak out", inPaws: "Send Paws in", inPeak: "Send Peak in", pin: "Keep the box open", clear: "Clear this chat", callMe: "Call me {name}" },
+    slash: { outPaws: "Call Paws out", outPeak: "Call Peak out", inPaws: "Send Paws in", inPeak: "Send Peak in", pin: "Keep the box open", unpin: "Let the box fade away", clear: "Clear this chat", callMe: "Call me {name}" },
   },
   vi: {
-    today: "Hôm nay", you: "Bạn", keepOpen: "Giữ hộp luôn mở", send: "Gửi", everyoneNote: "tất cả đang ở ngoài", restingNote: "đang nghỉ", commands: "Lệnh",
+    today: "Hôm nay", you: "Bạn", keepOpen: "Giữ hộp luôn mở", send: "Gửi", everyoneNote: "tất cả đang ở ngoài", restingNote: "sẽ ra", commands: "Lệnh",
     say: "Nói gì đó đi…", bothResting: "Cả hai đang nghỉ: gõ / để gọi ra",
     noBrain: "Chưa có bộ não: chỉ dùng được lệnh",
     empty: "Nói gì đó với Peak hoặc Paws đi.",
     emptyNoBrain: "Chưa có bộ não nào. Các lệnh như “gọi Paws ra” vẫn dùng được.",
     hintName: "Cho Peak và Paws biết nên gọi bạn là gì: gõ", hintNameAfter: "rồi tên của bạn.",
     writing: "{name} đang viết", locale: "vi-VN",
-    slash: { outPaws: "Gọi Paws ra", outPeak: "Gọi Peak ra", inPaws: "Cho Paws vào", inPeak: "Cho Peak vào", pin: "Giữ hộp luôn mở", clear: "Xóa cuộc trò chuyện này", callMe: "Hãy gọi tôi là {name}" },
+    slash: { outPaws: "Gọi Paws ra", outPeak: "Gọi Peak ra", inPaws: "Cho Paws vào", inPeak: "Cho Peak vào", pin: "Giữ hộp luôn mở", unpin: "Cho hộp tự mờ đi", clear: "Xóa cuộc trò chuyện này", callMe: "Hãy gọi tôi là {name}" },
   },
   ja: {
-    today: "今日", you: "あなた", keepOpen: "開いたままにする", send: "送信", everyoneNote: "外にいる全員", restingNote: "お休み中", commands: "コマンド",
+    today: "今日", you: "あなた", keepOpen: "開いたままにする", send: "送信", everyoneNote: "外にいる全員", restingNote: "出てくる", commands: "コマンド",
     say: "なにか話しかけてね…", bothResting: "ふたりとも休み中：/ で呼び出せます",
     noBrain: "ブレインが未接続です：コマンドのみ",
     empty: "PeakかPawsに話しかけてみよう。",
     emptyNoBrain: "ブレインが未接続です。「Pawsを呼んで」などのコマンドは使えます。",
     hintName: "PeakとPawsに呼び名を伝えるには、", hintNameAfter: "と名前を入力してね。",
     writing: "{name}が入力中", locale: "ja-JP",
-    slash: { outPaws: "Pawsを呼ぶ", outPeak: "Peakを呼ぶ", inPaws: "Pawsを戻す", inPeak: "Peakを戻す", pin: "ボックスを開いたままにする", clear: "このチャットを消す", callMe: "{name}と呼んで" },
+    slash: { outPaws: "Pawsを呼ぶ", outPeak: "Peakを呼ぶ", inPaws: "Pawsを戻す", inPeak: "Peakを戻す", pin: "ボックスを開いたままにする", unpin: "ボックスを自動で消えるようにする", clear: "このチャットを消す", callMe: "{name}と呼んで" },
   },
 };
 
@@ -67,7 +67,7 @@ export function slashLabel(s: BoxStrings, it: SlashItem): string {
   switch (it.act.kind) {
     case "out": return it.act.target === "paws" ? s.slash.outPaws : s.slash.outPeak;
     case "in": return it.act.target === "paws" ? s.slash.inPaws : s.slash.inPeak;
-    case "pin": return s.slash.pin;
+    case "pin": return it.id === "unpin" ? s.slash.unpin : s.slash.pin;
     case "clear": return s.slash.clear;
     case "name": return s.slash.callMe.replace("{name}", it.act.value);
   }

@@ -178,6 +178,8 @@ pub fn init(app: &AppHandle) {
     if paws_out { paws_in_thread(app.clone(), true); }
     crate::duo_keys::init(app);
     spawn_dev_commands(app.clone(), dir);
+    let a = app.clone();
+    std::thread::spawn(move || loop { std::thread::sleep(Duration::from_secs(3)); sync_windows(&a); });
 }
 
 /// The developer channel of the prototype (instead of menu items): a line written to `duo-cmd.txt` in the data folder is run once and the file is
@@ -438,6 +440,8 @@ pub fn call_other(app: &AppHandle) {
 fn apply(app: &AppHandle, send_in: Vec<Id>, bring_out: Vec<Id>) {
     let d = app.state::<Duo>();
     let mut paws_work = false;
+    let mut peak_work = false;
+    let mut peak_in = false;
     for id in &send_in {
         match id {
             Id::Peak => {
@@ -447,7 +451,7 @@ fn apply(app: &AppHandle, send_in: Vec<Id>, bring_out: Vec<Id>) {
                         let mut s = d.state.lock().unwrap();
                         if let Some(e) = e { s.pets.peak.entrance = Some(e); save(&d, &s); }
                     }
-                    crate::toggle_visibility(app); // visible -> hides it and its bubble
+                    peak_in = true; // it walks out through the nearest edge before it is hidden (the author: an invisible door at the edge, not a vanishing on the spot)
                 }
             }
             Id::Paws => {
@@ -465,15 +469,127 @@ fn apply(app: &AppHandle, send_in: Vec<Id>, bring_out: Vec<Id>) {
     }
     for id in &bring_out {
         match id {
-            Id::Peak => { if let Some(w) = app.get_webview_window("main") { if !w.is_visible().unwrap_or(false) { crate::toggle_visibility(app); } } }
+            Id::Peak => peak_work = true,
             Id::Paws => paws_work = true,
         }
     }
-    if paws_work {
+    if peak_in { peak_work = true; }
+    if paws_work || peak_work {
         let out = bring_out.contains(&Id::Paws);
         let app2 = app.clone();
-        std::thread::spawn(move || { if out { paws_come_out(&app2, false) } else { paws_go_in(&app2) } app2.state::<Duo>().busy.store(false, Ordering::SeqCst); });
+        std::thread::spawn(move || {
+            if peak_in { peak_go_in(&app2); } else if peak_work { peak_come_out(&app2); }
+            if paws_work { if out { paws_come_out(&app2, false) } else { paws_go_in(&app2) } }
+            app2.state::<Duo>().busy.store(false, Ordering::SeqCst);
+        });
     } else {
+        d.busy.store(false, Ordering::SeqCst);
+    }
+}
+
+/// Peak comes out as Paws does (ADR-0158): from its remembered edge, walking in. If its window is already shown nothing moves. The window is set to shown
+/// only after it has been put outside the screen, so that it does not flash where it was.
+fn peak_come_out(app: &AppHandle) {
+    let Some(win) = app.get_webview_window("main") else { return };
+    if win.is_visible().unwrap_or(false) { return; }
+    let Some(d) = app.try_state::<Duo>() else { crate::set_peak_visible(app, true); return };
+    let entrance = d.state.lock().unwrap().pets.peak.entrance.clone();
+    let Some((e, m)) = resolve_entrance(&entrance, &monitors(app)) else { crate::set_peak_visible(app, true); return };
+    let (at, door_x) = peak_door(app, &e, &m);
+    let from = (door_x, at.1);
+    let _ = win.set_position(PhysicalPosition::new(from.0, from.1));
+    crate::set_peak_visible(app, true);
+    peak_walk(app, &win, from, at);
+}
+
+/// Where Peak stands when it is in (`at`, from its remembered entrance) and the x of its door: an invisible door in the side of the screen, left or right,
+/// whichever is nearer (Peak lives on the floor: it walks through a side, it does not sink into the taskbar). The author asked for a door, not a vanishing.
+fn peak_door(app: &AppHandle, e: &Entrance, m: &Mon) -> ((i32, i32), i32) {
+    let (body, inset) = ((BODY * scale(app)).round() as i32, (INSET * scale(app)).round() as i32);
+    let (at, outside) = entrance_pos(e, m, body, inset);
+    let win = body + 2 * inset;
+    let door_x = match e.edge {
+        Edge::Left | Edge::Right => outside.0,
+        Edge::Top | Edge::Bottom => if e.along < 0.5 { m.x - win } else { m.x + m.w },
+    };
+    (at, door_x)
+}
+
+/// Peak walks (its walking pose, held by the page as in a scene) from one point to another in a straight line at a walking pace, then is given its own
+/// behaviour back. Not a slide: the page shows the steps.
+fn peak_walk(app: &AppHandle, win: &tauri::WebviewWindow, from: (i32, i32), to: (i32, i32)) {
+    let dist = ((to.0 - from.0) as f64).abs().max(((to.1 - from.1) as f64).abs());
+    let speed = (230.0 * scale(app)).max(dist / 4.0); // physical px per second: a brisk walk, and never longer than 4 s across a wide screen
+    let dur = Duration::from_secs_f64((dist / speed).max(0.2));
+    let dir = if to.0 >= from.0 { 1 } else { -1 };
+    let _ = app.emit_to("main", "duo-scene-pose", serde_json::json!({ "pose": "walk", "dir": dir, "hold": true }));
+    let t0 = Instant::now();
+    loop {
+        let t = (t0.elapsed().as_secs_f64() / dur.as_secs_f64()).min(1.0);
+        let x = from.0 as f64 + (to.0 - from.0) as f64 * t;
+        let y = from.1 as f64 + (to.1 - from.1) as f64 * t;
+        let _ = win.set_position(PhysicalPosition::new(x.round() as i32, y.round() as i32));
+        if t >= 1.0 { break; }
+        std::thread::sleep(Duration::from_millis(16));
+    }
+    let _ = app.emit_to("main", "duo-scene-pose", serde_json::json!({ "pose": "idle", "dir": dir, "hold": false }));
+}
+
+/// Peak goes in through its entrance (the nearest edge, saved just before): it walks out of the screen and only then is hidden.
+fn peak_go_in(app: &AppHandle) {
+    let Some(win) = app.get_webview_window("main") else { return };
+    if win.is_visible().unwrap_or(false) {
+        let entrance = app.try_state::<Duo>().and_then(|d| d.state.lock().unwrap().pets.peak.entrance.clone());
+        if let (Some((e, m)), Ok(p)) = (resolve_entrance(&entrance, &monitors(app)), win.outer_position()) {
+            let (_, door_x) = peak_door(app, &e, &m);
+            peak_walk(app, &win, (p.x, p.y), (door_x, p.y)); // along the floor to the nearer side, then out of sight
+        }
+    }
+    crate::set_peak_visible(app, false);
+}
+
+/// The state follows a change of Peak's window made elsewhere (the away flow hides and shows it): away is a tuck. Does nothing without the flag.
+pub fn peak_present(app: &AppHandle, out: bool) {
+    if !enabled() { return; }
+    let Some(d) = app.try_state::<Duo>() else { return };
+    let mut s = d.state.lock().unwrap();
+    if s.pets.peak.out == out { return; }
+    s.pets.peak.out = out;
+    if !out { s.pets.peak.tucked_at = now_ms(); }
+    save(&d, &s);
+}
+
+/// Whether a pet is still coming or going: the page waits for this to be false before the pet speaks (ADR-0158; it was a fixed wait).
+#[tauri::command]
+pub fn duo_busy(app: AppHandle) -> bool {
+    app.try_state::<Duo>().map(|d| d.busy.load(Ordering::SeqCst)).unwrap_or(false)
+}
+
+/// The check of ADR-0158: the windows follow the saved state. Called every few seconds and never while a pet is coming or going. A disagreement is
+/// put right and written in the log, so that it can be found afterwards.
+fn sync_windows(app: &AppHandle) {
+    let Some(d) = app.try_state::<Duo>() else { return };
+    let look = || {
+        let (peak_out, paws_out) = { let s = d.state.lock().unwrap(); (s.pets.peak.out, s.pets.paws.out) };
+        let peak_vis = app.get_webview_window("main").map(|w| w.is_visible().unwrap_or(false));
+        let paws_win = app.get_webview_window(PAWS_LABEL).is_some();
+        (peak_out, paws_out, peak_vis, paws_win)
+    };
+    let off = |t: (bool, bool, Option<bool>, bool)| t.2.is_some_and(|v| v != t.0) || t.3 != t.1;
+    if d.busy.load(Ordering::SeqCst) || !off(look()) { return; }
+    std::thread::sleep(Duration::from_millis(900)); // a change in progress (a window being made, a state just written) settles first: only a disagreement seen twice is put right
+    if d.busy.load(Ordering::SeqCst) { return; }
+    let (peak_out, paws_out, peak_vis, paws_window) = look();
+    if let Some(v) = peak_vis {
+        if v != peak_out {
+            log(app, &format!("sync_fix peak state_out={peak_out}"));
+            crate::set_peak_visible(app, peak_out);
+        }
+    }
+    if paws_window != paws_out {
+        if d.busy.swap(true, Ordering::SeqCst) { return; }
+        log(app, &format!("sync_fix paws state_out={paws_out}"));
+        if paws_out { paws_come_out(app, true); } else if let Some(w) = app.get_webview_window(PAWS_LABEL) { let _ = w.destroy(); }
         d.busy.store(false, Ordering::SeqCst);
     }
 }

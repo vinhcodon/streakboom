@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { parseDuoCommand } from "./duo-command.ts";
+import { parseDuoCommand, summons } from "./duo-command.ts";
 
 const c = (t: string) => parseDuoCommand(t);
 
@@ -76,4 +76,16 @@ test("@everyone, @all and @both keep every pet that is out, as the words for bot
   assert.deepEqual(addressees("@all what time is it", both), ["peak", "paws"]);
   assert.deepEqual(addressees("@both hi", both), ["peak", "paws"]);
   assert.deepEqual(addressees("@Paws hi", both), ["paws"]);
+});
+
+test("an @ mention at the start calls the pets that are in out, and nothing else does (ADR-0157)", () => {
+  const bothIn = { peak: false, paws: false }, pawsIn = { peak: true, paws: false };
+  assert.deepEqual(summons("@Paws what do you think?", pawsIn), ["paws"]);
+  assert.deepEqual(summons("@Paws what do you think?", { peak: true, paws: true }), []);
+  assert.deepEqual(summons("@peak @paws hi", bothIn), ["peak", "paws"]);
+  assert.deepEqual(summons("@Peak và @Paws ơi", bothIn), ["peak", "paws"]);
+  assert.deepEqual(summons("@everyone hello", bothIn), []);
+  assert.deepEqual(summons("Paws ơi", pawsIn), [], "a name without the @ calls nobody");
+  assert.deepEqual(summons("what does @Paws think", pawsIn), [], "a mention in the middle calls nobody");
+  assert.deepEqual(summons("@Pawsy hi", pawsIn), []);
 });
