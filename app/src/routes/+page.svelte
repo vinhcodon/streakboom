@@ -18,7 +18,7 @@
   import { parseCallMe } from "$lib/callme";
   import { Presenter } from "$lib/presentation";
   import { SendQueue } from "$lib/send-queue";
-  import { Conversation, addTurn, newRoom, shownSays, presentable, situation, toHistory, type Line } from "$lib/conversation";
+  import { Conversation, addTurn, newRoom, presentAfterPlacing, shownSays, presentable, situation, toHistory, type Line } from "$lib/conversation";
   import type { BoxAction, BoxView } from "$lib/chatbox";
   import type { PetId } from "$lib/duo";
   import { LEAVE_PACE_PX_S, RETRY_SECS, isLeaveCommand, leaveDeadlineMs, mayLeave, nearerEdge } from "$lib/farewell";
@@ -2510,17 +2510,24 @@
   let lineGen = 0;
   let lineChain: Promise<void> = Promise.resolve();
   const pause = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));
-  async function sayAs(pet: PetId, text: string) {
+  /** Say a line in a pet's bubble. `wanted` is the caller's own test (a queued line passes its turn: `() => g === lineGen`); it is asked after the bubble window
+   *  has moved, with Quiet and away, so that nothing cancelled during that await comes back (#11). The log says "shown" only for a line that was shown. */
+  async function sayAs(pet: PetId, text: string, wanted: () => boolean = () => true) {
     // the bubble above a pet speaks only when the chat box is hidden: while it shows, the line is in the box and a bubble would pull the eye away for a duplicate (ADR-0161)
     if (await invoke<boolean>("chatbox_showing").catch(() => false)) { void invoke("duo_log", { line: `box shows: no bubble for ${pet}` }).catch(() => {}); return; }
-    const anchored = await invoke<boolean>("duo_bubble_to", { pet, ms: 4000 + text.length * 60 + 1500 }).catch(() => false); // the bubble stands beside the speaker
+    let anchored = false, boxNow = false;
+    const shown = await presentAfterPlacing({
+      place: async () => {
+        anchored = await invoke<boolean>("duo_bubble_to", { pet, ms: 4000 + text.length * 60 + 1500 }).catch(() => false); // the bubble stands beside the speaker
+        // checked again at the moment of showing: the box may have appeared (or briefly been hidden and shown) during the await (#18, point 1)
+        if (anchored) boxNow = await invoke<boolean>("chatbox_showing").catch(() => false);
+      },
+      stillWanted: () => wanted() && !quiet && !away && anchored && !boxNow,
+      show: () => { showBubble(text); bubbleWho = pet; },
+    });
     if (!anchored) return; // a pet with no body (Paws in the chat) never speaks above Peak (#18)
-    // checked again at the moment of showing: the box may have appeared (or briefly been hidden and shown) during the await (#18, point 1)
-    if (await invoke<boolean>("chatbox_showing").catch(() => false)) { void invoke("duo_log", { line: `box shows: no bubble for ${pet}` }).catch(() => {}); return; }
-    if (quiet || away) { void invoke("duo_log", { line: `quiet: the bubble of ${pet} is not shown` }).catch(() => {}); return; } // Quiet came during the await: a late callback never brings a bubble back (#11)
-    void invoke("duo_log", { line: `shown ${pet} ${text.length}` }).catch(() => {});
-    showBubble(text);
-    bubbleWho = pet;
+    if (boxNow) { void invoke("duo_log", { line: `box shows: no bubble for ${pet}` }).catch(() => {}); return; }
+    void invoke("duo_log", { line: shown ? `shown ${pet} ${text.length}` : `not shown ${pet}: cancelled or Quiet during the move` }).catch(() => {}); // a JS decision, not proof of pixels
   }
   function enqueueLine(l: Line) {
     if (l.act === "say") presenter.written(l.turnId, l.pet); // written into the talk now, shown when presented below
@@ -2548,7 +2555,7 @@
           const p = l.pet === "peak" ? moodBeat(l.mood || "neutral", data.settings.gentle).steps[0].pose : null;
           if (p) enter(p); // Peak acts out the line's own feeling (the same beat as its old chat), then settles
           void invoke("duo_log", { line: `presented ${l.pet} row${p ? ` with ${p} (mood ${l.mood || "neutral"})` : ""}` }).catch(() => {});
-          await sayAs(l.pet, clipReply(l.text, 160)); // the bubble shows the head of a long reply cut at the end of a sentence; the talk and the box keep the whole (ADR-0146)
+          await sayAs(l.pet, clipReply(l.text, 160), () => g === lineGen); // the bubble shows the head of a long reply cut at the end of a sentence; the talk and the box keep the whole (ADR-0146)
           await pause(Math.min(9000, 1500 + l.text.length * 55)); // the time to read it, before the next speaker
         } else if (l.act === "turn") {
           void invoke("duo_face", { listener: l.pet, speaker: l.to[0] }).catch(() => {}); // it turns to the one it was asked to ask
