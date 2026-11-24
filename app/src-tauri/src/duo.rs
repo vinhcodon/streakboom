@@ -922,11 +922,14 @@ pub fn tray_double(app: &AppHandle) {
 fn dismiss_tray_flyout() {
     #[cfg(windows)]
     unsafe {
-        use windows_sys::Win32::UI::WindowsAndMessaging::{FindWindowW, IsWindowVisible, ShowWindow, SW_HIDE};
+        use windows_sys::Win32::UI::WindowsAndMessaging::{FindWindowW, IsWindowVisible, PostMessageW, WM_KEYDOWN, WM_KEYUP};
+        const VK_ESCAPE: usize = 0x1B;
         for class in ["NotifyIconOverflowWindow", "TopLevelWindowForOverflowXamlIsland"] {
             let w: Vec<u16> = class.encode_utf16().chain(std::iter::once(0)).collect();
             let h = FindWindowW(w.as_ptr(), std::ptr::null());
-            if !h.is_null() && IsWindowVisible(h) != 0 { ShowWindow(h, SW_HIDE); }
+            // Esc, as the person would press it: the shell closes its flyout and knows it is closed. Hiding the window behind its back (as before) left the
+            // shell thinking it was open, so the next click on the chevron did nothing (the author saw it; reproduced: hide, then the chevron fails; Esc, then it opens)
+            if !h.is_null() && IsWindowVisible(h) != 0 { PostMessageW(h, WM_KEYDOWN, VK_ESCAPE, 0); PostMessageW(h, WM_KEYUP, VK_ESCAPE, 0); }
         }
     }
 }
