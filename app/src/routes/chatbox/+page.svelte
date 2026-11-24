@@ -134,7 +134,9 @@
     for (const p of summons(d, presence)) eff[p] = true; // an @ that invites makes the pet a member before the message goes
     return addressees(d, eff);
   });
-  const members = $derived((["peak", "paws"] as const).filter((p) => presence[p] || nextTo.includes(p)));
+  // the members are who is really in the chat (the saved state), never someone the draft only names: a pet the draft would invite shows apart, as "+ Paws" (#17, Codex's return)
+  const members = $derived((["peak", "paws"] as const).filter((p) => presence[p]));
+  const invited = $derived((["peak", "paws"] as const).filter((p) => !presence[p] && nextTo.includes(p)));
   let joinedNote = $state(""); // "Paws joined": once, when it joins
   let wasPaws = false;
   let joinedT: ReturnType<typeof setTimeout> | undefined;
@@ -247,10 +249,11 @@
             {/each}
           </ul>
         {/if}
-{#if pawsMode === "chat" && members.length > 0}
+{#if pawsMode === "chat" && (members.length > 0 || invited.length > 0)}
           <div class="members" role="group" aria-label="{t.members}: {members.map((p) => NAME[p]).join(', ')}">
-            <span class="faces">{#each members as p (p)}<span class="av face {p}" class:dim={!nextTo.includes(p)} title={NAME[p]}><img src={p === "paws" ? "/paws/paws-front.svg" : "/peak-avatar.png"} alt="" /></span>{/each}</span>
-            <span class="to" aria-live="polite">{#if joinedNote}{joinedNote}{:else if nextTo.length > 0}{t.nextTo} {nextTo.map((p) => NAME[p]).join(" · ")}{/if}</span>
+            {#if joinedNote}<span class="note" role="status">{joinedNote}</span>{/if}
+            <span class="faces">{#each members as p (p)}<span class="av face {p}" class:dim={!nextTo.includes(p)} title={NAME[p]}><img src={p === "paws" ? "/paws/paws-front.svg" : "/peak-avatar.png"} alt="" /></span>{/each}{#each invited as p (p)}<span class="av face invite {p}" title="+ {NAME[p]}"><img src={p === "paws" ? "/paws/paws-front.svg" : "/peak-avatar.png"} alt="" /></span>{/each}</span>
+            <span class="to" aria-live="polite">{#if nextTo.length > 0}{t.nextTo} {nextTo.map((p) => (invited.includes(p) ? "+ " : "") + NAME[p]).join(" · ")}{/if}</span>
           </div>
         {/if}
 <footer>
@@ -304,6 +307,8 @@
   .members .faces { display: inline-flex; }
   .members .face { width: 20px; height: 20px; margin-left: -5px; box-shadow: 0 0 0 1.5px #fff, 0 1px 4px rgba(0, 0, 0, 0.3); transition: opacity 0.2s; }
   .members .face.dim { opacity: 0.4; }
+  .members .face.invite { box-shadow: 0 0 0 1.5px #fff; outline: 1.5px dashed #b4d0f0; outline-offset: 1px; opacity: 0.85; } /* named by the draft, not yet in the chat */
+  .members .note { background: rgba(24, 24, 30, 0.55); padding: 0 7px; border-radius: 8px; color: #b4d0f0; }
   .slash { position: absolute; left: 0; right: 0; bottom: calc(100% + 4px); margin: 0; padding: 4px; list-style: none; background: var(--bg); border: 1px solid var(--line); border-radius: 12px; box-shadow: 0 2px 10px rgba(0, 0, 0, 0.14); }
   .slash.list { position: static; margin: 0 0 6px 0; box-shadow: none; } /* in the flow: the window is as tall as the list too */
   .slash button { all: unset; box-sizing: border-box; display: flex; justify-content: space-between; gap: 10px; width: 100%; padding: 6px 9px; border-radius: 8px; cursor: pointer; }

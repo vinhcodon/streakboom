@@ -321,9 +321,12 @@ pub fn duo_paws_out(app: AppHandle) -> bool { app.get_webview_window(PAWS_LABEL)
 /// The bubble belongs to the pet that answers (ADR-0139/0140): it stands next to `pet` ("peak" or "paws") for `ms` milliseconds, then goes
 /// back to Peak. The bubble window is the same one; only the window it is placed against changes.
 #[tauri::command]
-pub fn duo_bubble_to(app: AppHandle, pet: String, ms: u64) {
+pub fn duo_bubble_to(app: AppHandle, pet: String, ms: u64) -> bool {
+    // a pet with no body on the screen has no bubble: Paws's words were anchored above Peak when its window did not exist (#18, point 2)
+    if pet == "paws" && app.get_webview_window(PAWS_LABEL).is_none() { log(&app, "bubble paws refused: no window"); return false; }
     let state = app.state::<crate::AppState>();
-    let label = if pet == "paws" && app.get_webview_window(PAWS_LABEL).is_some() { PAWS_LABEL } else { "main" };
+    let label = if pet == "paws" { PAWS_LABEL } else { "main" };
+    log(&app, &format!("bubble {pet} anchor={label}"));
     *state.bubble_anchor.lock().unwrap() = label.to_string();
     crate::place_bubble(&app); // a bubble already on the screen moves to the pet it now belongs to
     let stamp = BUBBLE_GEN.fetch_add(1, Ordering::SeqCst) + 1;
@@ -334,6 +337,7 @@ pub fn duo_bubble_to(app: AppHandle, pet: String, ms: u64) {
             if BUBBLE_GEN.load(Ordering::SeqCst) == stamp { *app2.state::<crate::AppState>().bubble_anchor.lock().unwrap() = "main".to_string(); } // a later call keeps its own anchor
         });
     }
+    true
 }
 
 static BUBBLE_GEN: AtomicU64 = AtomicU64::new(0);

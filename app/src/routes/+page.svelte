@@ -2428,7 +2428,12 @@
       sleep: (ms) => new Promise((r) => setTimeout(r, ms)),
       beat: () => 600 + Math.random() * 600,
       now: () => Date.now(),
-      writing: (p) => (modelTyping = p),
+      writing: (p) => {
+        modelTyping = p;
+        // Peak's own turn in the box (alone or in the group): it tilts its head and thinks while its answer is being written, as in its old chat; it wakes for
+        // its own turn. Paws's turn leaves Peak as it is (asleep stays asleep). Not in Quiet (#18, point 3)
+        if (p === "peak" && !quiet && !away) { void invoke("duo_log", { line: "peak thinks (its own turn)" }).catch(() => {}); enter("think"); }
+      },
     },
     (l) => enqueueLine(l),
   );
@@ -2478,8 +2483,11 @@
   async function sayAs(pet: PetId, text: string) {
     // the bubble above a pet speaks only when the chat box is hidden: while it shows, the line is in the box and a bubble would pull the eye away for a duplicate (ADR-0161)
     if (await invoke<boolean>("chatbox_showing").catch(() => false)) { void invoke("duo_log", { line: `box shows: no bubble for ${pet}` }).catch(() => {}); return; }
+    const anchored = await invoke<boolean>("duo_bubble_to", { pet, ms: 4000 + text.length * 60 + 1500 }).catch(() => false); // the bubble stands beside the speaker
+    if (!anchored) return; // a pet with no body (Paws in the chat) never speaks above Peak (#18)
+    // checked again at the moment of showing: the box may have appeared (or briefly been hidden and shown) during the await (#18, point 1)
+    if (await invoke<boolean>("chatbox_showing").catch(() => false)) { void invoke("duo_log", { line: `box shows: no bubble for ${pet}` }).catch(() => {}); return; }
     void invoke("duo_log", { line: `shown ${pet} ${text.length}` }).catch(() => {});
-    await invoke("duo_bubble_to", { pet, ms: 4000 + text.length * 60 + 1500 }).catch(() => {}); // the bubble stands beside the speaker
     showBubble(text);
     bubbleWho = pet;
   }
@@ -2495,7 +2503,13 @@
           void invoke("duo_face", { listener: other, speaker: l.pet }).catch(() => {});
           await pause(500);
           if (g !== lineGen) return;
-          if (!presentable(l, quiet || away)) { void invoke("duo_log", { line: `quiet: a queued line of ${l.pet} is dropped` }).catch(() => {}); return; } // Quiet came while the line waited
+          if (!presentable(l, quiet || away)) { void invoke("duo_log", { line: `quiet: a queued line of ${l.pet} is dropped` }).catch(() => {}); if (l.pet === "peak" && pose === "think") enter("idle"); return; } // Quiet came while the line waited
+          if (l.pet === "peak") {
+            // its line appears in the box now: Peak acts out the line's own feeling (the same beat as its old chat), then settles (#18, point 3)
+            const p = moodBeat(l.mood || "neutral", data.settings.gentle).steps[0].pose;
+            void invoke("duo_log", { line: `peak says its line with ${p} (mood ${l.mood || "neutral"})` }).catch(() => {});
+            enter(p);
+          }
           await sayAs(l.pet, clipReply(l.text, 160)); // the bubble shows the head of a long reply cut at the end of a sentence; the talk and the box keep the whole (ADR-0146)
           await pause(Math.min(9000, 1500 + l.text.length * 55)); // the time to read it, before the next speaker
         } else if (l.act === "turn") {
@@ -2513,6 +2527,7 @@
   function cancelTalk() {
     lineGen++;
     talk.cancel();
+    if (pose === "think" && chatPhase !== "thinking") enter("idle"); // a turn cancelled (Quiet, a touch, the chat dismissed): Peak does not keep thinking about it (#18)
   }
   function mirrorPeak(user: string, reply: string) {
     if (!duoOn) return;
@@ -3157,7 +3172,7 @@
       if (k === "invalid_key") brainBad = true;
       if (k === "rate_limit") data = coolDown(data, Date.now());
       chatReply = ui.err[k];
-      if (duoOn && panel !== "chat") showBubble(ui.err[k]);
+      if (duoOn && panel !== "chat") { mirrorPeak(text, ui.err[k]); void sayAs("peak", ui.err[k]); } // the box says it too: with the box showing, an error was said nowhere (#18 capture: a slow model left no answer at all)
       replyMood = "none";
     } finally {
       clearTimeout(slowTimer);
@@ -3165,8 +3180,9 @@
       busy = false;
       if (leftByModel) return; // startLeave closed the chat box and is saying its goodbye
       chatPhase = "reply";
-      // If the chat was closed while waiting, still deliver the answer as a plain bubble.
-      if (panel !== "chat") showBubble(chatReply, 5000);
+      // If the chat was closed while waiting, still deliver the answer as a plain bubble. With the duo the answer went through sayAs above (the box, or a
+      // bubble only when the box is hidden); this second bubble was the copy above Peak that #18 reported
+      if (panel !== "chat" && !duoOn) showBubble(chatReply, 5000);
       // act out the answer's feeling (a plain nod when there is none; nothing special after an error)
       enter(replyMood === "none" ? "idle" : moodBeat(replyMood, data.settings.gentle).steps[0].pose);
       resetMenuTimer();
