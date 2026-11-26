@@ -31,12 +31,12 @@ concurrency:
   group: pages
   cancel-in-progress: true
 
+# two jobs (ADR-0162): `build` makes the site and uploads it, `deploy` publishes it. deploy-pages asks GitHub for the uploaded artifact, and asked a
+# few hundred milliseconds after the upload it has been told there is none (2026-11-11, 11-25, 11-26); the second job starts a few seconds later,
+# tries once more if it still fails, and can be re-run alone ("Re-run failed jobs")
 jobs:
-  deploy:
+  build:
     runs-on: ubuntu-latest
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -75,18 +75,36 @@ jobs:
       - uses: actions/upload-pages-artifact@v3
         with:
           path: _site
-      - id: deployment
-        uses: actions/deploy-pages@v4
-      # a second copy of the ledger (the first is published with the site), kept by Actions for 90 days. It comes AFTER the
-      # deployment: deploy-pages looks for its artifact among the run's artifacts, and a second artifact uploaded before it made
-      # one run fail ("No artifacts named github-pages were found", 2026-11-11)
+      # a second copy of the ledger (the first is published with the site), kept by Actions for 90 days. It is kept here, in the build job, so a day
+      # is not lost from the history when the deployment fails (the days 2026-11-25 and 11-26 were)
       - uses: actions/upload-artifact@v4
         with:
           name: downloads-ledger
           path: _site/downloads.json
 
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url || steps.again.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
+        continue-on-error: true
+      - name: Wait before the second try
+        if: steps.deployment.outcome == 'failure'
+        run: sleep 30
+      # no continue-on-error: if this one fails too, the run fails
+      - id: again
+        if: steps.deployment.outcome == 'failure'
+        uses: actions/deploy-pages@v4
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
       # the LIVE pages must carry only what the privacy page says (ADR-0096): Cloudflare sits in front of the site and can add scripts, headers or
-      # cookies after the build checked its own files. Last, after the deploy and the ledger copy, so a failure is an alert and undoes nothing
+      # cookies after the build checked its own files. Last, after the deploy, so a failure is an alert and undoes nothing
       - name: Check the live site against the privacy page
         run: sleep 20 && node scripts/site/livecheck.mjs
 
