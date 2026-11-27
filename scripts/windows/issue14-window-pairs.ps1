@@ -9,22 +9,23 @@
 #      Esc hides it, shown again
 #   C. destroy and recreate: after 47 s hidden the bubble window is gone; a poke makes a new one, shown, never foreground
 #   D. tray round trip, with the overlay following Peak: tray click hides Peak and the overlay, a second click shows both
-#   E. "go away" (Lượn đi) with STREAKBOOM_AWAY_SECS=5: Peak and the overlay hide, come back, then the tray hides and
+#   E. "go away" (Luon di) with STREAKBOOM_AWAY_SECS=5: Peak and the overlay hide, come back, then the tray hides and
 #      shows both again (the bug of issue 14)
 #
 # Setup (nothing of the person's own Peak is touched):
 #   - a build with a test identifier, so its data folder is %APPDATA%\com.streakboom.i14test, not Stable's:
 #       npm run tauri build -- --no-bundle --features terrain-overlay --config <file with {"identifier":"com.streakboom.i14test"}>
 #     (`terrain-overlay` makes the overlay reachable in a Stable-numbered build; STREAKBOOM_DEV_OVERLAY=1 opens it)
-#   - a pet.json in that data folder whose first-run introduction is done (copy one from an earlier test run), no key
-#   - the tray icon visible on the taskbar (not in the hidden-icons flyout); one monitor
+#   - a pet.json in that data folder whose first-run introduction is done (-Seed copies one there if the folder has none), no key
+#   - one monitor; the tray icon on the taskbar or in the hidden-icons flyout (the script opens the flyout if needed)
 #   - no other streakboom.exe running: the script refuses to start if one is, and stops only the process it started
 # Run from a normal PowerShell on the desktop (an agent's sandboxed shell may see a private AppData):
 #   powershell -ExecutionPolicy Bypass -File scripts\windows\issue14-window-pairs.ps1 -Exe <path to the test build> -Out <folder>
 # It clicks and types only in the program under test and in its own small form.
 param(
     [Parameter(Mandatory = $true)][string]$Exe,
-    [string]$Out = (Join-Path $env:TEMP "issue14-run")
+    [string]$Out = (Join-Path $env:TEMP "issue14-run"),
+    [string]$Seed = "" # a pet.json whose introduction is done; copied into the test data folder only if that folder has none
 )
 $ErrorActionPreference = "Stop"
 Add-Type -AssemblyName System.Windows.Forms, System.Drawing, UIAutomationClient, UIAutomationTypes
@@ -46,6 +47,22 @@ public static class W {
     [DllImport("user32.dll")] public static extern bool SetCursorPos(int x, int y);
     [DllImport("user32.dll")] public static extern void mouse_event(uint f, int x, int y, uint d, UIntPtr e);
     [DllImport("user32.dll")] public static extern IntPtr GetAncestor(IntPtr h, uint flags);
+    [DllImport("user32.dll", CharSet = CharSet.Unicode)] public static extern int GetClassName(IntPtr h, StringBuilder s, int n);
+    [DllImport("user32.dll")] public static extern bool PostMessage(IntPtr h, uint m, IntPtr w, IntPtr l);
+    [DllImport("user32.dll")] public static extern bool SetProcessDPIAware();
+    [StructLayout(LayoutKind.Sequential)] public struct NOTIFYICONIDENTIFIER { public uint cbSize; public IntPtr hWnd; public uint uID; public Guid guidItem; }
+    [DllImport("shell32.dll")] public static extern int Shell_NotifyIconGetRect(ref NOTIFYICONIDENTIFIER id, out RECT r);
+    public static bool IconRect(IntPtr owner, out RECT r) {
+        r = new RECT();
+        for (uint id = 0; id < 32; id++) {
+            var n = new NOTIFYICONIDENTIFIER(); n.cbSize = (uint)Marshal.SizeOf(n); n.hWnd = owner; n.uID = id;
+            if (Shell_NotifyIconGetRect(ref n, out r) == 0) return true;
+        }
+        return false;
+    }
+    [DllImport("user32.dll", CharSet = CharSet.Unicode)] public static extern IntPtr FindWindow(string cls, string title);
+    public static bool OverflowOpen() { var h = FindWindow("NotifyIconOverflowWindow", null); return h != IntPtr.Zero && IsWindowVisible(h); }
+    public static string Class(IntPtr h) { var s = new StringBuilder(256); GetClassName(h, s, 256); return s.ToString(); }
     [StructLayout(LayoutKind.Sequential)] public struct RECT { public int L, T, R, B; }
     public static List<IntPtr> Of(uint pid) {
         var list = new List<IntPtr>();
@@ -63,6 +80,7 @@ public static class W {
 }
 "@
 
+[W]::SetProcessDPIAware() | Out-Null # every coordinate below is in physical pixels (window rects, the cursor, the tray)
 New-Item -ItemType Directory -Force $Out | Out-Null
 $log = Join-Path $Out "issue14-log.txt"
 "" | Set-Content -Encoding utf8 $log
@@ -75,9 +93,15 @@ function Note([string]$kind, [string]$text) {
 }
 function Check([bool]$ok, [string]$text) { if ($ok) { Note "PASS" $text } else { Note "FAIL" $text } }
 
-if (Get-Process streakboom -ErrorAction SilentlyContinue) { throw "a streakboom.exe is already running; close it first (this script stops only what it starts)" }
+$exeName = [System.IO.Path]::GetFileNameWithoutExtension($Exe)
+if (Get-Process streakboom, $exeName -ErrorAction SilentlyContinue) { throw "a streakboom.exe or $exeName.exe is already running; close it first (this script stops only what it starts)" }
 $data = Join-Path $env:APPDATA "com.streakboom.i14test"
-if (-not (Test-Path (Join-Path $data "pet.json"))) { throw "no pet.json in $data; see Setup" }
+if (-not (Test-Path (Join-Path $data "pet.json"))) {
+    if ($Seed -eq "" -or -not (Test-Path $Seed)) { throw "no pet.json in $data; pass -Seed or see Setup" }
+    New-Item -ItemType Directory -Force $data | Out-Null
+    Copy-Item $Seed (Join-Path $data "pet.json")
+    Write-Host "seeded $data from $Seed"
+}
 $sha = (& git -C (Split-Path $PSScriptRoot -Parent | Split-Path -Parent) rev-parse HEAD 2>$null)
 $exeInfo = Get-Item $Exe
 Note "INFO" ("exe {0} ({1} bytes, written {2}); checkout HEAD {3}" -f $exeInfo.FullName, $exeInfo.Length, $exeInfo.LastWriteTime.ToString("s"), $sha)
@@ -107,10 +131,22 @@ function Bubble { Wins | Where-Object { $_.Title -eq "Streakboom bubble" } | Sel
 function Overlay { Wins | Where-Object { $_.Title -ne "Streakboom bubble" -and $_.Title -ne "" -and (Width $_.H) -ge 800 } | Select-Object -First 1 }
 function Fg { $h = [W]::GetForegroundWindow(); $t = [W]::Title($h); "{0}:{1}" -f $h, $(if ([W]::Pid($h) -eq $proc.Id) { "pet/$t" } elseif ($h -eq $formH) { "harness" } else { "other" }) }
 function PeakCenter { $m = Main; $r = New-Object W+RECT; [W]::GetWindowRect($m.H, [ref]$r) | Out-Null; [pscustomobject]@{ X = [int](($r.L + $r.R) / 2); Y = [int]($r.T + ($r.B - $r.T) * 0.62) } }
+# A poke speaks at most every 3 s and not every poke finds a line: poke up to three times until the bubble shows.
+function Poke([string]$label) {
+    foreach ($try in 1..3) {
+        $p = PeakCenter
+        [W]::Click($p.X, $p.Y, $false)
+        $script:afterClick = Fg
+        if (WaitFor { $b = Bubble; $b -and $b.Vis } 2500) { if ($try -gt 1) { Note "INFO" "$label the bubble came at poke $try" }; return $true }
+        Pump 1200
+    }
+    return $false
+}
 function WaitFor([scriptblock]$cond, [int]$ms) { $end = (Get-Date).AddMilliseconds($ms); while ((Get-Date) -lt $end) { if (& $cond) { return $true }; Pump 50 }; return [bool](& $cond) }
 
 $m = Main
 Check ($null -ne $m -and $m.Vis) "Peak's window is shown at start"
+WaitFor { $null -ne (Overlay) } 8000 | Out-Null
 $ov = Overlay
 Note "INFO" ("overlay window: {0}" -f $(if ($ov) { "$($ov.H) '$($ov.Title)' visible=$($ov.Vis)" } else { "not found" }))
 Note "INFO" ("all windows of the pet: " + ((Wins | ForEach-Object { "$($_.H)'$($_.Title)'v=$($_.Vis)" }) -join ", "))
@@ -120,10 +156,8 @@ $firstBubble = $null
 foreach ($i in 1..3) {
     FocusForm
     $before = Fg
-    $p = PeakCenter
-    [W]::Click($p.X, $p.Y, $false)
-    $afterClick = Fg
-    $shown = WaitFor { $b = Bubble; $b -and $b.Vis } 4000
+    $shown = Poke "A$i"
+    $afterClick = $script:afterClick
     $b = Bubble
     $fgShown = Fg
     Check $shown "A$i passive bubble shown after a poke"
@@ -140,8 +174,7 @@ foreach ($i in 1..3) {
 # keys while a passive bubble shows: the harness takes the keyboard, a poke shows the bubble, then the harness gets it back
 # by a click on itself and letters are typed; they must arrive in the harness and the bubble must stay passive
 FocusForm; $box.Text = ""
-$p = PeakCenter; [W]::Click($p.X, $p.Y, $false)
-$shown = WaitFor { $b = Bubble; $b -and $b.Vis } 4000
+$shown = Poke "A4"
 FocusForm
 if ($shown -and [W]::GetForegroundWindow() -eq $formH) {
     [System.Windows.Forms.SendKeys]::SendWait("passive"); Pump 300
@@ -182,9 +215,8 @@ Pump 47000
 $b = Bubble
 Check ($null -eq $b -and -not [W]::IsWindow($firstBubble)) "C the unused bubble window was destroyed"
 FocusForm
-$p = PeakCenter; $afterClickH = $null
-[W]::Click($p.X, $p.Y, $false); $afterClick = Fg
-$shown = WaitFor { $b = Bubble; $b -and $b.Vis } 6000
+$shown = Poke "C"
+$afterClick = $script:afterClick
 $b = Bubble
 Check $shown "C a new bubble window is made and shown by a poke"
 if ($b) {
@@ -194,19 +226,39 @@ if ($b) {
 WaitFor { $b = Bubble; -not ($b -and $b.Vis) } 15000 | Out-Null
 
 # ---------------------------------------------------------------- D and E. tray and overlay
-function TrayButton {
-    $root = [System.Windows.Automation.AutomationElement]::RootElement
-    $cond = New-Object System.Windows.Automation.PropertyCondition([System.Windows.Automation.AutomationElement]::NameProperty, "Streakboom")
-    $tray = $root.FindFirst([System.Windows.Automation.TreeScope]::Children, (New-Object System.Windows.Automation.PropertyCondition([System.Windows.Automation.AutomationElement]::ClassNameProperty, "Shell_TrayWnd")))
-    if (-not $tray) { return $null }
-    $tray.FindFirst([System.Windows.Automation.TreeScope]::Descendants, $cond)
-}
+# The tray icon is clicked with the real mouse at the rectangle the shell gives for it (Shell_NotifyIconGetRect, keyed by the
+# program's own tray window, class tray_icon_app). When the icon sits in the hidden-icons flyout, the script first opens the
+# flyout with the taskbar's chevron: that is the only click outside the program, and only to reach the program's own icon.
+function OnTaskbar($r) { $tb = [System.Windows.Forms.Screen]::PrimaryScreen; ($r.T -ge $tb.WorkingArea.Bottom) -and ($r.R - $r.L) -gt 0 }
 function TrayClick([string]$label) {
-    $t = TrayButton
-    if (-not $t) { Note "FAIL" "$label the tray icon 'Streakboom' was not found on the taskbar"; return }
-    $r = $t.Current.BoundingRectangle
-    [W]::Click([int]($r.X + $r.Width / 2), [int]($r.Y + $r.Height / 2), $false)
+    $tw = [W]::Of([uint32]$proc.Id) | Where-Object { [W]::Class($_) -eq "tray_icon_app" } | Select-Object -First 1
+    if (-not $tw) { Note "FAIL" "$label the program's tray window was not found"; return }
+    $r = New-Object W+RECT
+    $ok = [W]::IconRect($tw, [ref]$r)
+    $how = "on the taskbar"
+    $chev = $null
+    if ([W]::OverflowOpen()) { $how = "in the hidden-icons flyout (already open)" }
+    elseif (-not $ok -or -not (OnTaskbar $r)) {
+        $root = [System.Windows.Automation.AutomationElement]::RootElement
+        $tray = $root.FindFirst([System.Windows.Automation.TreeScope]::Children, (New-Object System.Windows.Automation.PropertyCondition([System.Windows.Automation.AutomationElement]::ClassNameProperty, "Shell_TrayWnd")))
+        $notify = $tray.FindFirst([System.Windows.Automation.TreeScope]::Descendants, (New-Object System.Windows.Automation.PropertyCondition([System.Windows.Automation.AutomationElement]::ClassNameProperty, "TrayNotifyWnd")))
+        $chev = $notify.FindFirst([System.Windows.Automation.TreeScope]::Children, (New-Object System.Windows.Automation.PropertyCondition([System.Windows.Automation.AutomationElement]::ClassNameProperty, "Button")))
+        if (-not $chev) { Note "FAIL" "$label the icon is hidden and the flyout chevron was not found"; return }
+        $c = $chev.Current.BoundingRectangle
+        [W]::Click([int]($c.X + $c.Width / 2), [int]($c.Y + $c.Height / 2), $false)
+        Pump 800
+        $ok = [W]::IconRect($tw, [ref]$r)
+        $how = "in the hidden-icons flyout (opened with the chevron)"
+    }
+    if (-not $ok) { Note "FAIL" "$label the shell gave no rectangle for the tray icon"; return }
+    [W]::Click([int](($r.L + $r.R) / 2), [int](($r.T + $r.B) / 2), $false)
+    Note "INFO" "$label real click on the tray icon $how at ($($r.L),$($r.T))-($($r.R),$($r.B))"
     Pump 1500
+    if ([W]::OverflowOpen() -and $chev) { # close the flyout again with the same chevron, so the next step starts as this one did
+        $c = $chev.Current.BoundingRectangle
+        [W]::Click([int]($c.X + $c.Width / 2), [int]($c.Y + $c.Height / 2), $false)
+        Pump 600
+    }
 }
 function State([string]$label) {
     $m = Main; $o = Overlay
@@ -218,18 +270,28 @@ Check (-not $s.Main) "D1 the tray hides Peak"; if ($null -ne $s.Ov) { Check (-no
 TrayClick "D2"; $s = State "D2 after tray click 2"
 Check $s.Main "D2 the tray shows Peak again"; if ($null -ne $s.Ov) { Check $s.Ov "D2 the overlay shows with Peak" }
 
-# E. go away and come back, then the tray
-Pump 1500
-$p = PeakCenter
-[W]::Click($p.X, $p.Y, $true)
-$shown = WaitFor { $b = Bubble; $b -and $b.Vis } 4000
-Pump 700
-$b = Bubble; $fg = [W]::GetForegroundWindow()
-if ($shown -and ($fg -eq $b.H -or [W]::GetAncestor($fg, 2) -eq $b.H)) {
-    [System.Windows.Forms.SendKeys]::SendWait("go away{ENTER}")
-    Note "INFO" "E typed 'go away' + Enter into the bubble"
-} else { Note "FAIL" "E the chat input did not take the keyboard; cannot send 'go away' (foreground $(Fg))" }
-$left = WaitFor { $m = Main; -not $m.Vis } 30000
+# E. go away and come back, then the tray (one retry if Peak did not leave, with the reason from the test data's leave trace)
+function GoAway([string]$label) {
+    Pump 1500
+    $p = PeakCenter
+    [W]::Click($p.X, $p.Y, $true)
+    $shown = WaitFor { $b = Bubble; $b -and $b.Vis } 4000
+    Pump 900
+    $b = Bubble; $fg = [W]::GetForegroundWindow()
+    if ($shown -and ($fg -eq $b.H -or [W]::GetAncestor($fg, 2) -eq $b.H)) {
+        [System.Windows.Forms.SendKeys]::SendWait("go away"); Pump 300
+        [System.Windows.Forms.SendKeys]::SendWait("{ENTER}")
+        Note "INFO" "$label typed 'go away' + Enter into the bubble"
+    } else { Note "INFO" "$label the chat input did not take the keyboard (foreground $(Fg))" }
+    WaitFor { $m = Main; -not $m.Vis } 30000
+}
+$left = GoAway "E"
+if (-not $left) {
+    $trace = Join-Path $data "leave-trace.log"
+    if (Test-Path $trace) { Note "INFO" ("E leave trace, last lines: " + ((Get-Content $trace -Tail 4) -join " | ")) }
+    Pump 3000
+    $left = GoAway "E retry"
+}
 $s = State "E after leaving"
 Check $left "E Peak left (window hidden)"; if ($null -ne $s.Ov) { Check (-not $s.Ov) "E the overlay hid while Peak is away" }
 $back = WaitFor { $m = Main; $m.Vis } 60000
@@ -237,7 +299,7 @@ Pump 2500
 $s = State "E after coming back"
 Check $back "E Peak came back (window shown)"; if ($null -ne $s.Ov) { Check $s.Ov "E the overlay is shown again" }
 TrayClick "E1"; $s = State "E1 tray click after the return"
-Check (-not $s.Main) "E1 the tray hides Peak after Lượn đi (issue 14)"; if ($null -ne $s.Ov) { Check (-not $s.Ov) "E1 the overlay hides with it" }
+Check (-not $s.Main) "E1 the tray hides Peak after Luon di (issue 14)"; if ($null -ne $s.Ov) { Check (-not $s.Ov) "E1 the overlay hides with it" }
 TrayClick "E2"; $s = State "E2 second tray click"
 Check $s.Main "E2 the tray shows Peak again"; if ($null -ne $s.Ov) { Check $s.Ov "E2 the overlay shows with it" }
 
