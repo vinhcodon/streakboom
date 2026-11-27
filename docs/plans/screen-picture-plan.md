@@ -8,12 +8,12 @@
 - Before it is trusted, `perch-trace.log` (ADR-0116) will tell whether `no_ledge` is really the gate that stops most attempts, or `not_free mode=work` (Peak must stay still while the person works; better sight changes nothing then). The experiment of stage 1 does not wait for that: it only draws.
 
 ## 2. What the sense is, and is not
-- **Is:** a grid of grey levels about 190 by 110 (a cell is about 10 by 10 physical px on a 1920 px screen: **too small to read a letter from**), taken from the monitor Peak is on, turned into **edges** (where the brightness changes sharply), then into **segments** (horizontal runs are candidate ledges, vertical runs are candidate walls) and **empty space** (cells where nothing changes). The grid is dropped at once; only the segments stay, in memory, for a moment.
+- **Is:** a grid of grey levels 192 wide and at most 216 tall (a cell is about 10 by 10 physical px on a 1920 px screen; **small, but large or zoomed text can still be read from it**, see `screen-picture-evidence.md`, corrected 2026-11-24 for issue #8), taken from the monitor Peak is on, turned into **edges** (where the brightness changes sharply), then into **segments** (horizontal runs are candidate ledges, vertical runs are candidate walls) and **empty space** (cells where nothing changes). The grid is dropped at once; only the segments stay, in memory, for a moment.
 - **Is not:** a picture that is saved, sent, logged or shown anywhere but as lines on the overlay; text recognition; an understanding of what a block is (a window, a card, a button). It has no colour (grey only) and no identity: a block is a rectangle.
 
 ## 3. Guarantees (the test for each is in stage 1)
 1. **Local and in memory only.** The grid is a byte array in Rust, handed to the pet window once, used and dropped. No file, no log line, no network, no telemetry.
-2. **Too small to read.** At most 192 by 108 grey cells for a whole monitor.
+2. **Small, not unreadable** (corrected 2026-11-24, issue #8; the earlier text said "Too small to read. At most 192 by 108"). At most 192 grey cells wide and 216 tall for a whole monitor (108 tall on a 16:9 screen). Large or zoomed text can stay readable in it (`screen-picture-evidence.md`), so the guarantee is that nothing recognises text and the grid is dropped at once, not that text cannot be read.
 3. **Peak's own windows are not in the picture** (GDI `StretchBlt` without the layered-window flag leaves layered windows out, and Peak's windows are layered).
 4. **Only when asked, in the experiment**: a tray item of a Preview build, off at every start (ADR-0119). For the real feature (stage 5) the rule of ADR-0045 holds: a switch in Settings, Privacy, off by default, its own text in the README, Settings and the website, taken only when Peak is about to move or to check its seat.
 5. **Nothing from the picture reaches a chat, a line or a trace**; the perch trace may say how many segments were found, never where or what.

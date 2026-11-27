@@ -1,6 +1,6 @@
 # ADR-0139: Peak and Paws may share the screen; who appears follows the last state, with no setting
 
-- **Status:** accepted on 2026-11-22 for the prototype (job C of `docs/handoff/duo-prototype-and-cross-review.md`) and as the direction for the spec. Nothing ships: the work is on `exp/duo-prototype`, Preview only, behind a developer flag that is off by default. The product decision to ship a second pet is still the author's and is not made here.
+- **Status:** (amended by ADR-0164, 2026-11-27) accepted on 2026-11-22 for the prototype (job C of `docs/handoff/duo-prototype-and-cross-review.md`) and as the direction for the spec. Nothing ships: the work is on `exp/duo-prototype`, Preview only, behind a developer flag that is off by default. The product decision to ship a second pet is still the author's and is not made here.
 - **Date:** 2026-11-22
 - **Decided by:** Vinh (author)
 - **Amended by:** ADR-0142 (2026-11-22): the tray single click now shows or hides the chat box and the **double click** is the click described below (everyone in, or the pet tucked last out); ADR-0143: the pet is no longer named by the person., answering four multiple-choice questions; the appearance rule is his own wording

@@ -1,6 +1,6 @@
 //! The screen picture sense, stage 1 (ADR-0119, `docs/plans/screen-picture-plan.md`): a very small grey picture of one monitor's work
 //! area, taken only when the person has turned the experiment on in a Preview build, handed to the pet window once and dropped.
-//! Never written, logged or sent. At most `GRID_W` by `GRID_H_MAX` cells, so small that no letter can be read from it.
+//! Never written, logged or sent. At most `GRID_W` by `GRID_H_MAX` cells. Small, but not unreadable: large or zoomed text can stay readable in it, so nothing here recognises text and nothing may promise that (issue #8; `docs/plans/screen-picture-evidence.md`).
 
 /// The width of the grid in cells (a cell is about 10 by 10 physical px on a 1920 px screen; 384 was tried and refused, ADR-0121).
 pub const GRID_W: u32 = 192;

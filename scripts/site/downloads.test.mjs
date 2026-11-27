@@ -4,7 +4,7 @@ import assert from "node:assert/strict";
 import { mkdtempSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { checkLedger, formatCount, installerCounts, liveLedger, mergeLedger, previousLedger } from "./downloads.mjs";
+import { checkLedger, formatCount, historyOk, installerCounts, liveLedger, mergeLedger, previousLedger } from "./downloads.mjs";
 import { build } from "../build-site.mjs";
 import { check } from "./checks.mjs";
 
@@ -22,7 +22,7 @@ test("only the installer counts, not latest.json", () => {
 
 test("the ledger keeps a deleted release and never goes down", () => {
   const first = mergeLedger(null, { "v0.3.1": 3, "v0.3.0": 1 }, "2026-11-11");
-  assert.deepEqual(first, { updated: "2026-11-11", total: 4, perTag: { "v0.3.0": 1, "v0.3.1": 3 }, history: [{ date: "2026-11-11", total: 4 }] });
+  assert.deepEqual(first, { updated: "2026-11-11", total: 4, perTag: { "v0.3.0": 1, "v0.3.1": 3 }, history: [{ date: "2026-11-11", total: 4, stable: 0, preview: 4 }] });
   // v0.3.0 is deleted by a release, v0.3.2 appears, v0.3.1 grows
   const next = mergeLedger(first, { "v0.3.2": 2, "v0.3.1": 5 }, "2026-11-20");
   assert.equal(next.total, 1 + 5 + 2);
@@ -155,4 +155,35 @@ test("the previous ledger is read from the copy kept in Actions when there is on
   // no file (the first run, or the artifact expired): the live site, as before
   assert.equal(await previousLedger({ file: join(dir, "missing.json"), fetchFn: async () => reply(404) }), null);
   assert.equal(await previousLedger({ file: undefined, fetchFn: async () => reply(404) }), null);
+});
+
+import { channelOf, channelTotals, loadChannelBackfill } from "./downloads.mjs";
+test("the channel of a version: an even middle number is a Stable, an odd one a Preview, anything else none", () => {
+  for (const [t, c] of [["v0.10.0", "stable"], ["v0.8.1", "stable"], ["v0.9.8", "preview"], ["v0.11.5", "preview"], ["0.7.7", "preview"], ["v1", null], ["latest", null]]) assert.equal(channelOf(t), c, t);
+  assert.deepEqual(channelTotals({ "v0.10.0": 3, "v0.9.8": 4, "v0.8.1": 5 }), { stable: 8, preview: 4 });
+  assert.equal(channelTotals({ "v0.10.0": 3, v1: 4 }), null, "a tag that is not a version: no split");
+});
+
+test("the history carries the split from today on, the backfill fills the days before it only when the two add up, and a day that has it is never overwritten", () => {
+  const prev = { total: 5, perTag: { "v0.9.0": 2, "v0.8.0": 3 }, history: [{ date: "2026-11-10", total: 2 }, { date: "2026-11-11", total: 5 }] };
+  const backfill = { "2026-11-10": { stable: 0, preview: 2 }, "2026-11-11": { stable: 3, preview: 2 } };
+  const l = mergeLedger(prev, { "v0.9.0": 2, "v0.8.0": 3 }, "2026-11-12", backfill);
+  assert.deepEqual(l.history, [{ date: "2026-11-10", total: 2, stable: 0, preview: 2 }, { date: "2026-11-11", total: 5, stable: 3, preview: 2 }, { date: "2026-11-12", total: 5, stable: 3, preview: 2 }]);
+  // a backfill that does not add up is not used; a day that already has the split is kept
+  const bad = mergeLedger(prev, { "v0.9.0": 2, "v0.8.0": 3 }, "2026-11-12", { "2026-11-11": { stable: 4, preview: 2 } });
+  assert.deepEqual(bad.history[1], { date: "2026-11-11", total: 5 });
+  const had = mergeLedger({ ...prev, history: [{ date: "2026-11-11", total: 5, stable: 3, preview: 2 }] }, { "v0.9.0": 2, "v0.8.0": 3 }, "2026-11-12", { "2026-11-11": { stable: 2, preview: 3 } });
+  assert.deepEqual(had.history[0], { date: "2026-11-11", total: 5, stable: 3, preview: 2 }, "kept");
+});
+
+test("a history whose split does not add up or falls is refused; the repository's backfill file is valid and has the days Actions kept", () => {
+  assert.equal(historyOk([{ date: "2026-11-11", total: 5, stable: 3, preview: 2 }, { date: "2026-11-12", total: 6, stable: 3, preview: 3 }]), true);
+  assert.equal(historyOk([{ date: "2026-11-11", total: 5, stable: 3, preview: 3 }]), false, "does not add up");
+  assert.equal(historyOk([{ date: "2026-11-11", total: 5, stable: 3, preview: 2 }, { date: "2026-11-12", total: 6, stable: 2, preview: 4 }]), false, "a channel fell");
+  assert.equal(historyOk([{ date: "2026-11-11", total: 5, stable: 3 }]), false, "half a split");
+  assert.equal(historyOk([{ date: "2026-11-11", total: 5 }, { date: "2026-11-12", total: 6, stable: 3, preview: 3 }]), true, "a day without the split before one with it");
+  const days = loadChannelBackfill();
+  assert.ok(Object.keys(days).length >= 12 && days["2026-11-14"].stable + days["2026-11-14"].preview === 112);
+  const list = Object.entries(days).sort(([a], [b]) => (a < b ? -1 : 1)).map(([date, d]) => ({ date, total: d.stable + d.preview, ...d }));
+  assert.equal(historyOk(list), true, "the backfill is itself a valid history");
 });

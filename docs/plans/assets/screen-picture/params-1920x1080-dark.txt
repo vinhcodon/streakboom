@@ -1,0 +1,14 @@
+﻿script: scripts/windows/picture-evidence.ps1
+screen: 1920 x 1080 (synthetic)
+grid: 192 x 108
+cell_px: 10
+font: Segoe UI, regular, GraphicsUnit.Pixel (em height), ClearTypeGridFit
+text: Hello Peak 2026 - Xin chào, đây là chữ
+sizes_px: 8, 10, 12, 14, 16, 20, 24, 32, 40, 48
+band_px: 108
+theme: white on dark
+reduction: StretchBlt HALFTONE (SetStretchBltMode 4, SetBrushOrgEx 0,0) from a device context into a bitmap of the grid size
+grey: 0.299 R + 0.587 G + 0.114 B
+enlargement: x5 nearest neighbour (PixelOffsetMode Half)
+os: Microsoft Windows NT 10.0.19045.0
+sheet: contact-sheet-1920x1080-dark.png

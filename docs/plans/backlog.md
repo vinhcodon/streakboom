@@ -4,6 +4,8 @@ Status: **proposed 2026-11-08, asked by Vinh to be carried out story by story.**
 
 ## How we work with it
 
+**Delivery execution (2026-11-24):** use [Streakboom Delivery](https://github.com/users/vinhcodon/projects/1), epic #7 and the [operating guide](github-delivery.md). The legacy product backlog remains the source of future candidates; only approved slices enter iterations. The initial native task breakdown is #2 → #8; #3 → #9/#10; #4 → #11/#12; #5 → #13. #6 stays a follow-up assessment. This is organization, not evidence of completed product work.
+
 Cross-agent review progress and acceptance are tracked in [GitHub issue #1](https://github.com/vinhcodon/streakboom/issues/1) and its linked issues. This supplements the product backlog and roadmap; creating review tickets does not complete their implementation or verification. The current batch covers privacy (#2), complete duo performance (#3), conversation/input integration (#4), and the isolated bubble-focus fix (#5).
 
 1. **Size.** S = up to half a day, M = one to two days, L = more than two days (an L must be split before it starts).
@@ -417,7 +419,7 @@ Why: the author keeps building features and lets a few adults try them (ADR-0089
 
 | # | Story | Size | Status |
 |---|---|---|---|
-| PS-1 | Rust `screen_grid`: the monitor Peak is on, `StretchBlt` (halftone) into at most 192 x 108 grey cells, Windows only, Peak's own windows left out, nothing kept | S | built on branch `vanish` 2026-11-15, not seen |
+| PS-1 | Rust `screen_grid`: the monitor Peak is on, `StretchBlt` (halftone) into at most 192 x 108 grey cells (the cap is 192 wide and 216 tall; the grid is small but large or zoomed text can stay readable, `screen-picture-evidence.md`, issue #8), Windows only, Peak's own windows left out, nothing kept | S | built on branch `vanish` 2026-11-15, not seen |
 | PS-2 | `picture.ts` (pure, tested): gradient, relative threshold, horizontal and vertical segments, room above a ledge, empty space | M | built, not seen (tuning waits for what the author sees) |
 | PS-3 | The tray item "Screen picture (experiment)" (Preview only, off at every start) and the drawing on the overlay | S | built, not seen (V-149) |
 | PS-11 | **2a. Regions:** label the areas the borders enclose (connected calm cells, merged when tiny), with box, area, mean grey and edge density; drawn on the overlay as outlines | M | built on branch `vanish` 2026-11-15, not seen (outlines on the overlay) |
@@ -479,6 +481,8 @@ The dog is **not** to be put in the app; this is a sticker test, and the decisio
 | DU-8 | The author tries the prototype for several days and says whether the two feel alive together (the question of the handoff), and what to keep | M | proposed |
 | DU-9 | The review of the branch by a reader who did not build it (`docs/handoff/duo-review-request.md`) | M | requested 2026-11-22 |
 | DU-10 | If the author keeps it: a spec for the two pets, the merge in steps, the privacy and settings text, the README and the website (nothing is changed in public texts before) | L | proposed, depends on DU-8 |
+| DU-11 | **The look and the interaction of Paws** (ADR-0154; the author asked where its animations are: Paws shows only the side view and cannot be touched). **Step 1, interaction with the two pictures it has:** a poke and a stroke get a reaction; it can be dragged and stands again; its head follows the pointer and turns to Peak; the front or the side view follows the direction. **Step 2, new art** (walk, stand, sleep) drawn by the sticker session from DU-3; **step 3** a climb so that a scene does not need one floor, decided after the first two. The author looks at each step in a test build first | L | **step 1 built on the branch 2026-11-23** (commit d3534d2, checked with the real mouse; not yet seen by the author, V-200); steps 2 and 3 proposed |
+| DU-12 | **The @ mention in the duo chat, reviewed and planned** ([duo-mentions-review.md](duo-mentions-review.md), after ADR-0157 was tried: `@Peak` did not bring Peak out and a message that only names a pet was answered without the pet appearing). Found: the saved presence and Peak's window can disagree (the window is toggled, not set), `@Peak` with Paws out goes to the old single-pet chat, the person's turn is filed before the call, the wait is a fixed 0.7 s, Peak has no entrance, a failed call is silent. Plan: 12.1 one source of truth, 12.2 route a mention to the shared talk, 12.3 a visible entrance (motion, the author looks first), 12.4 say a failed call and the limits, 12.5 the whole matrix as a script. **Six decisions wait for the author (D1 to D6 of the document); nothing is built.** | S/M | Decide D1 to D6, then ADR |
 
 ## E32: The repository for Windows, macOS and the web (`docs/plans/repo-structure-proposal.md`; a proposal)
 

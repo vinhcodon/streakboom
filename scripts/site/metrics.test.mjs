@@ -1,7 +1,7 @@
 // The numbers of the project dashboard (ADR-0120): the channel of a version, the CSV files, the history of the repository and the check of the hand-typed file.
 import test from "node:test";
 import assert from "node:assert/strict";
-import { WEEKLY_COLUMNS, channelOf, collect, dailyCsv, parseCsv, repoHistoryCsv, versionsCsv, weeklyProblems } from "./metrics.mjs";
+import { WEEKLY_COLUMNS, channelCsv, channelOf, collect, dailyCsv, parseCsv, repoHistoryCsv, versionsCsv, weeklyProblems } from "./metrics.mjs";
 
 const LEDGER = { updated: "2026-11-14", total: 112, perTag: { "v0.10.0": 3, "v0.9.8": 3, "v0.8.1": 4 }, history: [{ date: "2026-11-13", total: 64 }, { date: "2026-11-14", total: 112 }] };
 const REPO = { stargazers_count: 1, forks_count: 0, open_issues_count: 0, subscribers_count: 0 };
@@ -42,8 +42,17 @@ test("collect reads the two public addresses and the two files, writes nothing, 
   const fetchFn = async (url) => ({ ok: true, status: 200, json: async () => (url.includes("downloads.json") ? LEDGER : REPO) });
   const read = (p) => (p.endsWith("weekly.csv") ? HEAD + "\n2026-11-09,120,30,4,16,900\n" : "");
   const r = await collect({ fetchFn, read, today: "2026-11-15" });
-  assert.deepEqual(Object.keys(r.files), ["downloads_daily.csv", "downloads_by_version.csv", "repo.csv", "weekly.csv"]);
+  assert.deepEqual(Object.keys(r.files), ["downloads_daily.csv", "downloads_by_version.csv", "downloads_channel.csv", "repo.csv", "weekly.csv"]);
   assert.equal(r.summary.total, 112); assert.equal(r.summary.weeks, 1); assert.equal(r.summary.stars, 1);
   await assert.rejects(collect({ fetchFn: async () => ({ ok: false, status: 503 }), read }), /answered 503/);
   await assert.rejects(collect({ fetchFn, read: () => HEAD + "\n2026-11-10,1,1,1,1,1\n" }), /not a Monday/);
+});
+
+test("the channel file: the split of the history, from the ledger when it has it, from the backfill for the days before, from the counts for the day of the ledger, empty when none", () => {
+  const ledger = { updated: "2026-11-14", total: 112, perTag: { "v0.10.0": 41, "v0.9.8": 71 }, history: [{ date: "2026-11-12", total: 24 }, { date: "2026-11-13", total: 64, stable: 29, preview: 35 }, { date: "2026-11-14", total: 112 }] };
+  const csv = channelCsv(ledger, { "2026-11-12": { stable: 17, preview: 7 } });
+  assert.equal(csv, "date,total,stable,preview\n2026-11-12,24,17,7\n2026-11-13,64,29,35\n2026-11-14,112,41,71\n");
+  const none = channelCsv({ updated: "2026-11-14", total: 5, perTag: { v1: 5 }, history: [{ date: "2026-11-10", total: 3 }, { date: "2026-11-14", total: 5 }] }, { "2026-11-10": { stable: 1, preview: 1 } });
+  assert.equal(none, "date,total,stable,preview\n2026-11-10,3,,\n2026-11-14,5,,\n", "a backfill that does not add up is not used; a tag that is not a version gives no split");
+  assert.throws(() => channelCsv({}), /no daily history/);
 });
