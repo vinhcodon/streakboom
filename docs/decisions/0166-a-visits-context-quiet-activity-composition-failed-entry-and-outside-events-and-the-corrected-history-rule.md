@@ -1,6 +1,6 @@
 # ADR-0166: In a group visit: what the second pet hears, Quiet and unsent messages, activity against closing, typing composition, a failed entry and outside events
 
-- **Status:** accepted on 2026-11-27 for the duo experiment. **Nothing is built from it.** It stays behind `STREAKBOOM_DUO`; no merge, release, key use or art is authorised. Amends ADR-0165 (and corrects one sentence of it).
+- **Status:** (amended by ADR-0167, 2026-11-27: four further decisions and a revised contract text) accepted on 2026-11-27 for the duo experiment. **Nothing is built from it.** It stays behind `STREAKBOOM_DUO`; no merge, release, key use or art is authorised. Amends ADR-0165 (and corrects one sentence of it).
 - **Date:** 2026-11-27
 - **Decided by:** Vinh (author): option (a) on six multiple-choice questions. Recorded by Claude (the app session).
 

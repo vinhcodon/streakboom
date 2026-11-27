@@ -10,6 +10,7 @@ What was **decided**, why, and what was rejected. One short file per decision (a
 
 | ADR | Decision | Status | Date |
 |---|---|---|---|
+| [0167](0167-returned-text-over-the-limit-closing-while-composing-a-repeated-invitation-and-the-shortcut-with-peak-hidden.md) | Returned text over the limit stays whole in the draft; closing while composing ends the visit and hides after; a repeated bare invitation is an ordinary message; the shortcut shows a hidden Peak (not built; amends 0166; contract and tasks still proposed) |
 | [0166](0166-a-visits-context-quiet-activity-composition-failed-entry-and-outside-events-and-the-corrected-history-rule.md) | In a group visit: same-turn hearing as in #18, unsent text back to the draft under Quiet or a failed entry, activity reverses only an automatic fade, no change of surface while composing, outside events (not built; amends 0165) |
 | [0165](0165-the-group-visit-its-states-one-counter-a-held-fade-old-paths-kept-until-after-the-trial-and-the-baseline-and-tasks.md) | The group visit: its states, one counter with a cap of 120 in the experiment, the fade held while work is pending, old paths deleted only after the trial, the baseline and tasks T0 to T6 (not built; amends 0164) |
 | [0164](0164-paws-lives-only-in-the-chat-no-switch-an-invitation-opens-the-group-box-and-solo-stays-as-peak-is-today.md) | Paws lives only in the chat: no switch, an invitation opens the group box, solo stays as Peak is today (a direction for the duo experiment, not built; amends 0139, 0145, 0152, 0154, 0157 to 0161) |
