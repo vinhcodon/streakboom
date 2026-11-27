@@ -10,6 +10,7 @@ What was **decided**, why, and what was rejected. One short file per decision (a
 
 | ADR | Decision | Status | Date |
 |---|---|---|---|
+| [0166](0166-a-visits-context-quiet-activity-composition-failed-entry-and-outside-events-and-the-corrected-history-rule.md) | In a group visit: same-turn hearing as in #18, unsent text back to the draft under Quiet or a failed entry, activity reverses only an automatic fade, no change of surface while composing, outside events (not built; amends 0165) |
 | [0165](0165-the-group-visit-its-states-one-counter-a-held-fade-old-paths-kept-until-after-the-trial-and-the-baseline-and-tasks.md) | The group visit: its states, one counter with a cap of 120 in the experiment, the fade held while work is pending, old paths deleted only after the trial, the baseline and tasks T0 to T6 (not built; amends 0164) |
 | [0164](0164-paws-lives-only-in-the-chat-no-switch-an-invitation-opens-the-group-box-and-solo-stays-as-peak-is-today.md) | Paws lives only in the chat: no switch, an invitation opens the group box, solo stays as Peak is today (a direction for the duo experiment, not built; amends 0139, 0145, 0152, 0154, 0157 to 0161) |
 | [0107](0107-the-language-strip-shows-once-and-the-button-of-the-wanted-language-is-brighter.md) | The language strip shows once and is quieter; the header button of the wanted language is a little brighter; amends ADR-0067 (the website session) | accepted, built | 2026-11-14 |

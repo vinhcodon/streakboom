@@ -1,6 +1,6 @@
 # ADR-0165: The group visit: its states, one counter with one cap, a fade that is held while work is pending, the old paths kept until after the trial, and the baseline and tasks
 
-- **Status:** accepted on 2026-11-27 for the duo experiment. **Nothing is built from it.** It stays behind `STREAKBOOM_DUO`; no merge into `main`, release, key use or art is authorised. Amends ADR-0164.
+- **Status:** (amended by ADR-0166, 2026-11-27: the sentence on what the model is sent is replaced; Quiet, activity, composition, a failed entry and outside events decided) accepted on 2026-11-27 for the duo experiment. **Nothing is built from it.** It stays behind `STREAKBOOM_DUO`; no merge into `main`, release, key use or art is authorised. Amends ADR-0164.
 - **Date:** 2026-11-27
 - **Decided by:** Vinh (author): option (a) on five multiple-choice questions, then "Duyệt, ghi ADR" to the state table, the baseline and the task list. Recorded by Claude (the app session).
 
