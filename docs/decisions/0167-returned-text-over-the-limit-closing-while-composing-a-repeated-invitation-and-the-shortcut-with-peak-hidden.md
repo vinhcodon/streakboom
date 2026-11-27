@@ -1,6 +1,6 @@
 # ADR-0167: Returned text longer than the field, closing while composing, a repeated bare invitation, and the box shortcut while Peak is hidden
 
-- **Status:** accepted on 2026-11-27 for the duo experiment. **Nothing is built from it.** It stays behind `STREAKBOOM_DUO`; no merge, release, key use or art is authorised. Amends ADR-0166.
+- **Status:** accepted on 2026-11-27 for the duo experiment. **Nothing is built from it.** It stays behind `STREAKBOOM_DUO`; no merge, release, key use or art is authorised. Amends ADR-0166; the contract and the task split below replace those proposed in ADR-0165 and 0166.
 - **Date:** 2026-11-27
 - **Decided by:** Vinh (author): "Theo đề xuất" to four multiple-choice questions, each with the app session's recommendation. Recorded by Claude (the app session). Where the recommendation differed from Codex's (questions 1 and 3), the app session's was chosen.
 
@@ -23,7 +23,7 @@ Each takes the choice that adds the least new interface, throws away nothing the
 - 4: doing nothing while Peak is hidden.
 
 ## The contract text
-**Standing of this part:** proposed in comment 7213564548 and recorded here with the four choices applied, so that Codex can confirm one text. **The author has approved the four decisions above; he has not yet approved these definitions, the rows or the task split**, including the one consequence that needs his eye: the read beat (`min(9000, 1500 + 55 x characters)` ms) belongs to the hold of the automatic fade, and is also used for Peak's solo reply at a handoff.
+**Standing of this part:** proposed in comment 7213564548, recorded here with the four choices applied, and **approved by the author on 2026-11-27 ("Duyệt và đẩy")**: these definitions, the rows and the task split, including that the read beat (`min(9000, 1500 + 55 x characters)` ms) belongs to the hold of the automatic fade and is also used for Peak's solo reply at a handoff. Codex's confirmation (task T1) is still to come; a change of policy it finds comes back to the author. No GitHub task is created by this record and none is ordered to start.
 
 ### Shared definitions
 - `mid` one deliberate send; `g` visit generation. States S, E, **A**, **Xr** (automatic fade, reversible, same `g`, membership kept), **Xe** (ended: `g` invalidated and membership ended exactly once, cleanup running). Xr and Xe are internal, not modes.
