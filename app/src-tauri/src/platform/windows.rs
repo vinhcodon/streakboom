@@ -113,8 +113,6 @@ pub fn precise_sleep(ms: u64) {
     });
 }
 
-/// Show a window without making it the active one (`SW_SHOWNOACTIVATE`), so that Peak reappearing by itself never takes
-/// the keyboard focus. If the call fails, it is an ordinary `show`.
 /// Hide a window with the system call (`SW_HIDE`). A window shown by `show_without_activating` is shown behind the back of the window library, whose own
 /// flag still says hidden, so its `hide` does nothing (issue 14: after Peak came back from Lượn đi, the tray could not hide it). Show and hide must be
 /// the same kind of call.
@@ -128,6 +126,8 @@ pub fn hide_window(win: &WebviewWindow) {
     let _ = win.hide();
 }
 
+/// Show a window without making it the active one (`SW_SHOWNOACTIVATE`), so that Peak reappearing by itself never takes
+/// the keyboard focus. If the call fails, it is an ordinary `show`. Its pair is `hide_window`.
 pub fn show_without_activating(win: &WebviewWindow) {
     use windows_sys::Win32::UI::WindowsAndMessaging::{ShowWindow, SW_SHOWNOACTIVATE};
     if let Ok(hwnd) = win.hwnd() {

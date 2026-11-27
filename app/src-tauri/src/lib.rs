@@ -739,7 +739,7 @@ fn bubble_fit(app: AppHandle, state: State<AppState>, w: f64, h: f64, interactiv
 fn bubble_hide(app: AppHandle, state: State<AppState>) {
     state.bubble.lock().unwrap().visible = false;
     if let Some(bubble) = app.get_webview_window("bubble") {
-        hide_window(&bubble); // it may have been shown with the system call (issue 14)
+        let _ = bubble.hide(); // the pair of `bubble.show()` in bubble_fit: the bubble is only ever shown by the library (issue 14)
     }
     // Destroy the window if it stays unused, to give its memory back.
     let gen_now = state.bubble_gen.fetch_add(1, Ordering::Relaxed) + 1;
