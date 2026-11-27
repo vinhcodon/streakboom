@@ -1,6 +1,6 @@
 # ADR-0164: Paws lives only in the chat: there is no switch, an invitation opens the group box, and solo stays as Peak is today
 
-- **Status:** accepted on 2026-11-27 as the direction of the duo experiment. **Nothing is built from this record yet.** It stays an experiment behind `STREAKBOOM_DUO`; it does not authorise a merge into `main`, a release or new art.
+- **Status:** (amended by ADR-0165, 2026-11-27: old paths deleted only after the trial; the daily limit, the fade hold and discovery decided) accepted on 2026-11-27 as the direction of the duo experiment. **Nothing is built from this record yet.** It stays an experiment behind `STREAKBOOM_DUO`; it does not authorise a merge into `main`, a release or new art.
 - **Date:** 2026-11-27
 - **Decided by:** Vinh (author), recorded by Claude (the app session): four multiple-choice questions, then "Duyệt" to the written direction.
 - **Amends:** ADR-0139 (who appears), 0145 and 0152 (the double click), 0154 (Paws's body and new art), 0157 (a mention calls a pet out), 0158 (presence), 0159 (walking, the tray and the shortcut), 0160 (the tray), 0161 (point 4, Paws's portrait). The parts of those records that this one does not name stand.
