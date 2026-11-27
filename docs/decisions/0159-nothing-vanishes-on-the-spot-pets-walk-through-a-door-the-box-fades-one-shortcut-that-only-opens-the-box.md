@@ -1,6 +1,6 @@
 # ADR-0159: Nothing vanishes on the spot: the pets walk through a door, the box fades; one shortcut, which only opens the box
 
-- **Status:** accepted on 2026-11-24 for the prototype (the branch `exp/duo-prototype`, nothing ships, ADR-0139). The author found that Esc works well but that the two global shortcuts make the windows and the characters vanish, which does not feel physical; the recommended option of three questions was chosen. Amends ADR-0142 (two global shortcuts).
+- **Status:** (amended by ADR-0164, 2026-11-27) accepted on 2026-11-24 for the prototype (the branch `exp/duo-prototype`, nothing ships, ADR-0139). The author found that Esc works well but that the two global shortcuts make the windows and the characters vanish, which does not feel physical; the recommended option of three questions was chosen. Amends ADR-0142 (two global shortcuts).
 - **Date:** 2026-11-24
 - **Decided by:** Vinh (author)
 

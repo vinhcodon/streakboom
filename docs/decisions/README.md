@@ -10,6 +10,7 @@ What was **decided**, why, and what was rejected. One short file per decision (a
 
 | ADR | Decision | Status | Date |
 |---|---|---|---|
+| [0164](0164-paws-lives-only-in-the-chat-no-switch-an-invitation-opens-the-group-box-and-solo-stays-as-peak-is-today.md) | Paws lives only in the chat: no switch, an invitation opens the group box, solo stays as Peak is today (a direction for the duo experiment, not built; amends 0139, 0145, 0152, 0154, 0157 to 0161) |
 | [0107](0107-the-language-strip-shows-once-and-the-button-of-the-wanted-language-is-brighter.md) | The language strip shows once and is quieter; the header button of the wanted language is a little brighter; amends ADR-0067 (the website session) | accepted, built | 2026-11-14 |
 | [0104](0104-the-slogan-under-the-name-and-the-taglines-of-the-home-page.md) | The slogan under the name on every page and twelve taglines that rotate at random on the home page (the website session) | accepted, built | 2026-11-14 |
 | [0163](0163-the-download-ledger-keeps-stable-and-preview-by-day.md) | The download ledger keeps Stable and Preview by day (the days before rebuilt once from the copies Actions kept); the dashboard chart splits each day (the website session) | accepted, built | 2026-11-23 |

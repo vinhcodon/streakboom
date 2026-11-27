@@ -1,6 +1,6 @@
 # ADR-0160: The tray opens the chat box, its menu names what each pet can do now, and Lượn đi goes and comes back through the door
 
-- **Status:** accepted on 2026-11-24 for the prototype (the branch `exp/duo-prototype`, nothing ships, ADR-0139). The author found that a left click on the tray hiding Peak, Lượn đi and some items of the tray menu no longer fit the rule of ADR-0159 (nothing vanishes on the spot); the recommended option of three questions was chosen. Amends ADR-0142 (the tray) and ADR-0159 (it kept the double click).
+- **Status:** (amended by ADR-0164, 2026-11-27) accepted on 2026-11-24 for the prototype (the branch `exp/duo-prototype`, nothing ships, ADR-0139). The author found that a left click on the tray hiding Peak, Lượn đi and some items of the tray menu no longer fit the rule of ADR-0159 (nothing vanishes on the spot); the recommended option of three questions was chosen. Amends ADR-0142 (the tray) and ADR-0159 (it kept the double click).
 - **Date:** 2026-11-24
 - **Decided by:** Vinh (author)
 

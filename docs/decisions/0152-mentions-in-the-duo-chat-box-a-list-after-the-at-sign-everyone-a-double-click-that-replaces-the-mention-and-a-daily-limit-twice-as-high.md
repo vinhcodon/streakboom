@@ -1,6 +1,6 @@
 # ADR-0152: Mentions in the duo chat box: a list after the @ sign, @everyone, a double click that replaces the mention, and a daily limit twice as high
 
-- **Status:** accepted on 2026-11-23 for the prototype (the branch `exp/duo-prototype`, nothing ships, ADR-0139). It amends ADR-0145 (points 2 and 4: how a name is written and what a double click does) and the daily limit of the chat in the duo prototype. Each point was chosen by the author from options after trying the test build.
+- **Status:** (amended by ADR-0164, 2026-11-27) accepted on 2026-11-23 for the prototype (the branch `exp/duo-prototype`, nothing ships, ADR-0139). It amends ADR-0145 (points 2 and 4: how a name is written and what a double click does) and the daily limit of the chat in the duo prototype. Each point was chosen by the author from options after trying the test build.
 - **Date:** 2026-11-23
 - **Decided by:** Vinh (author)
 

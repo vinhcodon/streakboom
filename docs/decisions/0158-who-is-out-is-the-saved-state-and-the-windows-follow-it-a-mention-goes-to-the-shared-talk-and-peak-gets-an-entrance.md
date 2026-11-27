@@ -1,6 +1,6 @@
 # ADR-0158: Who is out is the saved state and the windows follow it; a mention goes to the shared talk; Peak gets an entrance (DU-12)
 
-- **Status:** accepted on 2026-11-24 for the prototype (the branch `exp/duo-prototype`, nothing ships, ADR-0139). After the author tried ADR-0157, a review ([duo-mentions-review.md](../plans/duo-mentions-review.md)) found the causes of "`@Peak` does not bring Peak out" and "it answers but does not appear"; the author chose the recommended option of each of six questions. Amends ADR-0145, 0152 and 0157.
+- **Status:** (amended by ADR-0164, 2026-11-27) accepted on 2026-11-24 for the prototype (the branch `exp/duo-prototype`, nothing ships, ADR-0139). After the author tried ADR-0157, a review ([duo-mentions-review.md](../plans/duo-mentions-review.md)) found the causes of "`@Peak` does not bring Peak out" and "it answers but does not appear"; the author chose the recommended option of each of six questions. Amends ADR-0145, 0152 and 0157.
 - **Date:** 2026-11-24
 - **Decided by:** Vinh (author)
 

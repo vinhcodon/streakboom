@@ -1,6 +1,6 @@
 # ADR-0154: Paws gets interaction first, with the two pictures it has; new art comes after and is drawn by the sticker session (DU-11)
 
-- **Status:** accepted on 2026-11-23 for the prototype (the branch `exp/duo-prototype`, nothing ships, ADR-0139). The author saw that Paws appears only in the side view and cannot be touched, and asked where its animations are in the plan; the answer was that no story held them. Each point was chosen from options.
+- **Status:** (amended by ADR-0164, 2026-11-27) accepted on 2026-11-23 for the prototype (the branch `exp/duo-prototype`, nothing ships, ADR-0139). The author saw that Paws appears only in the side view and cannot be touched, and asked where its animations are in the plan; the answer was that no story held them. Each point was chosen from options.
 - **Date:** 2026-11-23
 - **Decided by:** Vinh (author)
 

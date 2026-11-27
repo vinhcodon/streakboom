@@ -1,6 +1,6 @@
 # ADR-0145: No buttons to choose who hears: everyone who is out hears, a name or an @ picks one, and a double click opens the box for that pet
 
-- **Status:** accepted on 2026-11-22 for the prototype (the branch `exp/duo-prototype`, nothing ships, ADR-0139). It amends ADR-0142 (the recipient avatars, Tab, Ctrl+1/2/3) and ADR-0141 (point 2, how the person picks who is spoken to). The author proposed it after trying the build: the buttons break the rule of few buttons; showing who is out is enough.
+- **Status:** (amended by ADR-0164, 2026-11-27) accepted on 2026-11-22 for the prototype (the branch `exp/duo-prototype`, nothing ships, ADR-0139). It amends ADR-0142 (the recipient avatars, Tab, Ctrl+1/2/3) and ADR-0141 (point 2, how the person picks who is spoken to). The author proposed it after trying the build: the buttons break the rule of few buttons; showing who is out is enough.
 - **Date:** 2026-11-22
 - **Decided by:** Vinh (author)
 

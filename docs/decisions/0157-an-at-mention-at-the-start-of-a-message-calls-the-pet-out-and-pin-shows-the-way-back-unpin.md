@@ -1,6 +1,6 @@
 # ADR-0157: An @ mention at the start of a message calls the pet out, and the pin command shows the way back (/unpin)
 
-- **Status:** accepted on 2026-11-24 for the prototype (the branch `exp/duo-prototype`, nothing ships, ADR-0139). The author saw `/pin` with no `/unpin`, and `@Paws` offered and accepted while Paws was in, with nothing that reached it; option A of three was chosen. Amends ADR-0145 (a name of a pet that is in sends the message to whoever is out) and ADR-0152 (the list offers a pet that is resting).
+- **Status:** (amended by ADR-0164, 2026-11-27) accepted on 2026-11-24 for the prototype (the branch `exp/duo-prototype`, nothing ships, ADR-0139). The author saw `/pin` with no `/unpin`, and `@Paws` offered and accepted while Paws was in, with nothing that reached it; option A of three was chosen. Amends ADR-0145 (a name of a pet that is in sends the message to whoever is out) and ADR-0152 (the list offers a pet that is resting).
 - **Date:** 2026-11-24
 - **Decided by:** Vinh (author)
 
