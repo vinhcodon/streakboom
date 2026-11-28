@@ -10,6 +10,7 @@ What was **decided**, why, and what was rejected. One short file per decision (a
 
 | ADR | Decision | Status | Date |
 |---|---|---|---|
+| [0171](0171-a-failed-entry-into-the-group-visit-says-the-existing-busy-line.md) | A failed entry into the group visit says the existing busy line, never in Quiet (adds to 0166 and 0167) | accepted for the prototype | 2026-11-28 |
 | [0170](0170-when-the-charge-cannot-be-saved-no-request-is-made-and-the-pet-answers-with-a-gesture.md) | When a charge cannot be saved no request is made; the pet answers with a gesture (adds to 0165 and 0167) | accepted for the prototype | 2026-11-28 |
 | [0169](0169-a-solo-message-sent-in-quiet-with-the-experiment-makes-no-request-and-peak-answers-with-a-gesture.md) | A solo message sent in Quiet with the experiment makes no request and is not counted; Peak answers with a gesture (adds to 0166 and 0167) | accepted for the prototype | 2026-11-28 |
 | [0168](0168-t0a-is-an-integration-baseline-with-recorded-exceptions-and-what-the-experiment-off-differences-must-meet-before-main.md) | T0a is a baseline with exceptions against 701a394; walking pace and naming differ only with the experiment on, three window and mood fixes are kept (two after B1), the voice is decided later; all are gates before main (amends 0167, 0143, 0161) | accepted for the prototype | 2026-11-28 |
