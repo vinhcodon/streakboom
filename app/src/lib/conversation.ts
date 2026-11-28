@@ -239,6 +239,9 @@ export class Conversation {
   }
 
   private gesture(pet: PetId) { this.pass(pet, false); }
+
+  /** A gesture of `pet` outside a turn: what a request that was never issued leaves (ADR-0170: the charge could not be saved; no text is spoken). */
+  gestureFor(pet: PetId) { this.gesture(pet); }
 }
 
 export interface HistoryTurn { role: "user" | "model"; text: string }

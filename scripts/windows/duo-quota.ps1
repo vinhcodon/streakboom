@@ -62,6 +62,13 @@ try {
   Set-ItemProperty -Path $pj -Name IsReadOnly -Value $false
   Row "L12 the same after the write works again" "both, now it writes" 8
   Stop-Pet
+  Note "== solo while the write fails (Paws not called), seeded chat=40"
+  Seed 40; Start-Pet; Cmd "cmd:paws:in"; Start-Sleep 4 # Paws's presence is kept across a restart: it goes in, so the message is Peak's alone
+  Set-ItemProperty -Path $pj -Name IsReadOnly -Value $true
+  Row "L13 solo message while the write fails" "alone, while the disk refuses" 6
+  Set-ItemProperty -Path $pj -Name IsReadOnly -Value $false
+  Row "L14 solo after the write works again" "alone, now it writes" 6
+  Stop-Pet
 } finally {
   Stop-Pet
   if (Test-Path $pj) { Set-ItemProperty -Path $pj -Name IsReadOnly -Value $false }

@@ -211,7 +211,22 @@ test("R2: a failed write issues no request; the in-memory count goes back and no
   assert.equal(p.data().ai.chat, 10);
   assert.equal(p.disk.chat(), 10);
   assert.ok(p.log.some((l) => l.startsWith("charge not saved")));
+  assert.deepEqual(p.lines.map((l) => `${l.pet}:${l.act}`), ["peak:gesture", "paws:gesture"], "ADR-0170: each pet addressed makes a gesture, no text is spoken");
   await assert.rejects(p.q.charge(), ChargeNotSaved);
+});
+
+test("ADR-0170, solo: a charge that cannot be saved sends nothing, Peak makes a gesture and no text is spoken", async () => {
+  const p = page({ chat: 10 });
+  p.disk.mode = "fail";
+  const go = await chargeSolo(p.q, () => true);
+  assert.equal(go, "not-saved");
+  if (go === "not-saved") p.talk.gestureFor("peak"); // what the page's chargeNotSaved does
+  assert.deepEqual(p.requests, []);
+  assert.deepEqual(p.lines.map((l) => `${l.pet}:${l.act}:${l.text}`), ["peak:gesture:"]);
+  const src = readFileSync(new URL("../routes/+page.svelte", import.meta.url), "utf8");
+  const fn = src.slice(src.indexOf("function chargeNotSaved("), src.indexOf("function chargeNotSaved(") + 400);
+  assert.ok(fn.includes("talk.gestureFor(pet)") && fn.includes("charge not saved"), "the page logs it and makes the gesture");
+  assert.ok(src.includes('if (go === "not-saved") { chargeNotSaved("peak", text); return; }'), "solo returns without a request or a spoken line");
 });
 
 test("R2: Quiet during the held write: no request, the charge given back, no line spoken", async () => {

@@ -2414,11 +2414,11 @@
     duo: true,
     log: (line) => void invoke("duo_log", { line }).catch(() => {}),
   });
-  /** The charge of a request could not be written (T2d, R2): no request is issued, and the in-memory count was taken back. What the person sees is the
-   *  author's choice (asked on 2026-11-28 through the coordinating session); until it is made, only the log says so. In a visit the Conversation's usual
-   *  failure gesture follows, as for any request that did not complete. */
+  /** The charge of a request could not be written (T2d, R2; ADR-0170): no request is issued and the in-memory count was taken back; the pet addressed makes a
+   *  gesture, as for a failed call (row 14d), with a log line, and no new text is spoken. In a visit the Conversation makes that gesture itself; this is solo. */
   function chargeNotSaved(pet: PetId, text: string) {
-    void invoke("duo_log", { line: `charge not saved: no request for ${pet} (${text.length} chars)` }).catch(() => {});
+    void invoke("duo_log", { line: `charge not saved: no request for ${pet} (${text.length} chars), a gesture` }).catch(() => {});
+    talk.gestureFor(pet);
   }
   const sendGate = new SendGate(); // one dispatch per send, also after its visit ended; a send made before the end is not sent after it (R1)
   const talk = new Conversation(
