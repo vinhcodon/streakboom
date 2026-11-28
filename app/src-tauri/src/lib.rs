@@ -647,6 +647,30 @@ const BUSY_READ_EVERY: Duration = Duration::from_millis(1000);
 /// How often the return timer of "Lượn đi" looks at the clock while Peak is away.
 const AWAY_SLICE: Duration = Duration::from_secs(20);
 
+// ---- B1 DIAGNOSTIC (ADR-0172, investigation only, not for merge): a log of the bubble's native state, and one factor chosen by
+// STREAKBOOM_B1_VARIANT: "control" (as the base), "nofocused" (no .focused(false)), "taohide" (hidden with tao's hide), "taoshow" (plain
+// speech shown with tao's show, as main). Nothing is logged unless STREAKBOOM_B1_DIAG=1.
+static B1_TAO_SHOWN: AtomicBool = AtomicBool::new(false); // tao's own VISIBLE flag as this code last set it, since the window was made
+fn b1_variant() -> String { std::env::var("STREAKBOOM_B1_VARIANT").unwrap_or_else(|_| "control".into()) }
+fn b1_state(app: &AppHandle) -> String {
+    use windows_sys::Win32::UI::WindowsAndMessaging::{GetForegroundWindow, IsWindowVisible, GetWindowLongW, GWL_EXSTYLE, WS_EX_NOACTIVATE};
+    let b = app.get_webview_window("bubble").and_then(|w| w.hwnd().ok()).map(|h| h.0 as isize).unwrap_or(0);
+    let m = app.get_webview_window("main").and_then(|w| w.hwnd().ok()).map(|h| h.0 as isize).unwrap_or(0);
+    // SAFETY: plain queries with handles of our own windows.
+    let (fg, vis, noact) = unsafe { let fg = GetForegroundWindow() as isize; let vis = b != 0 && IsWindowVisible(b as _) != 0; let ex = if b != 0 { GetWindowLongW(b as _, GWL_EXSTYLE) as u32 } else { 0 }; (fg, vis, ex & WS_EX_NOACTIVATE != 0) };
+    let who = if fg == 0 { "none" } else if fg == b { "bubble" } else if fg == m { "main" } else { "other" };
+    format!("vis={} fg={} noact={} tao={}", vis, who, noact, B1_TAO_SHOWN.load(Ordering::SeqCst))
+}
+fn b1_log(app: &AppHandle, line: &str) {
+    if std::env::var("STREAKBOOM_B1_DIAG").as_deref() != Ok("1") { return; }
+    let Ok(dir) = app.path().app_data_dir() else { return };
+    let ms = std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).map(|d| d.as_millis()).unwrap_or(0);
+    if let Ok(mut f) = std::fs::OpenOptions::new().create(true).append(true).open(dir.join("b1-diag.txt")) {
+        use std::io::Write;
+        let _ = writeln!(f, "{} [{}] {}", ms, b1_variant(), line);
+    }
+}
+
 /// A transparent topmost window of its own, so the bubble is never clipped by the small pet
 /// window and can sit on whichever side of the pet has room.
 fn create_bubble(app: &AppHandle) -> tauri::Result<()> {
@@ -664,9 +688,11 @@ fn create_bubble(app: &AppHandle) -> tauri::Result<()> {
         .shadow(false)
         .visible(false)
         .focusable(false)
-        .focused(false) // a window made while the person is typing elsewhere must not take the keyboard when it is first shown (issue 5: seen after the bubble was destroyed and made again)
+        .focused(b1_variant() == "nofocused") // B1 DIAGNOSTIC: the base is .focused(false)
         .additional_browser_args(BROWSER_ARGS)
         .build()?;
+    B1_TAO_SHOWN.store(false, Ordering::SeqCst);
+    b1_log(app, "created");
     Ok(())
 }
 
@@ -731,6 +757,7 @@ fn bubble_fit(app: AppHandle, state: State<AppState>, w: f64, h: f64, interactiv
         v
     };
     state.bubble_gen.fetch_add(1, Ordering::Relaxed); // in use: cancels a pending destroy
+    b1_log(&app, &format!("fit interactive={} focus={} was_visible={} before: {}", interactive, focus, was_visible, b1_state(&app)));
     let _ = bubble.set_focusable(interactive);
     let _ = bubble.set_ignore_cursor_events(!interactive);
     let _ = bubble.set_size(LogicalSize::new(w.ceil(), h.ceil()));
@@ -738,18 +765,22 @@ fn bubble_fit(app: AppHandle, state: State<AppState>, w: f64, h: f64, interactiv
     if !was_visible {
         // Plain speech is shown without taking the keyboard. Found with the chat box (ADR-0142): a pet's line took the focus from the box the person
         // was typing in (the program was already in front, so Windows let the bubble be activated). Only a bubble that is asked to take focus does.
-        if interactive { let _ = bubble.show(); } else { show_without_activating(&bubble); }
+        if interactive || b1_variant() == "taoshow" { let _ = bubble.show(); B1_TAO_SHOWN.store(true, Ordering::SeqCst); } else { show_without_activating(&bubble); }
     }
+    b1_log(&app, &format!("fit after show: {}", b1_state(&app)));
     if focus && interactive {
         let _ = bubble.set_focus();
+        b1_log(&app, &format!("fit after set_focus: {}", b1_state(&app)));
     }
+    { let app2 = app.clone(); std::thread::spawn(move || { std::thread::sleep(Duration::from_millis(300)); b1_log(&app2, &format!("fit +300ms: {}", b1_state(&app2))); }); }
 }
 
 #[tauri::command]
 fn bubble_hide(app: AppHandle, state: State<AppState>) {
     state.bubble.lock().unwrap().visible = false;
+    b1_log(&app, &format!("hide before: {}", b1_state(&app)));
     if let Some(bubble) = app.get_webview_window("bubble") {
-        hide_window(&bubble);
+        if b1_variant() == "taohide" { let _ = bubble.hide(); B1_TAO_SHOWN.store(false, Ordering::SeqCst); } else { hide_window(&bubble); }
     }
     // Destroy the window if it stays unused, to give its memory back.
     let gen_now = state.bubble_gen.fetch_add(1, Ordering::Relaxed) + 1;
