@@ -16,7 +16,9 @@
 #     left untyped to their own timeout and opened again; a second start while the form has the keyboard.
 #   E (experiment on, canned replies): five chat boxes each closed by Esc once Peak is still (four after-Esc cycles); a second start and
 #     the box shortcut (Ctrl+Alt+P), each while the form has the keyboard.
-param([Parameter(Mandatory = $true)][string]$Exe, [Parameter(Mandatory = $true)][string]$Out, [Parameter(Mandatory = $true)][ValidateSet("A", "B", "C", "D", "E")][string]$Plan, [string]$Seed = "")
+#   F (experiment off): up to 12 attempts to get a refused chat (the form takes the keyboard back at once), stopping at 4 refusals; in
+#     each refused one, a press on the bubble's own text field (only once the window under the cursor is the bubble), then 'hi' read back.
+param([Parameter(Mandatory = $true)][string]$Exe, [Parameter(Mandatory = $true)][string]$Out, [Parameter(Mandatory = $true)][ValidateSet("A", "B", "C", "D", "E", "F")][string]$Plan, [string]$Seed = "")
 $ErrorActionPreference = "Stop"
 Add-Type -AssemblyName System.Windows.Forms, System.Drawing, UIAutomationClient, UIAutomationTypes
 Add-Type @"
@@ -184,6 +186,45 @@ function ChatRefused([string]$label) {
     Check (WaitFor { BubbleHidden } 30000) "$label the bubble goes within 30 s"
     Pump 800
 }
+# A refused chat, then a press on the bubble's text field: does the click give it the keyboard? Returns "refused", "granted" or "none".
+function ClickRefused([string]$label) {
+    WaitStill $label | Out-Null
+    $t0 = NowMs
+    if (-not (SafeClick $label $true)) { Note "INFO" "$label the double click was not made"; return "none" }
+    $null = FormClick; $tForm = NowMs; $box.Text = ""
+    $got = WaitFor { [bool](FitLine $t0 "1") } 3000
+    Pump 400
+    $fit = FitLine $t0 "1"; $b = Bubble; $vis = [bool]($b -and $b.Vis); $fg = Fg
+    $fitMs = if ($fit -match '^(\d+) ') { [long]$Matches[1] } else { 0 }
+    Note "INFO" "$label fit: $fit | form pressed at $tForm, fit at $fitMs (the form first = $($tForm -lt $fitMs)) | shown=$vis foreground=$fg"
+    if (-not $got) { Note "INFO" "$label no interactive fit (not a chat)"; WaitFor { BubbleHidden } 20000 | Out-Null; Pump 1500; return "none" }
+    if ($fit -match "result=keyboard taken") {
+        Note "INFO" "$label granted by Windows (reported taken; foreground $fg): not a refused case"
+        if ((Fg) -eq "bubble") { Keys "{ESC}" | Out-Null }
+        WaitFor { BubbleHidden } 20000 | Out-Null; Pump 1500; return "granted"
+    }
+    Check ($vis -and $fg -eq "harness") "$label refused: reported not taken, the bubble shown, the form keeps the keyboard"
+    # the bubble's own text field, found through UI Automation; pressed only when the window under the cursor is the bubble
+    $rect = $null
+    try {
+        $root = [System.Windows.Automation.AutomationElement]::FromHandle($b.H)
+        $cond = New-Object System.Windows.Automation.PropertyCondition([System.Windows.Automation.AutomationElement]::ControlTypeProperty, [System.Windows.Automation.ControlType]::Edit)
+        $e = $root.FindFirst([System.Windows.Automation.TreeScope]::Descendants, $cond)
+        if ($e) { $rect = $e.Current.BoundingRectangle }
+    } catch { }
+    if (-not $rect -or $rect.IsEmpty) { Note "FAIL" "$label the bubble's text field was not found; nothing pressed"; WaitFor { BubbleHidden } 20000 | Out-Null; return "refused" }
+    $x = [int]($rect.X + $rect.Width / 2); $y = [int]($rect.Y + $rect.Height / 2)
+    [W]::SetCursorPos($x, $y) | Out-Null
+    $on = WaitFor { [W]::RootAt($x, $y) -eq $b.H } 1500
+    if (-not $on) { Note "FAIL" "$label the window under the cursor at the field is not the bubble; nothing pressed"; WaitFor { BubbleHidden } 20000 | Out-Null; return "refused" }
+    [W]::Press(); Pump 400
+    $fg2 = Fg; $read = "<not typed>"
+    if ($fg2 -eq "bubble") { if (Keys "hi") { Pump 400; $read = EditValue $b } }
+    Check ($fg2 -eq "bubble" -and $read -like "*hi*") "$label a press on the bubble's field gives it the keyboard: foreground $fg2, 'hi' reads back ('$read')"
+    if ((Fg) -eq "bubble") { Keys "{ESC}" | Out-Null }
+    WaitFor { BubbleHidden } 20000 | Out-Null; Pump 1500
+    return "refused"
+}
 # A speech line from a poke while this script's form takes the keyboard back: the line must never take it.
 function Speech([string]$label) {
     foreach ($try in 1..3) {
@@ -303,6 +344,14 @@ switch ($Plan) {
         foreach ($i in 1..2) { WaitStill "D-timeout$i" | Out-Null; Chat "D-timeout$i" "wait-untyped" }
         WaitStill "D-reopen" | Out-Null; Chat "D-reopen (after the timeouts)" "esc"
         SecondStart "D-second-start"
+    }
+    "F" {
+        $refused = 0; $granted = 0; $none = 0; $n = 0
+        while ($n -lt 12 -and $refused -lt 4) {
+            $n++
+            switch (ClickRefused "F-try$n") { "refused" { $refused++ } "granted" { $granted++ } default { $none++ } }
+        }
+        Note "INFO" "F attempts ${n}: refused $refused, granted $granted, not a chat $none$(if ($refused -lt 4) { ' (fewer than the 4 refusals aimed at)' })"
     }
     "E" {
         foreach ($i in 1..5) { BoxEsc "E-esc$i" }
