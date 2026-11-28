@@ -924,6 +924,56 @@ mod tests {
     fn m2() -> Mon { Mon { id: "m2".into(), x: 1920, y: 0, w: 1280, h: 1024 } }
 
     #[test]
+    fn an_entry_effect_is_done_only_for_the_current_armed_entry_and_a_held_worker_cannot_land_after_the_end() {
+        // T2a second return: accept now, effect later. A worker that is past its check holds the lock until its effect is done; an end waits for it;
+        // a worker that runs after the end is refused.
+        let gate = std::sync::Arc::new(EntryGate::new());
+        gate.set(7);
+        assert!(!gate.guarded(7, true, || {}), "not armed yet: no focus");
+        gate.arm(7);
+        let done = std::sync::Arc::new(AtomicU64::new(0));
+        assert!(gate.guarded(7, true, || { done.fetch_add(1, Ordering::SeqCst); }), "the current armed entry is focused");
+        // a worker held inside its effect: the end waits for it, so the effect is not done after the end
+        let (in_effect_tx, in_effect_rx) = std::sync::mpsc::channel::<()>();
+        let (release_tx, release_rx) = std::sync::mpsc::channel::<()>();
+        let g2 = gate.clone();
+        let d2 = done.clone();
+        let worker = std::thread::spawn(move || g2.guarded(7, true, || { in_effect_tx.send(()).unwrap(); release_rx.recv().unwrap(); d2.fetch_add(1, Ordering::SeqCst); }));
+        in_effect_rx.recv().unwrap();
+        let g3 = gate.clone();
+        let ender = std::thread::spawn(move || g3.set(0));
+        std::thread::sleep(std::time::Duration::from_millis(50));
+        assert_eq!(gate.current(), 7, "the end waits for the worker that is inside its effect");
+        release_tx.send(()).unwrap();
+        assert!(worker.join().unwrap());
+        ender.join().unwrap();
+        assert_eq!(gate.current(), 0);
+        // a worker scheduled before the end but run after it: refused
+        let before = done.load(Ordering::SeqCst);
+        assert!(!gate.guarded(7, true, || { done.fetch_add(1, Ordering::SeqCst); }));
+        assert_eq!(done.load(Ordering::SeqCst), before);
+        // an explicit close marks the end at once; a worker that checks after it is refused
+        gate.set(5); gate.arm(5); gate.set_now(0);
+        assert!(!gate.guarded(5, true, || {}));
+        // the effects count tells a close that a worker's effect landed while it waited
+        gate.set(6); gate.arm(6);
+        let e0 = gate.effects();
+        assert!(gate.guarded(6, true, || {}));
+        assert_eq!(gate.effects(), e0 + 1);
+        // Quiet or a composition disarms: the entry is still in progress, but no focus
+        gate.set(8); gate.arm(8); gate.disarm();
+        assert!(!gate.guarded(8, true, || {}));
+        assert!(gate.guarded(8, false, || {}), "a show (not a focus) does not need the arming");
+        gate.end_if(7); // an old entry's end does not clear the newer one
+        assert_eq!(gate.current(), 8);
+        gate.end_if(8);
+        assert_eq!(gate.current(), 0);
+        gate.set(8);
+        gate.arm(9); // arming another entry than the current one does nothing
+        assert!(!gate.guarded(9, true, || {}));
+    }
+
+    #[test]
     fn a_membership_change_that_cannot_be_written_is_not_acknowledged_and_is_undone_in_memory() {
         // T2a R4: a failing write (as a rename refused by the system) gives an error and the state in memory as it was
         let mut s = DuoState::default();
@@ -1209,46 +1259,77 @@ fn take_foreground(win: &tauri::WebviewWindow) {
 
 /// T2a (issue 23, row 28a): while the page enters a group visit, the shortcut and a second start do not open or focus anything themselves; the page is told and
 /// focuses the entry's box once the entry has its outcome (a press made before an explicit close is dropped there). Set only by the page with the experiment.
-/// The generation of the entry in progress (0: none), set by the page. A show of the box asked by an entry is done only while its generation is still this one,
-/// checked on the thread that shows it (R1: an ended entry never shows the box).
-static ENTRY_G: AtomicU64 = AtomicU64::new(0);
-pub fn entry_pending() -> bool { enabled() && ENTRY_G.load(Ordering::SeqCst) != 0 }
+/// T2a: the native side of an entry. `g` is the entry in progress (0: none); `armed` is the entry the page allows to take the keyboard now (it disarms on
+/// Quiet, on a composition and at the end). A show or a focus of the box is done by a worker that checks, under the one lock that every change of `g` or
+/// `armed` also takes, right before the effect: so an effect never lands for an entry that ended, and a close cannot be undone by a worker still running.
+/// The page's commands that change it (`duo_entry_gen`, `_arm`, `_disarm`) are async, so they wait for the lock off the main thread (a worker inside its effect
+/// needs the main thread for its window calls); an explicit close on the main thread marks the end at once without the lock and its hide waits for the lock.
+pub struct EntryGate { lock: Mutex<()>, g: AtomicU64, armed: AtomicU64, effects: AtomicU64 }
+impl EntryGate {
+    pub const fn new() -> Self { Self { lock: Mutex::new(()), g: AtomicU64::new(0), armed: AtomicU64::new(0), effects: AtomicU64::new(0) } }
+    pub fn current(&self) -> u64 { self.g.load(Ordering::SeqCst) }
+    /// How many effects have been done (a close compares it before and after waiting for the lock).
+    pub fn effects(&self) -> u64 { self.effects.load(Ordering::SeqCst) }
+    /// The page's entry in progress, or 0 (which also disarms); returns once no worker is inside its effect.
+    pub fn set(&self, g: u64) { let _l = self.lock.lock().unwrap(); self.set_now(g); }
+    /// The same at once, without waiting (an explicit close on the main thread): a worker that checks after this is refused.
+    pub fn set_now(&self, g: u64) { self.g.store(g, Ordering::SeqCst); if g == 0 { self.armed.store(0, Ordering::SeqCst); } }
+    /// Entry `g` is over: forgotten only if it is still the current one.
+    pub fn end_if(&self, g: u64) { let _l = self.lock.lock().unwrap(); if self.g.load(Ordering::SeqCst) == g { self.set_now(0); } }
+    /// Waits until no worker is inside its effect.
+    pub fn wait_idle(&self) { drop(self.lock.lock().unwrap()); }
+    pub fn arm(&self, g: u64) { let _l = self.lock.lock().unwrap(); if self.g.load(Ordering::SeqCst) == g { self.armed.store(g, Ordering::SeqCst); } }
+    pub fn disarm(&self) { let _l = self.lock.lock().unwrap(); self.armed.store(0, Ordering::SeqCst); }
+    /// The effect for entry `g`, done only if `g` is still the entry in progress (and armed, for a focus) at this moment, under the lock. True if it was done.
+    pub fn guarded(&self, g: u64, need_armed: bool, effect: impl FnOnce()) -> bool {
+        let _l = self.lock.lock().unwrap();
+        let ok = g != 0 && self.g.load(Ordering::SeqCst) == g && (!need_armed || self.armed.load(Ordering::SeqCst) == g);
+        if ok { effect(); self.effects.fetch_add(1, Ordering::SeqCst); }
+        ok
+    }
+}
+static ENTRY: EntryGate = EntryGate::new();
+pub fn entry_pending() -> bool { enabled() && ENTRY.current() != 0 }
 
 /// The page says which entry is in progress (its generation) or that none is (0).
 #[tauri::command]
-pub fn duo_entry_gen(g: u64) { ENTRY_G.store(g, Ordering::SeqCst); }
+pub async fn duo_entry_gen(g: u64) { ENTRY.set(g); }
+
+/// The entry `g` has its outcome: the native side forgets it, only if it is still the one in progress (an old entry's end never clears a newer one).
+#[tauri::command]
+pub async fn duo_entry_end(g: u64) { ENTRY.end_if(g); }
+
+/// The page allows entry `g` to take the keyboard now (not in Quiet, no composition), or takes that back.
+#[tauri::command]
+pub async fn duo_entry_arm(g: u64) { ENTRY.arm(g); }
+#[tauri::command]
+pub async fn duo_entry_disarm() { ENTRY.disarm(); }
 
 /// The box shown for entry `g` without taking the keyboard, only if `g` is still the entry in progress when the window is shown; true if it was shown.
 #[tauri::command]
 pub fn duo_entry_show(app: AppHandle, g: u64) {
     if !enabled() { return; }
     std::thread::spawn(move || {
-        if ENTRY_G.load(Ordering::SeqCst) != g { log(&app, &format!("entry g={g}: the box is not shown, the entry ended")); return; }
-        match app.get_webview_window(BOX_LABEL) {
-            Some(win) => {
-                if ENTRY_G.load(Ordering::SeqCst) != g { return; }
-                BOX_IDLE_SINCE.store(0, Ordering::SeqCst); emit_fade(&app, 1000);
-                if !win.is_visible().unwrap_or(false) { show_ambient(&app, &win); }
-            }
-            None => { if ENTRY_G.load(Ordering::SeqCst) == g { make_box(&app, false); } }
-        }
+        let done = ENTRY.guarded(g, false, || match app.get_webview_window(BOX_LABEL) {
+            Some(win) => { BOX_IDLE_SINCE.store(0, Ordering::SeqCst); emit_fade(&app, 1000); if !win.is_visible().unwrap_or(false) { show_ambient(&app, &win); } }
+            None => make_box(&app, false),
+        });
+        if !done { log(&app, &format!("entry g={g}: the box is not shown, the entry ended")); }
     });
 }
 
 /// Row 6 (ADR-0167; Vinh 2026-11-28): at the commit of entry `g` the box is shown and given the keyboard, also when it was hidden; only while `g` is still
 /// the entry in progress when the thread does it (an ended or cancelled entry never takes the focus). The page never asks this in Quiet or while composing.
-/// The generation is checked here, in the command, in the order the page's commands arrive (so before the page says the entry is over); the window is then
-/// shown and focused on a thread of its own. True when it was asked for the current entry.
+/// The worker checks the generation and the arming under the gate's lock right before the effect, and the page is told the result of the effect itself
+/// (`duo-entry-focused` {g, ok}), not that the work was accepted.
 #[tauri::command]
-pub fn duo_entry_focus(app: AppHandle, g: u64) -> bool {
-    if !enabled() { return false; }
-    if ENTRY_G.load(Ordering::SeqCst) != g { log(&app, &format!("entry g={g}: not focused, the entry ended")); return false; }
+pub fn duo_entry_focus(app: AppHandle, g: u64) {
+    if !enabled() { return; }
     std::thread::spawn(move || {
-        dismiss_tray_flyout();
-        open_box_now(&app);
-        log(&app, &format!("entry g={g}: the box shown and focused at the commit"));
+        let ok = ENTRY.guarded(g, true, || { dismiss_tray_flyout(); open_box_now(&app); });
+        log(&app, &format!("entry g={g}: {}", if ok { "the box shown and focused at the commit" } else { "not focused: the entry ended, Quiet or a composition" }));
+        let _ = app.emit_to("main", "duo-entry-focused", serde_json::json!({ "g": g, "ok": ok }));
     });
-    true
 }
 
 /// The page focuses the box after an entry (row 28a): shown if it was not and given the keyboard, with no `@Name` written in the field.
@@ -1348,7 +1429,7 @@ fn spawn_hover(app: AppHandle) {
                 if idle > FADE_AFTER_MS {
                     let p = ((idle - FADE_AFTER_MS) as f64 / FADE_MS as f64).min(1.0);
                     emit_fade(&app, ((1.0 - p) * 1000.0).round() as u64);
-                    if p >= 1.0 { let _ = app.emit_to("main", "chatbox-closed", ()); portrait_dismiss(&app); hide_box(&win); BOX_IDLE_SINCE.store(0, Ordering::SeqCst); emit_fade(&app, 1000); log(&app, "box faded away"); continue; }
+                    if p >= 1.0 { ENTRY.set_now(0); let _ = app.emit_to("main", "chatbox-closed", ()); portrait_dismiss(&app); hide_box(&win); BOX_IDLE_SINCE.store(0, Ordering::SeqCst); emit_fade(&app, 1000); log(&app, "box faded away"); continue; }
                 }
             }
             if !BOX_ENGAGED.load(Ordering::SeqCst) {
@@ -1395,6 +1476,10 @@ pub fn chatbox_state(empty: bool, content: bool) {
 /// it was shown again meanwhile. It stops taking clicks and keys at once.
 static HIDE_GEN: AtomicU64 = AtomicU64::new(0);
 fn hide_box_soft(app: &AppHandle, win: &tauri::WebviewWindow) {
+    // an explicit close ends the native side of an entry at once (no worker checks in after this); a worker already inside its show or focus finishes, and the
+    // hide below waits for it and then hides even if that worker's show called the fade off: the close wins
+    let effects_before = ENTRY.effects();
+    ENTRY.set_now(0);
     let _ = app.emit_to("main", "chatbox-closed", ()); // T2a (note 3): an explicit close ends an entry in progress at this instant, even while the box still fades
     let g = HIDE_GEN.fetch_add(1, Ordering::SeqCst) + 1;
     BOX_ENGAGED.store(false, Ordering::SeqCst);
@@ -1404,7 +1489,9 @@ fn hide_box_soft(app: &AppHandle, win: &tauri::WebviewWindow) {
     let (app, win) = (app.clone(), win.clone());
     std::thread::spawn(move || {
         std::thread::sleep(Duration::from_millis(320));
-        if HIDE_GEN.load(Ordering::SeqCst) != g { return; } // shown again during the fade
+        ENTRY.wait_idle();
+        let raced = ENTRY.effects() != effects_before; // an entry's worker showed it during the close
+        if HIDE_GEN.load(Ordering::SeqCst) != g && !raced { return; } // shown again during the fade
         hide_box(&win);
         emit_fade(&app, 1000); // ready to be seen whole the next time it shows
     });

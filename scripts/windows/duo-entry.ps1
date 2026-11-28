@@ -89,7 +89,7 @@ try {
   Cmd "cmd:paws:in"; Start-Sleep 2; Cmd "boxclose"; Start-Sleep 2
   FocusForm; $before = "form has the keyboard=$(FormHasKeyboard)"
   $m = (LogLines).Count; Cmd "type:@Paws focus me"; Start-Sleep 7; $l = Since $m
-  Note "N6 before the invitation: $before" 
+  Note "N6 before the invitation: $before"
   $front = Front
   $had = ProgramHasFocus
   $typed = "<not typed: the program does not have the keyboard>"

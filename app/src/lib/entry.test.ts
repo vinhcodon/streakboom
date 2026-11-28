@@ -1,7 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
-import { ENTRY_DEADLINE_MS, Entries, Membership, Restorer, RestoreInbox, entryTurn, nativeEntryHost, type EntryPage, type MemberAnswer } from "./entry.ts";
+import { ENTRY_DEADLINE_MS, Entries, Membership, Restorer, RestoreInbox, entryTurn, nativeEntryHost, tuckPaws, type EntryPage, type MemberAnswer } from "./entry.ts";
 import { SendQueue } from "./send-queue.ts";
 
 // T2a of ADR-0167 (issue 23), with the return of comment 7235779508. The page's whole continuation is entryTurn, its host is nativeEntryHost and its
@@ -38,15 +38,30 @@ function program() {
   const heldQueries: ((v: boolean) => void)[] = [];
   const membership = new Membership(native, sleep, (l) => log.push(l));
   const showQueue: number[] = []; // native show threads not run yet
-  const focusQueue: number[] = []; // native focus threads not run yet
+  // the native focus, as in the program: the command is accepted now, its worker does the effect later and reports it; the worker checks the generation and
+  // the arming at that moment (EntryGate.guarded)
+  let armed = 0;
   let focused = false;
+  let focusMode: "auto" | "hold" = "auto";
+  let focusBroken = false; // the window call itself fails
+  const focusWorkers: { g: number; done: (ok: boolean) => void }[] = [];
+  const runWorker = (w: { g: number; done: (ok: boolean) => void }) => {
+    const ok = !focusBroken && w.g !== 0 && w.g === entryGen && armed === w.g;
+    if (ok) { boxVisible = true; focused = true; } else log.push(`native: focus of g=${w.g} refused`);
+    w.done(ok);
+  };
   let quietFlag = false;
   const base = {
     composing: () => composing,
     compositionEnded: () => new Promise<void>((r) => { if (!composing) r(); else endComposition.push(r); }),
     showing: () => { calls.push("query"); if (queryMode === "hold") return new Promise<boolean>((r) => heldQueries.push(r)); return Promise.resolve(boxVisible); },
     show: (g: number) => { calls.push(`show g=${g}`); showQueue.push(g); },
-    focus: async (g: number) => { calls.push(`focus g=${g}`); if (g === entryGen) { boxVisible = true; focused = true; } else log.push(`native: focus of g=${g} refused`); }, // the command checks the generation as it arrives
+    arm: async (g: number) => { calls.push(`arm g=${g}`); if (entryGen === g) armed = g; },
+    focus: (g: number) => new Promise<boolean>((done) => {
+      calls.push(`focus g=${g}`);
+      const w = { g, done };
+      if (focusMode === "auto") setTimeout(() => runWorker(w), 0); else focusWorkers.push(w);
+    }),
     membership,
     sleep,
     quiet: () => quietFlag,
@@ -56,11 +71,16 @@ function program() {
     membership, calls, log,
     get member() { return member; },
     get boxVisible() { return boxVisible; }, set boxVisible(v: boolean) { boxVisible = v; },
-    setGen: (g: number) => { entryGen = g; },
+    setGen: (g: number) => { entryGen = g; if (g === 0) armed = 0; },
+    endGen: (g: number) => { if (entryGen === g) { entryGen = 0; armed = 0; } },
+    /** the page's disarm (Quiet on, a composition) */
+    disarm: () => { armed = 0; },
+    set focusMode(m: "auto" | "hold") { focusMode = m; },
+    set focusBroken(b: boolean) { focusBroken = b; },
+    releaseFocus: () => { const w = focusWorkers.shift(); if (!w) throw new Error("no held focus worker"); runWorker(w); },
+    heldFocusCount: () => focusWorkers.length,
     /** the native show threads run now: each shows the box only if its generation is still the entry in progress (duo_entry_show) */
     runShows: () => { while (showQueue.length) { const g = showQueue.shift()!; if (g === entryGen) boxVisible = true; else log.push(`native: show of g=${g} refused`); } },
-    /** the native focus threads run now: each shows and focuses the box only if its generation is still the entry in progress (duo_entry_focus) */
-    runFocus: () => { while (focusQueue.length) { const g = focusQueue.shift()!; if (g === entryGen) { boxVisible = true; focused = true; } else log.push(`native: focus of g=${g} refused`); } },
     get focused() { return focused; },
     set memberMode(m: "auto" | "hold" | "error") { memberMode = m; },
     releaseMember: () => {
@@ -102,6 +122,7 @@ function pageSide(prog: ReturnType<typeof program>, queued: string[] = []) {
     sayFailed: async () => { said.push("the call changed nothing"); },
     quiet: () => prog.quiet(),
     setGen: (g) => prog.setGen(g),
+    endGen: (g) => prog.endGen(g),
     takeDeferred: () => { const d = deferred; deferred = null; return d; },
     doDeferred: (press) => done.push(press),
     memberStuck: () => stuck.push(1),
@@ -434,7 +455,7 @@ test("the page and Rust: both invitation paths re-check the committed visit afte
   const rust = readFileSync(new URL("../../src-tauri/src/duo.rs", import.meta.url), "utf8");
   assert.ok(src.includes("return entryTurn(entries, text, entryHost(text), {"));
   assert.ok(src.includes("return nativeEntryHost({"), "the page's host is the library's");
-  assert.equal((src.match(/const entry = await enterChatVisit\(text\);\s*await refreshPawsOut\(\);[\s\S]{0,260}if \(entry\.outcome !== "committed" \|\| !entries\.visitLive\(entry\.g\)\) return true;/g) ?? []).length, 2);
+  assert.equal((src.match(/const entry = await enterChatVisit\(text\);\s*await refreshPawsOut\(\);[\s\S]{0,260}if \(entry\.outcome !== "committed" \|\| !entries\.takeHeld\(entry\.g\)\) return true;/g) ?? []).length, 2);
   assert.ok(/function cancelTalk\(reason: "quiet" \| "touch" \| "clear" \| "visit-end"[^)]*\) \{\s*if \(reason === "clear" \|\| reason === "visit-end"\) endEntry\(reason\);/.test(src));
   assert.ok(src.includes('cancelTalk("clear");') && src.includes('cancelTalk("visit-end");') && src.includes('cancelTalk("quiet");') && src.includes('cancelTalk("touch");'));
   assert.ok(!/cancelTalk\(\);/.test(src), "every call names its reason");
@@ -443,7 +464,7 @@ test("the page and Rust: both invitation paths re-check the committed visit afte
   assert.ok(/function endEntry\(reason: string\) \{\s*const g = entries\.end\(\);\s*if \(g === null\) return;\s*void invoke\("duo_entry_gen", \{ g: 0 \}\)/.test(src));
   assert.ok(src.includes('show: (g) => void invoke("duo_entry_show", { g })'));
   assert.ok(src.includes('await invoke<string>("duo_membership", { out })'));
-  assert.ok(rust.includes('if ENTRY_G.load(Ordering::SeqCst) != g { log(&app, &format!("entry g={g}: the box is not shown, the entry ended")); return; }'));
+  assert.ok(rust.includes("let done = ENTRY.guarded(g, false, || match app.get_webview_window(BOX_LABEL) {"), "the show worker checks the generation under the gate's lock at the effect");
   assert.ok(rust.includes("if let Err(e) = persist(s) { s.pets.paws = before; return Err(e.to_string()); }"));
   assert.ok(box.includes("restores.apply(draft, e.payload.id, e.payload.text)") && box.includes('emitTo("main", "chatbox-composing", true)'));
   assert.ok(/listen\("chatbox-ready"[\s\S]{0,400}if \(boxComposing\) \{ boxComposing = false;/.test(src));
@@ -507,6 +528,161 @@ test("row 6: no focus while a composition is active; it is asked when the compos
 test("row 6, the page and Rust: the focus goes with the entry's generation and the native thread checks it", () => {
   const src = readFileSync(new URL("../routes/+page.svelte", import.meta.url), "utf8");
   const rust = readFileSync(new URL("../../src-tauri/src/duo.rs", import.meta.url), "utf8");
-  assert.ok(src.includes('focus: (g) => invoke<boolean>("duo_entry_focus", { g })'), "awaited by the host");
-  assert.ok(rust.includes('if ENTRY_G.load(Ordering::SeqCst) != g { log(&app, &format!("entry g={g}: not focused, the entry ended")); return false; }'), "checked in the command, before the page's end arrives");
+  assert.ok(src.includes('void invoke("duo_entry_focus", { g })'), "the page asks the focus and waits for the worker's report");
+  assert.ok(rust.includes("let ok = ENTRY.guarded(g, true, || { dismiss_tray_flyout(); open_box_now(&app); });"), "checked by the worker at the effect");
+});
+
+// ---------------------------------------------------------------- second return (comment 7237781628)
+
+/** The page's Quiet handler, as the page does it: cancelTalk("quiet") (the entry continues), the native disarm, and the held words of a committed visit dropped
+ *  with the waiting messages given back. */
+function quietOn(pr: ReturnType<typeof program>, entries: Entries, giveBackWaiting: () => void) {
+  pr.setQuiet(true);
+  pr.disarm();
+  if (entries.dropHeld() !== null) giveBackWaiting();
+}
+
+test("1: Quiet on during the held focus, the worker then runs: no focus, the commit is silent, B and C go back; Quiet off later replays nothing", async () => {
+  const pr = program();
+  pr.boxVisible = true;
+  pr.focusMode = "hold";
+  const entries = new Entries();
+  const pg = pageSide(pr, ["B", "C"]);
+  const run = entryTurn(entries, "@Paws hello", pr.host(), pg.page);
+  await ticks();
+  assert.equal(pr.heldFocusCount(), 1, "the focus was accepted; its worker has not run");
+  quietOn(pr, entries, () => {});
+  pr.releaseFocus(); // the worker runs while Quiet is on: disarmed, refused
+  const r = await run;
+  assert.equal(r.outcome, "committed-quiet", "the outcome says what was really committed");
+  assert.equal(pr.focused, false);
+  assert.equal(pg.draft(), "B\nC", "B and C go back");
+  pr.setQuiet(false); // Quiet off again, while the caller awaits its refresh
+  assert.equal(entries.takeHeld(r.g), false, "the caller sends nothing: the invitation of a silent commit is not replayed");
+});
+
+test("1: Quiet stays on: the same silent commit; with no Quiet the ordinary focus commits and the held words go once", async () => {
+  const q = program();
+  q.boxVisible = true;
+  q.setQuiet(true);
+  const rq = await entryTurn(new Entries(), "@Paws hello", q.host(), pageSide(q).page);
+  assert.equal(rq.outcome, "committed-quiet");
+  assert.ok(!q.calls.some((c) => c.startsWith("focus")));
+
+  const ok = program();
+  const entries = new Entries();
+  const runOk = entryTurn(entries, "@Paws hello", ok.host(), pageSide(ok).page);
+  await ticks();
+  ok.runShows(); await ok.advance(100);
+  const r = await runOk;
+  assert.equal(r.outcome, "committed");
+  assert.equal(ok.focused, true, "shown and focused at the commit, although it was hidden");
+  assert.ok(ok.calls.indexOf("arm g=1") < ok.calls.indexOf("focus g=1"));
+  assert.equal(entries.takeHeld(r.g), true);
+  assert.equal(entries.takeHeld(r.g), false, "once");
+});
+
+test("1: Quiet after the commit, before the caller sends the held words: they are dropped; Quiet off later brings nothing back", async () => {
+  const pr = program();
+  pr.boxVisible = true;
+  const entries = new Entries();
+  const r = await entryTurn(entries, "@Paws hello", pr.host(), pageSide(pr).page);
+  assert.equal(r.outcome, "committed");
+  let gaveBack = 0;
+  quietOn(pr, entries, () => gaveBack++); // during the caller's await refreshPawsOut()
+  pr.setQuiet(false);
+  assert.equal(entries.takeHeld(r.g), false);
+  assert.equal(gaveBack, 1, "what waited behind the invitation goes back once");
+});
+
+test("2: the focus accepted, its worker held, the entry ended, the worker released: refused, no focus, and the entry is not committed", async () => {
+  const pr = program();
+  pr.boxVisible = true;
+  pr.focusMode = "hold";
+  const entries = new Entries();
+  const pg = pageSide(pr);
+  const run = entryTurn(entries, "@Paws hello", pr.host(), pg.page);
+  await ticks();
+  assert.equal(pr.heldFocusCount(), 1);
+  entries.end(); pr.setGen(0); // the page's endEntry (a close, a clear, a tuck) and its native duo_entry_gen(0)
+  pr.releaseFocus();
+  const r = await run;
+  assert.equal(r.outcome, "closed");
+  assert.equal(pr.focused, false);
+  assert.ok(pr.log.includes("native: focus of g=1 refused"));
+  await pr.membership.idle();
+  assert.equal(pr.member, false);
+});
+
+test("2: a focus the native side cannot do (it fails twice) is not a commit: the entry fails and its membership is undone", async () => {
+  const pr = program();
+  pr.boxVisible = true;
+  pr.focusBroken = true;
+  const pg = pageSide(pr, ["B"]);
+  const r = await entryTurn(new Entries(), "@Paws hello", pr.host(), pg.page);
+  assert.equal(r.outcome, "failed");
+  assert.equal(pr.member, false);
+  assert.equal(pg.draft(), "@Paws hello\nB");
+  assert.deepEqual(pg.said, ["the call changed nothing"]);
+});
+
+test("2: a composition that starts while the focus worker is held disarms it; when the composition ends the focus is asked again and done", async () => {
+  const pr = program();
+  pr.boxVisible = true;
+  pr.focusMode = "hold";
+  const pg = pageSide(pr);
+  const run = entryTurn(new Entries(), "@Paws hello", pr.host(), pg.page);
+  await ticks();
+  pr.compose(true); pr.disarm(); // the page's chatbox-composing handler disarms
+  pr.releaseFocus(); // refused
+  await ticks();
+  assert.equal(pr.focused, false);
+  pr.focusMode = "auto";
+  pr.compose(false);
+  const r = await run;
+  assert.equal(r.outcome, "committed");
+  assert.equal(pr.focused, true, "asked again after the composition and done");
+});
+
+test("3: Paws tucked by a command while the join is held: the entry ends, the late join is undone, the tuck lands after it; nothing commits", async () => {
+  const pr = program();
+  pr.memberMode = "hold";
+  pr.boxVisible = true;
+  const entries = new Entries();
+  const pg = pageSide(pr);
+  const run = entryTurn(entries, "@Paws hello", pr.host(), pg.page);
+  await ticks();
+  const tuck = tuckPaws(() => { entries.end(); pr.setGen(0); }, pr.membership); // the page passes its endEntry
+  pr.memberMode = "auto";
+  pr.releaseMember(); // the held join answers: the entry is over, so it is undone in its step; then the tuck step
+  const r = await run;
+  assert.equal(r.outcome, "closed");
+  await tuck;
+  await pr.membership.idle();
+  assert.equal(pr.member, false);
+  assert.equal(entries.visitLive(r.g), false);
+});
+
+test("3: Paws tucked by a command after the commit and before the words are sent: the visit ends, nothing is sent", async () => {
+  const pr = program();
+  pr.boxVisible = true;
+  const entries = new Entries();
+  const r = await entryTurn(entries, "@Paws hello", pr.host(), pageSide(pr).page);
+  assert.equal(r.outcome, "committed");
+  assert.equal(await tuckPaws(() => { entries.end(); }, pr.membership), true);
+  assert.equal(entries.takeHeld(r.g), false);
+  assert.equal(pr.member, false);
+});
+
+test("the page wires these: both command tucks use tuckPaws; Quiet disarms and drops the held words; a composition disarms; the focus waits for the worker's report", () => {
+  const src = readFileSync(new URL("../routes/+page.svelte", import.meta.url), "utf8");
+  const rust = readFileSync(new URL("../../src-tauri/src/duo.rs", import.meta.url), "utf8");
+  assert.equal((src.match(/=== "paws" && (?:c|a)\.act === "in" && pawsMode === "chat" \? await tuckPaws\(endEntry, membership\)/g) ?? []).length, 2, "the typed and the slash-list tuck");
+  assert.equal((src.match(/if \(entry\.outcome !== "committed" \|\| !entries\.takeHeld\(entry\.g\)\) return true;/g) ?? []).length, 2);
+  assert.ok(/cancelTalk\("quiet"\);\s*void invoke\("duo_entry_disarm"\)[\s\S]{0,300}if \(entries\.dropHeld\(\) !== null\) \{ restorer\.give\(sendQueue\.takeAll\(\)\);/.test(src));
+  assert.ok(/boxComposing = e\.payload;\s*if \(boxComposing\) void invoke\("duo_entry_disarm"\)/.test(src));
+  assert.ok(src.includes('cleanups.push(await win.listen<{ g: number; ok: boolean }>("duo-entry-focused", (e) => focusWaiters.get(e.payload.g)?.(e.payload.ok)));'));
+  assert.ok(rust.includes("let ok = ENTRY.guarded(g, true, || { dismiss_tray_flyout(); open_box_now(&app); });"), "the worker checks under the gate's lock at the effect");
+  assert.ok(rust.includes('let _ = app.emit_to("main", "duo-entry-focused", serde_json::json!({ "g": g, "ok": ok }));'), "and reports the effect itself");
+  assert.ok(rust.includes("pub async fn duo_entry_gen(g: u64)") && rust.includes("pub async fn duo_entry_disarm()"), "the page's end and disarm wait for the lock off the main thread");
 });

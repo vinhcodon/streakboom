@@ -45,10 +45,16 @@ export class Entries {
     const had = this.cur || this.visit || 0;
     if (this.cur) { this.closing = this.cur; this.cur = 0; this.stop?.(); this.stop = null; }
     this.visit = 0;
+    this.held = 0;
     return had || null;
   }
-  /** The entry committed: its visit is current until a reason ends it. */
-  commit(g: number) { if (this.cur === g || this.closing === g) this.visit = g; }
+  private held = 0;
+  /** The entry committed: its visit is current until a reason ends it. `withWords`: its held words wait to be sent (not after a commit in Quiet). */
+  commit(g: number, withWords = true) { if (this.cur === g || this.closing === g) { this.visit = g; this.held = withWords ? g : 0; } }
+  /** Quiet after a commit, before the held words are sent: they are dropped (row 14a); turning Quiet off later brings nothing back. Returns the `g`, or null. */
+  dropHeld(): number | null { const g = this.held; this.held = 0; return g || null; }
+  /** The caller is about to send the held words of `g`: true once, only if they are still wanted and the visit is current. */
+  takeHeld(g: number): boolean { const ok = this.held === g && this.visit === g; if (this.held === g) this.held = 0; return ok; }
   /** The visit committed by `g` is still the current one (checked after every await of the page that follows the commit). */
   visitLive(g: number): boolean { return this.visit === g; }
   /** The entry `g` reached its outcome and its cleanup is done. */
@@ -108,6 +114,8 @@ export class Membership {
   }
   /** The undo of entry `g`'s own membership, in order: true when Paws is not a member afterwards; false when it could not be undone (stuck). */
   leave(g: number): Promise<boolean> { return this.step(() => this.undoNow(g)); }
+  /** Paws sent in by the person (a command): in order with the entries' changes. */
+  tuck(): Promise<MemberAnswer> { return this.step(() => this.native(false).catch((): MemberAnswer => "error")); }
   /** Resolves when every change asked so far is done (the tests and the page's own ordering). */
   idle(): Promise<void> { return this.step(async () => {}); }
 }
@@ -123,8 +131,9 @@ export interface EntryHost {
   undoMembership(t: EntryToken): Promise<boolean>;
   /** The box shown for this entry (identity and composition checked at the effect, and by the native side when it shows): true when it is on the screen. */
   showBox(t: EntryToken): Promise<boolean>;
-  /** Row 6: at the commit, the box shown and given the keyboard for this entry (identity and composition checked at the effect, and by the native side). */
-  focusBox(t: EntryToken): Promise<void>;
+  /** Row 6: at the commit, the box shown and given the keyboard for this entry. "focused" only when the native side reports the effect done; "refused" when it
+   *  did not do it (the entry ended, Quiet, a composition, or it failed); "skipped" when it was not asked (not eligible at the effect). */
+  focusBox(t: EntryToken): Promise<"focused" | "refused" | "skipped">;
   sleep(ms: number): Promise<void>;
   quiet(): boolean;
   log(line: string): void;
@@ -138,8 +147,10 @@ export interface EntryNative {
   showing(): Promise<boolean>;
   /** Show the box for entry `g`, without the keyboard; the native side shows it only while `g` is still the entry in progress. */
   show(g: number): void;
-  /** Show the box for entry `g` and give it the keyboard (row 6); the native side does it only while `g` is still the entry in progress. */
-  focus(g: number): Promise<unknown>;
+  /** Allow entry `g` to take the keyboard now (the native side disarms it on Quiet, a composition and the end). Resolves when the native side has it. */
+  arm(g: number): Promise<unknown>;
+  /** Show the box for entry `g` and give it the keyboard (row 6). Resolves with the result of the native effect itself, reported by its worker: true when done. */
+  focus(g: number): Promise<boolean>;
   membership: Membership;
   /** The developer channel refuses the join without asking the native side. */
   refuse?: boolean;
@@ -174,7 +185,13 @@ export function nativeEntryHost(n: EntryNative): EntryHost {
       }
       return false;
     },
-    focusBox: async (t) => { if (await eligibleAtEffect(t, host)) await n.focus(t.g).catch(() => {}); }, // awaited: the native side checks the generation before the page says the entry is over
+    focusBox: async (t) => {
+      if (!(await eligibleAtEffect(t, host)) || n.quiet()) return "skipped";
+      await n.arm(t.g).catch(() => {});
+      if (!(await eligibleAtEffect(t, host)) || n.quiet()) return "skipped"; // checked again after the await; the native side checks the arming at the effect
+      const ok = await n.focus(t.g).catch(() => false);
+      return ok ? "focused" : "refused";
+    },
     sleep: (ms) => n.sleep(ms),
     quiet: () => n.quiet(),
     log: (l) => n.log(l),
@@ -241,14 +258,22 @@ export async function enterVisitResult(t: EntryToken, h: EntryHost, deadlineMs =
 
   // both acknowledgements are in: a composition that started meanwhile defers the commit (no deadline); an entry ended meanwhile never resumes
   if (!(await eligibleAtEffect(t, h))) return rollback("closed", "closed while the commit waited for a composition");
-  const quiet = h.quiet();
-  // row 6 (ADR-0167; Vinh 2026-11-28): show AND focus the box at the commit, also when it was hidden; never in Quiet (row 10), never while composing
-  if (!quiet) {
-    await h.focusBox(t);
+  // row 6 (ADR-0167; Vinh 2026-11-28): show AND focus the box at the commit, also when it was hidden; never in Quiet (row 10), never while composing. The final
+  // commit is decided after the focus, from the state at that moment: the entry still current, no composition, and Quiet as it is now
+  for (let tries = 0; ; tries++) {
+    if (!(await eligibleAtEffect(t, h))) return rollback("closed", "closed before the final commit");
+    if (h.quiet()) break;
+    const f = await h.focusBox(t);
     if (!t.live()) return rollback("closed", "closed while the box was being focused");
+    if (h.composing()) continue; // a composition came: wait for it and ask again
+    if (h.quiet()) break; // Quiet came during the focus: the commit is silent (a focus done before it stays)
+    if (f === "focused") { h.log(`entry g=${t.g}: committed`); return res("committed"); }
+    if (f === "skipped") continue;
+    if (tries >= 1) return rollback("failed", "the box could not be focused");
   }
-  h.log(`entry g=${t.g}: committed${quiet ? " in Quiet (no greeting)" : ""}`);
-  return res(quiet ? "committed-quiet" : "committed");
+  if (!t.live()) return rollback("closed", "closed before the final commit");
+  h.log(`entry g=${t.g}: committed in Quiet (no greeting)`);
+  return res("committed-quiet");
 }
 
 // ---------------------------------------------------------------- returned text (Codex's T1 note 2)
@@ -312,8 +337,10 @@ export interface EntryPage {
   /** The existing line for a call that changed nothing, said by Peak (never in Quiet; ADR-0171). */
   sayFailed(): Promise<void>;
   quiet(): boolean;
-  /** The native side is told which entry is in progress (its g), or none (0): it shows the box only for that entry, and defers presses meanwhile. */
+  /** The native side is told which entry is in progress (its g): it shows or focuses the box only for that entry, and defers presses meanwhile. */
   setGen(g: number): void;
+  /** Entry `g` has its outcome: the native side forgets it, only if it is still the one it holds. */
+  endGen(g: number): void;
   /** A press that waited for this entry (or null), taken once. */
   takeDeferred(): string | null;
   /** The press done after the outcome: the second start's own effect, then the box focused. */
@@ -333,9 +360,9 @@ export async function entryTurn(entries: Entries, text: string, h: EntryHost, p:
     r = await enterVisitResult(t, h, deadlineMs);
   } finally {
     if (row !== null) p.markWaiting(row, false);
-    p.setGen(0);
+    p.endGen(t.g);
   }
-  if (r.outcome === "committed" || r.outcome === "committed-quiet") entries.commit(t.g);
+  if (r.outcome === "committed" || r.outcome === "committed-quiet") entries.commit(t.g, r.outcome === "committed");
   if (r.stuck) { p.log(`entry g=${t.g}: membership stuck after the rollback`); p.memberStuck(); }
   if (r.outcome === "failed" || r.outcome === "closed") {
     if (row !== null) p.removeRow(row);
@@ -353,4 +380,11 @@ export async function entryTurn(entries: Entries, text: string, h: EntryHost, p:
   entries.settle(t.g);
   if (r.outcome === "failed" && !p.quiet()) await p.sayFailed();
   return r;
+}
+
+/** Paws sent in by the person (the slash list or a typed command) during an entry or a visit: the entry, or the committed visit whose words are not sent
+ *  yet, ends first (so a join still to answer is undone in its own step), then the tuck goes through the same Membership chain. True when Paws went in. */
+export async function tuckPaws(endEntry: (reason: string) => void, membership: Membership): Promise<boolean> {
+  endEntry("Paws tucked in");
+  return (await membership.tuck()) === "changed";
 }
