@@ -49,7 +49,7 @@ export function timeLabel(at: number, now: number, locale: string, today: string
 
 /** A message from the box: the text and who it is for (the main page checks it again). */
 export type BoxAction =
-  | { type: "send"; text: string; mid?: string } // mid: one deliberate send, so that a repeated delivery of it is dispatched once (T2d, row 13)
+  | { type: "send"; text: string; mid?: string; at?: number } // mid: one deliberate send, dispatched at most once; at: when it left the box (T2d, row 13)
   | { type: "command"; act: "out" | "in"; target: "peak" | "paws" } // a command of the slash list: bring a pet out or send it in (local, no model)
   | { type: "clear" } // clear this chat: the talk is forgotten, by the box and by the pets
   | { type: "name"; value: string }; // `/name Vinh`: what the pets call the person (the main page cleans it again)

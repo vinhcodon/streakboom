@@ -71,7 +71,7 @@
     if (!text) return;
     // with both pets in only a local command goes ("call Paws out", "call me ..."): anything else stays in the field and the placeholder says why
     if (!anyOut && !parseDuoCommand(text) && !parseCallMe(text) && summons(text, presence).length === 0) return; // an @ mention calls the pet out (ADR-0157)
-    act({ type: "send", text, mid: newMid() });
+    act({ type: "send", text, mid: newMid(), at: Date.now() });
     draft = "";
     settledDraft = "";
     recallIdx = -1;

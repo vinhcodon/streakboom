@@ -100,7 +100,7 @@ export interface Line { pet: PetId; act: Act; text: string; mood: string; to: Pa
 
 export interface Deps {
   /** One model call for one pet: the turns it heard, and whether it speaks first or second. Rejects on any failure. */
-  model(pet: PetId, view: Turn[], role: "first" | "second" | "relayed"): Promise<string>;
+  model(pet: PetId, view: Turn[], role: "first" | "second" | "relayed", live?: () => boolean): Promise<string>;
   /** The gate of quota and attention for one more call by this pet; false makes the line a gesture. */
   allow(pet: PetId): boolean;
   /** Quiet or no words wanted: gestures only, no call. */
@@ -138,12 +138,14 @@ export class Conversation {
     this.noted = text;
   }
 
-  /** One model call for one pet, with the "writing" signal on while it lasts. */
-  private async ask(pet: PetId, role: "first" | "second" | "relayed"): Promise<string> {
+  /** One model call for one pet, with the "writing" signal on while it lasts. `live` tells the caller, at any later moment, whether this turn still wants the
+   *  call (the same turn, the pet still out, no Quiet): the page asks it after the charge has been written and before the request is issued (T2d). */
+  private async ask(pet: PetId, role: "first" | "second" | "relayed", my: number): Promise<string> {
     const mine = ++this.writes;
     this.deps.writing?.(pet);
+    const live = () => my === this.token && !this.gone.has(pet) && !this.deps.quiet();
     // an older call that ends after a newer one began must not switch the dots off for the newer one (issue 4)
-    try { return await this.deps.model(pet, heard(this.room, pet), role); } finally { if (mine === this.writes) this.deps.writing?.(null); }
+    try { return await this.deps.model(pet, heard(this.room, pet), role, live); } finally { if (mine === this.writes) this.deps.writing?.(null); }
   }
 
   private takeNote(text: string): boolean {
@@ -183,7 +185,7 @@ export class Conversation {
       const prof = this.profiles[pet];
       if (!prof.speaksToPerson || this.deps.quiet() || !this.deps.allow(pet)) { this.gesture(pet); continue; } // a pet that never speaks, Quiet, or the gate: a gesture
       let raw: string;
-      try { raw = await this.ask(pet, role); } catch { if (my === this.token && !this.gone.has(pet)) this.gesture(pet); continue; }
+      try { raw = await this.ask(pet, role, my); } catch { if (my === this.token && !this.gone.has(pet)) this.gesture(pet); continue; }
       if (my !== this.token || this.gone.has(pet)) return; // the turn was cancelled or the pet went in while it was being written
       if (this.deps.quiet()) { this.gesture(pet); break; } // Quiet turned on while the call was pending: no line, and the next pet is not asked (the cost of the call already made is not undone)
       const u = parseUtterance(raw);
@@ -214,7 +216,7 @@ export class Conversation {
     const prof = this.profiles[target];
     if (!prof.speaksToPerson || this.deps.quiet() || !this.deps.allow(target)) { this.gesture(target); return; }
     let raw: string;
-    try { raw = await this.ask(target, "relayed"); } catch { if (my === this.token && !this.gone.has(target)) this.gesture(target); return; }
+    try { raw = await this.ask(target, "relayed", my); } catch { if (my === this.token && !this.gone.has(target)) this.gesture(target); return; }
     if (my !== this.token || this.gone.has(target)) return;
     if (this.deps.quiet()) { this.gesture(target); return; } // Quiet turned on while the call was pending
     const u = parseUtterance(raw);

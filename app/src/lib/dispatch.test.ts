@@ -1,27 +1,61 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
-import { DUO_CAP_SCALE, SendIds, chargedRequest, quota } from "./dispatch.ts";
+import { ChargeNotSaved, DUO_CAP_SCALE, NotIssued, PetWriter, SendGate, chargeSolo, chargedRequest, quota, routeBoxSend } from "./dispatch.ts";
 import { Conversation, type Deps, type Line } from "./conversation.ts";
+import { SendQueue } from "./send-queue.ts";
 import { AI_CHAT_DAILY_CAP, AI_COOLDOWN_MS, dayKey, defaultData, parse, type PetData } from "./state.ts";
 import type { PetId } from "./duo.ts";
 
-// T2d of ADR-0167 (issue 22): the fixtures frozen on the ticket before the change.
+// T2d of ADR-0167 (issue 22): the fixtures frozen on the ticket, and the return of comment 7234025168 (R1: a late or replayed send; R2: the charge is an
+// acknowledged write before the request). The page's boundaries are the functions of dispatch.ts; these tests drive them with the page's own wiring:
+// PetWriter over a native write that can be held or rejected, quota over it, chargedRequest inside the Conversation's model, routeBoxSend into a SendQueue.
 
-/** Local time on the 28th of November 2026 (the fixtures are local calendar dates, as `dayKey` is). */
 const at = (h: number, m = 0, s = 0, ms = 0, day = 28) => new Date(2026, 10, day, h, m, s, ms).getTime();
+const tick = () => new Promise<void>((r) => setTimeout(r, 0));
 
-/** The page in miniature: pet data, the clock, a save that writes the JSON (what a restart reads back), and a Conversation whose model goes through the quota. */
+/** A native write of pet.json that the test controls: "ok" acknowledges at once, "hold" waits for release(), "fail" rejects (a write or rename error). */
+function disk(initial: string) {
+  let stored = initial;
+  let mode: "ok" | "hold" | "fail" = "ok";
+  const held: (() => void)[] = [];
+  let writes = 0;
+  const write = (json: string) => {
+    writes++;
+    if (mode === "fail") return Promise.reject(new Error("rename failed"));
+    if (mode === "hold") return new Promise<void>((r) => held.push(() => { stored = json; r(); }));
+    stored = json;
+    return Promise.resolve();
+  };
+  return {
+    write,
+    stored: () => stored,
+    chat: () => (JSON.parse(stored) as PetData).ai.chat,
+    set mode(m: "ok" | "hold" | "fail") { mode = m; },
+    release: () => { while (held.length) held.shift()!(); },
+    writes: () => writes,
+  };
+}
+
+/** The page in miniature, with the page's own wiring: pet data, the clock, one PetWriter over the disk, the quota over the writer, a Conversation whose model
+ *  goes through chargedRequest with the Conversation's own `live`. */
 function page(opts: { chat?: number; day?: string; now?: number; duo?: boolean; reply?: (pet: PetId) => Promise<string>; quiet?: () => boolean; brain?: boolean } = {}) {
   let now = opts.now ?? at(12);
   let data: PetData = defaultData(now);
   data = { ...data, ai: { ...data.ai, day: opts.day ?? dayKey(now), chat: opts.chat ?? 0 } };
-  let stored = JSON.stringify(data);
+  const d = disk(JSON.stringify(data));
+  const writer = new PetWriter(d.write, () => JSON.stringify(data));
   const requests: PetId[] = [];
-  const q = quota({ get: () => data, set: (d) => { data = d; }, save: () => { stored = JSON.stringify(data); }, now: () => now, duo: opts.duo ?? true });
+  const storedAtRequest: number[] = [];
+  const log: string[] = [];
+  const q = quota({ get: () => data, set: (x) => { data = x; }, persist: () => writer.save(), now: () => now, duo: opts.duo ?? true, log: (l) => log.push(l) });
   const kindOf = (e: unknown) => (e as { kind?: string } | null)?.kind ?? "unknown";
   const deps: Deps = {
-    model: (pet) => chargedRequest(q, () => { requests.push(pet); return (opts.reply ?? (async () => "[happy] Fine."))(pet); }, kindOf),
+    model: (pet, _view, _role, live) => chargedRequest(q, () => {
+      requests.push(pet);
+      storedAtRequest.push(d.chat()); // what a restart at this moment would read
+      return (opts.reply ?? (async () => "[happy] Fine."))(pet);
+    }, kindOf, live ?? (() => true)),
     allow: () => (opts.brain ?? true) && q.gate() === "ok",
     quiet: opts.quiet ?? (() => false),
     sleep: async (ms) => { now += ms; },
@@ -31,29 +65,29 @@ function page(opts: { chat?: number; day?: string; now?: number; duo?: boolean; 
   const lines: Line[] = [];
   const talk = new Conversation(deps, (l) => lines.push(l));
   return {
-    talk, lines, requests, q,
+    talk, lines, requests, storedAtRequest, q, disk: d, writer, log,
     data: () => data,
-    restart: () => { data = parse(stored, now); },
+    setData: (x: PetData) => { data = x; },
+    restart: () => { data = parse(d.stored(), now); },
     setNow: (t: number) => { now = t; },
   };
 }
 
+// ---------------------------------------------------------------- the count and the cap (fixtures of the claim)
+
 test("the cap is 120 a day with the experiment and 60 without it (ADR-0165)", () => {
   assert.equal(AI_CHAT_DAILY_CAP * DUO_CAP_SCALE, 120);
-  const on = page({ chat: 119 });
-  assert.equal(on.q.gate(), "ok");
-  const on120 = page({ chat: 120 });
-  assert.equal(on120.q.gate(), "cap");
-  const off59 = page({ chat: 59, duo: false });
-  assert.equal(off59.q.gate(), "ok");
-  const off60 = page({ chat: 60, duo: false });
-  assert.equal(off60.q.gate(), "cap", "with the experiment off the cap stays 60");
+  assert.equal(page({ chat: 119 }).q.gate(), "ok");
+  assert.equal(page({ chat: 120 }).q.gate(), "cap");
+  assert.equal(page({ chat: 59, duo: false }).q.gate(), "ok");
+  assert.equal(page({ chat: 60, duo: false }).q.gate(), "cap", "with the experiment off the cap stays 60");
 });
 
-test("119 used with two pets eligible: one request, the count reaches 120, the second pet makes a gesture (no 121st)", async () => {
+test("119 used with two pets eligible: one request, the count reaches 120 (stored before the request), the second pet makes a gesture (no 121st)", async () => {
   const p = page({ chat: 119 });
   await p.talk.person("how are you both", ["peak", "paws"], ["peak", "paws"]);
   assert.deepEqual(p.requests, ["peak"]);
+  assert.deepEqual(p.storedAtRequest, [120], "the charge was on disk when the request was issued");
   assert.equal(p.data().ai.chat, 120);
   assert.deepEqual(p.lines.map((l) => `${l.pet}:${l.act}`), ["peak:say", "paws:gesture"]);
 });
@@ -62,7 +96,8 @@ test("a request that fails is charged; the pet makes a gesture", async () => {
   const p = page({ chat: 10, reply: async () => { throw { kind: "network" }; } });
   await p.talk.person("hello", ["peak"], ["peak"]);
   assert.deepEqual(p.requests, ["peak"]);
-  assert.equal(p.data().ai.chat, 11, "the charge made before the request stays");
+  assert.equal(p.data().ai.chat, 11);
+  assert.equal(p.disk.chat(), 11, "the charge made before the request stays, on disk");
   assert.deepEqual(p.lines.map((l) => `${l.pet}:${l.act}`), ["peak:gesture"]);
 });
 
@@ -71,25 +106,26 @@ test("a reply dropped because Quiet came while it was pending is still charged, 
   const p = page({ chat: 3, quiet: () => quiet, reply: async () => { quiet = true; return "[happy] late"; } });
   await p.talk.person("both?", ["peak", "paws"], ["peak", "paws"]);
   assert.deepEqual(p.requests, ["peak"]);
-  assert.equal(p.data().ai.chat, 4);
+  assert.equal(p.disk.chat(), 4);
 });
 
-test("a rate limit starts the cooldown: the second pet of the turn makes a gesture with no request, and so does the next turn", async () => {
+test("a rate limit starts the cooldown: the second pet makes a gesture with no request, and so does the next turn", async () => {
   const p = page({ chat: 5, reply: async () => { throw { kind: "rate_limit" }; } });
   const t0 = p.data().ai.coolUntil;
   await p.talk.person("both?", ["peak", "paws"], ["peak", "paws"]);
-  assert.deepEqual(p.requests, ["peak"], "one request; the second pet is not asked during the cooldown");
+  assert.deepEqual(p.requests, ["peak"]);
   assert.equal(p.data().ai.chat, 6);
   assert.ok(p.data().ai.coolUntil > t0);
+  assert.ok((JSON.parse(p.disk.stored()) as PetData).ai.coolUntil > t0, "the cooldown is written too");
   assert.equal(p.q.gate(), "cooldown");
   await p.talk.person("again", ["peak"], ["peak"]);
-  assert.deepEqual(p.requests, ["peak"], "no request while cooling down");
+  assert.deepEqual(p.requests, ["peak"]);
   p.setNow(p.data().ai.coolUntil + 1);
-  assert.equal(p.q.gate(), "ok", "the gate opens when the cooldown ends");
-  assert.ok(AI_COOLDOWN_MS === 120_000);
+  assert.equal(p.q.gate(), "ok");
+  assert.equal(AI_COOLDOWN_MS, 120_000);
 });
 
-test("Quiet, group and solo: no request and no charge, a gesture (rows 14a and solo Quiet)", async () => {
+test("Quiet, group and solo: no request, no charge, a gesture (rows 14a and solo Quiet, ADR-0169)", async () => {
   const g = page({ chat: 7, quiet: () => true });
   await g.talk.person("both?", ["peak", "paws"], ["peak", "paws"]);
   const s = page({ chat: 7, quiet: () => true });
@@ -97,6 +133,7 @@ test("Quiet, group and solo: no request and no charge, a gesture (rows 14a and s
   for (const p of [g, s]) {
     assert.deepEqual(p.requests, []);
     assert.equal(p.data().ai.chat, 7);
+    assert.equal(p.disk.writes(), 0);
     assert.ok(p.lines.every((l) => l.act === "gesture"));
   }
 });
@@ -110,12 +147,11 @@ test("no brain: no request and no charge (row 14b)", async () => {
 
 test("an invitation, the end of a visit and a restart on the same day never refill the count", async () => {
   const p = page({ chat: 40 });
-  await p.talk.person("@Paws hello", ["paws"], ["peak", "paws"]); // the invitation: one request to Paws
+  await p.talk.person("@Paws hello", ["paws"], ["peak", "paws"]);
   assert.equal(p.data().ai.chat, 41);
-  p.talk.cancel(); // the visit ends: pending work is dropped, nothing is given back
-  assert.equal(p.data().ai.chat, 41);
+  p.talk.cancel();
   p.setNow(at(18));
-  p.restart(); // the program starts again: what was saved after the charge is read back
+  p.restart();
   assert.equal(p.data().ai.chat, 41);
   assert.equal(p.q.gate(), "ok");
 });
@@ -123,53 +159,208 @@ test("an invitation, the end of a visit and a restart on the same day never refi
 test("rollover: just before midnight the day's count holds; the first gate or charge after it starts a new day and keeps the cooldown (row 25)", async () => {
   const p = page({ chat: 120, now: at(23, 59, 59, 900) });
   assert.equal(p.q.gate(), "cap");
-  p.q.rateLimited();
+  await p.q.rateLimited();
   const cool = p.data().ai.coolUntil;
   p.setNow(at(0, 0, 0, 100, 29));
   assert.equal(p.q.gate(), "cooldown", "the cooldown is kept across midnight");
   p.setNow(cool + 1);
-  assert.equal(p.q.gate(), "ok", "the new day's count starts at 0");
-  p.q.charge();
+  assert.equal(p.q.gate(), "ok");
+  await p.q.charge();
   const a = p.data().ai;
   assert.equal(a.day, dayKey(at(0, 0, 0, 100, 29)));
-  assert.equal(a.chat, 1);
-  assert.equal(a.proactive, 0);
-  assert.equal(a.note, 0);
-  assert.equal(a.coolUntil, cool);
+  assert.deepEqual([a.chat, a.proactive, a.note, a.coolUntil], [1, 0, 0, cool]);
 });
 
 test("a call pending across midnight is charged to the day it was issued on", async () => {
   let release: (s: string) => void = () => {};
   const p = page({ chat: 50, now: at(23, 59, 59, 900), reply: () => new Promise<string>((r) => { release = r; }) });
   const run = p.talk.person("late", ["peak"], ["peak"]);
-  await Promise.resolve();
+  for (let i = 0; i < 5; i++) await tick();
   assert.equal(p.data().ai.chat, 51);
   assert.equal(p.data().ai.day, dayKey(at(23)));
   p.setNow(at(0, 0, 1, 0, 29));
   release("[happy] ok");
   await run;
-  assert.equal(p.q.gate(), "ok");
-  p.q.charge();
+  await p.q.charge();
   assert.equal(p.data().ai.chat, 1, "the first charge of the new day starts from 0");
 });
 
-test("one send is dispatched once in a generation; a repeat of its mid is dropped; two sends with the same text stay two (row 13)", () => {
-  const ids = new SendIds();
-  assert.equal(ids.accept("m1", 1), true);
-  assert.equal(ids.accept("m1", 1), false, "a duplicate or retried delivery of one send");
-  assert.equal(ids.accept("m2", 1), true, "a second send with the same text has its own mid");
-  assert.equal(ids.accept("m2", 1), false);
-  assert.equal(ids.accept("m1", 2), true, "a new visit generation forgets the old one");
+// ---------------------------------------------------------------- R2: the charge is an acknowledged write before the request
+
+test("R2: while the charge is being written no request is issued; after the acknowledgement exactly one, and a restart then reads the count", async () => {
+  const p = page({ chat: 10 });
+  p.disk.mode = "hold";
+  const run = p.talk.person("hello", ["peak"], ["peak"]);
+  for (let i = 0; i < 5; i++) await tick();
+  assert.deepEqual(p.requests, [], "no provider call while the write is pending");
+  assert.equal(p.disk.chat(), 10);
+  p.disk.mode = "ok";
+  p.disk.release();
+  await run;
+  assert.deepEqual(p.requests, ["peak"]);
+  assert.deepEqual(p.storedAtRequest, [11], "the request went out only once 11 was on disk");
+  p.restart();
+  assert.equal(p.data().ai.chat, 11, "a same-day restart reads the charge");
 });
 
-test("the page: the box sends a mid, the page drops a repeat, and the canned replies go through the same gate and charge (T2d)", () => {
-  const pageSrc = readFileSync(new URL("../routes/+page.svelte", import.meta.url), "utf8");
+test("R2: a failed write issues no request; the in-memory count goes back and nothing unrecorded is sent", async () => {
+  const p = page({ chat: 10 });
+  p.disk.mode = "fail";
+  await p.talk.person("hello", ["peak", "paws"], ["peak", "paws"]);
+  assert.deepEqual(p.requests, [], "no request for either pet");
+  assert.equal(p.data().ai.chat, 10);
+  assert.equal(p.disk.chat(), 10);
+  assert.ok(p.log.some((l) => l.startsWith("charge not saved")));
+  await assert.rejects(p.q.charge(), ChargeNotSaved);
+});
+
+test("R2: Quiet during the held write: no request, the charge given back, no line spoken", async () => {
+  let quiet = false;
+  const p = page({ chat: 10, quiet: () => quiet });
+  p.disk.mode = "hold";
+  const run = p.talk.person("hello", ["peak"], ["peak"]);
+  for (let i = 0; i < 5; i++) await tick();
+  quiet = true;
+  p.disk.mode = "ok";
+  p.disk.release();
+  await run;
+  for (let i = 0; i < 5; i++) await tick();
+  assert.deepEqual(p.requests, []);
+  assert.equal(p.data().ai.chat, 10, "the charge of a request that was not issued is given back");
+  assert.equal(p.disk.chat(), 10, "and written");
+  assert.ok(p.lines.every((l) => l.act !== "say"));
+});
+
+test("R2: a cancel (a touch, a new message, the end) during the held write: no request, nothing of the old turn appears, the charge given back", async () => {
+  const p = page({ chat: 10 });
+  p.disk.mode = "hold";
+  const run = p.talk.person("hello", ["peak"], ["peak"]);
+  for (let i = 0; i < 5; i++) await tick();
+  p.talk.cancel();
+  p.disk.mode = "ok";
+  p.disk.release();
+  await run;
+  for (let i = 0; i < 5; i++) await tick();
+  assert.deepEqual(p.requests, []);
+  assert.deepEqual(p.lines, [], "no gesture or line of a cancelled turn");
+  assert.equal(p.disk.chat(), 10);
+});
+
+test("R2: writes are ordered and each takes its snapshot at its turn: an older snapshot never lands after a newer charge", async () => {
+  const p = page({ chat: 10 });
+  p.disk.mode = "hold";
+  const first = p.writer.save(); // an ordinary save (a scratch, a setting) started before the charge
+  const charge = p.q.charge();
+  p.disk.mode = "ok";
+  p.disk.release();
+  await first;
+  await charge;
+  assert.equal(p.disk.chat(), 11, "the last write on disk carries the charge");
+});
+
+test("R2, solo with the experiment: held, rejected and Quiet during the write", async () => {
+  const held = page({ chat: 10 });
+  held.disk.mode = "hold";
+  let issued = false;
+  const go = chargeSolo(held.q, () => true).then((r) => { issued = r === "issue"; return r; });
+  for (let i = 0; i < 5; i++) await tick();
+  assert.equal(issued, false, "no solo request while the write is pending");
+  held.disk.mode = "ok";
+  held.disk.release();
+  assert.equal(await go, "issue");
+  assert.equal(held.disk.chat(), 11);
+
+  const failed = page({ chat: 10 });
+  failed.disk.mode = "fail";
+  assert.equal(await chargeSolo(failed.q, () => true), "not-saved");
+  assert.equal(failed.data().ai.chat, 10);
+
+  let quiet = false;
+  const q = page({ chat: 10 });
+  q.disk.mode = "hold";
+  const r = chargeSolo(q.q, () => !quiet);
+  for (let i = 0; i < 5; i++) await tick();
+  quiet = true;
+  q.disk.mode = "ok";
+  q.disk.release();
+  assert.equal(await r, "not-issued");
+  assert.equal(q.disk.chat(), 10, "refunded and written");
+});
+
+test("chargedRequest: a request no longer wanted after the write is not issued (NotIssued) and its charge is given back", async () => {
+  const p = page({ chat: 3 });
+  let called = 0;
+  await assert.rejects(chargedRequest(p.q, async () => { called++; return 1; }, () => "unknown", () => false), NotIssued);
+  assert.equal(called, 0);
+  assert.equal(p.disk.chat(), 3);
+});
+
+// ---------------------------------------------------------------- R1: one send, one dispatch, also after its visit ended
+
+/** The page's boundary for box sends: routeBoxSend into the real SendQueue, whose dispatch is a person turn of the Conversation through the quota. */
+function boxPage(chat = 0) {
+  const p = page({ chat });
+  const queued: string[] = [];
+  const givenBack: string[] = [];
+  const gate = new SendGate();
+  const sq = new SendQueue(async (t) => { queued.push(t); await p.talk.person(t, ["peak", "paws"], ["peak", "paws"]); }, async () => {});
+  const send = (s: { text: string; mid?: string; at?: number }) => routeBoxSend(gate, s, { queue: (t) => sq.send(t, 0), giveBack: (t) => givenBack.push(t), log: () => {} });
+  return { p, queued, givenBack, gate, send };
+}
+
+test("R1: a replayed send is dropped in its visit and after the visit ended: no queue entry, request or charge; a new send still goes once", async () => {
+  const b = boxPage(0);
+  assert.equal(b.send({ text: "@Paws hello", mid: "old-mid", at: at(12) }), "new");
+  await tick(); await tick();
+  assert.equal(b.send({ text: "@Paws hello", mid: "old-mid", at: at(12) }), "replay");
+  b.gate.end(at(12, 1)); // the visit ends
+  assert.equal(b.send({ text: "@Paws hello", mid: "old-mid", at: at(12) }), "replay", "the old mid is not rebound to the next visit");
+  for (let i = 0; i < 10; i++) await tick();
+  assert.deepEqual(b.queued, ["@Paws hello"], "one queue entry in all");
+  const requests = b.p.requests.length;
+  const chat = b.p.data().ai.chat;
+  assert.equal(b.send({ text: "@Paws hello", mid: "new-mid", at: at(12, 2) }), "new", "a genuinely new send after the end goes");
+  for (let i = 0; i < 10; i++) await tick();
+  assert.deepEqual(b.queued, ["@Paws hello", "@Paws hello"]);
+  assert.ok(b.p.requests.length > requests && b.p.data().ai.chat > chat, "and it is requested and charged once more");
+});
+
+test("R1: a send that left the box before the visit ended and arrives after it is not sent into the next visit; its text goes back once", async () => {
+  const b = boxPage(0);
+  b.gate.end(at(12, 5));
+  assert.equal(b.send({ text: "late words", mid: "m-late", at: at(12, 4) }), "stale");
+  assert.equal(b.send({ text: "late words", mid: "m-late", at: at(12, 4) }), "replay", "a second delivery of it is not returned twice");
+  for (let i = 0; i < 5; i++) await tick();
+  assert.deepEqual(b.queued, []);
+  assert.deepEqual(b.p.requests, []);
+  assert.equal(b.p.data().ai.chat, 0);
+  assert.deepEqual(b.givenBack, ["late words"]);
+});
+
+test("R1: two deliberate sends with the same text have their own ids and both go", async () => {
+  const b = boxPage(0);
+  assert.equal(b.send({ text: "hi", mid: "a", at: at(12) }), "new");
+  assert.equal(b.send({ text: "hi", mid: "b", at: at(12) }), "new");
+  for (let i = 0; i < 20; i++) await tick();
+  assert.deepEqual(b.queued, ["hi", "hi"]);
+});
+
+// ---------------------------------------------------------------- the page uses these boundaries (source checks beside the behaviour above)
+
+test("the page uses these boundaries: box sends with mid and time, routeBoxSend, the end of a visit, acknowledged ordered writes, awaited charges", () => {
+  const src = readFileSync(new URL("../routes/+page.svelte", import.meta.url), "utf8");
   const box = readFileSync(new URL("../routes/chatbox/+page.svelte", import.meta.url), "utf8");
-  assert.ok(/act\(\{ type: "send", text, mid: /.test(box), "the box gives every deliberate send its own mid");
-  assert.ok(pageSrc.includes("sendIds.accept(mid, visitG)"), "the page dispatches one mid once in a generation");
-  assert.ok(/duo-visit-ended[\s\S]{0,200}visitG\+\+/.test(pageSrc), "the end of a visit moves the generation");
-  const model = pageSrc.slice(pageSrc.indexOf("const talk = new Conversation("), pageSrc.indexOf("const talk = new Conversation(") + 2400);
-  assert.ok(model.indexOf("chargedRequest(") >= 0 && model.indexOf("chargedRequest(") < model.indexOf("if (duoFake)"), "a canned reply is charged like a real one");
-  assert.ok(/allow: \(\) => duoQuota\.gate\(\) === "ok"/.test(model), "the canned replies do not skip the gate");
-  assert.ok(!pageSrc.includes('duoFake ? "ok"'), "no gate is bypassed for canned replies");
+  assert.ok(/act\(\{ type: "send", text, mid: newMid\(\), at: Date\.now\(\) \}\)/.test(box), "the box gives every deliberate send its id and the moment it left");
+  assert.ok(src.includes("routeBoxSend(sendGate, { text, mid, at }"), "the page's send boundary is routeBoxSend");
+  assert.ok(/duo-visit-ended[\s\S]{0,200}sendGate\.end\(Date\.now\(\)\)/.test(src), "the end of a visit closes its sends");
+  assert.ok(src.includes("persist: () => petWriter.save()"), "the quota waits for the acknowledged write");
+  assert.ok(/if \(duoOn\) await petWriter\.save\(\);\s*else await invoke\("save_pet"/.test(src), "with the experiment every pet.json write goes through the ordered writer; without it, as before");
+  const model = src.slice(src.indexOf("const talk = new Conversation("), src.indexOf("const talk = new Conversation(") + 2600);
+  assert.ok(model.indexOf("chargedRequest(") >= 0 && model.indexOf("chargedRequest(") < model.indexOf("call ${pet} ${role}") && model.indexOf("call ${pet} ${role}") < model.indexOf("if (duoFake)"),
+    "the request (and its log line) is issued inside chargedRequest, after the charge, for canned and real replies alike");
+  assert.ok(model.includes("live ?? (() => true)"), "the Conversation's live test is asked after the write");
+  assert.ok(/allow: \(\) => duoQuota\.gate\(\) === "ok"/.test(model));
+  assert.ok(src.includes("const go = await chargeSolo(duoQuota, () => !quiet && !away);"), "solo with the experiment awaits the written charge");
+  assert.ok(/\} else data = recordAi\(data, "chat", Date\.now\(\)\);/.test(src), "without the experiment the solo charge is as before");
+  assert.ok(!src.includes('duoFake ? "ok"'), "no gate is bypassed for canned replies");
 });

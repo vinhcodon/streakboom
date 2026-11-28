@@ -18,7 +18,7 @@
   import { parseCallMe } from "$lib/callme";
   import { Presenter } from "$lib/presentation";
   import { SendQueue } from "$lib/send-queue";
-  import { SendIds, chargedRequest, quota } from "$lib/dispatch";
+  import { PetWriter, SendGate, chargeSolo, chargedRequest, quota, routeBoxSend } from "$lib/dispatch";
   import { Conversation, addTurn, newRoom, presentAfterPlacing, shownSays, presentable, situation, toHistory, type Line } from "$lib/conversation";
   import type { BoxAction, BoxView } from "$lib/chatbox";
   import type { PetId } from "$lib/duo";
@@ -246,9 +246,13 @@
     clearTimeout(saveTimer);
     saveTimer = setTimeout(save, 500);
   }
+  // with the experiment every write of pet.json goes through one ordered chain whose result is awaited where it matters: a charge is acknowledged before its
+  // request is issued, and an older snapshot never lands after a newer one (T2d, issue 22, R2). Without the experiment the write is as before.
+  const petWriter = new PetWriter((json) => invoke("save_pet", { json }), () => JSON.stringify(data));
   async function save() {
     try {
-      await invoke("save_pet", { json: JSON.stringify(data) });
+      if (duoOn) await petWriter.save();
+      else await invoke("save_pet", { json: JSON.stringify(data) });
       await invoke("save_memory", { json: JSON.stringify(mem) });
     } catch {
       /* keep running; we will retry on the next change */
@@ -2405,18 +2409,24 @@
   const duoQuota = quota({
     get: () => data,
     set: (d) => { data = d; },
-    save: () => { void save(); void invoke("duo_log", { line: `usage chat=${data.ai.chat} day=${data.ai.day} cool=${data.ai.coolUntil > Date.now() ? "on" : "off"}` }).catch(() => {}); },
+    persist: () => petWriter.save(), // acknowledged: the request waits for it (R2)
     now: () => Date.now(),
     duo: true,
+    log: (line) => void invoke("duo_log", { line }).catch(() => {}),
   });
-  const sendIds = new SendIds();
-  let visitG = 0; // the visit generation of this slice: it moves when a visit ends; T2a owns entry and commit
+  /** The charge of a request could not be written (T2d, R2): no request is issued, and the in-memory count was taken back. What the person sees is the
+   *  author's choice (asked on 2026-11-28 through the coordinating session); until it is made, only the log says so. In a visit the Conversation's usual
+   *  failure gesture follows, as for any request that did not complete. */
+  function chargeNotSaved(pet: PetId, text: string) {
+    void invoke("duo_log", { line: `charge not saved: no request for ${pet} (${text.length} chars)` }).catch(() => {});
+  }
+  const sendGate = new SendGate(); // one dispatch per send, also after its visit ended; a send made before the end is not sent after it (R1)
   const talk = new Conversation(
     {
-      model: async (pet, view, role) => {
-        void invoke("duo_log", { line: `call ${pet} ${role}` }).catch(() => {}); // the record of who was asked (#17 evidence: no call for a guest that has left)
+      model: async (pet, view, role, live) => {
         const lastPerson = [...view].reverse().find((t) => t.from === "person");
         return chargedRequest(duoQuota, async () => {
+        void invoke("duo_log", { line: `call ${pet} ${role}` }).catch(() => {}); // the record of who was asked, written when the request is issued (after its charge is saved)
         if (duoFake) {
           await pause(400);
           const fail = /\[fake:(rate_limit|network)\]/.exec(lastPerson?.text ?? ""); // the developer channel: a canned failure, to see a charge and the cooldown without a provider
@@ -2440,7 +2450,7 @@
           throw e; // chargedRequest starts the cooldown on a rate limit: the second pet of a turn is then a gesture, not a second refused call (issue 4)
         });
         return out.text;
-        }, (e) => errKind(e));
+        }, (e) => errKind(e), live ?? (() => true));
       },
       allow: () => duoQuota.gate() === "ok",
       quiet: () => quiet || away,
@@ -2471,7 +2481,7 @@
   }
   $effect(() => pushBox());
   function onBoxAction(a: BoxAction) {
-    if (a.type === "send") { void sendChat(a.text, a.mid); return; }
+    if (a.type === "send") { void sendChat(a.text, a.mid, a.at); return; }
     if (a.type === "name") { const n = cleanName(a.value); if (n) answerInput("callMe", n); return; } // `/name Vinh`
     if (a.type === "clear") {
       // "clear this chat": the talk is forgotten by the box and by the pets, and the lines waiting to be said are dropped
@@ -3109,13 +3119,19 @@
 
   /** #19: a message from the person. With the duo it goes through the send queue (lib/send-queue.ts): handled now if nothing is being handled, else it shows as
    *  "waiting" and goes after the current one has settled and its answers have been presented, in the order sent. */
-  function sendChat(raw: string, mid?: string) {
+  function sendChat(raw: string, mid?: string, at?: number) {
     const text = raw.trim();
     if (!text) return;
     if (!duoOn) { void sendChatNow(text); return; }
-    if (mid && !sendIds.accept(mid, visitG)) { void invoke("duo_log", { line: `duplicate send ignored (${mid})` }).catch(() => {}); return; } // one send, one dispatch (row 13)
-    const how = sendQueue.send(text, Date.now());
-    if (how === "queued") void invoke("duo_log", { line: `queued a message (${sendQueue.waiting().length} waiting)` }).catch(() => {});
+    // one send, one dispatch (row 13): a repeat of a sent mid is dropped, also after its visit ended; a send made before the end is given back, not sent (R1)
+    routeBoxSend(sendGate, { text, mid, at }, {
+      queue: (t) => {
+        const how = sendQueue.send(t, Date.now());
+        if (how === "queued") void invoke("duo_log", { line: `queued a message (${sendQueue.waiting().length} waiting)` }).catch(() => {});
+      },
+      giveBack: (t) => void emitTo("chatbox", "chatbox-restore", t).catch(() => {}),
+      log: (line) => void invoke("duo_log", { line }).catch(() => {}),
+    });
   }
   async function sendChatNow(raw: string) {
     const text = raw.trim();
@@ -3155,12 +3171,13 @@
       resetMenuTimer();
       return;
     }
-    data = recordAi(data, "chat", Date.now());
     if (duoOn) {
-      void save(); // saved at once: a restart on the same day does not give the request back (ADR-0165)
+      // the charge is written and acknowledged before the request (R2); Quiet or away during the write: no request, the charge given back, a gesture
+      const go = await chargeSolo(duoQuota, () => !quiet && !away);
+      if (go === "not-saved") { chargeNotSaved("peak", text); return; }
+      if (go === "not-issued") { await talk.person(text, ["peak"], ["peak"]); return; }
       void invoke("duo_log", { line: `call peak solo` }).catch(() => {});
-      void invoke("duo_log", { line: `usage chat=${data.ai.chat} day=${data.ai.day} cool=${data.ai.coolUntil > Date.now() ? "on" : "off"}` }).catch(() => {});
-    }
+    } else data = recordAi(data, "chat", Date.now());
     if (duoOn && duoFake) {
       // developer channel: Peak's own chat answers with a canned line too, after the same gate and charge, so that a test never calls the model with the person's key
       const line = "Fine, as usual.";
@@ -3736,7 +3753,7 @@
       cleanups.push(await win.listen<string>("duo-type", (e) => void sendChat(e.payload))); // developer channel: a message typed without the box
       cleanups.push(await win.listen<PetId>("duo-tucked", (e) => { talk.tucked(e.payload); dropPetLines(e.payload); void refreshPawsOut(); }));
       cleanups.push(await win.listen("duo-visit-ended", () => {
-        visitG++; // the visit's generation ends: a late repeat of one of its sends is a new generation's business, and nothing of the old one is dispatched again
+        sendGate.end(Date.now()); // the visit's generation ends: a late delivery of one of its sends is neither sent again nor sent into the next visit (R1)
         // #19: messages still waiting are not sent after the visit is dismissed; their text goes back to the field so that nothing is lost
         const back = sendQueue.takeAll();
         if (back.length > 0) { void emitTo("chatbox", "chatbox-restore", back.join(String.fromCharCode(10))).catch(() => {}); void invoke("duo_log", { line: `visit ended: ${back.length} waiting message(s) given back to the field` }).catch(() => {}); }

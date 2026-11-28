@@ -20,7 +20,7 @@ function Stop-Pet { if ($script:p) { Stop-Process -Id $script:p.Id -Force -Error
 function Row($name, $msg, $wait = 6) {
   $m = (LogLines).Count; Cmd "type:$msg"; Start-Sleep $wait; $l = Since $m
   Note ("{0,-44} requests={1} usage-lines=[{2}] pet.json {3}" -f $name, (Calls $l), (($l | Where-Object { $_ -match '^usage ' }) -join '; '), (Usage))
-  $l | Where-Object { $_ -match '^(call |line |brain_failed|quiet:|duplicate|usage )' } | ForEach-Object { Note "     $_" }
+  $l | Where-Object { $_ -match '^(call |line |brain_failed|quiet:|duplicate|stale|usage |refund|charge not saved)' } | ForEach-Object { Note "     $_" }
 }
 if (Get-Process streakboom -ErrorAction SilentlyContinue | Where-Object { $_.Path -eq $Exe }) { throw "a streakboom.exe is already running: not touching it" }
 Copy-Item $pj "$pj.bak-quota" -Force
@@ -55,8 +55,16 @@ try {
   Row "L9 rate limit on the first pet of two" "[fake:rate_limit] both?" 8
   Row "L10 next message in the cooldown" "and now" 6
   Stop-Pet
+  Note "== the write of the charge fails (pet.json of the test data made read-only, so the native rename is refused), seeded chat=30"
+  Seed 30; Start-Pet; Cmd "call"; Start-Sleep 4
+  Set-ItemProperty -Path $pj -Name IsReadOnly -Value $true
+  Row "L11 message to both while the write fails" "both, while the disk refuses" 8
+  Set-ItemProperty -Path $pj -Name IsReadOnly -Value $false
+  Row "L12 the same after the write works again" "both, now it writes" 8
+  Stop-Pet
 } finally {
   Stop-Pet
+  if (Test-Path $pj) { Set-ItemProperty -Path $pj -Name IsReadOnly -Value $false }
   Copy-Item "$pj.bak-quota" $pj -Force; Remove-Item "$pj.bak-quota" -ErrorAction SilentlyContinue
   Note "test data restored: $(Usage)"
   $log | Set-Content -Encoding utf8 "$Out\duo-quota-log.txt"
