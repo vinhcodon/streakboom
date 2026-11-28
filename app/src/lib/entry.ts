@@ -123,6 +123,8 @@ export interface EntryHost {
   undoMembership(t: EntryToken): Promise<boolean>;
   /** The box shown for this entry (identity and composition checked at the effect, and by the native side when it shows): true when it is on the screen. */
   showBox(t: EntryToken): Promise<boolean>;
+  /** Row 6: at the commit, the box shown and given the keyboard for this entry (identity and composition checked at the effect, and by the native side). */
+  focusBox(t: EntryToken): Promise<void>;
   sleep(ms: number): Promise<void>;
   quiet(): boolean;
   log(line: string): void;
@@ -136,6 +138,8 @@ export interface EntryNative {
   showing(): Promise<boolean>;
   /** Show the box for entry `g`, without the keyboard; the native side shows it only while `g` is still the entry in progress. */
   show(g: number): void;
+  /** Show the box for entry `g` and give it the keyboard (row 6); the native side does it only while `g` is still the entry in progress. */
+  focus(g: number): Promise<unknown>;
   membership: Membership;
   /** The developer channel refuses the join without asking the native side. */
   refuse?: boolean;
@@ -170,6 +174,7 @@ export function nativeEntryHost(n: EntryNative): EntryHost {
       }
       return false;
     },
+    focusBox: async (t) => { if (await eligibleAtEffect(t, host)) await n.focus(t.g).catch(() => {}); }, // awaited: the native side checks the generation before the page says the entry is over
     sleep: (ms) => n.sleep(ms),
     quiet: () => n.quiet(),
     log: (l) => n.log(l),
@@ -237,6 +242,11 @@ export async function enterVisitResult(t: EntryToken, h: EntryHost, deadlineMs =
   // both acknowledgements are in: a composition that started meanwhile defers the commit (no deadline); an entry ended meanwhile never resumes
   if (!(await eligibleAtEffect(t, h))) return rollback("closed", "closed while the commit waited for a composition");
   const quiet = h.quiet();
+  // row 6 (ADR-0167; Vinh 2026-11-28): show AND focus the box at the commit, also when it was hidden; never in Quiet (row 10), never while composing
+  if (!quiet) {
+    await h.focusBox(t);
+    if (!t.live()) return rollback("closed", "closed while the box was being focused");
+  }
   h.log(`entry g=${t.g}: committed${quiet ? " in Quiet (no greeting)" : ""}`);
   return res(quiet ? "committed-quiet" : "committed");
 }

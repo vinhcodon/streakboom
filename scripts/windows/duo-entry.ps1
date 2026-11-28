@@ -30,6 +30,14 @@ function Focus {
 }
 function Keys($seq) { Focus; [System.Windows.Forms.SendKeys]::SendWait($seq); Start-Sleep -Milliseconds 450 }
 function Draft { Focus | Out-Null; $old = $null; try { $old = [System.Windows.Forms.Clipboard]::GetText() } catch {}; try { [System.Windows.Forms.Clipboard]::Clear() } catch {}; [System.Windows.Forms.SendKeys]::SendWait("^a^c"); Start-Sleep -Milliseconds 400; $t = ""; try { $t = [System.Windows.Forms.Clipboard]::GetText() } catch {}; try { if ($old) { [System.Windows.Forms.Clipboard]::SetText($old) } } catch {}; [System.Windows.Forms.SendKeys]::SendWait("{END}"); ($t -replace "`r", "") -replace "`n", " | " }
+Add-Type @"
+using System; using System.Text; using System.Runtime.InteropServices;
+public class WT { [DllImport("user32.dll")] public static extern IntPtr GetForegroundWindow();
+  [DllImport("user32.dll", CharSet=CharSet.Unicode)] public static extern int GetWindowText(IntPtr h, StringBuilder s, int n); }
+"@
+function Front { $h = [WT]::GetForegroundWindow(); $sb = New-Object System.Text.StringBuilder 256; [void][WT]::GetWindowText($h, $sb, 256); $q = [uint32]0; [void][M]::GetWindowThreadProcessId($h, [ref]$q); $own = (Get-Process -Id $q -ErrorAction SilentlyContinue).Path -eq $Exe; "{0} own={1}" -f $sb.ToString(), $own }
+# the field read back only if the program already has the keyboard: no click, so a letter typed before is proof the box had the input focus
+function DraftNoClick { if (-not (ProgramHasFocus)) { return "<no keyboard>" }; $old = $null; try { $old = [System.Windows.Forms.Clipboard]::GetText() } catch {}; try { [System.Windows.Forms.Clipboard]::Clear() } catch {}; [System.Windows.Forms.SendKeys]::SendWait("^a^c"); Start-Sleep -Milliseconds 400; $t = ""; try { $t = [System.Windows.Forms.Clipboard]::GetText() } catch {}; try { if ($old) { [System.Windows.Forms.Clipboard]::SetText($old) } } catch {}; [System.Windows.Forms.SendKeys]::SendWait("{END}"); ($t -replace "`r", "") -replace "`n", " | " }
 function ClearDraft { Keys "^a"; Keys "{BACKSPACE}" }
 function LogLines { @(Get-Content "$data\duo-log.txt" -ErrorAction SilentlyContinue | ForEach-Object { $_ -replace '^\d+ ', '' }) }
 function Since($m) { @(LogLines | Select-Object -Skip $m) }
@@ -70,6 +78,23 @@ try {
   Note ("N5 requests={0} member={1} field='{2}'" -f (Calls $l), (Member), (Draft)); Show $l
   $l | Where-Object { $_ -match 'membership not saved' } | ForEach-Object { Note "     $_" }
   ClearDraft
+  Note "== N6 row 6: the box hidden, an invitation commits: the box is shown and takes the keyboard (no click by the script)"
+  Cmd "cmd:paws:in"; Start-Sleep 2; Cmd "boxclose"; Start-Sleep 2
+  $m = (LogLines).Count; Cmd "type:@Paws focus me"; Start-Sleep 7; $l = Since $m
+  $front = Front
+  $had = ProgramHasFocus
+  $typed = "<not typed: the program does not have the keyboard>"
+  if ($had) { [System.Windows.Forms.SendKeys]::SendWait("z"); Start-Sleep -Milliseconds 500; $typed = DraftNoClick }
+  Note ("N6 requests={0} member={1} foreground='{2}' program has the keyboard={3} field after typing z without a click='{4}'" -f (Calls $l), (Member), $front, $had, $typed); Show $l
+  $l | Where-Object { $_ -match 'focused at the commit|not focused' } | ForEach-Object { Note "     $_" }
+  if ($had) { ClearDraft }
+  Note "== N7 row 10: the same in Quiet: the visit commits silently and the box does not take the keyboard"
+  Cmd "cmd:paws:in"; Start-Sleep 2; Cmd "boxclose"; Start-Sleep 2
+  Cmd "quiet:on"; Start-Sleep 1
+  $m = (LogLines).Count; Cmd "type:@Paws quiet focus"; Start-Sleep 7; $l = Since $m
+  Note ("N7 requests={0} member={1} foreground='{2}' program has the keyboard={3}" -f (Calls $l), (Member), (Front), (ProgramHasFocus)); Show $l
+  $l | Where-Object { $_ -match 'focused at the commit|not focused' } | ForEach-Object { Note "     $_" }
+  Cmd "quiet:off"; Start-Sleep 1
 } finally {
   if (Test-Path "$data\duo.json") { Set-ItemProperty -Path "$data\duo.json" -Name IsReadOnly -Value $false }
   $log | Set-Content -Encoding utf8 "$Out\duo-entry-log.txt"

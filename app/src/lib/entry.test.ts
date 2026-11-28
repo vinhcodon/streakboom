@@ -38,12 +38,15 @@ function program() {
   const heldQueries: ((v: boolean) => void)[] = [];
   const membership = new Membership(native, sleep, (l) => log.push(l));
   const showQueue: number[] = []; // native show threads not run yet
+  const focusQueue: number[] = []; // native focus threads not run yet
+  let focused = false;
   let quietFlag = false;
   const base = {
     composing: () => composing,
     compositionEnded: () => new Promise<void>((r) => { if (!composing) r(); else endComposition.push(r); }),
     showing: () => { calls.push("query"); if (queryMode === "hold") return new Promise<boolean>((r) => heldQueries.push(r)); return Promise.resolve(boxVisible); },
     show: (g: number) => { calls.push(`show g=${g}`); showQueue.push(g); },
+    focus: async (g: number) => { calls.push(`focus g=${g}`); if (g === entryGen) { boxVisible = true; focused = true; } else log.push(`native: focus of g=${g} refused`); }, // the command checks the generation as it arrives
     membership,
     sleep,
     quiet: () => quietFlag,
@@ -56,6 +59,9 @@ function program() {
     setGen: (g: number) => { entryGen = g; },
     /** the native show threads run now: each shows the box only if its generation is still the entry in progress (duo_entry_show) */
     runShows: () => { while (showQueue.length) { const g = showQueue.shift()!; if (g === entryGen) boxVisible = true; else log.push(`native: show of g=${g} refused`); } },
+    /** the native focus threads run now: each shows and focuses the box only if its generation is still the entry in progress (duo_entry_focus) */
+    runFocus: () => { while (focusQueue.length) { const g = focusQueue.shift()!; if (g === entryGen) { boxVisible = true; focused = true; } else log.push(`native: focus of g=${g} refused`); } },
+    get focused() { return focused; },
     set memberMode(m: "auto" | "hold" | "error") { memberMode = m; },
     releaseMember: () => {
       const h = heldMember.shift();
@@ -441,4 +447,66 @@ test("the page and Rust: both invitation paths re-check the committed visit afte
   assert.ok(rust.includes("if let Err(e) = persist(s) { s.pets.paws = before; return Err(e.to_string()); }"));
   assert.ok(box.includes("restores.apply(draft, e.payload.id, e.payload.text)") && box.includes('emitTo("main", "chatbox-composing", true)'));
   assert.ok(/listen\("chatbox-ready"[\s\S]{0,400}if \(boxComposing\) \{ boxComposing = false;/.test(src));
+});
+
+// ---------------------------------------------------------------- row 6 (ADR-0167; Vinh 2026-11-28): show AND focus at the commit
+
+test("row 6: at the commit the box is shown and focused for this entry, also when it was hidden", async () => {
+  const pr = program();
+  const pg = pageSide(pr);
+  const run = entryTurn(new Entries(), "@Paws hello", pr.host(), pg.page);
+  await ticks();
+  pr.runShows(); await pr.advance(100);
+  const r = await run;
+  assert.equal(r.outcome, "committed");
+  assert.ok(pr.calls.includes("focus g=1"), "the focus is asked with the entry's generation, after both acknowledgements");
+  assert.ok(pr.calls.indexOf("focus g=1") > pr.calls.indexOf("join"), "not before the commit's acknowledgements");
+  // the focus thread runs while the entry is still the one in progress (the page tells the native side 0 only after the outcome)
+});
+
+test("row 6: no focus in Quiet (row 10); the focus of the current entry is done; a focus for an ended entry is refused by the native command", async () => {
+  const q = program();
+  q.boxVisible = true;
+  q.setQuiet(true);
+  const rq = await entryTurn(new Entries(), "@Paws hello", q.host(), pageSide(q).page);
+  assert.equal(rq.outcome, "committed-quiet");
+  assert.ok(!q.calls.some((c) => c.startsWith("focus")), "Quiet: the box may show, it does not take the keyboard");
+
+  const ok = program();
+  const runOk = entryTurn(new Entries(), "@Paws hello", ok.host(), pageSide(ok).page);
+  await ticks();
+  ok.runShows(); await ok.advance(100); // the hidden box is shown by the native thread for this entry
+  const rok = await runOk;
+  assert.equal(rok.outcome, "committed");
+  assert.equal(ok.focused, true, "shown and focused at the commit, although it was hidden");
+
+  const gone = program();
+  gone.setGen(0);
+  await gone.host().focusBox({ g: 9, live: () => true, ended: new Promise(() => {}), abandon: () => {} }); // the native side does not hold g=9
+  assert.equal(gone.focused, false);
+  assert.ok(gone.log.includes("native: focus of g=9 refused"));
+});
+
+test("row 6: no focus while a composition is active; it is asked when the composition ends", async () => {
+  const pr = program();
+  pr.boxVisible = true;
+  pr.memberMode = "hold";
+  const pg = pageSide(pr);
+  const run = entryTurn(new Entries(), "@Paws hello", pr.host(), pg.page);
+  await ticks();
+  pr.compose(true);
+  pr.releaseMember();
+  await ticks();
+  assert.ok(!pr.calls.some((c) => c.startsWith("focus")), "no focus while composing");
+  pr.compose(false);
+  const r = await run;
+  assert.equal(r.outcome, "committed");
+  assert.ok(pr.calls.includes("focus g=1"));
+});
+
+test("row 6, the page and Rust: the focus goes with the entry's generation and the native thread checks it", () => {
+  const src = readFileSync(new URL("../routes/+page.svelte", import.meta.url), "utf8");
+  const rust = readFileSync(new URL("../../src-tauri/src/duo.rs", import.meta.url), "utf8");
+  assert.ok(src.includes('focus: (g) => invoke<boolean>("duo_entry_focus", { g })'), "awaited by the host");
+  assert.ok(rust.includes('if ENTRY_G.load(Ordering::SeqCst) != g { log(&app, &format!("entry g={g}: not focused, the entry ended")); return false; }'), "checked in the command, before the page's end arrives");
 });

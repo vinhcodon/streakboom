@@ -2055,6 +2055,7 @@ pub fn run() {
             duo::duo_open_box,
             duo::duo_entry_gen,
             duo::duo_entry_show,
+            duo::duo_entry_focus,
             duo::duo_membership,
             duo::duo_focus_box,
             duo_second_start_resume,

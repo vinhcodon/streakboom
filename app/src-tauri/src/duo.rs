@@ -1235,6 +1235,22 @@ pub fn duo_entry_show(app: AppHandle, g: u64) {
     });
 }
 
+/// Row 6 (ADR-0167; Vinh 2026-11-28): at the commit of entry `g` the box is shown and given the keyboard, also when it was hidden; only while `g` is still
+/// the entry in progress when the thread does it (an ended or cancelled entry never takes the focus). The page never asks this in Quiet or while composing.
+/// The generation is checked here, in the command, in the order the page's commands arrive (so before the page says the entry is over); the window is then
+/// shown and focused on a thread of its own. True when it was asked for the current entry.
+#[tauri::command]
+pub fn duo_entry_focus(app: AppHandle, g: u64) -> bool {
+    if !enabled() { return false; }
+    if ENTRY_G.load(Ordering::SeqCst) != g { log(&app, &format!("entry g={g}: not focused, the entry ended")); return false; }
+    std::thread::spawn(move || {
+        dismiss_tray_flyout();
+        open_box_now(&app);
+        log(&app, &format!("entry g={g}: the box shown and focused at the commit"));
+    });
+    true
+}
+
 /// The page focuses the box after an entry (row 28a): shown if it was not and given the keyboard, with no `@Name` written in the field.
 #[tauri::command]
 pub fn duo_focus_box(app: AppHandle) {

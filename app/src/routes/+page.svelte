@@ -2456,6 +2456,7 @@
       compositionEnded: () => new Promise<void>((r) => { if (!boxComposing) r(); else compositionWaiters.push(r); }),
       showing: () => invoke<boolean>("chatbox_showing"),
       show: (g) => void invoke("duo_entry_show", { g }).catch(() => {}),
+      focus: (g) => invoke<boolean>("duo_entry_focus", { g }),
       membership,
       refuse: duoFake && text.includes("[fake:join-fail]"),
       beforeJoin: async () => { if (duoFake && text.includes("[fake:join-slow]")) await pause(3000); },
