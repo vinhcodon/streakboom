@@ -61,7 +61,17 @@ try {
   EnsureBox | Out-Null
   Note ("N4 field after reopening='{0}'" -f (Draft))
   ClearDraft
+  Note "== N5 the native write of the membership fails (duo.json of the test data made read-only, so the rename is refused): no commit, no request, the text back"
+  $dj = "$data\duo.json"
+  if (-not (Test-Path $dj)) { Cmd "cmd:paws:in"; Start-Sleep 2 }
+  Set-ItemProperty -Path $dj -Name IsReadOnly -Value $true
+  $m = (LogLines).Count; Cmd "type:@Paws the disk refuses"; Start-Sleep 6; $l = Since $m
+  Set-ItemProperty -Path $dj -Name IsReadOnly -Value $false
+  Note ("N5 requests={0} member={1} field='{2}'" -f (Calls $l), (Member), (Draft)); Show $l
+  $l | Where-Object { $_ -match 'membership not saved' } | ForEach-Object { Note "     $_" }
+  ClearDraft
 } finally {
+  if (Test-Path "$data\duo.json") { Set-ItemProperty -Path "$data\duo.json" -Name IsReadOnly -Value $false }
   $log | Set-Content -Encoding utf8 "$Out\duo-entry-log.txt"
   Stop-Process -Id $p.Id -Force
 }
