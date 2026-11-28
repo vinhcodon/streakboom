@@ -1,6 +1,6 @@
 # ADR-0173: The chat bubble is shown and given the keyboard with the system calls, and a refused keyboard is reported as refused
 
-- **Status:** accepted on 2026-11-28 for the duo experiment. It authorises a scoped fix on its own branch; no merge, release, key use or art, and it does not start T2b. Completes E3 of ADR-0168; E4 is not touched.
+- **Status:** (added to by ADR-0174, 2026-11-29: the keyboard is not forced) accepted on 2026-11-28 for the duo experiment. It authorises a scoped fix on its own branch; no merge, release, key use or art, and it does not start T2b. Completes E3 of ADR-0168; E4 is not touched.
 - **Date:** 2026-11-28
 - **Decided by:** Vinh (author): one multiple-choice question, answered with the recommended option. Recorded by Claude (the app session).
 
