@@ -127,6 +127,35 @@ pub fn hide_window(win: &WebviewWindow) {
     let _ = win.hide();
 }
 
+/// Show an interactive window with the system call and ask for the keyboard (B1, ADR-0173). The answer is read back, never assumed from the
+/// call: `Ok` only when the window is shown and is the foreground window afterwards, `Err` with what failed otherwise.
+pub fn show_taking_keyboard(win: &WebviewWindow) -> Result<(), String> {
+    use windows_sys::Win32::UI::WindowsAndMessaging::{ShowWindow, SW_SHOW};
+    let Ok(hwnd) = win.hwnd() else { return Err("no window handle".into()) };
+    // SAFETY: a plain call with the window handle of our own window; no pointers are passed.
+    unsafe { ShowWindow(hwnd.0 as _, SW_SHOW) };
+    take_keyboard(win)
+}
+
+/// Ask Windows to give a shown window of ours the keyboard (the foreground), and read back whether it did. Windows may refuse when another
+/// program is in front and the person did not act on ours: that is an `Err`, not a success.
+pub fn take_keyboard(win: &WebviewWindow) -> Result<(), String> {
+    use windows_sys::Win32::UI::WindowsAndMessaging::{GetForegroundWindow, IsWindowVisible, SetForegroundWindow};
+    let Ok(hwnd) = win.hwnd() else { return Err("no window handle".into()) };
+    let h = hwnd.0 as _;
+    // SAFETY: plain calls with the window handle of our own window; no pointers are passed.
+    unsafe {
+        if IsWindowVisible(h) == 0 {
+            return Err("the window is not shown".into());
+        }
+        if GetForegroundWindow() == h {
+            return Ok(());
+        }
+        SetForegroundWindow(h);
+        if GetForegroundWindow() == h { Ok(()) } else { Err("refused: another window keeps the keyboard".into()) }
+    }
+}
+
 pub fn show_without_activating(win: &WebviewWindow) {
     use windows_sys::Win32::UI::WindowsAndMessaging::{ShowWindow, SW_SHOWNOACTIVATE};
     if let Ok(hwnd) = win.hwnd() {

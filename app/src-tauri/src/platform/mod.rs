@@ -11,6 +11,8 @@
 //! - `timer_period(begin)`: ask for a finer system timer while a flight runs, and give it back.
 //! - `pointer_pos() -> Option<(i32, i32)>`, `window_rect_of(hwnd) -> Option<(i32, i32, i32, i32)>`: the pointer's position, and the rectangle of one of the program's own visible windows; read by the fine sampler near Peak (ADR-0135, a test build only for now).
 //! - `precise_sleep(ms)`: sleep with a timer of the calling thread that keeps a short period (8 ms) without a finer system timer for the whole program.
+//! - `show_taking_keyboard(window) -> Result<(), String>`, `take_keyboard(window) -> Result<(), String>`: show an interactive window and ask for the
+//!   keyboard, or ask for it for a shown one; the answer is read back (`Ok` only when the window is shown and in front), never assumed (ADR-0173).
 //! - `show_without_activating(window)`: show a window without taking the keyboard focus.
 //! - `hide_window(window)`: hide it with the same kind of call (a window shown by the system call is hidden by the system call).
 //! - `ground_of_point(x, y) -> Ground`: the **kind** of thing at a physical point (the desktop, the taskbar, a window, the window in front, Peak itself), never what it is.

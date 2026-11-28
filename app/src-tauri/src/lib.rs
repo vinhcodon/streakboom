@@ -13,7 +13,7 @@ mod updater;
 
 use brain::{AiError, Kind, Turn};
 use layout::Area;
-use platform::{busy_now, hide_window, last_input_idle_ms, pointer_pos, primary_button_raw, precise_sleep, show_without_activating, timer_period, window_rect_of};
+use platform::{busy_now, hide_window, last_input_idle_ms, pointer_pos, primary_button_raw, precise_sleep, show_taking_keyboard, show_without_activating, take_keyboard, timer_period, window_rect_of};
 use serde::{Deserialize, Serialize};
 use std::{
     fs,
@@ -86,6 +86,8 @@ struct BubbleState {
     w: f64,
     h: f64,
     visible: bool,
+    /// The bubble last shown was interactive (it takes clicks and keys); speech is not. Memory only.
+    interactive: bool,
 }
 
 struct AppState {
@@ -667,6 +669,9 @@ fn create_bubble(app: &AppHandle) -> tauri::Result<()> {
         .focused(false) // a window made while the person is typing elsewhere must not take the keyboard when it is first shown (issue 5: seen after the bubble was destroyed and made again)
         .additional_browser_args(BROWSER_ARGS)
         .build()?;
+    if overlay_allowed() {
+        append_trace(app, "bubble-trace.log", "made");
+    }
     Ok(())
 }
 
@@ -714,20 +719,20 @@ pub(crate) fn place_bubble(app: &AppHandle) {
 /// `interactive` bubbles take clicks and keys; plain speech is click-through and never takes
 /// focus from the app the user is typing in.
 #[tauri::command]
-fn bubble_fit(app: AppHandle, state: State<AppState>, w: f64, h: f64, interactive: bool, focus: bool) {
+fn bubble_fit(app: AppHandle, state: State<AppState>, w: f64, h: f64, interactive: bool, focus: bool) -> String {
     let Some(bubble) = app.get_webview_window("bubble") else {
-        return;
+        return "no bubble".into();
     };
     // The bubble belongs to the pet: while the pet is hidden (tray Show / Hide) nothing is shown.
     let anchor = state.bubble_anchor.lock().unwrap().clone();
     if !app.get_webview_window(&anchor).or_else(|| app.get_webview_window("main")).is_some_and(|m| m.is_visible().unwrap_or(false)) {
         bubble_hide(app.clone(), state);
-        return;
+        return "the pet is hidden".into();
     }
-    let was_visible = {
+    let (was_visible, was_interactive) = {
         let mut b = state.bubble.lock().unwrap();
-        let v = b.visible;
-        *b = BubbleState { w: w.ceil(), h: h.ceil(), visible: true };
+        let v = (b.visible, b.interactive);
+        *b = BubbleState { w: w.ceil(), h: h.ceil(), visible: true, interactive };
         v
     };
     state.bubble_gen.fetch_add(1, Ordering::Relaxed); // in use: cancels a pending destroy
@@ -735,13 +740,38 @@ fn bubble_fit(app: AppHandle, state: State<AppState>, w: f64, h: f64, interactiv
     let _ = bubble.set_ignore_cursor_events(!interactive);
     let _ = bubble.set_size(LogicalSize::new(w.ceil(), h.ceil()));
     place_bubble(&app);
-    if !was_visible {
-        // Plain speech is shown without taking the keyboard. Found with the chat box (ADR-0142): a pet's line took the focus from the box the person
-        // was typing in (the program was already in front, so Windows let the bubble be activated). Only a bubble that is asked to take focus does.
-        if interactive { let _ = bubble.show(); } else { show_without_activating(&bubble); }
+    // Plain speech is shown without taking the keyboard. Found with the chat box (ADR-0142): a pet's line took the focus from the box the person
+    // was typing in (the program was already in front, so Windows let the bubble be activated). An interactive bubble is shown and given the
+    // keyboard with the system calls, the same kind of call as the hide (B1, ADR-0173): the window library keeps its own record of whether the
+    // window is shown, which the system hide does not update, and a show through the library after it did nothing while the focus went to the
+    // hidden window. Whether the keyboard was taken is read back and reported, never assumed.
+    let outcome = match layout::bubble_show(interactive, was_visible, was_interactive, focus) {
+        layout::BubbleShow::Speech => {
+            show_without_activating(&bubble);
+            "speech".to_string()
+        }
+        layout::BubbleShow::WithKeyboard => keyboard_outcome(show_taking_keyboard(&bubble)),
+        layout::BubbleShow::KeyboardOnly => keyboard_outcome(take_keyboard(&bubble)),
+        layout::BubbleShow::Nothing => {
+            // a speech line that replaced an interactive bubble: the library may have hidden the window when the flags changed; shown again
+            // without the keyboard
+            if !interactive && !bubble.is_visible().unwrap_or(true) {
+                show_without_activating(&bubble);
+            }
+            "unchanged".to_string()
+        }
+    };
+    if overlay_allowed() {
+        append_trace(&app, "bubble-trace.log", &format!("fit interactive={} was_visible={} focus={} result={}", interactive as u8, was_visible as u8, focus as u8, outcome));
     }
-    if focus && interactive {
-        let _ = bubble.set_focus();
+    outcome
+}
+
+/// The answer of the system to a keyboard request, as the bubble reports it: "keyboard taken" only when it was read back.
+fn keyboard_outcome(r: Result<(), String>) -> String {
+    match r {
+        Ok(()) => "keyboard taken".into(),
+        Err(e) => format!("keyboard not taken: {e}"),
     }
 }
 
@@ -750,6 +780,9 @@ fn bubble_hide(app: AppHandle, state: State<AppState>) {
     state.bubble.lock().unwrap().visible = false;
     if let Some(bubble) = app.get_webview_window("bubble") {
         hide_window(&bubble);
+        if overlay_allowed() {
+            append_trace(&app, "bubble-trace.log", "hide");
+        }
     }
     // Destroy the window if it stays unused, to give its memory back.
     let gen_now = state.bubble_gen.fetch_add(1, Ordering::Relaxed) + 1;
@@ -760,6 +793,9 @@ fn bubble_hide(app: AppHandle, state: State<AppState>) {
         if state.bubble_gen.load(Ordering::Relaxed) == gen_now && !state.bubble.lock().unwrap().visible {
             if let Some(w) = app2.get_webview_window("bubble") {
                 let _ = w.destroy();
+                if overlay_allowed() {
+                    append_trace(&app2, "bubble-trace.log", "destroyed after idle");
+                }
             }
         }
     });
@@ -2137,6 +2173,23 @@ mod away_tests {
 
 
     use super::*;
+
+    #[test]
+    fn the_bubble_is_shown_and_hidden_only_through_the_platform_calls() {
+        // B1 (ADR-0173): the window library keeps its own record of visibility; mixing its show with the system hide left an invisible bubble
+        // holding the keyboard. bubble_fit and bubble_hide reach the window only through platform::, and the keyboard is reported as read back.
+        let src = include_str!("lib.rs");
+        let fit = &src[src.find("fn bubble_fit(").unwrap()..src.find("fn keyboard_outcome(").unwrap()];
+        let hide = &src[src.find("fn bubble_hide(").unwrap()..src.find("// ------------------------------------------------------------ settings and menus").unwrap()];
+        for body in [fit, hide] {
+            for bad in [concat!("bubble", ".show()"), concat!("bubble", ".hide()"), concat!("bubble", ".set_focus()")] {
+                assert!(!body.contains(bad), "{bad} must not be called on the bubble");
+            }
+        }
+        assert!(fit.contains("show_taking_keyboard(&bubble)") && fit.contains("take_keyboard(&bubble)") && fit.contains("show_without_activating(&bubble)"));
+        assert!(hide.contains("hide_window(&bubble)"));
+        assert!(src.contains(concat!("Ok(()) => \"keyboard ", "taken\"")), "taken is said only for Ok");
+    }
 
     #[test]
     fn a_trace_line_keeps_only_a_step_name_and_numbers() {

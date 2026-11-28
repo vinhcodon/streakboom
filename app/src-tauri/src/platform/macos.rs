@@ -32,6 +32,17 @@ pub fn window_rect_of(_hwnd: isize) -> Option<(i32, i32, i32, i32)> {
     None
 }
 
+/// macOS keeps the library's calls (ADR-0173); whether the keyboard was taken is not read back here, so it is never reported as taken.
+pub fn show_taking_keyboard(win: &WebviewWindow) -> Result<(), String> {
+    let _ = win.show();
+    take_keyboard(win)
+}
+
+pub fn take_keyboard(win: &WebviewWindow) -> Result<(), String> {
+    let _ = win.set_focus();
+    Err("not checked on this platform".into())
+}
+
 pub fn show_without_activating(win: &WebviewWindow) {
     let _ = win.show();
 }

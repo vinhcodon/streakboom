@@ -195,6 +195,28 @@ pub struct Placement {
 
 /// Choose where a `w` x `h` bubble goes around the pet square `(px, py, size)`: above if it
 /// fits, then below, right, left; clamped along the other axis so it never leaves the work area.
+/// What the bubble's window does when the page sizes it (B1, ADR-0173). Plain speech is shown without the keyboard; an interactive bubble is
+/// shown with the keyboard when it appears, and also when it replaces a speech line that is still showing (the window was shown without the
+/// keyboard); a shown interactive bubble asks again only when the page asks for the focus.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum BubbleShow {
+    Nothing,
+    Speech,
+    WithKeyboard,
+    KeyboardOnly,
+}
+
+pub fn bubble_show(interactive: bool, was_visible: bool, was_interactive: bool, focus: bool) -> BubbleShow {
+    match (interactive, was_visible) {
+        (false, false) => BubbleShow::Speech,
+        (false, true) => BubbleShow::Nothing,
+        (true, false) => BubbleShow::WithKeyboard,
+        (true, true) if !was_interactive => BubbleShow::WithKeyboard,
+        (true, true) if focus => BubbleShow::KeyboardOnly,
+        (true, true) => BubbleShow::Nothing,
+    }
+}
+
 pub fn place_bubble(a: Area, px: i32, py: i32, size: i32, w: i32, h: i32, gap: i32) -> Placement {
     let cx = px + size / 2;
     let cy = py + size / 2;
@@ -271,6 +293,23 @@ mod tests {
     fn the_pet_can_reach_the_very_top_of_the_screen() {
         let (_, y) = clamp_window(A, 500, -9999, 10, 10, 120);
         assert_eq!(y + 10, 0); // pet top == work area top
+    }
+
+    #[test]
+    fn the_bubble_takes_the_keyboard_only_when_it_is_interactive_and_new_or_replacing_speech() {
+        use BubbleShow::*;
+        // speech: shown without the keyboard, and never asks for it once shown
+        assert_eq!(bubble_show(false, false, false, false), Speech);
+        assert_eq!(bubble_show(false, true, true, false), Nothing);
+        assert_eq!(bubble_show(false, false, false, true), Speech, "a focus request is never honoured for speech");
+        // an interactive bubble appearing (after Esc, after a destroy, for the first time) takes the keyboard, with or without a focus request
+        assert_eq!(bubble_show(true, false, false, false), WithKeyboard);
+        assert_eq!(bubble_show(true, false, true, true), WithKeyboard);
+        // a chat opened over a speech line still showing: the window was shown without the keyboard, so it is shown with it
+        assert_eq!(bubble_show(true, true, false, false), WithKeyboard);
+        // the same interactive bubble resized: nothing, unless the page asks for the focus
+        assert_eq!(bubble_show(true, true, true, false), Nothing);
+        assert_eq!(bubble_show(true, true, true, true), KeyboardOnly);
     }
 
     #[test]
