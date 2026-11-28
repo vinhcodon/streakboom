@@ -18,15 +18,14 @@ export interface BoxSend { text: string; mid?: string; at?: number }
 export type Admission = "new" | "replay" | "stale";
 
 /** The sends already dispatched, and the moment the last visit ended. A consumed `mid` stays consumed in every later generation (ADR-0167 row 13: a repeated
- *  delivery is never a new send); a send that left the box before the end of the visit it was made in belongs to that visit and is not dispatched after it. */
+ *  delivery is never a new send); a send that left the box before the end of the visit it was made in belongs to that visit and is not dispatched after it.
+ *  The ids are kept for the life of the process and never evicted (issue 22, second return: a bound turned an old send into a new one). A box event cannot
+ *  outlive the process that made the box, so nothing older can arrive after a restart; the cost is one short string per deliberate send. */
 export class SendGate {
   private consumed = new Set<string>();
-  private order: string[] = [];
   private endedAt = -Infinity;
   /** The visit generation: it moves when a visit ends. T2a owns entry and commit; this slice only needs the boundary. */
   g = 0;
-  private keep: number;
-  constructor(keep = 512) { this.keep = keep; }
 
   /** The visit ended at `now`: the generation moves, and every send made before this moment is stale from now on. */
   end(now: number) { this.g++; this.endedAt = now; }
@@ -42,11 +41,10 @@ export class SendGate {
     return "new";
   }
 
-  private remember(mid: string) {
-    this.consumed.add(mid);
-    this.order.push(mid);
-    while (this.order.length > this.keep) this.consumed.delete(this.order.shift()!); // bounded: far older than any delivery can be late
-  }
+  private remember(mid: string) { this.consumed.add(mid); }
+
+  /** How many ids are held (for the tests and the log). */
+  get held(): number { return this.consumed.size; }
 }
 
 /** The page's boundary for a send from the box: admitted sends go to the queue, a replay is dropped, a stale send's text goes back to the field. */
@@ -125,6 +123,27 @@ export function quota(h: QuotaHost) {
     },
     today: () => dayKey(h.now()),
   };
+}
+
+/** The identity of one piece of solo work (T2d, second return): it is current from `begin` until anything moves it on (Quiet on, a cancel, a clear, the
+ *  end of a visit, Peak tucked in, a newer turn). Work that is no longer current never issues a request and shows nothing, whatever happens later
+ *  (Quiet off again, a refund acknowledged): turning something back on does not bring old work back. */
+export class SoloWork {
+  private n = 0;
+  begin(): { live(): boolean } { const my = ++this.n; return { live: () => my === this.n }; }
+  cancel() { this.n++; }
+}
+
+/** The page's solo continuation with the experiment, whole: the charge is written and acknowledged; true means "issue the request now"; every other outcome
+ *  is terminal and handled here, with no path back to anything that can call the model:
+ *  - the write failed (ADR-0170): `notSaved` (a log line and a gesture), only if the work is still current
+ *  - Quiet or away, or the work moved on, during the write: the charge is given back; a gesture only if the work is still current (Quiet or away alone) */
+export async function soloTurn(q: ReturnType<typeof quota>, work: { live(): boolean }, quietNow: () => boolean, k: { gesture(): void; notSaved(): void }): Promise<boolean> {
+  const r = await chargeSolo(q, () => work.live() && !quietNow());
+  if (r === "issue") return true; // chargeSolo checked the work and Quiet in the same step as it returned
+  if (r === "not-saved") { if (work.live()) k.notSaved(); return false; }
+  if (work.live()) k.gesture(); // Quiet or away alone: the person sees Peak's gesture; moved-on work shows nothing
+  return false;
 }
 
 /** Peak's solo chat with the experiment (row 1, cap 120): the charge is written and acknowledged before the request; "issue" lets the page send it,

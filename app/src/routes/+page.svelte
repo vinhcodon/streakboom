@@ -18,7 +18,7 @@
   import { parseCallMe } from "$lib/callme";
   import { Presenter } from "$lib/presentation";
   import { SendQueue } from "$lib/send-queue";
-  import { PetWriter, SendGate, chargeSolo, chargedRequest, quota, routeBoxSend } from "$lib/dispatch";
+  import { PetWriter, SendGate, SoloWork, chargedRequest, quota, routeBoxSend, soloTurn } from "$lib/dispatch";
   import { Conversation, addTurn, newRoom, presentAfterPlacing, shownSays, presentable, situation, toHistory, type Line } from "$lib/conversation";
   import type { BoxAction, BoxView } from "$lib/chatbox";
   import type { PetId } from "$lib/duo";
@@ -2370,7 +2370,7 @@
     if (!c) return false;
     const ok = await invoke<boolean>("duo_command", { target: c.target, act: c.act }).catch(() => false);
     lt(`command_duo target=${c.target} act=${c.act} ok=${ok}`);
-    if (ok && c.act === "in") { talk.tucked(c.target); dropPetLines(c.target); }
+    if (ok && c.act === "in") { talk.tucked(c.target); dropPetLines(c.target); if (c.target === "peak") soloWork.cancel(); }
     void refreshPawsOut();
     if (ok && c.target === "paws") { closePanel(); enter("nod"); }
     return true; // recognised: no model call and no chat turn, even when it changed nothing
@@ -2420,6 +2420,7 @@
     void invoke("duo_log", { line: `charge not saved: no request for ${pet} (${text.length} chars), a gesture` }).catch(() => {});
     talk.gestureFor(pet);
   }
+  const soloWork = new SoloWork(); // the identity of Peak's solo work with the experiment: moved by Quiet, a cancel, a clear, the end of a visit, a tuck, a newer turn
   const sendGate = new SendGate(); // one dispatch per send, also after its visit ended; a send made before the end is not sent after it (R1)
   const talk = new Conversation(
     {
@@ -2496,7 +2497,7 @@
       void (async () => {
         const ok = await invoke<boolean>("duo_command", { target: a.target, act: a.act }).catch(() => false);
         lt(`command_duo target=${a.target} act=${a.act} ok=${ok} from=box`);
-        if (ok && a.act === "in") { talk.tucked(a.target); dropPetLines(a.target); }
+        if (ok && a.act === "in") { talk.tucked(a.target); dropPetLines(a.target); if (a.target === "peak") soloWork.cancel(); }
         await refreshPawsOut();
         if (ok && a.target === "paws") enter("nod");
       })();
@@ -2597,6 +2598,7 @@
   }
   /** A touch, or the pet going in: the lines still waiting are thrown away and a line being written is dropped. */
   function cancelTalk() {
+    soloWork.cancel(); // solo work waiting for its charge or refund is over too: nothing of it is requested or shown later (T2d, second return)
     supersede("cancelled");
     talk.cancel();
     if (pose === "think" && chatPhase !== "thinking") enter("idle"); // a turn cancelled (Quiet, a touch, the chat dismissed): Peak does not keep thinking about it (#18)
@@ -3158,7 +3160,7 @@
     if (duoOn && (quiet || away)) {
       // solo Quiet (T2d, row 14a applied to solo): with the experiment the box can still send in Quiet; no request, no charge, Peak makes a gesture
       void invoke("duo_log", { line: "quiet: a solo message makes no request" }).catch(() => {});
-      await talk.person(text, ["peak"], ["peak"]);
+      talk.gestureFor("peak"); // a local gesture: no path that can call the model (second return)
       return;
     }
     const gate = aiGate(data, "chat", Date.now(), duoOn ? 2 : 1); // the duo prototype counts two calls for a message to both, so its limit is twice as high (ADR-0152)
@@ -3172,10 +3174,10 @@
       return;
     }
     if (duoOn) {
-      // the charge is written and acknowledged before the request (R2); Quiet or away during the write: no request, the charge given back, a gesture
-      const go = await chargeSolo(duoQuota, () => !quiet && !away);
-      if (go === "not-saved") { chargeNotSaved("peak", text); return; }
-      if (go === "not-issued") { await talk.person(text, ["peak"], ["peak"]); return; }
+      // the charge is written and acknowledged before the request (R2); every outcome but "issue" is terminal inside soloTurn: a failed write is ADR-0170's
+      // gesture, Quiet or away a gesture with the charge given back, work moved on (cancel, clear, end, tuck, newer turn) nothing; none of them reaches a model call
+      const work = soloWork.begin();
+      if (!(await soloTurn(duoQuota, work, () => quiet || away, { gesture: () => talk.gestureFor("peak"), notSaved: () => chargeNotSaved("peak", text) }))) return;
       void invoke("duo_log", { line: `call peak solo` }).catch(() => {});
     } else data = recordAi(data, "chat", Date.now());
     if (duoOn && duoFake) {
@@ -3751,7 +3753,7 @@
       cleanups.push(await win.listen("chatbox-ready", () => pushBox(true)));
       cleanups.push(await win.listen<BoxAction>("chatbox-action", (e) => onBoxAction(e.payload)));
       cleanups.push(await win.listen<string>("duo-type", (e) => void sendChat(e.payload))); // developer channel: a message typed without the box
-      cleanups.push(await win.listen<PetId>("duo-tucked", (e) => { talk.tucked(e.payload); dropPetLines(e.payload); void refreshPawsOut(); }));
+      cleanups.push(await win.listen<PetId>("duo-tucked", (e) => { talk.tucked(e.payload); dropPetLines(e.payload); if (e.payload === "peak") soloWork.cancel(); void refreshPawsOut(); }));
       cleanups.push(await win.listen("duo-visit-ended", () => {
         sendGate.end(Date.now()); // the visit's generation ends: a late delivery of one of its sends is neither sent again nor sent into the next visit (R1)
         // #19: messages still waiting are not sent after the visit is dismissed; their text goes back to the field so that nothing is lost

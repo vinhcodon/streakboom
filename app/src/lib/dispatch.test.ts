@@ -1,7 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
-import { ChargeNotSaved, DUO_CAP_SCALE, NotIssued, PetWriter, SendGate, chargeSolo, chargedRequest, quota, routeBoxSend } from "./dispatch.ts";
+import { ChargeNotSaved, DUO_CAP_SCALE, NotIssued, PetWriter, SendGate, SoloWork, chargeSolo, chargedRequest, quota, routeBoxSend, soloTurn } from "./dispatch.ts";
 import { Conversation, type Deps, type Line } from "./conversation.ts";
 import { SendQueue } from "./send-queue.ts";
 import { AI_CHAT_DAILY_CAP, AI_COOLDOWN_MS, dayKey, defaultData, parse, type PetData } from "./state.ts";
@@ -215,18 +215,15 @@ test("R2: a failed write issues no request; the in-memory count goes back and no
   await assert.rejects(p.q.charge(), ChargeNotSaved);
 });
 
-test("ADR-0170, solo: a charge that cannot be saved sends nothing, Peak makes a gesture and no text is spoken", async () => {
+test("ADR-0170, solo: a charge that cannot be saved sends nothing, Peak makes a gesture and no text is spoken (through soloTurn, the page's continuation)", async () => {
   const p = page({ chat: 10 });
   p.disk.mode = "fail";
-  const go = await chargeSolo(p.q, () => true);
-  assert.equal(go, "not-saved");
-  if (go === "not-saved") p.talk.gestureFor("peak"); // what the page's chargeNotSaved does
+  const work = new SoloWork().begin();
+  const issue = await soloTurn(p.q, work, () => false, { gesture: () => p.talk.gestureFor("peak"), notSaved: () => p.talk.gestureFor("peak") });
+  assert.equal(issue, false);
   assert.deepEqual(p.requests, []);
   assert.deepEqual(p.lines.map((l) => `${l.pet}:${l.act}:${l.text}`), ["peak:gesture:"]);
-  const src = readFileSync(new URL("../routes/+page.svelte", import.meta.url), "utf8");
-  const fn = src.slice(src.indexOf("function chargeNotSaved("), src.indexOf("function chargeNotSaved(") + 400);
-  assert.ok(fn.includes("talk.gestureFor(pet)") && fn.includes("charge not saved"), "the page logs it and makes the gesture");
-  assert.ok(src.includes('if (go === "not-saved") { chargeNotSaved("peak", text); return; }'), "solo returns without a request or a spoken line");
+  assert.equal(p.disk.chat(), 10);
 });
 
 test("R2: Quiet during the held write: no request, the charge given back, no line spoken", async () => {
@@ -375,7 +372,148 @@ test("the page uses these boundaries: box sends with mid and time, routeBoxSend,
     "the request (and its log line) is issued inside chargedRequest, after the charge, for canned and real replies alike");
   assert.ok(model.includes("live ?? (() => true)"), "the Conversation's live test is asked after the write");
   assert.ok(/allow: \(\) => duoQuota\.gate\(\) === "ok"/.test(model));
-  assert.ok(src.includes("const go = await chargeSolo(duoQuota, () => !quiet && !away);"), "solo with the experiment awaits the written charge");
+  assert.ok(src.includes('if (!(await soloTurn(duoQuota, work, () => quiet || away, { gesture: () => talk.gestureFor("peak"), notSaved: () => chargeNotSaved("peak", text) }))) return;'),
+    "solo with the experiment: soloTurn decides, and every outcome but issue returns");
+  assert.ok(src.includes("const work = soloWork.begin();"), "each solo turn has its own identity");
+  assert.ok(!/talk\.person\(text, \["peak"\], \["peak"\]\)/.test(src), "no solo outcome re-enters a turn that can call the model");
+  assert.ok(/function cancelTalk\(\) \{\s*soloWork\.cancel\(\);/.test(src), "Quiet, a touch, a clear and the end of a visit (all through cancelTalk) move the solo work on");
+  assert.equal((src.match(/if \((?:c|a|e\.payload|a\.target|c\.target)[^)]*=== "peak"\) soloWork\.cancel\(\)/g) ?? []).length, 3, "Peak tucked in moves it on, on all three paths");
+  assert.ok(/quiet: a solo message makes no request[\s\S]{0,120}talk\.gestureFor\("peak"\)/.test(src), "the solo Quiet gesture is local");
   assert.ok(/\} else data = recordAi\(data, "chat", Date\.now\(\)\);/.test(src), "without the experiment the solo charge is as before");
   assert.ok(!src.includes('duoFake ? "ok"'), "no gate is bypassed for canned replies");
+});
+
+// ---------------------------------------------------------------- second return (comment 7234808588)
+
+test("R1, second return: more than 512 sends in one visit do not make the first one new again (through routeBoxSend and the queue)", async () => {
+  const gate = new SendGate();
+  const queued: string[] = [];
+  const sq = new SendQueue(async (t) => { queued.push(t); }, async () => {});
+  const send = (s: { text: string; mid?: string; at?: number }) => routeBoxSend(gate, s, { queue: (t) => sq.send(t, 0), giveBack: () => {}, log: () => {} });
+  assert.equal(send({ text: "same", mid: "first", at: 100 }), "new");
+  for (let i = 0; i < 1500; i++) assert.equal(send({ text: `m${i}`, mid: `mid-${i}`, at: 101 + i }), "new");
+  for (let i = 0; i < 20; i++) await tick();
+  assert.equal(send({ text: "same", mid: "first", at: 100 }), "replay", "the original event, delivered again after 1500 others, is still a replay");
+  assert.equal(send({ text: "same", mid: "fresh", at: 2000 }), "new", "a genuinely fresh send with the same text still goes");
+  for (let i = 0; i < 20; i++) await tick();
+  assert.equal(queued.length, 1 + 1500 + 1);
+  assert.equal(queued.filter((t) => t === "same").length, 2);
+  assert.equal(gate.held, 1502);
+});
+
+/** The solo page continuation in miniature: soloWork, a quiet flag, the page's Quiet handler (which cancels through cancelTalk), and soloTurn with the page's
+ *  gesture. After soloTurn returns false the page returns; providerCalls counts anything that would reach the model after it (nothing may). */
+function soloPage(chat = 10) {
+  const p = page({ chat });
+  const work = new SoloWork();
+  let quiet = false;
+  let providerCalls = 0;
+  const run = async () => {
+    const w = work.begin();
+    const issue = await soloTurn(p.q, w, () => quiet, { gesture: () => p.talk.gestureFor("peak"), notSaved: () => p.talk.gestureFor("peak") });
+    if (!issue) return false; // the page returns here
+    providerCalls++; // the page would issue its solo request now
+    return true;
+  };
+  return { p, work, run, quietOn: () => { quiet = true; work.cancel(); }, quietOff: () => { quiet = false; }, calls: () => providerCalls };
+}
+
+test("R2, second return: Quiet on during the charge write, then off during the held refund: nothing is requested, nothing is shown, the count stays", async () => {
+  const s = soloPage(10);
+  s.p.disk.mode = "hold";
+  const r = s.run();
+  for (let i = 0; i < 5; i++) await tick();
+  s.quietOn();
+  s.p.disk.release(); // the charge write is acknowledged; the refund write is now held
+  for (let i = 0; i < 5; i++) await tick();
+  s.quietOff(); // Quiet off again while the refund is held
+  s.p.disk.mode = "ok";
+  s.p.disk.release();
+  assert.equal(await r, false);
+  for (let i = 0; i < 5; i++) await tick();
+  assert.equal(s.calls(), 0, "no provider call");
+  assert.deepEqual(s.p.requests, []);
+  assert.equal(s.p.disk.chat(), 10, "the refund is on disk");
+  assert.deepEqual(s.p.lines, [], "work moved on by Quiet shows nothing");
+});
+
+test("R2, second return: Quiet on and off again before the charge is acknowledged: the work stays over", async () => {
+  const s = soloPage(10);
+  s.p.disk.mode = "hold";
+  const r = s.run();
+  for (let i = 0; i < 5; i++) await tick();
+  s.quietOn();
+  s.quietOff();
+  s.p.disk.mode = "ok";
+  s.p.disk.release();
+  assert.equal(await r, false);
+  assert.equal(s.calls(), 0);
+  assert.equal(s.p.disk.chat(), 10);
+});
+
+test("R2, second return: a cancel, a clear, the end of a visit, Peak tucked in or a newer turn during the held write: no request, nothing shown, refunded", async () => {
+  for (const what of ["cancel", "newer"] as const) {
+    const s = soloPage(10);
+    s.p.disk.mode = "hold";
+    const r = s.run();
+    for (let i = 0; i < 5; i++) await tick();
+    if (what === "cancel") s.work.cancel(); // cancelTalk (a touch, a clear, the end of a visit) and a tuck of Peak all do this
+    else s.work.begin(); // a newer solo turn
+    s.p.disk.mode = "ok";
+    s.p.disk.release();
+    assert.equal(await r, false, what);
+    assert.equal(s.calls(), 0, what);
+    assert.deepEqual(s.p.lines, [], what);
+    assert.equal(s.p.disk.chat(), 10, what);
+  }
+});
+
+test("R2, second return: away (or Quiet without a cancel) during the write: no request, the charge given back, Peak's gesture", async () => {
+  const p = page({ chat: 10 });
+  let away = false;
+  p.disk.mode = "hold";
+  const r = soloTurn(p.q, new SoloWork().begin(), () => away, { gesture: () => p.talk.gestureFor("peak"), notSaved: () => {} });
+  for (let i = 0; i < 5; i++) await tick();
+  away = true;
+  p.disk.mode = "ok";
+  p.disk.release();
+  assert.equal(await r, false);
+  assert.deepEqual(p.lines.map((l) => `${l.pet}:${l.act}`), ["peak:gesture"]);
+  assert.equal(p.disk.chat(), 10);
+});
+
+test("R2, second return: the normal solo turn issues once after the acknowledged charge; a failed write of moved-on work shows nothing", async () => {
+  const ok = soloPage(10);
+  assert.equal(await ok.run(), true);
+  assert.equal(ok.calls(), 1);
+  assert.equal(ok.p.disk.chat(), 11);
+  const gone = soloPage(10);
+  gone.p.disk.mode = "hold";
+  const r = gone.run();
+  for (let i = 0; i < 5; i++) await tick();
+  gone.work.cancel();
+  gone.p.disk.mode = "fail";
+  gone.p.disk.release(); // the held charge write is acknowledged... then the refund write fails
+  assert.equal(await r, false);
+  assert.deepEqual(gone.p.lines, []);
+  assert.equal(gone.calls(), 0);
+});
+
+test("R2, second return, the visit path: Quiet on (a cancel) during the held charge, off during the held refund: no request, no line, refunded", async () => {
+  let quiet = false;
+  const p = page({ chat: 10, quiet: () => quiet });
+  p.disk.mode = "hold";
+  const run = p.talk.person("both?", ["peak", "paws"], ["peak", "paws"]);
+  for (let i = 0; i < 5; i++) await tick();
+  quiet = true; p.talk.cancel(); // the page's Quiet handler: cancelTalk
+  p.disk.release();
+  for (let i = 0; i < 5; i++) await tick();
+  quiet = false;
+  p.disk.mode = "ok";
+  p.disk.release();
+  await run;
+  for (let i = 0; i < 10; i++) await tick();
+  assert.deepEqual(p.requests, []);
+  assert.deepEqual(p.lines, []);
+  assert.equal(p.disk.chat(), 10);
 });
