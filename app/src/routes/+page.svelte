@@ -18,6 +18,7 @@
   import { parseCallMe } from "$lib/callme";
   import { Presenter } from "$lib/presentation";
   import { SendQueue } from "$lib/send-queue";
+  import { SendIds, chargedRequest, quota } from "$lib/dispatch";
   import { Conversation, addTurn, newRoom, presentAfterPlacing, shownSays, presentable, situation, toHistory, type Line } from "$lib/conversation";
   import type { BoxAction, BoxView } from "$lib/chatbox";
   import type { PetId } from "$lib/duo";
@@ -2399,13 +2400,29 @@
   let modelTyping = $state<PetId | null>(null); // the pet whose model call is running: the three dots of the chat box
   let boxTurns = $state<{ id: number; who: "person" | PetId; text: string; at: number }[]>([]); // the whole talk, for the chat box (ADR-0142)
   let talkLog = $state<{ who: "person" | PetId; text: string }[]>([]);
+  // T2d (ADR-0167, rows 12-14 and 25): one counter and one cap of 120 a day with the experiment; every request is charged once before it is issued and saved
+  // at once (a restart does not give it back); the canned replies of the developer channel go through the same gate and charge, only the provider is replaced
+  const duoQuota = quota({
+    get: () => data,
+    set: (d) => { data = d; },
+    save: () => { void save(); void invoke("duo_log", { line: `usage chat=${data.ai.chat} day=${data.ai.day} cool=${data.ai.coolUntil > Date.now() ? "on" : "off"}` }).catch(() => {}); },
+    now: () => Date.now(),
+    duo: true,
+  });
+  const sendIds = new SendIds();
+  let visitG = 0; // the visit generation of this slice: it moves when a visit ends; T2a owns entry and commit
   const talk = new Conversation(
     {
       model: async (pet, view, role) => {
         void invoke("duo_log", { line: `call ${pet} ${role}` }).catch(() => {}); // the record of who was asked (#17 evidence: no call for a guest that has left)
-        if (duoFake) { await pause(400); return fakeReply(pet, role, [...view].reverse().find((t) => t.from === "person")?.text ?? ""); }
-        data = recordAi(data, "chat", Date.now());
         const lastPerson = [...view].reverse().find((t) => t.from === "person");
+        return chargedRequest(duoQuota, async () => {
+        if (duoFake) {
+          await pause(400);
+          const fail = /\[fake:(rate_limit|network)\]/.exec(lastPerson?.text ?? ""); // the developer channel: a canned failure, to see a charge and the cooldown without a provider
+          if (fail) { void invoke("duo_log", { line: `brain_failed ${pet} ${fail[1]} (canned)` }).catch(() => {}); throw { kind: fail[1] }; }
+          return fakeReply(pet, role, lastPerson?.text ?? "");
+        }
         const both = !!lastPerson && lastPerson.to.length === 2;
         const out = await invoke<{ text: string }>("brain_chat", {
           lang,
@@ -2420,12 +2437,12 @@
           situation: situation(pet, role, both, undefined, mem.callMe, lang),
         }).catch((e) => {
           void invoke("duo_log", { line: `brain_failed ${pet} ${errKind(e)}` }).catch(() => {});
-          if (errKind(e) === "rate_limit") data = coolDown(data, Date.now()); // as every other brain call: the second pet of a turn is then a gesture, not a second refused call (issue 4)
-          throw e;
+          throw e; // chargedRequest starts the cooldown on a rate limit: the second pet of a turn is then a gesture, not a second refused call (issue 4)
         });
         return out.text;
+        }, (e) => errKind(e));
       },
-      allow: () => duoFake || aiGate(data, "chat", Date.now(), 2) === "ok",
+      allow: () => duoQuota.gate() === "ok",
       quiet: () => quiet || away,
       sleep: (ms) => new Promise((r) => setTimeout(r, ms)),
       beat: () => 600 + Math.random() * 600,
@@ -2454,7 +2471,7 @@
   }
   $effect(() => pushBox());
   function onBoxAction(a: BoxAction) {
-    if (a.type === "send") { void sendChat(a.text); return; }
+    if (a.type === "send") { void sendChat(a.text, a.mid); return; }
     if (a.type === "name") { const n = cleanName(a.value); if (n) answerInput("callMe", n); return; } // `/name Vinh`
     if (a.type === "clear") {
       // "clear this chat": the talk is forgotten by the box and by the pets, and the lines waiting to be said are dropped
@@ -2652,9 +2669,10 @@
     if (to.length === 0) return true; // nobody is out: nothing is sent
     if (to.length === 1 && to[0] === "peak" && !out.paws) return false; // Peak alone: its own chat, as before; with Paws out a message for Peak goes to the shared talk (ADR-0158)
     // the daily limit or a cooldown: the pet says so in its own words and no call is made (it used to be a silent gesture, and the person saw nothing)
-    const gate = duoFake ? "ok" : aiGate(data, "chat", Date.now(), 2);
-    if (gate !== "ok") {
+    const gate = duoQuota.gate();
+    if (gate !== "ok" && !(quiet || away)) { // in Quiet no line is spoken: the turn below makes gestures, with no request (row 14a)
       const line = gate === "cap" ? ui.capHit[Math.floor(Math.random() * ui.capHit.length)] : ui.err.rate_limit;
+      void invoke("duo_log", { line: `line ${to[0]} say to=person (${gate} line, no request) ${line}` }).catch(() => {}); // the evidence of row 14c: the pet addressed first says it
       talk.notePerson(text, to);
       talk.room = addTurn(talk.room, { from: to[0], to: ["person"], text: line, at: Date.now(), act: "say" }).room;
       syncLog();
@@ -3091,10 +3109,11 @@
 
   /** #19: a message from the person. With the duo it goes through the send queue (lib/send-queue.ts): handled now if nothing is being handled, else it shows as
    *  "waiting" and goes after the current one has settled and its answers have been presented, in the order sent. */
-  function sendChat(raw: string) {
+  function sendChat(raw: string, mid?: string) {
     const text = raw.trim();
     if (!text) return;
     if (!duoOn) { void sendChatNow(text); return; }
+    if (mid && !sendIds.accept(mid, visitG)) { void invoke("duo_log", { line: `duplicate send ignored (${mid})` }).catch(() => {}); return; } // one send, one dispatch (row 13)
     const how = sendQueue.send(text, Date.now());
     if (how === "queued") void invoke("duo_log", { line: `queued a message (${sendQueue.waiting().length} waiting)` }).catch(() => {});
   }
@@ -3120,12 +3139,10 @@
     // A yes or a no to the question about a day is Peak's business too (ADR-0115): no model call, no chat turn counted.
     if (!busy && answerDay(text)) return;
     if (busy || !canChat || noBrain) return; // the test aid of no brain holds here too: no model call with the stored key
-    if (duoOn && duoFake) {
-      // developer channel: Peak's own chat answers with a canned line too, so that a test never calls the model with the person's key
-      const line = "Fine, as usual.";
-      mirrorPeak(text, line);
-      void invoke("duo_log", { line: `line peak say to=person ${line}` }).catch(() => {});
-      void sayAs("peak", line);
+    if (duoOn && (quiet || away)) {
+      // solo Quiet (T2d, row 14a applied to solo): with the experiment the box can still send in Quiet; no request, no charge, Peak makes a gesture
+      void invoke("duo_log", { line: "quiet: a solo message makes no request" }).catch(() => {});
+      await talk.person(text, ["peak"], ["peak"]);
       return;
     }
     const gate = aiGate(data, "chat", Date.now(), duoOn ? 2 : 1); // the duo prototype counts two calls for a message to both, so its limit is twice as high (ADR-0152)
@@ -3134,11 +3151,24 @@
       chatUser = text;
       chatReply = gate === "cap" ? ui.capHit[Math.floor(Math.random() * ui.capHit.length)] : ui.err.rate_limit;
       chatPhase = "reply";
-      if (duoOn) { mirrorPeak(text, chatReply); void sayAs("peak", chatReply); } // the old chat bubble is not shown with the box: Peak says so in the box and above itself, not nothing
+      if (duoOn) { void invoke("duo_log", { line: `line peak say to=person (${gate} line, no request) ${chatReply}` }).catch(() => {}); mirrorPeak(text, chatReply); void sayAs("peak", chatReply); } // the old chat bubble is not shown with the box: Peak says so in the box and above itself, not nothing
       resetMenuTimer();
       return;
     }
     data = recordAi(data, "chat", Date.now());
+    if (duoOn) {
+      void save(); // saved at once: a restart on the same day does not give the request back (ADR-0165)
+      void invoke("duo_log", { line: `call peak solo` }).catch(() => {});
+      void invoke("duo_log", { line: `usage chat=${data.ai.chat} day=${data.ai.day} cool=${data.ai.coolUntil > Date.now() ? "on" : "off"}` }).catch(() => {});
+    }
+    if (duoOn && duoFake) {
+      // developer channel: Peak's own chat answers with a canned line too, after the same gate and charge, so that a test never calls the model with the person's key
+      const line = "Fine, as usual.";
+      mirrorPeak(text, line);
+      void invoke("duo_log", { line: `line peak say to=person ${line}` }).catch(() => {});
+      void sayAs("peak", line);
+      return;
+    }
     const talking = inConversation(Date.now(), lastUserChatAt); // a conversation was already going on: the model is not offered the skill (ADR-0108)
     lastUserChatAt = Date.now();
     count("chat"); // a message that passed the usage gate and goes to the model
@@ -3706,6 +3736,7 @@
       cleanups.push(await win.listen<string>("duo-type", (e) => void sendChat(e.payload))); // developer channel: a message typed without the box
       cleanups.push(await win.listen<PetId>("duo-tucked", (e) => { talk.tucked(e.payload); dropPetLines(e.payload); void refreshPawsOut(); }));
       cleanups.push(await win.listen("duo-visit-ended", () => {
+        visitG++; // the visit's generation ends: a late repeat of one of its sends is a new generation's business, and nothing of the old one is dispatched again
         // #19: messages still waiting are not sent after the visit is dismissed; their text goes back to the field so that nothing is lost
         const back = sendQueue.takeAll();
         if (back.length > 0) { void emitTo("chatbox", "chatbox-restore", back.join(String.fromCharCode(10))).catch(() => {}); void invoke("duo_log", { line: `visit ended: ${back.length} waiting message(s) given back to the field` }).catch(() => {}); }

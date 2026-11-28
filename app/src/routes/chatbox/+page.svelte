@@ -63,12 +63,15 @@
   function act(a: BoxAction) {
     void emitTo("main", "chatbox-action", a).catch(() => {});
   }
+  // every deliberate send gets its own id: the pet page dispatches one id once in a visit (T2d, ADR-0167 row 13); two sends of the same text stay two
+  let sends = 0;
+  const newMid = () => `${Date.now().toString(36)}-${(++sends).toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
   function send() {
     const text = draft.trim();
     if (!text) return;
     // with both pets in only a local command goes ("call Paws out", "call me ..."): anything else stays in the field and the placeholder says why
     if (!anyOut && !parseDuoCommand(text) && !parseCallMe(text) && summons(text, presence).length === 0) return; // an @ mention calls the pet out (ADR-0157)
-    act({ type: "send", text });
+    act({ type: "send", text, mid: newMid() });
     draft = "";
     settledDraft = "";
     recallIdx = -1;
