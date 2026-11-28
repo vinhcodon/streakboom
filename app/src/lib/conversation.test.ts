@@ -328,7 +328,7 @@ test("a line that waited in the queue is not shown if Quiet came meanwhile; a ge
 
 test("the page drops the pending turn when Quiet comes, and checks Quiet again before a queued line is shown", () => {
   const page = readFileSync(new URL("../routes/+page.svelte", import.meta.url), "utf8");
-  assert.ok(/if \(quiet && duoOn\) \{[\s\S]{0,220}cancelTalk\(\)/.test(page), "the quiet-changed handler cancels the talk");
+  assert.ok(/if \(quiet && duoOn\) \{[\s\S]{0,220}cancelTalk\("quiet"\)/.test(page), "the quiet-changed handler cancels the talk (T2a: with its reason, which does not end an entry)");
   assert.ok(/presentable\(l, quiet \|\| away\)/.test(page), "the presentation checks Quiet again");
 });
 

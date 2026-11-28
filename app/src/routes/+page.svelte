@@ -20,7 +20,7 @@
   import { SendQueue } from "$lib/send-queue";
   import { PetWriter, SendGate, SoloWork, chargedRequest, quota, routeBoxSend, soloTurn } from "$lib/dispatch";
   import { Conversation, addTurn, newRoom, presentAfterPlacing, shownSays, presentable, situation, toHistory, withoutTurn, type Line } from "$lib/conversation";
-  import { Entries, Restorer, entryTurn, type EntryHost, type EntryOutcome } from "$lib/entry";
+  import { Entries, Membership, Restorer, entryTurn, nativeEntryHost, type EntryHost, type EntryResult, type MemberAnswer } from "$lib/entry";
   import type { BoxAction, BoxView } from "$lib/chatbox";
   import type { PetId } from "$lib/duo";
   import { LEAVE_PACE_PX_S, RETRY_SECS, isLeaveCommand, leaveDeadlineMs, mayLeave, nearerEdge } from "$lib/farewell";
@@ -2373,9 +2373,11 @@
       await refreshPawsOut();
       if (!pawsOutNow) {
         // T2a: "call Paws" is an invitation too (ADR-0165 point 5): it enters through the entry
-        const outcome = await enterChatVisit(text);
+        const entry = await enterChatVisit(text);
         await refreshPawsOut();
-        if (outcome !== "committed") return true; // failed, closed or committed in Quiet: entryTurn has done all of it; nothing is requested
+        // failed, closed or committed in Quiet: entryTurn has done all of it; and a clear, a close or the end of the visit during these awaits ends the
+        // committed visit before its words are sent (R3): nothing is requested
+        if (entry.outcome !== "committed" || !entries.visitLive(entry.g)) return true;
         lt("command_duo target=paws act=out ok=true (entry committed)");
         closePanel(); enter("nod");
         return true;
@@ -2440,36 +2442,39 @@
   let boxComposing = false; // the box says when a word is being composed (an input method)
   let compositionWaiters: (() => void)[] = [];
   let deferredOpen: string | null = null; // a double click, the shortcut or a second start during an entry (row 28a): done after its outcome
-  /** The native effects of an entry, as the page performs them. The developer channel can refuse or slow the membership save ([fake:join-fail], [fake:join-slow]). */
+  /** Every change of Paws's membership in an entry goes through one ordered chain (R2); the native answer is the truth of the disk write (R4). */
+  const membership = new Membership(
+    async (out) => { const a = await invoke<string>("duo_membership", { out }).catch(() => "error"); return (a === "changed" || a === "unchanged" ? a : "error") as MemberAnswer; },
+    (ms) => new Promise<void>((r) => setTimeout(r, ms)),
+    (line) => void invoke("duo_log", { line }).catch(() => {}),
+  );
+  /** The native effects of an entry (lib/entry.ts nativeEntryHost: identity and composition checked at each effect, after every await; R1). The developer
+   *  channel can refuse the join ([fake:join-fail]) or make its native answer slow ([fake:join-slow], 3 s, after its check). */
   function entryHost(text: string): EntryHost {
-    const refuse = duoFake && text.includes("[fake:join-fail]");
-    const slow = duoFake && text.includes("[fake:join-slow]");
-    return {
+    return nativeEntryHost({
       composing: () => boxComposing,
       compositionEnded: () => new Promise<void>((r) => { if (!boxComposing) r(); else compositionWaiters.push(r); }),
-      saveMembership: async () => {
-        if (refuse) { void invoke("duo_log", { line: "entry: membership refused (canned)" }).catch(() => {}); return false; }
-        if (slow) await pause(3000);
-        return invoke<boolean>("duo_command", { target: "paws", act: "out" }).catch(() => false);
-      },
-      undoMembership: async () => {
-        const ok = await invoke<boolean>("duo_command", { target: "paws", act: "in" }).catch(() => false);
-        void invoke("duo_log", { line: `entry: membership undone ok=${ok}` }).catch(() => {});
-        await refreshPawsOut();
-      },
-      showBox: async () => {
-        if (await invoke<boolean>("chatbox_showing").catch(() => false)) return true;
-        void invoke("duo_box_ambient").catch(() => {}); // shown without taking the keyboard: a hidden or sleeping Peak stays so (row 10)
-        for (let i = 0; i < 48; i++) { await pause(100); if (await invoke<boolean>("chatbox_showing").catch(() => false)) return true; }
-        return false;
-      },
+      showing: () => invoke<boolean>("chatbox_showing"),
+      show: (g) => void invoke("duo_entry_show", { g }).catch(() => {}),
+      membership,
+      refuse: duoFake && text.includes("[fake:join-fail]"),
+      beforeJoin: async () => { if (duoFake && text.includes("[fake:join-slow]")) await pause(3000); },
+      afterUndo: () => refreshPawsOut(),
       sleep: pause,
       quiet: () => quiet,
       log: (line) => void invoke("duo_log", { line }).catch(() => {}),
-    };
+    });
+  }
+  /** A reason that ends the entry in progress, and a committed visit whose words are not sent yet: a close, a clear, the end of a visit, Paws tucked in. */
+  function endEntry(reason: string) {
+    const g = entries.end();
+    if (g === null) return;
+    void invoke("duo_entry_gen", { g: 0 }).catch(() => {}); // the native side shows nothing more for it
+    sendGate.end(Date.now());
+    void invoke("duo_log", { line: `entry g=${g}: ended (${reason})` }).catch(() => {});
   }
   /** One entry, from the invitation to its outcome (lib/entry.ts entryTurn: the whole continuation, tested there). The page acts only on the outcome. */
-  function enterChatVisit(text: string): Promise<EntryOutcome> {
+  function enterChatVisit(text: string): Promise<EntryResult> {
     return entryTurn(entries, text, entryHost(text), {
       inviteRow: (t) => [...talk.room.turns].reverse().find((x) => x.from === "person" && x.text === t)?.id ?? null,
       markWaiting: (id, on) => { if (on) entryWaitingIds.add(id); else entryWaitingIds.delete(id); syncLog(); },
@@ -2483,7 +2488,8 @@
         await sayAs("peak", line);
       },
       quiet: () => quiet,
-      setPending: (on) => void invoke("duo_entry_pending", { on }).catch(() => {}),
+      setGen: (g) => void invoke("duo_entry_gen", { g }).catch(() => {}),
+      memberStuck: () => { void refreshPawsOut(); },
       takeDeferred: () => { const d = deferredOpen; deferredOpen = null; return d; },
       doDeferred: (press) => { if (press === "second-start") void invoke("duo_second_start_resume").catch(() => {}); void invoke("duo_focus_box").catch(() => {}); },
       log: (line) => void invoke("duo_log", { line }).catch(() => {}),
@@ -2555,7 +2561,7 @@
     if (a.type === "name") { const n = cleanName(a.value); if (n) answerInput("callMe", n); return; } // `/name Vinh`
     if (a.type === "clear") {
       // "clear this chat": the talk is forgotten by the box and by the pets, and the lines waiting to be said are dropped
-      cancelTalk();
+      cancelTalk("clear");
       talk.room = newRoom();
       talk.lastSpoken = null;
       syncLog();
@@ -2666,7 +2672,10 @@
       .catch(() => {});
   }
   /** A touch, or the pet going in: the lines still waiting are thrown away and a line being written is dropped. */
-  function cancelTalk() {
+  /** `reason`: "clear" and "visit-end" also end an entry in progress or a committed visit whose words are not sent yet (R3); Quiet and a touch do not
+   *  (rows 10 and 29: the entry continues silently, the visit is kept). */
+  function cancelTalk(reason: "quiet" | "touch" | "clear" | "visit-end" = "touch") {
+    if (reason === "clear" || reason === "visit-end") endEntry(reason);
     soloWork.cancel(); // solo work waiting for its charge or refund is over too: nothing of it is requested or shown later (T2d, second return)
     supersede("cancelled");
     talk.cancel();
@@ -2691,9 +2700,11 @@
     for (const p of summons(text, outNow())) {
       if (p === "paws" && pawsMode === "chat") {
         // T2a: the invitation enters through the entry; nothing is requested before it commits (note 1), and a refused entry is terminal
-        const outcome = await enterChatVisit(text);
+        const entry = await enterChatVisit(text);
         await refreshPawsOut();
-        if (outcome !== "committed") return true; // failed, closed or committed in Quiet: entryTurn has done all of it; nothing is requested
+        // failed, closed or committed in Quiet: entryTurn has done all of it; and a clear, a close or the end of the visit during these awaits ends the
+        // committed visit before its words are sent (R3): nothing is requested
+        if (entry.outcome !== "committed" || !entries.visitLive(entry.g)) return true;
         lt("command_duo target=paws act=out ok=true from=mention (entry committed)");
         called.push(p);
         continue;
@@ -3795,7 +3806,7 @@
           quiet = e.payload;
           if (quiet) count("quiet");
           stopTimers();
-          if (quiet && duoOn) { void invoke("duo_log", { line: "quiet: the talk is cancelled" }).catch(() => {}); cancelTalk(); } // a call that is pending or a line that waits in the queue must not speak in Quiet (issue 4), as a touch drops them
+          if (quiet && duoOn) { void invoke("duo_log", { line: "quiet: the talk is cancelled" }).catch(() => {}); cancelTalk("quiet"); } // a call that is pending or a line that waits in the queue must not speak in Quiet (issue 4), as a touch drops them
           if (quiet) {
             bubbleOn = false;
             closePanel();
@@ -3826,7 +3837,7 @@
         if (e.payload.hold) { clearTimeout(oneShotTimer); clearTimeout(sleepTimer); clearTimeout(nextTimer); clearInterval(walkTimer); clearTimeout(walkEndTimer); clearInterval(glideTimer); dir = e.payload.dir; pose = e.payload.pose; poseTick++; }
         else { if (pose === "walk" || pose === "look" || pose === "sleep") pose = "idle"; scheduleNext(); }
       }));
-      cleanups.push(await win.listen("duo-touch", () => { if (duoOn) cancelTalk(); })); // a touch on Paws ends the talk, as a touch on Peak does
+      cleanups.push(await win.listen("duo-touch", () => { if (duoOn) cancelTalk("touch"); })); // a touch on Paws ends the talk, as a touch on Peak does
       void initDuo();
       cleanups.push(await win.listen("chatbox-ready", () => {
         pushBox(true);
@@ -3841,7 +3852,7 @@
       }));
       cleanups.push(await win.listen("chatbox-closed", () => {
         // an explicit close (Esc, the tray, its button) or the end of the fade: an entry in progress ends at this instant (note 3; row 9)
-        if (entries.pending()) { const g = entries.end(); sendGate.end(Date.now()); void invoke("duo_log", { line: `entry g=${g}: the box was closed` }).catch(() => {}); }
+        endEntry("the box was closed");
       }));
       cleanups.push(await win.listen<string>("duo-open-deferred", (e) => {
         if (entries.pending()) { deferredOpen = e.payload; void invoke("duo_log", { line: `entry: a ${e.payload} waits for the entry` }).catch(() => {}); }
@@ -3850,16 +3861,16 @@
       }));
       cleanups.push(await win.listen<BoxAction>("chatbox-action", (e) => onBoxAction(e.payload)));
       cleanups.push(await win.listen<string>("duo-type", (e) => void sendChat(e.payload))); // developer channel: a message typed without the box
-      cleanups.push(await win.listen<PetId>("duo-tucked", (e) => { talk.tucked(e.payload); dropPetLines(e.payload); if (e.payload === "peak") soloWork.cancel(); if (e.payload === "paws" && entries.pending()) entries.end(); void refreshPawsOut(); }));
+      cleanups.push(await win.listen<PetId>("duo-tucked", (e) => { talk.tucked(e.payload); dropPetLines(e.payload); if (e.payload === "peak") soloWork.cancel(); if (e.payload === "paws") endEntry("Paws tucked in"); void refreshPawsOut(); }));
       cleanups.push(await win.listen("duo-visit-ended", () => {
         sendGate.end(Date.now()); // the visit's generation ends: a late delivery of one of its sends is neither sent again nor sent into the next visit (R1)
         // #19: messages still waiting are not sent after the visit is dismissed; their text goes back to the field so that nothing is lost
         const back = entries.busy() ? [] : sendQueue.takeAll(); // during an entry the entry gives its own text back, in order (T2a)
         if (back.length > 0) { restorer.give(back); void invoke("duo_log", { line: `visit ended: ${back.length} waiting message(s) given back to the field` }).catch(() => {}); }
-        cancelTalk(); modelTyping = null; void invoke("duo_log", { line: "visit ended: the talk of the visit is dropped" }).catch(() => {}); })); // #17: nothing of a dismissed visit reaches a later one // the portrait went with the chat (issue 15): Paws hears nothing more
+        cancelTalk("visit-end"); modelTyping = null; void invoke("duo_log", { line: "visit ended: the talk of the visit is dropped" }).catch(() => {}); })); // #17: nothing of a dismissed visit reaches a later one // the portrait went with the chat (issue 15): Paws hears nothing more
       cleanups.push(await win.listen<{ dir: 1 | -1 }>("duo-face", (e) => { if (pose === "idle") dir = e.payload.dir; })); // the talk: the head turns toward the speaker
       cleanups.push(await win.listen<{ pet: PetId; text: string }>("duo-say", (e) => void sayAs(e.payload.pet, e.payload.text))); // developer channel: a line in Paws' bubble without the model
-      const touchEndsScene = () => { if (sceneHold) void invoke("duo_scene_cancel"); if (duoOn) cancelTalk(); };
+      const touchEndsScene = () => { if (sceneHold) void invoke("duo_scene_cancel"); if (duoOn) cancelTalk("touch"); };
       window.addEventListener("pointerdown", touchEndsScene, true);
       cleanups.push(() => window.removeEventListener("pointerdown", touchEndsScene, true));
       cleanups.push(await win.listen<SettingsPatch>("settings-patch", (e) => onSettingsPatch(e.payload)));

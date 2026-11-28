@@ -376,7 +376,7 @@ test("the page uses these boundaries: box sends with mid and time, routeBoxSend,
     "solo with the experiment: soloTurn decides, and every outcome but issue returns");
   assert.ok(src.includes("const work = soloWork.begin();"), "each solo turn has its own identity");
   assert.ok(!/talk\.person\(text, \["peak"\], \["peak"\]\)/.test(src), "no solo outcome re-enters a turn that can call the model");
-  assert.ok(/function cancelTalk\(\) \{\s*soloWork\.cancel\(\);/.test(src), "Quiet, a touch, a clear and the end of a visit (all through cancelTalk) move the solo work on");
+  assert.ok(/function cancelTalk\([^)]*\) \{\s*if \(reason === "clear" \|\| reason === "visit-end"\) endEntry\(reason\);\s*soloWork\.cancel\(\);/.test(src), "Quiet, a touch, a clear and the end of a visit (all through cancelTalk, whatever its reason) move the solo work on");
   assert.equal((src.match(/if \((?:c|a|e\.payload|a\.target|c\.target)[^)]*=== "peak"\) soloWork\.cancel\(\)/g) ?? []).length, 3, "Peak tucked in moves it on, on all three paths");
   assert.ok(/quiet: a solo message makes no request[\s\S]{0,120}talk\.gestureFor\("peak"\)/.test(src), "the solo Quiet gesture is local");
   assert.ok(/\} else data = recordAi\(data, "chat", Date\.now\(\)\);/.test(src), "without the experiment the solo charge is as before");

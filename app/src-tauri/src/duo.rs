@@ -176,10 +176,36 @@ fn monitors(app: &AppHandle) -> Vec<Mon> {
 
 fn scale(app: &AppHandle) -> f64 { app.primary_monitor().ok().flatten().map(|m| m.scale_factor()).unwrap_or(1.0) }
 
-fn save(d: &Duo, s: &DuoState) {
-    if let Ok(j) = serde_json::to_string(s) {
-        let tmp = d.path.with_extension("json.tmp");
-        if std::fs::write(&tmp, j).is_ok() { let _ = std::fs::rename(&tmp, &d.path); }
+fn save(d: &Duo, s: &DuoState) { let _ = write_state(&d.path, s); }
+
+/// The state written to disk (a temporary file, then a rename), with the truth of it: an error if serialising, writing or renaming failed.
+fn write_state(path: &std::path::Path, s: &DuoState) -> std::io::Result<()> {
+    let j = serde_json::to_string(s).map_err(std::io::Error::other)?;
+    let tmp = path.with_extension("json.tmp");
+    std::fs::write(&tmp, j)?;
+    std::fs::rename(&tmp, path)
+}
+
+/// T2a (issue 23, R4): Paws's membership of the chat changed only if the change is written. "changed", "unchanged" (it already was so), or an error, in
+/// which case the state in memory is put back as it was: an acknowledgement of "saved" is never given for a change that is not on disk.
+pub fn set_member(s: &mut DuoState, out: bool, now: u64, persist: impl FnOnce(&DuoState) -> std::io::Result<()>) -> Result<bool, String> {
+    let before = s.pets.paws.clone();
+    let changed = if out { if s.pets.paws.out { false } else { s.pets.paws.out = true; true } } else { s.tuck(Id::Paws, now, None) };
+    if !changed { return Ok(false); }
+    if let Err(e) = persist(s) { s.pets.paws = before; return Err(e.to_string()); }
+    Ok(true)
+}
+
+/// The entry's membership change (T2a): "changed", "unchanged" or "error: ...". Only with the chat-member visit.
+#[tauri::command]
+pub fn duo_membership(app: AppHandle, out: bool) -> String {
+    if !chat_member() { return "error: not the chat-member visit".into(); }
+    let Some(d) = app.try_state::<Duo>() else { return "error: no state".into() };
+    let r = { let mut s = d.state.lock().unwrap(); set_member(&mut s, out, now_ms(), |st| write_state(&d.path, st)) };
+    match r {
+        Ok(true) => { log(&app, if out { "paws joined the chat" } else { "paws left the chat" }); let _ = app.emit_to(BOX_LABEL, "chatbox-members", ()); "changed".into() }
+        Ok(false) => "unchanged".into(),
+        Err(e) => { log(&app, &format!("membership not saved: {e}")); format!("error: {e}") }
     }
 }
 
@@ -440,7 +466,10 @@ pub fn duo_command(app: AppHandle, target: String, act: String) -> bool {
     if chat_member() && target == "paws" {
         // #17: Paws's membership of the chat is a state only (no window, no walk), so it never waits for Peak's walk (the busy flag) and needs no caller on the screen
         let go_in = act == "in";
-        let ok = { let mut s = d.state.lock().unwrap(); let ok = if go_in { s.tuck(Id::Paws, now_ms(), None) } else if s.pets.paws.out { false } else { s.pets.paws.out = true; true }; if ok { save(&d, &s); } ok };
+        // the change counts only if it is written (T2a R4): a failed write gives false and the state in memory as it was
+        let r = { let mut s = d.state.lock().unwrap(); set_member(&mut s, !go_in, now_ms(), |st| write_state(&d.path, st)) };
+        if let Err(e) = &r { log(&app, &format!("membership not saved: {e}")); }
+        let ok = matches!(r, Ok(true));
         if ok { log(&app, if go_in { "paws left the chat" } else { "paws joined the chat" }); let _ = app.emit_to(BOX_LABEL, "chatbox-members", ()); }
         return ok;
     }
@@ -895,6 +924,40 @@ mod tests {
     fn m2() -> Mon { Mon { id: "m2".into(), x: 1920, y: 0, w: 1280, h: 1024 } }
 
     #[test]
+    fn a_membership_change_that_cannot_be_written_is_not_acknowledged_and_is_undone_in_memory() {
+        // T2a R4: a failing write (as a rename refused by the system) gives an error and the state in memory as it was
+        let mut s = DuoState::default();
+        let r = set_member(&mut s, true, 5, |_| Err(std::io::Error::new(std::io::ErrorKind::PermissionDenied, "rename refused")));
+        assert!(r.is_err());
+        assert!(!s.pets.paws.out, "not a member in memory either");
+        assert_eq!(set_member(&mut s, true, 5, |_| Ok(())), Ok(true));
+        assert!(s.pets.paws.out);
+        assert_eq!(set_member(&mut s, true, 6, |_| Ok(())), Ok(false), "already a member: unchanged");
+        let before = s.pets.paws.clone();
+        assert!(set_member(&mut s, false, 7, |_| Err(std::io::Error::other("disk full"))).is_err());
+        assert_eq!(s.pets.paws, before, "a refused undo leaves the member as the disk has it");
+        assert_eq!(set_member(&mut s, false, 8, |_| Ok(())), Ok(true));
+        assert!(!s.pets.paws.out);
+    }
+
+    #[test]
+    fn the_state_is_written_through_a_temporary_file_and_a_failure_is_reported() {
+        let dir = std::env::temp_dir().join(format!("streakboom-t2a-{}", std::process::id()));
+        let _ = std::fs::create_dir_all(&dir);
+        let path = dir.join("duo.json");
+        assert!(write_state(&path, &DuoState::default()).is_ok());
+        assert!(path.exists());
+        // a path whose folder does not exist cannot be written: an error, not a silent success
+        assert!(write_state(&dir.join("missing").join("duo.json"), &DuoState::default()).is_err());
+        // the membership through the real write to a path that cannot be written: refused, and not a member in memory
+        let mut s = DuoState::default();
+        let bad = dir.join("missing").join("duo.json");
+        assert!(set_member(&mut s, true, 9, |st| write_state(&bad, st)).is_err());
+        assert!(!s.pets.paws.out);
+        let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    #[test]
     fn a_new_state_is_peak_alone_and_junk_gives_the_default() {
         assert_eq!(DuoState::default().out(), vec![Id::Peak]);
         assert_eq!(DuoState::parse("not json").out(), vec![Id::Peak]);
@@ -1146,12 +1209,31 @@ fn take_foreground(win: &tauri::WebviewWindow) {
 
 /// T2a (issue 23, row 28a): while the page enters a group visit, the shortcut and a second start do not open or focus anything themselves; the page is told and
 /// focuses the entry's box once the entry has its outcome (a press made before an explicit close is dropped there). Set only by the page with the experiment.
-static ENTRY_PENDING: AtomicBool = AtomicBool::new(false);
-pub fn entry_pending() -> bool { enabled() && ENTRY_PENDING.load(Ordering::SeqCst) }
+/// The generation of the entry in progress (0: none), set by the page. A show of the box asked by an entry is done only while its generation is still this one,
+/// checked on the thread that shows it (R1: an ended entry never shows the box).
+static ENTRY_G: AtomicU64 = AtomicU64::new(0);
+pub fn entry_pending() -> bool { enabled() && ENTRY_G.load(Ordering::SeqCst) != 0 }
 
-/// The page says an entry into a group visit is in progress (true) or has its outcome (false).
+/// The page says which entry is in progress (its generation) or that none is (0).
 #[tauri::command]
-pub fn duo_entry_pending(on: bool) { ENTRY_PENDING.store(on, Ordering::SeqCst); }
+pub fn duo_entry_gen(g: u64) { ENTRY_G.store(g, Ordering::SeqCst); }
+
+/// The box shown for entry `g` without taking the keyboard, only if `g` is still the entry in progress when the window is shown; true if it was shown.
+#[tauri::command]
+pub fn duo_entry_show(app: AppHandle, g: u64) {
+    if !enabled() { return; }
+    std::thread::spawn(move || {
+        if ENTRY_G.load(Ordering::SeqCst) != g { log(&app, &format!("entry g={g}: the box is not shown, the entry ended")); return; }
+        match app.get_webview_window(BOX_LABEL) {
+            Some(win) => {
+                if ENTRY_G.load(Ordering::SeqCst) != g { return; }
+                BOX_IDLE_SINCE.store(0, Ordering::SeqCst); emit_fade(&app, 1000);
+                if !win.is_visible().unwrap_or(false) { show_ambient(&app, &win); }
+            }
+            None => { if ENTRY_G.load(Ordering::SeqCst) == g { make_box(&app, false); } }
+        }
+    });
+}
 
 /// The page focuses the box after an entry (row 28a): shown if it was not and given the keyboard, with no `@Name` written in the field.
 #[tauri::command]

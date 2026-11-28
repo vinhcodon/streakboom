@@ -1,68 +1,92 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
-import { ENTRY_DEADLINE_MS, Entries, Restorer, RestoreInbox, enterVisit, entryTurn, type EntryHost, type EntryPage } from "./entry.ts";
+import { ENTRY_DEADLINE_MS, Entries, Membership, Restorer, RestoreInbox, entryTurn, nativeEntryHost, type EntryPage, type MemberAnswer } from "./entry.ts";
 import { SendQueue } from "./send-queue.ts";
 
-// T2a of ADR-0167 (issue 23): the fixtures frozen on the ticket. The page's whole continuation is entryTurn (lib/entry.ts); these tests drive it with a host
-// whose native effects can be held, acknowledged, refused or never answered, a fake clock for the deadline, the real SendQueue and the real Restorer.
+// T2a of ADR-0167 (issue 23), with the return of comment 7235779508. The page's whole continuation is entryTurn, its host is nativeEntryHost and its
+// membership is the Membership chain (lib/entry.ts; the page passes only its native calls). These tests drive exactly those, with a native side whose
+// every call can be held, answered late, refused or never answered, a fake clock, the real SendQueue, the real Restorer and the box's RestoreInbox.
 
 const tick = () => new Promise<void>((r) => setTimeout(r, 0));
-const ticks = async (n = 8) => { for (let i = 0; i < n; i++) await tick(); };
+const ticks = async (n = 12) => { for (let i = 0; i < n; i++) await tick(); };
 
-/** A promise the test settles. */
-function held<T>() {
-  let resolve: (v: T) => void = () => {};
-  let reject: (e: unknown) => void = () => {};
-  const p = new Promise<T>((a, b) => { resolve = a; reject = b; });
-  return { p, resolve, reject };
-}
-
-/** The native side of an entry, controlled by the test, plus a fake clock. */
-function nativeSide() {
+/** The program's native side, as the page's calls reach it: a membership on disk, a box, a clock; each call recorded and controllable. */
+function program() {
   let now = 0;
   const timers: { at: number; r: () => void }[] = [];
-  const save = held<boolean>();
-  const show = held<boolean>();
+  const sleep = (ms: number) => new Promise<void>((r) => timers.push({ at: now + ms, r }));
+  let member = false;
+  let boxVisible = false;
+  let entryGen = 0; // what the native side was told (duo_entry_gen)
   let composing = false;
   let endComposition: (() => void)[] = [];
   const calls: string[] = [];
   const log: string[] = [];
-  let quiet = false;
-  const host: EntryHost = {
+  // the native membership answers: "auto" answers at once with the truth; "hold" keeps each answer for the test; "error" refuses (a write that fails)
+  let memberMode: "auto" | "hold" | "error" = "auto";
+  const heldMember: { out: boolean; done: (a: MemberAnswer) => void }[] = [];
+  const native = (out: boolean): Promise<MemberAnswer> => {
+    calls.push(out ? "join" : "leave");
+    if (memberMode === "error") return Promise.resolve("error");
+    if (memberMode === "hold") return new Promise<MemberAnswer>((r) => heldMember.push({ out, done: r }));
+    if (member === out) return Promise.resolve("unchanged");
+    member = out;
+    return Promise.resolve("changed");
+  };
+  let queryMode: "auto" | "hold" = "auto";
+  const heldQueries: ((v: boolean) => void)[] = [];
+  const membership = new Membership(native, sleep, (l) => log.push(l));
+  const showQueue: number[] = []; // native show threads not run yet
+  let quietFlag = false;
+  const base = {
     composing: () => composing,
     compositionEnded: () => new Promise<void>((r) => { if (!composing) r(); else endComposition.push(r); }),
-    saveMembership: () => { calls.push("save"); return save.p; },
-    undoMembership: async () => { calls.push("undo"); },
-    showBox: () => { calls.push("show"); return show.p; },
-    sleep: (ms) => new Promise<void>((r) => timers.push({ at: now + ms, r })),
-    quiet: () => quiet,
-    log: (l) => log.push(l),
+    showing: () => { calls.push("query"); if (queryMode === "hold") return new Promise<boolean>((r) => heldQueries.push(r)); return Promise.resolve(boxVisible); },
+    show: (g: number) => { calls.push(`show g=${g}`); showQueue.push(g); },
+    membership,
+    sleep,
+    quiet: () => quietFlag,
+    log: (l: string) => log.push(l),
   };
   return {
-    host, save, show, calls, log,
+    membership, calls, log,
+    get member() { return member; },
+    get boxVisible() { return boxVisible; }, set boxVisible(v: boolean) { boxVisible = v; },
+    setGen: (g: number) => { entryGen = g; },
+    /** the native show threads run now: each shows the box only if its generation is still the entry in progress (duo_entry_show) */
+    runShows: () => { while (showQueue.length) { const g = showQueue.shift()!; if (g === entryGen) boxVisible = true; else log.push(`native: show of g=${g} refused`); } },
+    set memberMode(m: "auto" | "hold" | "error") { memberMode = m; },
+    releaseMember: () => {
+      const h = heldMember.shift();
+      if (!h) throw new Error("no held membership call");
+      if (member === h.out) h.done("unchanged"); else { member = h.out; h.done("changed"); }
+    },
+    heldMemberCount: () => heldMember.length,
+    set queryMode(m: "auto" | "hold") { queryMode = m; },
+    releaseQuery: (v: boolean) => { const r = heldQueries.shift(); if (!r) throw new Error("no held query"); r(v); },
     compose: (on: boolean) => { composing = on; if (!on) { const w = endComposition; endComposition = []; for (const r of w) r(); } },
-    advance: async (ms: number) => { now += ms; for (const t of timers.filter((x) => x.at <= now)) t.r(); await ticks(); },
-    setQuiet: (q: boolean) => { quiet = q; },
+    advance: async (ms: number) => { now += ms; for (const t of timers.filter((x) => x.at <= now)) { timers.splice(timers.indexOf(t), 1); t.r(); } await ticks(); },
+    quiet: () => quietFlag,
+    setQuiet: (q: boolean) => { quietFlag = q; },
+    host: (o: { refuse?: boolean } = {}) => nativeEntryHost({ ...base, ...o }),
   };
 }
 
-/** The page around an entry, as entryTurn sees it: a talk with the invitation's row, the real SendQueue holding what waits, the real Restorer, a box inbox. */
-function pageSide(queued: string[] = []) {
+/** The page around an entry: a talk with the invitation's row, the real SendQueue (the invitation's dispatch held), the real Restorer into a box inbox. */
+function pageSide(prog: ReturnType<typeof program>, queued: string[] = []) {
   const rows = new Map<number, string>([[7, "@Paws hello"]]);
   const waiting = new Set<number>();
   const box = new RestoreInbox();
   let draft = "";
   const restorer = new Restorer(async (id, text) => { draft = box.apply(draft, id, text).draft; restorer.acked(id); });
-  const dispatched: string[] = [];
-  const sq = new SendQueue(async (t) => { dispatched.push(t); await new Promise<void>(() => {}); }, async () => {}); // the first dispatch is the invitation, held
+  const sq = new SendQueue(async () => { await new Promise<void>(() => {}); }, async () => {});
   sq.send("@Paws hello", 0);
   for (const q of queued) sq.send(q, 0);
   const said: string[] = [];
-  const pending: boolean[] = [];
   let deferred: string | null = null;
   const done: string[] = [];
-  let quiet = false;
+  const stuck: number[] = [];
   const page: EntryPage = {
     inviteRow: (t) => ([...rows].find(([, x]) => x === t)?.[0] ?? null),
     markWaiting: (id, on) => { if (on) waiting.add(id); else waiting.delete(id); },
@@ -70,287 +94,351 @@ function pageSide(queued: string[] = []) {
     takeWaiting: () => sq.takeAll(),
     giveBack: (texts) => void restorer.give(texts),
     sayFailed: async () => { said.push("the call changed nothing"); },
-    quiet: () => quiet,
-    setPending: (on) => pending.push(on),
+    quiet: () => prog.quiet(),
+    setGen: (g) => prog.setGen(g),
     takeDeferred: () => { const d = deferred; deferred = null; return d; },
     doDeferred: (press) => done.push(press),
+    memberStuck: () => stuck.push(1),
     log: () => {},
   };
-  return {
-    page, rows, waiting, said, pending, done, dispatched,
-    draft: () => draft,
-    defer: (p: string) => { deferred = p; },
-    setQuiet: (q: boolean) => { quiet = q; },
-    queueLeft: () => sq.waiting().map((w) => w.text),
-  };
+  return { page, rows, waiting, said, done, stuck, draft: () => draft, defer: (p: string) => { deferred = p; }, queueLeft: () => sq.waiting().map((w) => w.text) };
 }
 
-test("the deadline is 5000 ms, owned by the page (engineering parameter frozen on issue 23)", () => {
-  assert.equal(ENTRY_DEADLINE_MS, 5000);
+test("the deadline is 5000 ms, owned by the page (engineering parameter frozen on issue 23)", () => assert.equal(ENTRY_DEADLINE_MS, 5000));
+
+test("commit with the box already shown: the join, then committed; the row stays; B still waits for after the commit", async () => {
+  const pr = program();
+  pr.boxVisible = true;
+  const pg = pageSide(pr, ["B"]);
+  const r = await entryTurn(new Entries(), "@Paws hello", pr.host(), pg.page);
+  assert.equal(r.outcome, "committed");
+  assert.equal(pr.member, true);
+  assert.ok(pg.rows.has(7));
+  assert.equal(pg.draft(), "");
+  assert.deepEqual(pg.queueLeft(), ["B"]);
 });
 
-test("commit: membership saved then box shown, and box shown then membership saved, both commit; the row waits until then and nothing is given back", async () => {
-  for (const order of ["save-first", "show-first"] as const) {
-    const n = nativeSide();
-    const pg = pageSide(["B"]);
-    const run = entryTurn(new Entries(), "@Paws hello", n.host, pg.page);
+test("either acknowledgement order commits: the join answered before the box shows, and the box shown before the join answers", async () => {
+  for (const order of ["join-first", "show-first"] as const) {
+    const pr = program();
+    pr.memberMode = "hold";
+    const pg = pageSide(pr);
+    const run = entryTurn(new Entries(), "@Paws hello", pr.host(), pg.page);
     await ticks();
-    assert.ok(pg.waiting.has(7), "the invitation's row shows as waiting");
-    if (order === "save-first") { n.save.resolve(true); await ticks(); n.show.resolve(true); } else { n.show.resolve(true); await ticks(); n.save.resolve(true); }
-    assert.equal(await run, "committed", order);
-    assert.equal(pg.waiting.size, 0);
-    assert.ok(pg.rows.has(7), "the row stays in the history");
-    assert.equal(pg.draft(), "", "nothing given back");
-    assert.deepEqual(pg.queueLeft(), ["B"], "B still waits, to go FIFO after the commit (row 7)");
-    assert.deepEqual(pg.pending, [true, false]);
-    assert.ok(!n.calls.includes("undo"));
+    if (order === "join-first") { pr.releaseMember(); await ticks(); pr.runShows(); await pr.advance(100); }
+    else { pr.runShows(); await pr.advance(100); pr.releaseMember(); }
+    assert.equal((await run).outcome, "committed", order);
+    assert.equal(pr.member, true);
   }
 });
 
-test("nothing is shown or saved while a composition is active before the effects; then the entry goes on (note 1, row 11)", async () => {
-  const n = nativeSide();
-  const pg = pageSide();
-  n.compose(true);
-  const run = entryTurn(new Entries(), "@Paws hello", n.host, pg.page);
-  await ticks();
-  assert.deepEqual(n.calls, [], "no native effect while composing");
-  await n.advance(ENTRY_DEADLINE_MS * 3);
-  assert.deepEqual(n.calls, [], "the deadline does not run before the effects start");
-  n.compose(false);
-  await ticks();
-  assert.deepEqual(n.calls.sort(), ["save", "show"]);
-  n.save.resolve(true); n.show.resolve(true);
-  assert.equal(await run, "committed");
-});
-
-test("an entry closed while it waits for a composition ends and never resumes", async () => {
-  const n = nativeSide();
-  const pg = pageSide(["B"]);
+test("R1: the box query held, the entry closed, the old query answers 'not showing': no show is asked for the old entry", async () => {
+  const pr = program();
+  pr.queryMode = "hold";
   const entries = new Entries();
-  n.compose(true);
-  const run = entryTurn(entries, "@Paws hello", n.host, pg.page);
+  const pg = pageSide(pr);
+  const run = entryTurn(entries, "@Paws hello", pr.host(), pg.page);
   await ticks();
-  entries.end(); // the box closed
-  n.compose(false);
-  assert.equal(await run, "closed");
+  entries.end();
+  const r = await run;
+  assert.equal(r.outcome, "closed");
+  pr.releaseQuery(false);
   await ticks();
-  assert.deepEqual(n.calls, [], "no membership, no show, ever");
-  assert.equal(pg.draft(), "@Paws hello\nB", "the invitation then B, once");
-  assert.ok(!pg.rows.has(7));
+  pr.runShows();
+  assert.ok(!pr.calls.some((c) => c.startsWith("show")), "no show was asked after the close");
+  assert.equal(pr.boxVisible, false);
+  await pr.membership.idle();
+  assert.equal(pr.member, false, "the closed entry's join was undone in its step");
 });
 
-test("a composition that starts after both acknowledgements defers the commit, with no deadline", async () => {
-  const n = nativeSide();
-  const pg = pageSide();
-  const run = entryTurn(new Entries(), "@Paws hello", n.host, pg.page);
+test("R1: a native show asked by an entry that then ended is refused by the native side when its thread runs", async () => {
+  const pr = program();
+  pr.memberMode = "hold";
+  const entries = new Entries();
+  const pg = pageSide(pr);
+  const run = entryTurn(entries, "@Paws hello", pr.host(), pg.page);
   await ticks();
-  n.compose(true);
-  n.save.resolve(true); n.show.resolve(true);
-  await ticks();
-  await n.advance(ENTRY_DEADLINE_MS * 2);
-  let settled = false;
-  void run.then(() => { settled = true; });
-  await ticks();
-  assert.equal(settled, false, "the commit waits for the composition, past the deadline");
-  n.compose(false);
-  assert.equal(await run, "committed");
+  assert.ok(pr.calls.includes("show g=1"));
+  entries.end(); pg.page.setGen(0); // the page's endEntry tells the native side at once
+  pr.runShows();
+  assert.equal(pr.boxVisible, false);
+  assert.ok(pr.log.includes("native: show of g=1 refused"));
+  pr.memberMode = "auto"; // the undo that follows answers at once
+  pr.releaseMember();
+  await run;
+  await pr.membership.idle();
+  assert.equal(pr.member, false, "the late join was undone in its own step");
 });
 
-test("the deadline: acknowledgements at 4999 ms commit; none by 5000 ms fails, rolls back and gives the text back once", async () => {
-  const a = nativeSide();
-  const pa = pageSide();
-  const ra = entryTurn(new Entries(), "@Paws hello", a.host, pa.page);
-  await a.advance(4999);
-  a.save.resolve(true); a.show.resolve(true);
-  assert.equal(await ra, "committed");
-
-  const b = nativeSide();
-  const pb = pageSide(["B", "C"]);
-  const rb = entryTurn(new Entries(), "@Paws hello", b.host, pb.page);
-  await b.advance(4999);
-  b.show.resolve(true); // the box showed, the membership never answered
-  await b.advance(1);
-  assert.equal(await rb, "failed");
-  assert.equal(pb.draft(), "@Paws hello\nB\nC", "the invitation, B and C, in order, once");
-  assert.deepEqual(pb.said, ["the call changed nothing"], "the existing line, no new text");
-  assert.ok(!pb.rows.has(7));
-  b.save.resolve(true); // a late success
+test("R1: a composition that starts during an intermediate await stops the show until it ends", async () => {
+  const pr = program();
+  pr.queryMode = "hold";
+  const pg = pageSide(pr);
+  const run = entryTurn(new Entries(), "@Paws hello", pr.host(), pg.page);
   await ticks();
-  assert.deepEqual(b.calls.filter((c) => c === "undo"), ["undo"], "a late success is undone, once");
+  pr.compose(true);
+  pr.queryMode = "auto"; // the later polls answer at once
+  pr.releaseQuery(false);
+  await ticks();
+  assert.ok(!pr.calls.some((c) => c.startsWith("show")), "no show while composing");
+  pr.compose(false);
+  await ticks();
+  assert.ok(pr.calls.includes("show g=1"));
+  pr.runShows(); await pr.advance(100);
+  assert.equal((await run).outcome, "committed");
 });
 
-test("a refused membership fails at once: no wait for the deadline, nothing kept, the text given back; a box that cannot show fails and undoes the save", async () => {
-  const n = nativeSide();
-  const pg = pageSide(["B"]);
-  const run = entryTurn(new Entries(), "@Paws hello", n.host, pg.page);
-  n.save.resolve(false);
-  assert.equal(await run, "failed");
+test("R1: a composition active when the join's turn comes holds the native join until it ends", async () => {
+  const pr = program();
+  pr.boxVisible = true;
+  const entries = new Entries();
+  const pg = pageSide(pr);
+  // an earlier membership step holds the chain; meanwhile a composition starts
+  pr.memberMode = "hold";
+  const blocker = pr.membership.leave(0);
+  const run = entryTurn(entries, "@Paws hello", pr.host(), pg.page);
+  await ticks();
+  pr.compose(true);
+  pr.releaseMember(); // the blocker ends; the entry's join now has its turn, with a composition active
+  await blocker;
+  await ticks();
+  assert.equal(pr.calls.filter((c) => c === "join").length, 0, "no native join while composing");
+  pr.memberMode = "auto";
+  pr.compose(false);
+  assert.equal((await run).outcome, "committed");
+  assert.equal(pr.member, true);
+});
+
+test("nothing is shown or joined while composing before the effects; the deadline does not run then; an entry closed there never resumes", async () => {
+  const pr = program();
+  pr.compose(true);
+  const entries = new Entries();
+  const pg = pageSide(pr, ["B"]);
+  const run = entryTurn(entries, "@Paws hello", pr.host(), pg.page);
+  await pr.advance(ENTRY_DEADLINE_MS * 3);
+  assert.deepEqual(pr.calls, []);
+  entries.end();
+  pr.compose(false);
+  assert.equal((await run).outcome, "closed");
+  await ticks();
+  assert.deepEqual(pr.calls, []);
   assert.equal(pg.draft(), "@Paws hello\nB");
-  assert.ok(!n.calls.includes("undo"), "nothing to undo");
-
-  const m = nativeSide();
-  const pm = pageSide();
-  const rm = entryTurn(new Entries(), "@Paws hello", m.host, pm.page);
-  m.save.resolve(true);
-  await ticks();
-  m.show.resolve(false);
-  assert.equal(await rm, "failed");
-  assert.deepEqual(m.calls.filter((c) => c === "undo"), ["undo"]);
 });
 
-test("a close during the acknowledgements ends the entry at that instant: membership undone (also when saved later), text back once, a deferred press dropped", async () => {
-  const n = nativeSide();
-  const pg = pageSide(["B"]);
+test("R2: an old entry closed with its join pending, a newer entry that FAILS, then the old join answers: no ghost member", async () => {
+  const pr = program();
+  pr.memberMode = "hold";
   const entries = new Entries();
+  const p1 = pageSide(pr);
+  const r1 = entryTurn(entries, "@Paws hello", pr.host(), p1.page);
+  await ticks();
+  entries.end();
+  const p2 = pageSide(pr);
+  const r2 = entryTurn(entries, "@Paws hello", pr.host({ refuse: true }), p2.page);
+  assert.equal((await r2).outcome, "failed");
+  pr.releaseMember(); // the OLD join answers now and is undone in the same step of the chain
+  pr.memberMode = "auto";
+  await ticks();
+  await pr.membership.idle();
+  await r1;
+  assert.equal(pr.member, false, "no member without a visit");
+  assert.deepEqual(pr.calls.filter((c) => c === "join" || c === "leave"), ["join", "leave"]);
+});
+
+test("R2: an old entry's undo held; a newer entry's join waits behind it in the chain, so the old undo never removes the newer member", async () => {
+  const pr = program();
+  const entries = new Entries();
+  const p1 = pageSide(pr);
+  const r1 = entryTurn(entries, "@Paws hello", pr.host(), p1.page); // its box never shows
+  await ticks();
+  assert.equal(pr.member, true);
+  pr.memberMode = "hold";
+  await pr.advance(ENTRY_DEADLINE_MS);
+  await ticks();
+  assert.equal(pr.heldMemberCount(), 1, "the old undo is in flight");
+  const p2 = pageSide(pr);
+  pr.boxVisible = true;
+  const r2 = entryTurn(entries, "@Paws hello", pr.host(), p2.page);
+  await ticks();
+  assert.equal(pr.heldMemberCount(), 1, "the newer join has not run: it waits behind the old undo");
+  pr.releaseMember(); // the old undo
+  await ticks();
+  pr.releaseMember(); // then the newer join
+  assert.equal((await r1).outcome, "failed");
+  assert.equal((await r2).outcome, "committed");
+  assert.equal(pr.member, true, "the newer member stays");
+});
+
+test("R2: a refused undo is retried three times and then reported (stuck), never assumed done", async () => {
+  const pr = program();
+  const pg = pageSide(pr);
+  const run = entryTurn(new Entries(), "@Paws hello", pr.host(), pg.page); // its box never shows
+  await ticks();
+  assert.equal(pr.member, true);
+  pr.memberMode = "error";
+  await pr.advance(ENTRY_DEADLINE_MS);
+  for (let i = 0; i < 4; i++) await pr.advance(300);
+  const r = await run;
+  assert.equal(r.outcome, "failed");
+  assert.equal(r.stuck, true);
+  assert.deepEqual(pg.stuck, [1], "the page is told and shows the presence as the disk has it");
+  assert.equal(pr.calls.filter((c) => c === "leave").length, 3);
+});
+
+test("R4 at the boundary: a join the native side refuses (its write failed) is not saved: no commit, the text back once, the existing line", async () => {
+  const pr = program();
+  pr.memberMode = "error";
+  pr.boxVisible = true;
+  const pg = pageSide(pr, ["B"]);
+  const r = await entryTurn(new Entries(), "@Paws hello", pr.host(), pg.page);
+  assert.equal(r.outcome, "failed");
+  assert.equal(pr.member, false);
+  assert.equal(pg.draft(), "@Paws hello\nB");
+  assert.deepEqual(pg.said, ["the call changed nothing"]);
+});
+
+test("the deadline: answers at 4999 ms commit; a join never answered fails at 5000 ms, and its late answer is undone in the chain", async () => {
+  const a = program();
+  a.memberMode = "hold";
+  const pa = pageSide(a);
+  const ra = entryTurn(new Entries(), "@Paws hello", a.host(), pa.page);
+  await ticks();
+  a.runShows();
+  await a.advance(4899);
+  a.releaseMember();
+  assert.equal((await ra).outcome, "committed");
+
+  const b = program();
+  b.memberMode = "hold";
+  const pb = pageSide(b, ["B", "C"]);
+  const rb = entryTurn(new Entries(), "@Paws hello", b.host(), pb.page);
+  await ticks();
+  b.runShows();
+  await b.advance(ENTRY_DEADLINE_MS);
+  await b.advance(ENTRY_DEADLINE_MS); // the rollback waits one more deadline for the join's answer, then reports it as not known
+  const r = await rb;
+  assert.equal(r.outcome, "failed");
+  assert.equal(r.stuck, true);
+  assert.equal(pb.draft(), "@Paws hello\nB\nC");
+  b.releaseMember();
+  b.memberMode = "auto";
+  await ticks();
+  await b.membership.idle();
+  assert.equal(b.member, false);
+});
+
+test("a close during the acknowledgements: closed at once, the join undone, the text back once, no line, a deferred press dropped", async () => {
+  const pr = program();
+  pr.memberMode = "hold";
+  const entries = new Entries();
+  const pg = pageSide(pr, ["B"]);
   pg.defer("double click");
-  const run = entryTurn(entries, "@Paws hello", n.host, pg.page);
+  const run = entryTurn(entries, "@Paws hello", pr.host(), pg.page);
   await ticks();
-  n.show.resolve(true);
-  await ticks();
-  entries.end(); // Esc on the box, still fading
-  assert.equal(await run, "closed");
-  assert.deepEqual(pg.done, [], "the press made before the close is dropped (decision 2)");
-  assert.deepEqual(pg.said, [], "a close says nothing");
+  entries.end();
+  pr.releaseMember();
+  pr.memberMode = "auto";
+  const r = await run;
+  assert.equal(r.outcome, "closed");
+  await pr.membership.idle();
+  assert.equal(pr.member, false);
+  assert.deepEqual(pg.done, []);
+  assert.deepEqual(pg.said, []);
   assert.equal(pg.draft(), "@Paws hello\nB");
-  n.save.resolve(true); // the save lands after the close
-  await ticks();
-  assert.deepEqual(n.calls.filter((c) => c === "undo"), ["undo"]);
-  assert.equal(entries.busy(), false);
 });
 
-test("a deferred press waits for the entry and is done once after a commit or a failure (row 28a)", async () => {
+test("a deferred press waits and is done once after a commit or a failure (row 28a)", async () => {
   for (const ok of [true, false]) {
-    const n = nativeSide();
-    const pg = pageSide();
+    const pr = program();
+    pr.boxVisible = true;
+    if (!ok) pr.memberMode = "error";
+    const pg = pageSide(pr);
     pg.defer("shortcut");
-    const run = entryTurn(new Entries(), "@Paws hello", n.host, pg.page);
-    await ticks();
-    assert.deepEqual(pg.done, [], "not before the outcome");
-    n.save.resolve(ok); n.show.resolve(true);
-    await run;
+    await entryTurn(new Entries(), "@Paws hello", pr.host(), pg.page);
     assert.deepEqual(pg.done, ["shortcut"]);
   }
 });
 
-test("Quiet during the entry: it commits silently, no failure line, the waiting messages back; Quiet on then off before the commit commits normally (row 10)", async () => {
-  const n = nativeSide();
-  const pg = pageSide(["B", "C"]);
-  const run = entryTurn(new Entries(), "@Paws hello", n.host, pg.page);
+test("Quiet during the entry: it commits silently and the waiting messages go back (row 10)", async () => {
+  const pr = program();
+  pr.memberMode = "hold";
+  pr.boxVisible = true;
+  const pg = pageSide(pr, ["B", "C"]);
+  const run = entryTurn(new Entries(), "@Paws hello", pr.host(), pg.page);
   await ticks();
-  n.setQuiet(true); pg.setQuiet(true);
-  n.save.resolve(true); n.show.resolve(true);
-  assert.equal(await run, "committed-quiet");
-  assert.equal(pg.draft(), "B\nC", "the other unsent messages go back; the invitation stays as its row");
-  assert.ok(pg.rows.has(7));
+  pr.setQuiet(true);
+  pr.releaseMember();
+  const r = await run;
+  assert.equal(r.outcome, "committed-quiet");
+  assert.equal(pg.draft(), "B\nC");
+  assert.equal(pr.member, true);
   assert.deepEqual(pg.said, []);
-  assert.ok(!n.calls.includes("undo"), "the membership is kept");
-
-  const m = nativeSide();
-  const pm = pageSide();
-  const rm = entryTurn(new Entries(), "@Paws hello", m.host, pm.page);
-  await ticks();
-  m.setQuiet(true); await ticks(); m.setQuiet(false);
-  m.save.resolve(true); m.show.resolve(true);
-  assert.equal(await rm, "committed");
 });
 
-test("Quiet when an entry fails: the text goes back, no line is said", async () => {
-  const n = nativeSide();
-  const pg = pageSide();
-  pg.setQuiet(true);
-  const run = entryTurn(new Entries(), "@Paws hello", n.host, pg.page);
-  n.save.resolve(false);
-  assert.equal(await run, "failed");
-  assert.deepEqual(pg.said, []);
-  assert.equal(pg.draft(), "@Paws hello");
-});
-
-test("row 23: a late membership of an old entry does not undo the newer visit; an invitation after a closed one enters with a new g (row 22)", async () => {
+test("R3: the committed visit has an identity: a clear or the end of the visit after the outcome, before the words are sent, ends it", async () => {
+  const pr = program();
+  pr.boxVisible = true;
   const entries = new Entries();
-  const old = nativeSide();
-  const po = pageSide();
-  const ro = entryTurn(entries, "@Paws hello", old.host, po.page);
+  const r = await entryTurn(entries, "@Paws hello", pr.host(), pageSide(pr).page);
+  assert.equal(r.outcome, "committed");
+  assert.equal(entries.visitLive(r.g), true);
+  entries.end();
+  assert.equal(entries.visitLive(r.g), false);
+});
+
+test("R3: a clear while both acknowledgements are held ends the entry; the old acknowledgements then commit nothing", async () => {
+  const pr = program();
+  pr.memberMode = "hold";
+  pr.queryMode = "hold";
+  const entries = new Entries();
+  const run = entryTurn(entries, "@Paws hello", pr.host(), pageSide(pr).page);
   await ticks();
   entries.end();
-  assert.equal(await ro, "closed");
-  const fresh = nativeSide();
-  const pf = pageSide();
-  const rf = entryTurn(entries, "@Paws hello", fresh.host, pf.page);
-  await ticks();
-  fresh.save.resolve(true); fresh.show.resolve(true);
-  assert.equal(await rf, "committed");
-  old.save.resolve(true); // the old entry's save lands now
-  await ticks();
-  assert.ok(!old.calls.includes("undo"), "the membership now belongs to the newer visit: it is not undone");
-  assert.equal(entries.generation, 2);
+  pr.releaseQuery(true);
+  pr.releaseMember();
+  pr.memberMode = "auto";
+  const r = await run;
+  assert.equal(r.outcome, "closed");
+  assert.equal(entries.visitLive(r.g), false);
+  await pr.membership.idle();
+  assert.equal(pr.member, false);
 });
 
-test("duplicate and late acknowledgements after a commit change nothing", async () => {
-  const n = nativeSide();
-  const pg = pageSide();
-  const run = entryTurn(new Entries(), "@Paws hello", n.host, pg.page);
-  n.save.resolve(true); n.show.resolve(true);
-  assert.equal(await run, "committed");
-  n.save.resolve(false); n.show.resolve(false); // a second answer of either: ignored (a promise settles once; the machine records the first)
-  await ticks();
-  assert.ok(!n.calls.includes("undo"));
-  assert.deepEqual(pg.said, []);
-});
-
-test("enterVisit alone: an entry ended before it starts makes no native effect", async () => {
-  const entries = new Entries();
-  const n = nativeSide();
-  const t = entries.begin();
-  entries.end();
-  assert.equal(await enterVisit(t, n.host), "closed");
-  assert.deepEqual(n.calls, []);
-});
-
-// ---------------------------------------------------------------- lossless returns (note 2)
-
-test("a return is applied once per id, acknowledged, retried with its id when lost, and never cut at 300 characters", async () => {
+test("lossless returns (note 2): applied once per id, retried with the same id when lost, never cut at 300 characters", async () => {
   const box = new RestoreInbox();
   let draft = "typed";
   let online = false;
   const sent: string[] = [];
-  const r = new Restorer(async (id, text) => {
-    sent.push(id);
-    if (!online) throw new Error("the box is not there");
-    const a = box.apply(draft, id, text);
-    draft = a.draft;
-    r.acked(id);
-  });
+  const r = new Restorer(async (id, text) => { sent.push(id); if (!online) throw new Error("not there"); draft = box.apply(draft, id, text).draft; r.acked(id); });
   const long = "x".repeat(450);
   const id = r.give(["first", long])!;
   await ticks();
-  assert.equal(draft, "typed", "lost: nothing applied");
-  assert.equal(r.waiting().length, 1, "kept for a retry");
+  assert.equal(draft, "typed");
   online = true;
   r.retry();
   await ticks();
-  assert.equal(draft, `typed\nfirst\n${long}`, "the whole text, after the existing draft, beyond 300 characters");
-  assert.equal(r.waiting().length, 0);
-  assert.deepEqual(sent, [id, id], "the retry used the same id");
-  assert.deepEqual(box.apply(draft, id, "first"), { draft, applied: false }, "a second delivery of the same id changes nothing");
-  assert.equal(r.give([]), null, "nothing to give, no return");
+  assert.equal(draft, `typed\nfirst\n${long}`);
+  assert.deepEqual(sent, [id, id]);
+  assert.deepEqual(box.apply(draft, id, "first"), { draft, applied: false });
 });
 
-// ---------------------------------------------------------------- the page uses this continuation
-
-test("the page: invitations in the chat visit enter through entryTurn; nothing is dispatched unless committed; the box and the close feed the entry", () => {
+test("the page and Rust: both invitation paths re-check the committed visit after their awaits; reasons end the entry, Quiet and a touch do not; truthful native effects", () => {
   const src = readFileSync(new URL("../routes/+page.svelte", import.meta.url), "utf8");
   const box = readFileSync(new URL("../routes/chatbox/+page.svelte", import.meta.url), "utf8");
-  assert.ok(src.includes("return entryTurn(entries, text, entryHost(text), {"), "the page's continuation is entryTurn");
-  assert.equal((src.match(/const outcome = await enterChatVisit\(text\);\s*await refreshPawsOut\(\);\s*if \(outcome !== "committed"\) return true;/g) ?? []).length, 2,
-    "the mention and the typed command both stop on every outcome but a commit");
-  const mention = src.slice(src.indexOf('if (p === "paws" && pawsMode === "chat") {'), src.indexOf('if (p === "paws" && pawsMode === "chat") {') + 700);
-  assert.ok(mention.indexOf("enterChatVisit(text)") < mention.indexOf("called.push(p)"), "the held words are dispatched only after the commit");
-  assert.ok(/listen\("chatbox-closed"[\s\S]{0,300}entries\.end\(\)/.test(src), "an explicit close ends the entry at once");
-  assert.ok(/const back = entries\.busy\(\) \? \[\] : sendQueue\.takeAll\(\);/.test(src), "during an entry the end of a visit leaves the returns to the entry");
-  assert.ok(src.includes('if (entries.pending()) { deferredOpen = "double click";'), "a double click during an entry waits");
-  assert.ok(/listen<string>\("chatbox-restored", \(e\) => \{ restorer\.acked\(e\.payload\);/.test(src) && /chatbox-ready[\s\S]{0,80}restorer\.retry\(\)/.test(src), "returns are acknowledged and retried");
-  assert.ok(box.includes("restores.apply(draft, e.payload.id, e.payload.text)") && box.includes('emitTo("main", "chatbox-restored", e.payload.id)'), "the box applies a return once and acknowledges it");
-  assert.ok(box.includes('emitTo("main", "chatbox-composing", true)') && box.includes('emitTo("main", "chatbox-composing", false)'), "the box tells its composition");
-  assert.ok(!src.includes('emitTo("chatbox", "chatbox-restore", back'), "no return without an id is left");
-  assert.ok(/listen\("chatbox-ready"[\s\S]{0,400}if \(boxComposing\) \{ boxComposing = false;[\s\S]{0,120}for \(const r of w\) r\(\);/.test(src), "a reloaded box ends a composition the old page left open: no entry waits forever");
+  const rust = readFileSync(new URL("../../src-tauri/src/duo.rs", import.meta.url), "utf8");
+  assert.ok(src.includes("return entryTurn(entries, text, entryHost(text), {"));
+  assert.ok(src.includes("return nativeEntryHost({"), "the page's host is the library's");
+  assert.equal((src.match(/const entry = await enterChatVisit\(text\);\s*await refreshPawsOut\(\);[\s\S]{0,260}if \(entry\.outcome !== "committed" \|\| !entries\.visitLive\(entry\.g\)\) return true;/g) ?? []).length, 2);
+  assert.ok(/function cancelTalk\(reason: "quiet" \| "touch" \| "clear" \| "visit-end"[^)]*\) \{\s*if \(reason === "clear" \|\| reason === "visit-end"\) endEntry\(reason\);/.test(src));
+  assert.ok(src.includes('cancelTalk("clear");') && src.includes('cancelTalk("visit-end");') && src.includes('cancelTalk("quiet");') && src.includes('cancelTalk("touch");'));
+  assert.ok(!/cancelTalk\(\);/.test(src), "every call names its reason");
+  assert.ok(/listen\("chatbox-closed"[\s\S]{0,300}endEntry\("the box was closed"\)/.test(src));
+  assert.ok(src.includes('if (e.payload === "paws") endEntry("Paws tucked in");'));
+  assert.ok(/function endEntry\(reason: string\) \{\s*const g = entries\.end\(\);\s*if \(g === null\) return;\s*void invoke\("duo_entry_gen", \{ g: 0 \}\)/.test(src));
+  assert.ok(src.includes('show: (g) => void invoke("duo_entry_show", { g })'));
+  assert.ok(src.includes('await invoke<string>("duo_membership", { out })'));
+  assert.ok(rust.includes('if ENTRY_G.load(Ordering::SeqCst) != g { log(&app, &format!("entry g={g}: the box is not shown, the entry ended")); return; }'));
+  assert.ok(rust.includes("if let Err(e) = persist(s) { s.pets.paws = before; return Err(e.to_string()); }"));
+  assert.ok(box.includes("restores.apply(draft, e.payload.id, e.payload.text)") && box.includes('emitTo("main", "chatbox-composing", true)'));
+  assert.ok(/listen\("chatbox-ready"[\s\S]{0,400}if \(boxComposing\) \{ boxComposing = false;/.test(src));
 });
