@@ -3828,7 +3828,12 @@
       }));
       cleanups.push(await win.listen("duo-touch", () => { if (duoOn) cancelTalk(); })); // a touch on Paws ends the talk, as a touch on Peak does
       void initDuo();
-      cleanups.push(await win.listen("chatbox-ready", () => { pushBox(true); restorer.retry(); })); // a return not acknowledged yet goes again, with its id
+      cleanups.push(await win.listen("chatbox-ready", () => {
+        pushBox(true);
+        restorer.retry(); // a return not acknowledged yet goes again, with its id
+        // a box made or reloaded has no composition: one that was active in the old page never ends there, so an entry waiting for it must not wait forever
+        if (boxComposing) { boxComposing = false; const w = compositionWaiters; compositionWaiters = []; for (const r of w) r(); }
+      }));
       cleanups.push(await win.listen<string>("chatbox-restored", (e) => { restorer.acked(e.payload); void invoke("duo_log", { line: `return ${e.payload} acknowledged by the box` }).catch(() => {}); }));
       cleanups.push(await win.listen<boolean>("chatbox-composing", (e) => {
         boxComposing = e.payload;

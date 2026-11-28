@@ -352,4 +352,5 @@ test("the page: invitations in the chat visit enter through entryTurn; nothing i
   assert.ok(box.includes("restores.apply(draft, e.payload.id, e.payload.text)") && box.includes('emitTo("main", "chatbox-restored", e.payload.id)'), "the box applies a return once and acknowledges it");
   assert.ok(box.includes('emitTo("main", "chatbox-composing", true)') && box.includes('emitTo("main", "chatbox-composing", false)'), "the box tells its composition");
   assert.ok(!src.includes('emitTo("chatbox", "chatbox-restore", back'), "no return without an id is left");
+  assert.ok(/listen\("chatbox-ready"[\s\S]{0,400}if \(boxComposing\) \{ boxComposing = false;[\s\S]{0,120}for \(const r of w\) r\(\);/.test(src), "a reloaded box ends a composition the old page left open: no entry waits forever");
 });
