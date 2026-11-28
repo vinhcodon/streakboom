@@ -20,7 +20,7 @@ $log = @(); function Note($t) { $script:log += $t; Write-Output $t }
 function Cmd($c) { Set-Content -Path "$data\duo-cmd.txt" -Value $c -Encoding ascii; Start-Sleep -Milliseconds 800 }
 function Dump { Remove-Item "$data\duo-dump.txt" -ErrorAction SilentlyContinue; Cmd "dump"; Start-Sleep -Milliseconds 400; Get-Content "$data\duo-dump.txt" }
 function Rect4($dump, $label) { $l = $dump | Where-Object { $_ -like "$label *" }; if ($l -match 'visible=(\w+) pos=Some\(\((-?\d+), (-?\d+)\)\) size=Some\(\((\d+), (\d+)\)\)') { @{ v = ($matches[1] -eq "true"); x = [int]$matches[2]; y = [int]$matches[3]; w = [int]$matches[4]; h = [int]$matches[5] } } }
-function RawClick($x, $y) { [M]::SetCursorPos($x, $y); Start-Sleep -Milliseconds 120; [M]::mouse_event(2,0,0,0,[IntPtr]::Zero); Start-Sleep -Milliseconds 50; [M]::mouse_event(4,0,0,0,[IntPtr]::Zero) }
+function RawClick($x, $y) { [void][M]::SetCursorPos($x, $y); Start-Sleep -Milliseconds 120; [M]::mouse_event(2,0,0,0,[IntPtr]::Zero); Start-Sleep -Milliseconds 50; [M]::mouse_event(4,0,0,0,[IntPtr]::Zero) }
 function ProgramHasFocus { $q = [uint32]0; [void][M]::GetWindowThreadProcessId([M]::GetForegroundWindow(), [ref]$q); $p = Get-Process -Id $q -ErrorAction SilentlyContinue; return ($p -and $p.Path -eq $Exe) }
 function EnsureBox { $r = Rect4 (Dump) "chatbox"; if (-not ($r -and $r.v)) { Cmd "traysingle"; Start-Sleep -Milliseconds 1500; $r = Rect4 (Dump) "chatbox" }; $r }
 # a click only inside the box of the program under test, checked against its window at that moment
@@ -29,7 +29,7 @@ function Focus {
   if (-not (ProgramHasFocus)) { throw "the program under test does not have the keyboard" }
 }
 function Keys($seq) { Focus; [System.Windows.Forms.SendKeys]::SendWait($seq); Start-Sleep -Milliseconds 450 }
-function Draft { Focus; $old = $null; try { $old = [System.Windows.Forms.Clipboard]::GetText() } catch {}; try { [System.Windows.Forms.Clipboard]::Clear() } catch {}; [System.Windows.Forms.SendKeys]::SendWait("^a^c"); Start-Sleep -Milliseconds 400; $t = ""; try { $t = [System.Windows.Forms.Clipboard]::GetText() } catch {}; try { if ($old) { [System.Windows.Forms.Clipboard]::SetText($old) } } catch {}; [System.Windows.Forms.SendKeys]::SendWait("{END}"); ($t -replace "`r", "") -replace "`n", " | " }
+function Draft { Focus | Out-Null; $old = $null; try { $old = [System.Windows.Forms.Clipboard]::GetText() } catch {}; try { [System.Windows.Forms.Clipboard]::Clear() } catch {}; [System.Windows.Forms.SendKeys]::SendWait("^a^c"); Start-Sleep -Milliseconds 400; $t = ""; try { $t = [System.Windows.Forms.Clipboard]::GetText() } catch {}; try { if ($old) { [System.Windows.Forms.Clipboard]::SetText($old) } } catch {}; [System.Windows.Forms.SendKeys]::SendWait("{END}"); ($t -replace "`r", "") -replace "`n", " | " }
 function ClearDraft { Keys "^a"; Keys "{BACKSPACE}" }
 function LogLines { @(Get-Content "$data\duo-log.txt" -ErrorAction SilentlyContinue | ForEach-Object { $_ -replace '^\d+ ', '' }) }
 function Since($m) { @(LogLines | Select-Object -Skip $m) }
