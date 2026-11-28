@@ -12,7 +12,11 @@
 #     keyboard back (Windows should refuse it), three speech lines while the form has the keyboard.
 #   B (experiment off): a chat hidden by its own timeout then opened again (twice), and a chat after the window was destroyed and made again.
 #   C (experiment on, canned replies): three speech lines while the form has the keyboard, and two double clicks that open the chat box.
-param([Parameter(Mandatory = $true)][string]$Exe, [Parameter(Mandatory = $true)][string]$Out, [Parameter(Mandatory = $true)][ValidateSet("A", "B", "C")][string]$Plan, [string]$Seed = "")
+#   D (experiment off): five chats each closed by Esc, each double click made only once Peak is still (four after-Esc cycles); two chats
+#     left untyped to their own timeout and opened again; a second start while the form has the keyboard.
+#   E (experiment on, canned replies): five chat boxes each closed by Esc once Peak is still (four after-Esc cycles); a second start and
+#     the box shortcut (Ctrl+Alt+P), each while the form has the keyboard.
+param([Parameter(Mandatory = $true)][string]$Exe, [Parameter(Mandatory = $true)][string]$Out, [Parameter(Mandatory = $true)][ValidateSet("A", "B", "C", "D", "E")][string]$Plan, [string]$Seed = "")
 $ErrorActionPreference = "Stop"
 Add-Type -AssemblyName System.Windows.Forms, System.Drawing, UIAutomationClient, UIAutomationTypes
 Add-Type @"
@@ -111,6 +115,18 @@ function SafeClick([string]$label, [bool]$dbl) {
     }
     return $true
 }
+# Peak is still: its window has not moved for $ms (a walking Peak turns a double click into two single presses).
+function WaitStill([string]$label, [int]$ms = 1000, [int]$limit = 15000) {
+    $end = (Get-Date).AddMilliseconds($limit); $since = Get-Date; $last = ""
+    while ((Get-Date) -lt $end) {
+        $m = Main; if (-not $m) { Pump 50; continue }
+        $r = New-Object W+RECT; [W]::GetWindowRect($m.H, [ref]$r) | Out-Null; $k = "$($r.L),$($r.T)"
+        if ($k -ne $last) { $last = $k; $since = Get-Date }
+        if (((Get-Date) - $since).TotalMilliseconds -ge $ms) { return $true }
+        Pump 50
+    }
+    Note "INFO" "$label Peak did not stay still for $ms ms within $limit ms"; return $false
+}
 function FormClick { $x = $form.Left + 160; $y = $form.Top + 70; [W]::SetCursorPos($x, $y) | Out-Null; Start-Sleep -Milliseconds 20; if ([W]::RootAt($x, $y) -ne $formH) { Note "INFO" "the harness form is not under the cursor; nothing pressed"; return $false }; [W]::Press(); return $true }
 function FocusForm { if (FormClick) { Pump 250; $box.Focus() | Out-Null; Pump 80 } }
 function TraceSince([long]$ms) { if (-not (Test-Path $trace)) { return @() }; Get-Content $trace | Where-Object { $_ -match '^(\d+) (.*)$' -and [long]$Matches[1] -ge $ms } }
@@ -139,6 +155,11 @@ function Chat([string]$label, [string]$close, [string]$needBefore = "") {
     Note "INFO" "$label fit: $fit | shown=$vis foreground=$fg | trace since: $((TraceSince $t0) -join ' / ')"
     if ($needBefore -ne "" -and -not ($fit -match $needBefore)) { Note "INFO" "$label precondition '$needBefore' not met by this fit" }
     $read = "<not typed>"
+    if ($close -eq "wait-untyped") {
+        Check ($got -and ($fit -match "result=keyboard taken") -and $vis -and $fg -eq "bubble") "$label the chat bubble reports the keyboard taken, is shown and in front (left untyped: a draft keeps a chat open)"
+        Check (WaitFor { BubbleHidden } 30000) "$label hidden by its own timeout within 30 s"
+        Pump 800; return
+    }
     if ($fg -eq "bubble") { if (Keys "hi") { Pump 400; $read = EditValue $b } }
     Check ($got -and ($fit -match "result=keyboard taken") -and $vis -and $fg -eq "bubble" -and $read -like "*hi*") "$label the chat bubble reports the keyboard taken, is shown, in front and 'hi' reads back ('$read')"
     if ($close -eq "esc" -and $fg -eq "bubble") { Keys "{ESC}" | Out-Null; Check (WaitFor { BubbleHidden } 4000) "$label hidden within 4 s after Esc" }
@@ -197,6 +218,51 @@ function OverSpeech([string]$label) {
     }
     Note "FAIL" "$label no speech line came after three pokes"
 }
+function BoxValue($c) {
+    if (-not $c) { return "<no box>" }
+    try {
+        $root = [System.Windows.Automation.AutomationElement]::FromHandle($c.H)
+        $cond = New-Object System.Windows.Automation.PropertyCondition([System.Windows.Automation.AutomationElement]::ControlTypeProperty, [System.Windows.Automation.ControlType]::Edit)
+        $e = $root.FindFirst([System.Windows.Automation.TreeScope]::Descendants, $cond)
+        if (-not $e) { return "<no edit field>" }
+        return $e.GetCurrentPattern([System.Windows.Automation.ValuePattern]::Pattern).Current.Value
+    } catch { return "<uia error>" }
+}
+# The box opened by a double click once Peak is still, typed into, read back and closed by Esc (the experiment's after-Esc cycle).
+function BoxEsc([string]$label) {
+    WaitStill $label | Out-Null
+    if (-not (SafeClick $label $true)) { Note "FAIL" "$label not run: the double click was not made"; return }
+    $ok = WaitFor { $c = ChatBox; $c -and $c.Vis -and (Fg) -eq "chatbox" } 3000
+    $c = ChatBox; $read = "<not typed>"
+    if ((Fg) -eq "chatbox") { if (Keys "hi") { Pump 400; $read = BoxValue $c } }
+    Check ($ok -and $read -like "*hi*") "$label the chat box is shown, in front and 'hi' reads back ('$read'; foreground $(Fg))"
+    if ((Fg) -eq "chatbox") { Keys "^a{BACKSPACE}" | Out-Null; Pump 150; Keys "{ESC}" | Out-Null }
+    Check (WaitFor { $c = ChatBox; -not ($c -and $c.Vis) } 6000) "$label the box goes within 6 s after Esc"
+    Pump 1200
+}
+# A second start while this script's form has the keyboard: the running Peak stays the only one, nothing interactive opens, the form keeps the keys.
+function SecondStart([string]$label) {
+    FocusForm; $box.Text = ""
+    $t0 = NowMs
+    $p2 = Start-Process $Exe -PassThru
+    Pump 3000
+    $alive = -not $p2.HasExited
+    $fit = FitLine $t0 "1"; $c = ChatBox
+    $box.Focus() | Out-Null; Keys "abc" | Out-Null; Pump 300
+    Check ((-not $alive) -and (-not $fit) -and -not ($c -and $c.Vis -and (Fg) -eq "chatbox") -and $box.Text -eq "abc") "$label a second start: it exits (exited=$(-not $alive)), no interactive bubble, the form keeps the keys ('$($box.Text)'; foreground $(Fg))"
+    if ($alive) { Stop-Process -Id $p2.Id -Force -ErrorAction SilentlyContinue }
+}
+# The box shortcut while this script's form has the keyboard: reports whether the box took the keyboard or Windows refused it.
+function Shortcut([string]$label) {
+    FocusForm; $box.Text = ""
+    if (-not (Keys "^%p")) { Note "FAIL" "$label not run: the form did not have the keyboard"; return }
+    $shown = WaitFor { $c = ChatBox; $c -and $c.Vis } 3000
+    Pump 400
+    $fg = Fg
+    Note "INFO" "$label the box shortcut with the form in front: box shown=$shown, foreground=$fg ($(if ($fg -eq 'chatbox') { 'the keyboard was taken' } elseif ($fg -eq 'harness') { 'the keyboard stayed with the form' } else { 'the keyboard went elsewhere' }))"
+    Check $shown "$label the box shortcut shows the box"
+    if ($fg -eq "chatbox") { Keys "{ESC}" | Out-Null; WaitFor { $c = ChatBox; -not ($c -and $c.Vis) } 6000 | Out-Null }
+}
 # The chat box of the experiment (not the bubble): a double click opens it in front.
 function BoxOpen([string]$label) {
     if (-not (SafeClick $label $true)) { Note "FAIL" "$label not run: the double click was not made"; return }
@@ -231,6 +297,17 @@ switch ($Plan) {
     "C" {
         foreach ($i in 1..3) { Speech "C-speech$i" }
         foreach ($i in 1..2) { BoxOpen "C-box$i" }
+    }
+    "D" {
+        foreach ($i in 1..5) { WaitStill "D-esc$i" | Out-Null; Chat "D-esc$i" "esc" }
+        foreach ($i in 1..2) { WaitStill "D-timeout$i" | Out-Null; Chat "D-timeout$i" "wait-untyped" }
+        WaitStill "D-reopen" | Out-Null; Chat "D-reopen (after the timeouts)" "esc"
+        SecondStart "D-second-start"
+    }
+    "E" {
+        foreach ($i in 1..5) { BoxEsc "E-esc$i" }
+        SecondStart "E-second-start"
+        Shortcut "E-shortcut"
     }
 }
 Stop-Process -Id $proc.Id -Force -ErrorAction SilentlyContinue
