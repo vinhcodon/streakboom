@@ -1,6 +1,6 @@
 # ADR-0143: The person no longer names the pet: Peak is Peak and Paws is Paws
 
-- **Status:** accepted on 2026-11-22. It is built on the branch `exp/duo-prototype` only (nothing ships from there, ADR-0139); it changes ADR-0014 and `spec/03`, `spec/04` when it is merged.
+- **Status:** (amended by ADR-0168, 2026-11-28: with the experiment off, naming stays as on main) accepted on 2026-11-22. It is built on the branch `exp/duo-prototype` only (nothing ships from there, ADR-0139); it changes ADR-0014 and `spec/03`, `spec/04` when it is merged.
 - **Date:** 2026-11-22
 - **Decided by:** Vinh (author)
 

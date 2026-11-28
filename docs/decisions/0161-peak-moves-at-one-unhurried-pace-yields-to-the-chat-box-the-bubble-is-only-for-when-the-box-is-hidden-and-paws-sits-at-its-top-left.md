@@ -1,6 +1,6 @@
 # ADR-0161: Peak moves at one unhurried pace and yields to the chat box; the bubble speaks only when the box is hidden; Paws's portrait sits at the box's top-left
 
-- **Status:** (amended by ADR-0164, 2026-11-27) accepted on 2026-11-24 for the prototype (the branch `exp/duo-prototype` and the portrait variant of issue 15; nothing ships, ADR-0139). The author raised four points after trying the build; each was chosen from options.
+- **Status:** (amended by ADR-0168, 2026-11-28: with the experiment off, main's pace stays) (amended by ADR-0164, 2026-11-27) accepted on 2026-11-24 for the prototype (the branch `exp/duo-prototype` and the portrait variant of issue 15; nothing ships, ADR-0139). The author raised four points after trying the build; each was chosen from options.
 - **Date:** 2026-11-24
 - **Decided by:** Vinh (author)
 
