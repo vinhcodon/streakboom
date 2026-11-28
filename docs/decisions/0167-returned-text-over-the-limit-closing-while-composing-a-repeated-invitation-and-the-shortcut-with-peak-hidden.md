@@ -1,6 +1,6 @@
 # ADR-0167: Returned text longer than the field, closing while composing, a repeated bare invitation, and the box shortcut while Peak is hidden
 
-- **Status:** (amended by ADR-0168, 2026-11-28: the T0a acceptance) accepted on 2026-11-27 for the duo experiment. **Nothing is built from it.** It stays behind `STREAKBOOM_DUO`; no merge, release, key use or art is authorised. Amends ADR-0166; the contract and the task split below replace those proposed in ADR-0165 and 0166.
+- **Status:** (amended by ADR-0172, 2026-11-28: B1 is investigated before T2b) (amended by ADR-0168, 2026-11-28: the T0a acceptance) accepted on 2026-11-27 for the duo experiment. **Nothing is built from it.** It stays behind `STREAKBOOM_DUO`; no merge, release, key use or art is authorised. Amends ADR-0166; the contract and the task split below replace those proposed in ADR-0165 and 0166.
 - **Date:** 2026-11-27
 - **Decided by:** Vinh (author): "Theo đề xuất" to four multiple-choice questions, each with the app session's recommendation. Recorded by Claude (the app session). Where the recommendation differed from Codex's (questions 1 and 3), the app session's was chosen.
 
