@@ -1,6 +1,6 @@
 # ADR-0168: T0a is an integration baseline with recorded exceptions; what each experiment-off difference must meet before it reaches main
 
-- **Status:** (amended by ADR-0172, 2026-11-28: B1 is investigated before T2b) accepted on 2026-11-28 for the duo experiment. It authorises no merge, release, key use or art, and does not start T0b. Amends the T0a acceptance of ADR-0167 and, for the flag off, ADR-0143 and ADR-0161.
+- **Status:** (amended by ADR-0172, 2026-11-28: B1 is investigated before T2b; E3 completed by ADR-0173) accepted on 2026-11-28 for the duo experiment. It authorises no merge, release, key use or art, and does not start T0b. Amends the T0a acceptance of ADR-0167 and, for the flag off, ADR-0143 and ADR-0161.
 - **Date:** 2026-11-28
 - **Decided by:** Vinh (author): one multiple-choice question on the criterion and four on the differences, each answered with the app session's recommendation. Recorded by Claude (the app session).
 

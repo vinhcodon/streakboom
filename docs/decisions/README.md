@@ -10,6 +10,7 @@ What was **decided**, why, and what was rejected. One short file per decision (a
 
 | ADR | Decision | Status | Date |
 |---|---|---|---|
+| [0173](0173-the-chat-bubble-is-shown-and-focused-with-the-system-calls.md) | The chat bubble is shown and given the keyboard with the system calls, a refusal is reported as one; verified before T2b (completes E3 of 0168) | accepted for the prototype | 2026-11-28 |
 | [0172](0172-b1-is-investigated-before-t2b-for-one-working-day.md) | B1 (the first interactive bubble not taking the keyboard) is investigated before T2b, at most one working day, then the author is asked (amends 0167 and 0168) | accepted for the prototype | 2026-11-28 |
 | [0171](0171-a-failed-entry-into-the-group-visit-says-the-existing-busy-line.md) | A failed entry into the group visit says the existing busy line, never in Quiet (adds to 0166 and 0167) | accepted for the prototype | 2026-11-28 |
 | [0170](0170-when-the-charge-cannot-be-saved-no-request-is-made-and-the-pet-answers-with-a-gesture.md) | When a charge cannot be saved no request is made; the pet answers with a gesture (adds to 0165 and 0167) | accepted for the prototype | 2026-11-28 |
