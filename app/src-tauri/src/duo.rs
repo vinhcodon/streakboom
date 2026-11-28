@@ -229,6 +229,7 @@ fn spawn_dev_commands(app: AppHandle, dir: PathBuf) {
                     }
                 }
                 "hotbox" => chatbox_toggle(&app), // what the global shortcuts do, without the keys
+                "boxclose" => chatbox_hide(app.clone()), // an explicit close of the box (its Esc), without the key (T2a: a close during an entry)
                 "hotall" => tray(&app),
                 "pinbox" => chatbox_pin(true), // the pin without a click: the person's own windows may take the focus while a script runs
                 "unpinbox" => chatbox_pin(false),
@@ -1143,8 +1144,28 @@ fn take_foreground(win: &tauri::WebviewWindow) {
     let _ = win;
 }
 
+/// T2a (issue 23, row 28a): while the page enters a group visit, the shortcut and a second start do not open or focus anything themselves; the page is told and
+/// focuses the entry's box once the entry has its outcome (a press made before an explicit close is dropped there). Set only by the page with the experiment.
+static ENTRY_PENDING: AtomicBool = AtomicBool::new(false);
+pub fn entry_pending() -> bool { enabled() && ENTRY_PENDING.load(Ordering::SeqCst) }
+
+/// The page says an entry into a group visit is in progress (true) or has its outcome (false).
+#[tauri::command]
+pub fn duo_entry_pending(on: bool) { ENTRY_PENDING.store(on, Ordering::SeqCst); }
+
+/// The page focuses the box after an entry (row 28a): shown if it was not and given the keyboard, with no `@Name` written in the field.
+#[tauri::command]
+pub fn duo_focus_box(app: AppHandle) {
+    if !enabled() { return; }
+    std::thread::spawn(move || open_box_now(&app));
+}
+
 /// The shortcut (ADR-0159): open the box, or give it the keyboard if it is showing; never hide it (Esc, a click elsewhere and the fade do that).
 pub fn chatbox_open(app: &AppHandle) {
+    if entry_pending() { log(app, "shortcut during an entry: deferred to the page"); let _ = app.emit_to("main", "duo-open-deferred", "shortcut"); return; }
+    open_box_now(app);
+}
+fn open_box_now(app: &AppHandle) {
     match app.get_webview_window(BOX_LABEL) {
         Some(win) => { if !(win.is_visible().unwrap_or(false) && BOX_ENGAGED.load(Ordering::SeqCst) && has_keyboard(&win)) { show_box(app, &win); } }
         None => make_box(app, true),
@@ -1229,7 +1250,7 @@ fn spawn_hover(app: AppHandle) {
                 if idle > FADE_AFTER_MS {
                     let p = ((idle - FADE_AFTER_MS) as f64 / FADE_MS as f64).min(1.0);
                     emit_fade(&app, ((1.0 - p) * 1000.0).round() as u64);
-                    if p >= 1.0 { portrait_dismiss(&app); hide_box(&win); BOX_IDLE_SINCE.store(0, Ordering::SeqCst); emit_fade(&app, 1000); log(&app, "box faded away"); continue; }
+                    if p >= 1.0 { let _ = app.emit_to("main", "chatbox-closed", ()); portrait_dismiss(&app); hide_box(&win); BOX_IDLE_SINCE.store(0, Ordering::SeqCst); emit_fade(&app, 1000); log(&app, "box faded away"); continue; }
                 }
             }
             if !BOX_ENGAGED.load(Ordering::SeqCst) {
@@ -1276,6 +1297,7 @@ pub fn chatbox_state(empty: bool, content: bool) {
 /// it was shown again meanwhile. It stops taking clicks and keys at once.
 static HIDE_GEN: AtomicU64 = AtomicU64::new(0);
 fn hide_box_soft(app: &AppHandle, win: &tauri::WebviewWindow) {
+    let _ = app.emit_to("main", "chatbox-closed", ()); // T2a (note 3): an explicit close ends an entry in progress at this instant, even while the box still fades
     let g = HIDE_GEN.fetch_add(1, Ordering::SeqCst) + 1;
     BOX_ENGAGED.store(false, Ordering::SeqCst);
     let _ = win.set_ignore_cursor_events(true);

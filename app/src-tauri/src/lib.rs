@@ -1885,18 +1885,29 @@ fn build_tray(app: &AppHandle, quiet: bool) -> tauri::Result<()> {
 // ----------------------------------------------------------------------- run
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
+/// What a second start does (ADR-0067): the running Peak is made visible if it was hidden.
+fn second_start_show(app: &AppHandle) {
+    if let Some(win) = app.get_webview_window("main") {
+        if !win.is_visible().unwrap_or(true) {
+            let _ = win.show();
+            end_away(app);
+        }
+    }
+}
+
+/// T2a (row 28a): a second start that came during an entry into a group visit, done now that the entry has its outcome.
+#[tauri::command]
+fn duo_second_start_resume(app: AppHandle) { second_start_show(&app); }
+
 pub fn run() {
     tauri::Builder::default()
         // ONE Peak per user (ADR-0067): a second start (a click on the program, the start with Windows after a manual start)
         // does not open a second pet. It must be the first plugin. The running Peak is only made visible if it was hidden:
         // whoever starts it again most likely cannot find it.
         .plugin(tauri_plugin_single_instance::init(|app, _args, _cwd| {
-            if let Some(win) = app.get_webview_window("main") {
-                if !win.is_visible().unwrap_or(true) {
-                    let _ = win.show();
-                    end_away(app);
-                }
-            }
+            // T2a (row 28a): while the page enters a group visit, a second start waits for the entry; the page then focuses its box (experiment only)
+            if duo::entry_pending() { let _ = app.emit_to("main", "duo-open-deferred", "second-start"); return; }
+            second_start_show(app);
         }))
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_updater::Builder::new().build())
@@ -2042,6 +2053,9 @@ pub fn run() {
             duo::chatbox_showing,
             duo::duo_touch,
             duo::duo_open_box,
+            duo::duo_entry_pending,
+            duo::duo_focus_box,
+            duo_second_start_resume,
             duo::chatbox_take_prefill,
             duo::duo_fake,
             duo::duo_face,

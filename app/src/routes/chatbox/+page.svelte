@@ -6,6 +6,7 @@
   import { listen, emitTo } from "@tauri-apps/api/event";
   import { boxStrings, slashLabel } from "$lib/chatbox-ui";
   import { nfc } from "$lib/clip";
+  import { RestoreInbox } from "$lib/entry";
   import { parseCallMe } from "$lib/callme";
   import { addressees, parseDuoCommand, summons } from "$lib/duo-command";
   import { EMPTY_VIEW, applyMention, groupTurns, mentionItems, mentionToken, mentionsIn, recallStep, settled, slashItems, timeLabel, withMention, type BoxAction, type BoxView, type MentionItem, type PetKey, type SlashItem } from "$lib/chatbox";
@@ -19,6 +20,7 @@
   let input = $state<HTMLTextAreaElement | null>(null);
   let recallIdx = -1; // arrow up and down: where in the messages sent before (-1: not browsing)
   let slashSel = $state(0);
+  const restores = new RestoreInbox(); // T2a (note 2): a return of unsent text is applied once per id and acknowledged
   let composing = $state(false); // a word is being composed by a typing program (Telex, VNI, a Japanese IME): the field is left alone until it is done
   let settledDraft = $state(""); // the draft as the list of commands sees it: it does not move while a word is composed (ADR-0147)
   let slashOff = $state(false); // Esc closed the list: it stays closed until the field changes
@@ -190,7 +192,11 @@
       offs.push(await listen<BoxView>("chatbox-view", (e) => { view = e.payload; void refreshPresence(); }));
       offs.push(await listen<boolean>("chatbox-mode", (e) => { engaged = e.payload; }));
       offs.push(await listen("chatbox-members", () => void refreshPresence())); // #17: who is in the chat changed
-      offs.push(await listen<string>("chatbox-restore", (e) => { draft = draft ? `${draft}${String.fromCharCode(10)}${e.payload}` : e.payload; settledDraft = draft; void tick().then(grow); })); // #19: waiting messages not sent (the visit was dismissed) come back to the field
+      offs.push(await listen<{ id: string; text: string }>("chatbox-restore", (e) => {
+        const r = restores.apply(draft, e.payload.id, e.payload.text); // the whole text, also beyond the 300 characters of typing: returning is not sending
+        if (r.applied) { draft = r.draft; settledDraft = draft; void tick().then(grow); }
+        void emitTo("main", "chatbox-restored", e.payload.id).catch(() => {}); // acknowledged also when already applied: the page stops retrying
+      })); // #19: waiting messages not sent (the visit was dismissed) come back to the field
       pawsMode = await invoke<string>("duo_paws_mode").catch(() => "walk");
       offs.push(await listen<number>("chatbox-fade", (e) => { fade = e.payload; }));
       engaged = await invoke<boolean>("chatbox_mode").catch(() => false);
@@ -261,7 +267,7 @@
           </div>
         {/if}
 <footer>
-        <textarea bind:this={input} bind:value={draft} rows="1" {placeholder} maxlength="300" autocomplete="off" oninput={() => { settledDraft = settled(settledDraft, draft, composing); caret = input?.selectionStart ?? draft.length; if (!composing) { slashOff = false; mentionOff = false; recallIdx = -1; grow(); } }} onkeyup={() => { caret = input?.selectionStart ?? caret; }} onclick={() => { caret = input?.selectionStart ?? caret; }} oncompositionstart={() => { composing = true; }} oncompositionend={() => { composing = false; settledDraft = draft; slashOff = false; recallIdx = -1; grow(); }} onkeydown={onKey} aria-label={placeholder}></textarea>
+        <textarea bind:this={input} bind:value={draft} rows="1" {placeholder} maxlength="300" autocomplete="off" oninput={() => { settledDraft = settled(settledDraft, draft, composing); caret = input?.selectionStart ?? draft.length; if (!composing) { slashOff = false; mentionOff = false; recallIdx = -1; grow(); } }} onkeyup={() => { caret = input?.selectionStart ?? caret; }} onclick={() => { caret = input?.selectionStart ?? caret; }} oncompositionstart={() => { composing = true; void emitTo("main", "chatbox-composing", true).catch(() => {}); }} oncompositionend={() => { composing = false; void emitTo("main", "chatbox-composing", false).catch(() => {}); settledDraft = draft; slashOff = false; recallIdx = -1; grow(); }} onkeydown={onKey} aria-label={placeholder}></textarea>
         <button class="send" aria-label={t.send} disabled={!draft.trim()} onclick={send}>
           <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12l14-7-5 14-2-6-7-1z"/></svg>
         </button>
