@@ -649,7 +649,7 @@ const AWAY_SLICE: Duration = Duration::from_secs(20);
 
 // ---- B1 DIAGNOSTIC (ADR-0172, investigation only, not for merge): a log of the bubble's native state, and one factor chosen by
 // STREAKBOOM_B1_VARIANT: "control" (as the base), "nofocused" (no .focused(false)), "taohide" (hidden with tao's hide), "taoshow" (plain
-// speech shown with tao's show, as main). Nothing is logged unless STREAKBOOM_B1_DIAG=1.
+// speech shown with tao's show, as main), "syspair" (the interactive show and focus with the system calls). Nothing is logged unless STREAKBOOM_B1_DIAG=1.
 static B1_TAO_SHOWN: AtomicBool = AtomicBool::new(false); // tao's own VISIBLE flag as this code last set it, since the window was made
 fn b1_variant() -> String { std::env::var("STREAKBOOM_B1_VARIANT").unwrap_or_else(|_| "control".into()) }
 fn b1_state(app: &AppHandle) -> String {
@@ -660,6 +660,17 @@ fn b1_state(app: &AppHandle) -> String {
     let (fg, vis, noact) = unsafe { let fg = GetForegroundWindow() as isize; let vis = b != 0 && IsWindowVisible(b as _) != 0; let ex = if b != 0 { GetWindowLongW(b as _, GWL_EXSTYLE) as u32 } else { 0 }; (fg, vis, ex & WS_EX_NOACTIVATE != 0) };
     let who = if fg == 0 { "none" } else if fg == b { "bubble" } else if fg == m { "main" } else { "other" };
     format!("vis={} fg={} noact={} tao={}", vis, who, noact, B1_TAO_SHOWN.load(Ordering::SeqCst))
+}
+// "syspair": the interactive bubble shown and given the keyboard with the system calls, never through tao's own record of visibility
+fn b1_sys_show(win: &WebviewWindow) {
+    use windows_sys::Win32::UI::WindowsAndMessaging::{ShowWindow, SW_SHOW};
+    // SAFETY: a plain call with the handle of our own window.
+    if let Ok(h) = win.hwnd() { unsafe { ShowWindow(h.0 as _, SW_SHOW) }; }
+}
+fn b1_sys_focus(win: &WebviewWindow) {
+    use windows_sys::Win32::UI::WindowsAndMessaging::SetForegroundWindow;
+    // SAFETY: a plain call with the handle of our own window.
+    if let Ok(h) = win.hwnd() { unsafe { SetForegroundWindow(h.0 as _) }; }
 }
 fn b1_log(app: &AppHandle, line: &str) {
     if std::env::var("STREAKBOOM_B1_DIAG").as_deref() != Ok("1") { return; }
@@ -765,10 +776,13 @@ fn bubble_fit(app: AppHandle, state: State<AppState>, w: f64, h: f64, interactiv
     if !was_visible {
         // Plain speech is shown without taking the keyboard. Found with the chat box (ADR-0142): a pet's line took the focus from the box the person
         // was typing in (the program was already in front, so Windows let the bubble be activated). Only a bubble that is asked to take focus does.
-        if interactive || b1_variant() == "taoshow" { let _ = bubble.show(); B1_TAO_SHOWN.store(true, Ordering::SeqCst); } else { show_without_activating(&bubble); }
+        if interactive && b1_variant() == "syspair" { b1_sys_show(&bubble); } else if interactive || b1_variant() == "taoshow" { let _ = bubble.show(); B1_TAO_SHOWN.store(true, Ordering::SeqCst); } else { show_without_activating(&bubble); }
     }
     b1_log(&app, &format!("fit after show: {}", b1_state(&app)));
-    if focus && interactive {
+    if focus && interactive && b1_variant() == "syspair" {
+        b1_sys_focus(&bubble);
+        b1_log(&app, &format!("fit after set_focus: {}", b1_state(&app)));
+    } else if focus && interactive {
         let _ = bubble.set_focus();
         b1_log(&app, &format!("fit after set_focus: {}", b1_state(&app)));
     }
