@@ -123,8 +123,14 @@ try {
   # the visit dismissed while an invite waits: a group message in flight, then "Paws go in" and "@Paws ..." queued, then Esc
   $m = (LogLines).Count
   Send "ca hai lan cuoi"; Start-Sleep -Milliseconds 900; Send "Paws go in"; Start-Sleep -Milliseconds 300; Send "@Paws quay lai sau"; Start-Sleep -Milliseconds 400
-  Focus; [System.Windows.Forms.SendKeys]::SendWait("{ESC}"); Start-Sleep 10
+  Focus
+  # T2a bounded probe: was the queue still pending at the close? (the row's precondition: both messages still waiting when the Esc is accepted)
+  $atClose = Since $m
+  $pre = -not (@($atClose | Where-Object { $_ -match 'dispatch: (Paws go in|@Paws quay lai sau)' }).Count)
+  [System.Windows.Forms.SendKeys]::SendWait("{ESC}"); Start-Sleep 10
   $l = Since $m
+  $order = @($l | Where-Object { $_ -match 'dispatch: |given back|joined the chat|left the chat|entry g=|ended \(the box was closed\)' } | ForEach-Object { ($_ -replace '^\d+ ', '') })
+  Note ("dismissal precondition (both messages still waiting when the Esc was sent)={0}; order after the send: {1}" -f $pre, ($order -join ' > '))
   Note ("dismissed with an invite waiting: given back={0}; paws joined after={1}; member now={2}" -f (@($l | Where-Object { $_ -match 'given back' }) -join ''), @($l | Where-Object { $_ -match 'joined the chat' }).Count, (Member))
   OpenBox; Start-Sleep 1; Corner "q3-given-back"
 } finally { $log | ForEach-Object { Write-Output $_ }; Stop-Process -Id $p.Id -Force -ErrorAction SilentlyContinue }

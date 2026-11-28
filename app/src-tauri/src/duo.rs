@@ -974,6 +974,24 @@ mod tests {
     }
 
     #[test]
+    fn the_focus_report_is_the_effect_s_own_result_combined_with_the_gate() {
+        // T2a (comment 7238418647): a permitted focus that fails is reported false; only an eligible effect that succeeded is true
+        let gate = EntryGate::new();
+        gate.set(3); gate.arm(3);
+        let (ok, why) = focus_report(&gate, 3, || Err("the box did not get the keyboard within 1 s".into()));
+        assert!(!ok, "a permitted but failed focus is not reported as focused");
+        assert!(why.contains("did not get the keyboard"));
+        assert_eq!(focus_report(&gate, 3, || Ok(())), (true, "focused".to_string()));
+        gate.disarm();
+        let mut ran = false;
+        let (ok, why) = focus_report(&gate, 3, || { ran = true; Ok(()) });
+        assert!(!ok && !ran, "not armed: the effect does not run");
+        assert!(why.starts_with("not eligible"));
+        gate.set(0);
+        assert!(!focus_report(&gate, 3, || Ok(())).0, "an ended entry: refused");
+    }
+
+    #[test]
     fn a_membership_change_that_cannot_be_written_is_not_acknowledged_and_is_undone_in_memory() {
         // T2a R4: a failing write (as a rename refused by the system) gives an error and the state in memory as it was
         let mut s = DuoState::default();
@@ -1289,6 +1307,35 @@ impl EntryGate {
     }
 }
 static ENTRY: EntryGate = EntryGate::new();
+
+/// The focus worker's report (T2a): the gate's eligibility AND the result of the effect itself. False with the reason when the entry was not eligible (ended,
+/// Quiet, a composition) or when the effect ran and failed; true only when it ran and succeeded.
+pub fn focus_report(gate: &EntryGate, g: u64, effect: impl FnOnce() -> Result<(), String>) -> (bool, String) {
+    let mut result: Option<Result<(), String>> = None;
+    let allowed = gate.guarded(g, true, || { result = Some(effect()); });
+    match (allowed, result) {
+        (true, Some(Ok(()))) => (true, "focused".into()),
+        (true, Some(Err(e))) => (false, e),
+        _ => (false, "not eligible: the entry ended, Quiet or a composition".into()),
+    }
+}
+
+/// The entry's focus as an effect with a result: the box shown and engaged, then checked within a bounded wait to be visible, engaged and the foreground
+/// window (has_keyboard). An error when the window cannot be made or does not get the keyboard in time.
+fn entry_focus_effect(app: &AppHandle) -> Result<(), String> {
+    dismiss_tray_flyout();
+    let win = match app.get_webview_window(BOX_LABEL) {
+        Some(w) => w,
+        None => { make_box(app, true); app.get_webview_window(BOX_LABEL).ok_or_else(|| "the box window could not be made".to_string())? }
+    };
+    if !(win.is_visible().unwrap_or(false) && BOX_ENGAGED.load(Ordering::SeqCst) && has_keyboard(&win)) { show_box(app, &win); }
+    for _ in 0..50 {
+        if win.is_visible().unwrap_or(false) && BOX_ENGAGED.load(Ordering::SeqCst) && has_keyboard(&win) { return Ok(()); }
+        std::thread::sleep(Duration::from_millis(20));
+    }
+    Err(format!("the box did not get the keyboard within 1 s (visible={}, engaged={}, foreground={})",
+        win.is_visible().unwrap_or(false), BOX_ENGAGED.load(Ordering::SeqCst), has_keyboard(&win)))
+}
 pub fn entry_pending() -> bool { enabled() && ENTRY.current() != 0 }
 
 /// The page says which entry is in progress (its generation) or that none is (0).
@@ -1326,9 +1373,9 @@ pub fn duo_entry_show(app: AppHandle, g: u64) {
 pub fn duo_entry_focus(app: AppHandle, g: u64) {
     if !enabled() { return; }
     std::thread::spawn(move || {
-        let ok = ENTRY.guarded(g, true, || { dismiss_tray_flyout(); open_box_now(&app); });
-        log(&app, &format!("entry g={g}: {}", if ok { "the box shown and focused at the commit" } else { "not focused: the entry ended, Quiet or a composition" }));
-        let _ = app.emit_to("main", "duo-entry-focused", serde_json::json!({ "g": g, "ok": ok }));
+        let (ok, why) = focus_report(&ENTRY, g, || entry_focus_effect(&app));
+        log(&app, &format!("entry g={g}: {}", if ok { "the box shown and focused at the commit".to_string() } else { format!("not focused: {why}") }));
+        let _ = app.emit_to("main", "duo-entry-focused", serde_json::json!({ "g": g, "ok": ok, "why": why }));
     });
 }
 

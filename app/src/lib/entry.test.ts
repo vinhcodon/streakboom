@@ -529,7 +529,7 @@ test("row 6, the page and Rust: the focus goes with the entry's generation and t
   const src = readFileSync(new URL("../routes/+page.svelte", import.meta.url), "utf8");
   const rust = readFileSync(new URL("../../src-tauri/src/duo.rs", import.meta.url), "utf8");
   assert.ok(src.includes('void invoke("duo_entry_focus", { g })'), "the page asks the focus and waits for the worker's report");
-  assert.ok(rust.includes("let ok = ENTRY.guarded(g, true, || { dismiss_tray_flyout(); open_box_now(&app); });"), "checked by the worker at the effect");
+  assert.ok(rust.includes("let (ok, why) = focus_report(&ENTRY, g, || entry_focus_effect(&app));"), "checked by the worker at the effect");
 });
 
 // ---------------------------------------------------------------- second return (comment 7237781628)
@@ -617,10 +617,13 @@ test("2: the focus accepted, its worker held, the entry ended, the worker releas
 test("2: a focus the native side cannot do (it fails twice) is not a commit: the entry fails and its membership is undone", async () => {
   const pr = program();
   pr.boxVisible = true;
-  pr.focusBroken = true;
+  pr.focusBroken = true; // the worker was eligible (current, armed) and its effect failed: it reports ok=false
+  const entries = new Entries();
   const pg = pageSide(pr, ["B"]);
-  const r = await entryTurn(new Entries(), "@Paws hello", pr.host(), pg.page);
+  const r = await entryTurn(entries, "@Paws hello", pr.host(), pg.page);
   assert.equal(r.outcome, "failed");
+  assert.equal(entries.takeHeld(r.g), false, "no held words: nothing is sent, no request, no charge");
+  assert.equal(pr.calls.filter((c) => c.startsWith("focus")).length, 2, "asked once more, then not a commit");
   assert.equal(pr.member, false);
   assert.equal(pg.draft(), "@Paws hello\nB");
   assert.deepEqual(pg.said, ["the call changed nothing"]);
@@ -682,7 +685,8 @@ test("the page wires these: both command tucks use tuckPaws; Quiet disarms and d
   assert.ok(/cancelTalk\("quiet"\);\s*void invoke\("duo_entry_disarm"\)[\s\S]{0,300}if \(entries\.dropHeld\(\) !== null\) \{ restorer\.give\(sendQueue\.takeAll\(\)\);/.test(src));
   assert.ok(/boxComposing = e\.payload;\s*if \(boxComposing\) void invoke\("duo_entry_disarm"\)/.test(src));
   assert.ok(src.includes('cleanups.push(await win.listen<{ g: number; ok: boolean }>("duo-entry-focused", (e) => focusWaiters.get(e.payload.g)?.(e.payload.ok)));'));
-  assert.ok(rust.includes("let ok = ENTRY.guarded(g, true, || { dismiss_tray_flyout(); open_box_now(&app); });"), "the worker checks under the gate's lock at the effect");
-  assert.ok(rust.includes('let _ = app.emit_to("main", "duo-entry-focused", serde_json::json!({ "g": g, "ok": ok }));'), "and reports the effect itself");
+  assert.ok(rust.includes("let (ok, why) = focus_report(&ENTRY, g, || entry_focus_effect(&app));"), "the worker checks under the gate's lock at the effect");
+  assert.ok(rust.includes('let _ = app.emit_to("main", "duo-entry-focused", serde_json::json!({ "g": g, "ok": ok, "why": why }));'), "and reports the effect's own result");
+  assert.ok(rust.includes("if win.is_visible().unwrap_or(false) && BOX_ENGAGED.load(Ordering::SeqCst) && has_keyboard(&win) { return Ok(()); }"), "the effect checks that the box got the keyboard, within a bounded wait");
   assert.ok(rust.includes("pub async fn duo_entry_gen(g: u64)") && rust.includes("pub async fn duo_entry_disarm()"), "the page's end and disarm wait for the lock off the main thread");
 });
