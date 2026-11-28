@@ -38,12 +38,19 @@ public class WT { [DllImport("user32.dll")] public static extern IntPtr GetForeg
 function Front { $h = [WT]::GetForegroundWindow(); $sb = New-Object System.Text.StringBuilder 256; [void][WT]::GetWindowText($h, $sb, 256); $q = [uint32]0; [void][M]::GetWindowThreadProcessId($h, [ref]$q); $own = (Get-Process -Id $q -ErrorAction SilentlyContinue).Path -eq $Exe; "{0} own={1}" -f $sb.ToString(), $own }
 # the field read back only if the program already has the keyboard: no click, so a letter typed before is proof the box had the input focus
 function DraftNoClick { if (-not (ProgramHasFocus)) { return "<no keyboard>" }; $old = $null; try { $old = [System.Windows.Forms.Clipboard]::GetText() } catch {}; try { [System.Windows.Forms.Clipboard]::Clear() } catch {}; [System.Windows.Forms.SendKeys]::SendWait("^a^c"); Start-Sleep -Milliseconds 400; $t = ""; try { $t = [System.Windows.Forms.Clipboard]::GetText() } catch {}; try { if ($old) { [System.Windows.Forms.Clipboard]::SetText($old) } } catch {}; [System.Windows.Forms.SendKeys]::SendWait("{END}"); ($t -replace "`r", "") -replace "`n", " | " }
+# the script's own small form: it holds the keyboard before N6 and N7, so that the foreground after the commit says who took it (clicks only on itself)
+$form = New-Object System.Windows.Forms.Form
+$form.Text = "duo-entry harness"; $form.StartPosition = "Manual"; $form.Location = New-Object System.Drawing.Point(20, 20)
+$form.Size = New-Object System.Drawing.Size(300, 100); $form.TopMost = $true
+$form.Show(); [System.Windows.Forms.Application]::DoEvents()
+function FocusForm { RawClick ($form.Left + 150) ($form.Top + 60); Start-Sleep -Milliseconds 400; [System.Windows.Forms.Application]::DoEvents() }
+function FormHasKeyboard { [WT]::GetForegroundWindow() -eq $form.Handle }
 function ClearDraft { Keys "^a"; Keys "{BACKSPACE}" }
 function LogLines { @(Get-Content "$data\duo-log.txt" -ErrorAction SilentlyContinue | ForEach-Object { $_ -replace '^\d+ ', '' }) }
 function Since($m) { @(LogLines | Select-Object -Skip $m) }
 function Calls($l) { @($l | Where-Object { $_ -match '^call (peak|paws)' }).Count }
 function Member { $d = Get-Content "$data\duo.json" -Raw -ErrorAction SilentlyContinue | ConvertFrom-Json; if ($d) { [bool]$d.pets.paws.out } else { $false } }
-function Show($l) { $l | Where-Object { $_ -match '^(entry|call |line |return |paws (joined|left))' } | ForEach-Object { Note "     $_" } }
+function Show($l) { $l | Where-Object { $_ -match '^(entry|call |line |return |paws (joined|left)|membership not saved)' } | ForEach-Object { Note "     $_" } }
 if (Get-Process streakboom -ErrorAction SilentlyContinue | Where-Object { $_.Path -eq $Exe }) { throw "a streakboom.exe is already running: not touching it" }
 Remove-Item "$data\duo-log.txt", "$data\duo.json" -ErrorAction SilentlyContinue
 $env:STREAKBOOM_DUO = "1"; $env:STREAKBOOM_DUO_FAKE = "1"; $env:STREAKBOOM_PAWS_CHAT = "1"
@@ -80,23 +87,26 @@ try {
   ClearDraft
   Note "== N6 row 6: the box hidden, an invitation commits: the box is shown and takes the keyboard (no click by the script)"
   Cmd "cmd:paws:in"; Start-Sleep 2; Cmd "boxclose"; Start-Sleep 2
+  FocusForm; $before = "form has the keyboard=$(FormHasKeyboard)"
   $m = (LogLines).Count; Cmd "type:@Paws focus me"; Start-Sleep 7; $l = Since $m
+  Note "N6 before the invitation: $before" 
   $front = Front
   $had = ProgramHasFocus
   $typed = "<not typed: the program does not have the keyboard>"
   if ($had) { [System.Windows.Forms.SendKeys]::SendWait("z"); Start-Sleep -Milliseconds 500; $typed = DraftNoClick }
   Note ("N6 requests={0} member={1} foreground='{2}' program has the keyboard={3} field after typing z without a click='{4}'" -f (Calls $l), (Member), $front, $had, $typed); Show $l
-  $l | Where-Object { $_ -match 'focused at the commit|not focused' } | ForEach-Object { Note "     $_" }
   if ($had) { ClearDraft }
   Note "== N7 row 10: the same in Quiet: the visit commits silently and the box does not take the keyboard"
   Cmd "cmd:paws:in"; Start-Sleep 2; Cmd "boxclose"; Start-Sleep 2
   Cmd "quiet:on"; Start-Sleep 1
+  FocusForm; $before = "form has the keyboard=$(FormHasKeyboard)"
   $m = (LogLines).Count; Cmd "type:@Paws quiet focus"; Start-Sleep 7; $l = Since $m
-  Note ("N7 requests={0} member={1} foreground='{2}' program has the keyboard={3}" -f (Calls $l), (Member), (Front), (ProgramHasFocus)); Show $l
-  $l | Where-Object { $_ -match 'focused at the commit|not focused' } | ForEach-Object { Note "     $_" }
+  Note "N7 before the invitation: $before"
+  Note ("N7 requests={0} member={1} foreground='{2}' program has the keyboard={3} the form still has it={4}" -f (Calls $l), (Member), (Front), (ProgramHasFocus), (FormHasKeyboard)); Show $l
   Cmd "quiet:off"; Start-Sleep 1
 } finally {
   if (Test-Path "$data\duo.json") { Set-ItemProperty -Path "$data\duo.json" -Name IsReadOnly -Value $false }
+  $form.Close()
   $log | Set-Content -Encoding utf8 "$Out\duo-entry-log.txt"
   Stop-Process -Id $p.Id -Force
 }
